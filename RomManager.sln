@@ -1,0 +1,51 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31611.283
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RomManagerMaui", "RomManagerMaui\RomManagerMaui.csproj", "{8F22F9A6-12C3-4140-83C7-167970964424}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RomManagerShared", "ClassLibrary1\RomManagerShared.csproj", "{CA1859E0-E9EF-4411-88A5-1B9B38DF3DE3}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "testconsole", "testconsole\testconsole.csproj", "{05BE01B8-4A57-4DF8-BAF5-C7B89006D58B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SkyEditor.IO", "SkyEditor.IO\SkyEditor.IO.csproj", "{CA1E7B90-7177-41B2-B574-CACEC927EE3A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LibHac", "LibHac\LibHac.csproj", "{83917F10-E9A6-4356-B337-C530879A7873}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8F22F9A6-12C3-4140-83C7-167970964424}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8F22F9A6-12C3-4140-83C7-167970964424}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8F22F9A6-12C3-4140-83C7-167970964424}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{8F22F9A6-12C3-4140-83C7-167970964424}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8F22F9A6-12C3-4140-83C7-167970964424}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8F22F9A6-12C3-4140-83C7-167970964424}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{CA1859E0-E9EF-4411-88A5-1B9B38DF3DE3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CA1859E0-E9EF-4411-88A5-1B9B38DF3DE3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CA1859E0-E9EF-4411-88A5-1B9B38DF3DE3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CA1859E0-E9EF-4411-88A5-1B9B38DF3DE3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{05BE01B8-4A57-4DF8-BAF5-C7B89006D58B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{05BE01B8-4A57-4DF8-BAF5-C7B89006D58B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{05BE01B8-4A57-4DF8-BAF5-C7B89006D58B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{05BE01B8-4A57-4DF8-BAF5-C7B89006D58B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CA1E7B90-7177-41B2-B574-CACEC927EE3A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CA1E7B90-7177-41B2-B574-CACEC927EE3A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CA1E7B90-7177-41B2-B574-CACEC927EE3A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CA1E7B90-7177-41B2-B574-CACEC927EE3A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{83917F10-E9A6-4356-B337-C530879A7873}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{83917F10-E9A6-4356-B337-C530879A7873}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{83917F10-E9A6-4356-B337-C530879A7873}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{83917F10-E9A6-4356-B337-C530879A7873}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {61F7FB11-1E47-470C-91E2-47F8143E1572}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,24 @@
+{
+  "ErrorLogPath": "ErrorLog.txt",
+  "Switch": {
+    "TitleDB": {
+      "TitledbUrl": "https://github.com/blawar/titledb/raw/master/US.en.json",
+      "VersionsUrl": "https://github.com/blawar/titledb/raw/master/versions.json",
+      "TitledbSavePath": "TitleDB\\Switch\\US.en.json",
+      "VersionsSavePath": "TitleDB\\Switch\\versions.json"
+    }
+  },
+  "ThreeDS": {
+    "TitleDB": {
+      "BaseUrl": "https://github.com/hax0kartik/3dsdb/raw/master/jsons/",
+      "RegionFiles": [
+        "list_GB.json",
+        "list_JP.json",
+        "list_KR.json",
+        "list_TW.json",
+        "list_US.json"
+      ],
+      "SavePath": "TitleDB\\ThreeDS\\"
+    }
+  }
+}
