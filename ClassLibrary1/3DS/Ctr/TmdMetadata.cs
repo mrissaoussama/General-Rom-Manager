@@ -92,7 +92,7 @@ namespace DotNet3dsToolkit.Ctr
                     NextRecordsHash = await TmdData.ReadArrayAsync(afterSignatureOffset + 0xC4 + (i * 0x24) + 4, 0x20)
                 });
             }
-            ContentInfoRecords = contentInfos.ToArray();
+            ContentInfoRecords = [.. contentInfos];
 
             var contentChunks = new List<ContentChunk>();
             for (int i = 0; i < ContentCount; i++)
@@ -106,7 +106,7 @@ namespace DotNet3dsToolkit.Ctr
                     Hash = await TmdData.ReadArrayAsync(afterSignatureOffset + 0x9C4 + (i * 0x30) + 0x10, 0x20),
                 });
             }
-            ContentChunkRecords = contentChunks.ToArray();
+            ContentChunkRecords = [.. contentChunks];
         }
 
         private IReadOnlyBinaryDataAccessor TmdData { get; set; }

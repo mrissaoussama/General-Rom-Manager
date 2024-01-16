@@ -1,11 +1,13 @@
-{
+{//maybe think of a better structure
+  "PluginsPath": "Plugins",
+
   "ErrorLogPath": "ErrorLog.txt",
   "Switch": {
     "TitleDB": {
       "TitledbUrl": "https://github.com/blawar/titledb/raw/master/US.en.json",
       "VersionsUrl": "https://github.com/blawar/titledb/raw/master/versions.json",
-      "TitledbSavePath": "TitleDB\\Switch\\US.en.json",
-      "VersionsSavePath": "TitleDB\\Switch\\versions.json"
+      "TitledbSavePath": "Switch\\TitleDB\\US.en.json",
+      "VersionsSavePath": "Switch\\TitleDB\\versions.json"
     }
   },
   "ThreeDS": {
@@ -18,7 +20,19 @@
         "list_TW.json",
         "list_US.json"
       ],
-      "SavePath": "TitleDB\\ThreeDS\\"
+      "SavePath": "ThreeDS\\TitleDB\\"
+    }
+  },
+  "Wii" :{
+    "GameTDB": {
+      "Url": "https://www.gametdb.com/wiitdb.zip",
+      "Path": "Wii\\GameTDB\\wiitdb.xml"
+    },
+    "Wad": {
+      "CommonKeyPath": "Wii\\Wad\\common-key.bin"
+    },
+    "PS4": {
+      "PS4ToolsPath": "PS4\\PS4_Tools.dll"
     }
   }
 }

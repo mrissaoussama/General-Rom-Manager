@@ -15,7 +15,7 @@ public class KipReader : IDisposable
     private KipHeader _header;
 
     public ReadOnlySpan<uint> Capabilities => _header.Capabilities;
-    public U8Span Name => new U8Span(_header.Name);
+    public U8Span Name => new(_header.Name);
 
     public ulong ProgramId => _header.ProgramId;
     public int Version => _header.Version;

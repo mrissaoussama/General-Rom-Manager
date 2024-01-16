@@ -2,7 +2,7 @@
 
 public class MultiWaitHolderImpl
 {
-    private MultiWaitHolderBase _holder;
+    private readonly MultiWaitHolderBase _holder;
 
     public MultiWaitHolderBase HolderBase => _holder;
     public MultiWaitHolderOfNativeHandle HolderOfNativeHandle => (MultiWaitHolderOfNativeHandle)_holder;

@@ -12,8 +12,6 @@ namespace LibHac.FsSrv.FsCreator;
 
 public class StorageOnNcaCreator : IStorageOnNcaCreator
 {
-    // ReSharper disable once UnusedMember.Local
-    private bool IsEnabledProgramVerification { get; set; }
     private KeySet KeySet { get; }
 
     public StorageOnNcaCreator(KeySet keySet)
@@ -64,7 +62,7 @@ public class StorageOnNcaCreator : IStorageOnNcaCreator
         return Result.Success;
     }
 
-    private Result OpenStorage(out IStorage storage, Nca nca, int fsIndex)
+    private static Result OpenStorage(out IStorage storage, Nca nca, int fsIndex)
     {
         UnsafeHelpers.SkipParamInit(out storage);
 

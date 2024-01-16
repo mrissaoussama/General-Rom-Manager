@@ -42,7 +42,7 @@ public class FileSystemBufferManager : IBufferManager
 
         private struct AttrInfo
         {
-            private int _level;
+            private readonly int _level;
             private int _cacheCount;
             private int _cacheSize;
 
@@ -70,7 +70,7 @@ public class FileSystemBufferManager : IBufferManager
         private Entry[] _entries;
         private int _entryCount;
         private int _entryCountMax;
-        private LinkedList<AttrInfo> _attrList;
+        private readonly LinkedList<AttrInfo> _attrList;
         private int _cacheCountMin;
         private int _cacheSizeMin;
         private int _totalCacheSize;
@@ -360,8 +360,8 @@ public class FileSystemBufferManager : IBufferManager
         }
     }
 
-    private FileSystemBuddyHeap _buddyHeap;
-    private CacheHandleTable _cacheTable;
+    private readonly FileSystemBuddyHeap _buddyHeap;
+    private readonly CacheHandleTable _cacheTable;
     private int _totalSize;
     private int _peakFreeSize;
     private int _peakTotalAllocatableSize;

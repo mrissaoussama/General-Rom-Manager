@@ -12,10 +12,10 @@ public readonly struct PosixTime : IComparable<PosixTime>, IEquatable<PosixTime>
     }
 
     public static PosixTime operator +(PosixTime left, TimeSpan right) =>
-        new PosixTime(left.Value + right.GetSeconds());
+        new(left.Value + right.GetSeconds());
 
     public static PosixTime operator -(PosixTime left, TimeSpan right) =>
-        new PosixTime(left.Value - right.GetSeconds());
+        new(left.Value - right.GetSeconds());
 
     public static TimeSpan operator -(PosixTime left, PosixTime right) =>
         TimeSpan.FromSeconds(left.Value - right.Value);

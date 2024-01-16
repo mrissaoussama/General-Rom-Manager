@@ -10,16 +10,16 @@ public struct Array11<T>
     public const int Length = 11;
 
     private T _0;
-    private T _1;
-    private T _2;
-    private T _3;
-    private T _4;
-    private T _5;
-    private T _6;
-    private T _7;
-    private T _8;
-    private T _9;
-    private T _10;
+    private readonly T _1;
+    private readonly T _2;
+    private readonly T _3;
+    private readonly T _4;
+    private readonly T _5;
+    private readonly T _6;
+    private readonly T _7;
+    private readonly T _8;
+    private readonly T _9;
+    private readonly T _10;
 
     [UnscopedRef] public ref T this[int i] => ref Items[i];
 

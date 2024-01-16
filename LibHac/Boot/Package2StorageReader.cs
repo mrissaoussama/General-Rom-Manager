@@ -253,7 +253,7 @@ public class Package2StorageReader : IDisposable
         return Result.Success;
     }
 
-    private void DecryptHeader(ReadOnlySpan<byte> key, ref Package2Meta source, ref Package2Meta dest)
+    private static void DecryptHeader(ReadOnlySpan<byte> key, ref Package2Meta source, ref Package2Meta dest)
     {
         Array16<byte> iv = source.HeaderIv;
 

@@ -21,7 +21,7 @@ public class AesCtrStorage : IStorage
     public static readonly int KeySize = Aes.KeySize128;
     public static readonly int IvSize = Aes.KeySize128;
 
-    private IStorage _baseStorage;
+    private readonly IStorage _baseStorage;
     private Array16<byte> _key;
     private Array16<byte> _iv;
 

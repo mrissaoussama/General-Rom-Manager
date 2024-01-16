@@ -25,7 +25,7 @@ public class ProgramRegistryImpl : IProgramRegistry
     private ulong _processId;
 
     // LibHac addition
-    private FileSystemServer _fsServer;
+    private readonly FileSystemServer _fsServer;
 
     private ref ProgramRegistryImplGlobals Globals => ref _fsServer.Globals.ProgramRegistryImpl;
 

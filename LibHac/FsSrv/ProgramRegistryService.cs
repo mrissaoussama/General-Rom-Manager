@@ -116,8 +116,8 @@ public class ProgramRegistryServiceImpl : IDisposable
 {
     // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
     private Configuration _config;
-    private ProgramRegistryManager _registryManager;
-    private ProgramIndexMapInfoManager _programIndexManager;
+    private readonly ProgramRegistryManager _registryManager;
+    private readonly ProgramIndexMapInfoManager _programIndexManager;
 
     public struct Configuration
     {

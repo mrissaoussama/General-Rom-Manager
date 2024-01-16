@@ -11,15 +11,15 @@ public class MultiWaitImpl : IDisposable
     public const int WaitCancelled = -2;
     public const int WaitTimedOut = -1;
 
-    private LinkedList<MultiWaitHolderBase> _multiWaitList;
+    private readonly LinkedList<MultiWaitHolderBase> _multiWaitList;
     private MultiWaitHolderBase _signaledHolder;
     private TimeSpan _currentTime;
     private InternalCriticalSection _csWait;
-    private MultiWaitTargetImpl _targetImpl;
+    private readonly MultiWaitTargetImpl _targetImpl;
 
     // LibHac additions
-    private OsState _os;
-    private MultiWaitType _parent;
+    private readonly OsState _os;
+    private readonly MultiWaitType _parent;
     public MultiWaitType GetMultiWaitType() => _parent;
 
     public MultiWaitImpl(OsState os, MultiWaitType parent)
@@ -135,7 +135,7 @@ public class MultiWaitImpl : IDisposable
     {
         // Prepare for processing.
         _signaledHolder = null;
-        _targetImpl.SetCurrentThreadHandleForCancelWait();
+        MultiWaitTargetImpl.SetCurrentThreadHandleForCancelWait();
         MultiWaitHolderBase holder = AddToEachObjectListAndCheckObjectState();
 
         // Check if we've been signaled.
@@ -153,7 +153,7 @@ public class MultiWaitImpl : IDisposable
         }
         else if (reply && replyTarget != OsTypes.InvalidNativeHandle)
         {
-            waitResult = _targetImpl.TimedReplyAndReceive(out int _, null, num: 0, replyTarget,
+            waitResult = MultiWaitTargetImpl.TimedReplyAndReceive(out int _, null, num: 0, replyTarget,
                 new TimeSpan(0));
 
             if (waitResult.IsFailure())
@@ -163,7 +163,7 @@ public class MultiWaitImpl : IDisposable
         // Unlink holders from the current object list.
         RemoveFromEachObjectList();
 
-        _targetImpl.ClearCurrentThreadHandleForCancelWait();
+        MultiWaitTargetImpl.ClearCurrentThreadHandleForCancelWait();
 
         outHolder = holder;
         return waitResult;
@@ -194,11 +194,11 @@ public class MultiWaitImpl : IDisposable
             {
                 if (infinite && minTimeoutObject is null)
                 {
-                    waitResult = _targetImpl.ReplyAndReceive(out index, objectsArray, objectCount, replyTarget);
+                    waitResult = MultiWaitTargetImpl.ReplyAndReceive(out index, objectsArray, objectCount, replyTarget);
                 }
                 else
                 {
-                    waitResult = _targetImpl.TimedReplyAndReceive(out index, objectsArray, objectCount, replyTarget, timeoutMin);
+                    waitResult = MultiWaitTargetImpl.TimedReplyAndReceive(out index, objectsArray, objectCount, replyTarget, timeoutMin);
                 }
             }
             else

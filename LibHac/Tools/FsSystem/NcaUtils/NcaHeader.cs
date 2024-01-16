@@ -102,7 +102,7 @@ public struct NcaHeader
 
     public TitleVersion SdkVersion
     {
-        get => new TitleVersion(Header.SdkVersion);
+        get => new(Header.SdkVersion);
         set => Header.SdkVersion = value.Version;
     }
 

@@ -54,7 +54,7 @@ public class AlignmentMatchingStorage<TDataAlignment, TBufferAlignment> : IStora
         Abort.DoAbortUnless(BitUtil.IsPowerOfTwo(BufferAlign));
     }
 
-    private IStorage _baseStorage;
+    private readonly IStorage _baseStorage;
     private long _baseStorageSize;
     private bool _isBaseStorageSizeDirty;
     private SharedRef<IStorage> _sharedBaseStorage;
@@ -185,9 +185,9 @@ public class AlignmentMatchingStoragePooledBuffer<TBufferAlignment> : IStorage
 {
     public static uint BufferAlign => TBufferAlignment.Alignment;
 
-    private IStorage _baseStorage;
+    private readonly IStorage _baseStorage;
     private long _baseStorageSize;
-    private uint _dataAlignment;
+    private readonly uint _dataAlignment;
     private bool _isBaseStorageSizeDirty;
 
     // LibHac addition: This field goes unused if initialized with a plain IStorage.
@@ -329,10 +329,10 @@ public class AlignmentMatchingStorageInBulkRead<TBufferAlignment> : IStorage
 {
     public static uint BufferAlign => TBufferAlignment.Alignment;
 
-    private IStorage _baseStorage;
+    private readonly IStorage _baseStorage;
     private SharedRef<IStorage> _sharedBaseStorage;
     private long _baseStorageSize;
-    private uint _dataAlignment;
+    private readonly uint _dataAlignment;
 
     public AlignmentMatchingStorageInBulkRead(IStorage baseStorage, int dataAlignment)
     {

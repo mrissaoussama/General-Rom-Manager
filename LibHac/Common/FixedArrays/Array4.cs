@@ -10,9 +10,9 @@ public struct Array4<T>
     public const int Length = 4;
 
     private T _0;
-    private T _1;
-    private T _2;
-    private T _3;
+    private readonly T _1;
+    private readonly T _2;
+    private readonly T _3;
 
     [UnscopedRef] public ref T this[int i] => ref Items[i];
 

@@ -28,7 +28,7 @@ public sealed class GameCardEmulated : IGcApi
     private T1CardCertificate _certificate;
     private Array32<byte> _imageHash;
 
-    public GameCardWriter Writer => new GameCardWriter(this);
+    public GameCardWriter Writer => new(this);
     IGcWriterApi IGcApi.Writer => Writer;
 
     private Result CheckCardReady()
@@ -54,7 +54,7 @@ public sealed class GameCardEmulated : IGcApi
             SpanHelpers.AsByteSpan(ref header.EncryptedData), CardHeaderKey, iv);
     }
 
-    private long GetCardSize(MemoryCapacity memoryCapacity)
+    private static long GetCardSize(MemoryCapacity memoryCapacity)
     {
         return memoryCapacity switch
         {

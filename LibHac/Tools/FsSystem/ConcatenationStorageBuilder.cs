@@ -11,7 +11,7 @@ public class ConcatenationStorageBuilder
 
     public ConcatenationStorageBuilder()
     {
-        Segments = new List<ConcatenationStorageSegment>();
+        Segments = [];
     }
 
     public ConcatenationStorageBuilder(IEnumerable<ConcatenationStorageSegment> segments)
@@ -26,7 +26,7 @@ public class ConcatenationStorageBuilder
 
     public ConcatenationStorage Build()
     {
-        List<ConcatenationStorageSegment> segments = Segments.OrderBy(x => x.Offset).ToList();
+        List<ConcatenationStorageSegment> segments = [.. Segments.OrderBy(x => x.Offset)];
         var sources = new List<IStorage>();
 
         long offset = 0;

@@ -47,7 +47,7 @@ public class SaveDataExtraDataAccessorCacheManager : ISaveDataExtraDataAccessorO
         }
     }
 
-    private LinkedList<Cache> _accessorList;
+    private readonly LinkedList<Cache> _accessorList;
     private SdkRecursiveMutexType _mutex;
 
     public SaveDataExtraDataAccessorCacheManager()

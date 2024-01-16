@@ -23,7 +23,7 @@ namespace LibHac.Fs
         private SharedRef<ISaveDataTransferManagerWithDivision> _baseInterface;
 
         // LibHac addition
-        private FileSystemClient _fsClient;
+        private readonly FileSystemClient _fsClient;
 
         public struct Challenge
         {

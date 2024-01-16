@@ -11,8 +11,8 @@ namespace LibHac.Fs;
 /// <remarks>Based on nnSdk 16.2.0 (FS 16.0.0)</remarks>
 public class MemoryStorage : IStorage
 {
-    private byte[] _buffer;
-    private int _size;
+    private readonly byte[] _buffer;
+    private readonly int _size;
 
     public MemoryStorage(byte[] buffer)
     {

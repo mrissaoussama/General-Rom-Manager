@@ -13,7 +13,7 @@ public struct Array27<T>
     private Array16<T> _0;
     private Array8<T> _16;
     private Array2<T> _24;
-    private T _26;
+    private readonly T _26;
 
     [UnscopedRef] public ref T this[int i] => ref Items[i];
 

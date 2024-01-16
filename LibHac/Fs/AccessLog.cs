@@ -157,7 +157,7 @@ namespace LibHac.Fs.Impl
         public readonly object Handle;
 
         private IdentifyAccessLogHandle(object handle) => Handle = handle;
-        public static IdentifyAccessLogHandle MakeHandle(object handle) => new IdentifyAccessLogHandle(handle);
+        public static IdentifyAccessLogHandle MakeHandle(object handle) => new(handle);
     }
 
     public struct IdString

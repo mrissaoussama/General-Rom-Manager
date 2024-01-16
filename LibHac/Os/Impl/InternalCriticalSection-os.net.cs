@@ -19,7 +19,7 @@ internal struct InternalCriticalSectionImpl : IDisposable
         _obj = new object();
     }
 
-    public void FinalizeObject() { }
+    public static void FinalizeObject() { }
 
     public void Enter()
     {

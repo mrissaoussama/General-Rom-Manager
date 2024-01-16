@@ -67,7 +67,7 @@ internal static class HexConverter
         unchecked
         {
             uint difference = ((value & 0xF0U) << 4) + (value & 0x0FU) - 0x8989U;
-            uint packedResult = ((((uint)(-(int)difference) & 0x7070U) >> 4) + difference + 0xB9B9U) | (uint)casing;
+            uint packedResult = ((((uint)-(int)difference & 0x7070U) >> 4) + difference + 0xB9B9U) | (uint)casing;
 
             buffer[startingIndex + 1] = (byte)packedResult;
             buffer[startingIndex] = (byte)(packedResult >> 8);
@@ -80,7 +80,7 @@ internal static class HexConverter
         unchecked
         {
             uint difference = ((value & 0xF0U) << 4) + (value & 0x0FU) - 0x8989U;
-            uint packedResult = ((((uint)(-(int)difference) & 0x7070U) >> 4) + difference + 0xB9B9U) | (uint)casing;
+            uint packedResult = ((((uint)-(int)difference & 0x7070U) >> 4) + difference + 0xB9B9U) | (uint)casing;
 
             buffer[startingIndex + 1] = (char)(packedResult & 0xFF);
             buffer[startingIndex] = (char)(packedResult >> 8);
@@ -118,7 +118,7 @@ internal static class HexConverter
 
         if (value > '9')
         {
-            value += ('A' - ('9' + 1));
+            value += 'A' - ('9' + 1);
         }
 
         return (char)value;
@@ -132,7 +132,7 @@ internal static class HexConverter
 
         if (value > '9')
         {
-            value += ('a' - ('9' + 1));
+            value += 'a' - ('9' + 1);
         }
 
         return (char)value;

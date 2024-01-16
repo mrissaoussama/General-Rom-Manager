@@ -12,10 +12,10 @@ public class AesXtsFileSystem : IFileSystem
 {
     public int BlockSize { get; }
 
-    private IFileSystem _baseFileSystem;
+    private readonly IFileSystem _baseFileSystem;
     private SharedRef<IFileSystem> _sharedBaseFileSystem;
-    private byte[] _kekSource;
-    private byte[] _validationKey;
+    private readonly byte[] _kekSource;
+    private readonly byte[] _validationKey;
 
     public AesXtsFileSystem(ref SharedRef<IFileSystem> fs, byte[] keys, int blockSize)
     {

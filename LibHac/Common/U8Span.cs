@@ -64,10 +64,10 @@ public readonly ref struct U8Span
     }
 
     public static implicit operator ReadOnlySpan<byte>(in U8Span value) => value.Value;
-    public static implicit operator U8Span(ReadOnlySpan<byte> value) => new U8Span(value);
+    public static implicit operator U8Span(ReadOnlySpan<byte> value) => new(value);
 
     public static explicit operator string(in U8Span value) => value.ToString();
-    public static explicit operator U8Span(string value) => new U8Span(value);
+    public static explicit operator U8Span(string value) => new(value);
 
     public override string ToString()
     {

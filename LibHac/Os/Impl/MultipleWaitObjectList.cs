@@ -5,7 +5,7 @@ namespace LibHac.Os.Impl;
 
 public class MultiWaitObjectList
 {
-    private LinkedList<MultiWaitHolderBase> _objectList;
+    private readonly LinkedList<MultiWaitHolderBase> _objectList;
 
     public MultiWaitObjectList()
     {

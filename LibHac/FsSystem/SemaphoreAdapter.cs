@@ -6,7 +6,7 @@ namespace LibHac.FsSystem;
 
 public class SemaphoreAdapter : IDisposable, ILockable
 {
-    private SemaphoreSlim _semaphore;
+    private readonly SemaphoreSlim _semaphore;
 
     public SemaphoreAdapter(int initialCount, int maxCount)
     {

@@ -18,15 +18,15 @@ public static class ResultSf
     public const int ModuleSf = 10;
 
     /// <summary>Error code: 2010-0001; Inner value: 0x20a</summary>
-    public static Result.Base NotSupported => new Result.Base(ModuleSf, 1);
+    public static Result.Base NotSupported => new(ModuleSf, 1);
     /// <summary>Error code: 2010-0003; Inner value: 0x60a</summary>
-    public static Result.Base PreconditionViolation => new Result.Base(ModuleSf, 3);
+    public static Result.Base PreconditionViolation => new(ModuleSf, 3);
 
     /// <summary>Error code: 2010-0010; Range: 10-19; Inner value: 0x140a</summary>
-    public static Result.Base MemoryAllocationFailed => new Result.Base(ModuleSf, 10, 19);
+    public static Result.Base MemoryAllocationFailed => new(ModuleSf, 10, 19);
 
     /// <summary>Error code: 2010-0811; Range: 811-819</summary>
-    public static Result.Base.Abstract RequestDeferred { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => new Result.Base.Abstract(ModuleSf, 811, 819); }
+    public static Result.Base.Abstract RequestDeferred { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => new(ModuleSf, 811, 819); }
         /// <summary>Error code: 2010-0812; Inner value: 0x6580a</summary>
-        public static Result.Base RequestDeferredByUser => new Result.Base(ModuleSf, 812);
+        public static Result.Base RequestDeferredByUser => new(ModuleSf, 812);
 }

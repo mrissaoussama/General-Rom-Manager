@@ -1,21 +1,22 @@
 ﻿using DotNet3dsToolkit;
-using LibHac.Tools.Fs;
-using RomManagerShared;
-using RomManagerShared.ThreeDS;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using RomManagerShared.Base;
+using RomManagerShared.Utils;
 using static RomManagerShared.ThreeDS.ThreeDSUtils;
 
 namespace RomManagerShared.ThreeDS
 {
     public class ThreeDsRomParser : IRomParser
     {
-        public async Task<List<IRom>> ProcessFile(string path)
+        public ThreeDsRomParser()
         {
-            ThreeDsRom rom = new ThreeDsRom();
+            Extensions = ["cia"];
+        }
+
+        public HashSet<string> Extensions { get; set ; }
+
+        public async Task<List<Rom>> ProcessFile(string path)
+        {
+            ThreeDsRom rom = new();
             Console.WriteLine(Path.GetFileName(path));
             try
             {
@@ -27,7 +28,7 @@ namespace RomManagerShared.ThreeDS
             }
             var titleid=rom.GetTitleID().ToString("X16");
             
-            IRom game = GetRomType(titleid);
+            Rom game = GetRomType(titleid);
             game.ProductCode = rom.GetProductCode();
             game.Description = rom.GetShortDescription();
             game.TitleName = rom.GetLongDescription().Replace("\n"," ");
@@ -38,10 +39,10 @@ namespace RomManagerShared.ThreeDS
             game.Version=rom.GetTitleVersion().ToString();
             game.MinimumFirmware=rom.GetSystemVersion().ToString();
 
-            return new List<IRom>() { game };
+            return [game];
         }
 
-        private IRom GetRomType(string titleId)
+        private static Rom GetRomType(string titleId)
         {
             var romType = DetectContentCategory(titleId);
 
@@ -55,7 +56,7 @@ namespace RomManagerShared.ThreeDS
                     return update;
                 case TidCategory.Dlc:
                 case TidCategory.AddOnContents:
-                    ThreeDSDLC dlc = new ThreeDSDLC();
+                    ThreeDSDLC dlc = new();
                     return dlc;
                 default:
                     return new ThreeDSGame();

@@ -38,7 +38,7 @@ public static class Assert
 {
     private const string AssertCondition = "ENABLE_ASSERTS";
 
-    private static SdkMutexType _mutex = new SdkMutexType();
+    private static SdkMutexType _mutex = new();
     private static AssertionFailureHandler _assertionFailureHandler = DefaultAssertionFailureHandler;
 
     private static AbortReason ToAbortReason(AssertionType assertionType)

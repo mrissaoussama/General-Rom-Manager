@@ -1,4 +1,5 @@
-﻿using RomManagerShared;
+﻿using RomManagerShared.Base;
+using RomManagerShared.Utils;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -14,7 +15,7 @@ namespace RomManagerShared.ThreeDS.TitleInfoProviders
     {
         public string Source { get; set; }
         public Dictionary<string, JsonElement> TitlesDatabase { get; set; }
-        private ThreeDSTitledbDownloader titledbDownloader;
+        private readonly ThreeDSTitledbDownloader titledbDownloader;
 
         public ThreeDSJsonTitleInfoProvider(string jsonFilesDirectory)
         {
@@ -38,7 +39,7 @@ namespace RomManagerShared.ThreeDS.TitleInfoProviders
             }
             if (!File.Exists(Source))
                 await titledbDownloader.DownloadRegionFiles();
-            TitlesDatabase = new Dictionary<string, JsonElement>();
+            TitlesDatabase = [];
 
             foreach (var regionFile in regionfiles)
             {
@@ -64,7 +65,7 @@ namespace RomManagerShared.ThreeDS.TitleInfoProviders
             }
         }
 
-        public async Task<IRom> GetTitleInfo(IRom rom)
+        public async Task<Rom> GetTitleInfo(Rom rom)
         {
             if (TitlesDatabase.TryGetValue(rom.TitleID, out var titleInfoElement))
             {
@@ -108,12 +109,12 @@ namespace RomManagerShared.ThreeDS.TitleInfoProviders
             
         }
 
-        private string NormalizeVersion(string version)
+        private static string NormalizeVersion(string version)
         {
             return string.Equals(version, "N/A", StringComparison.OrdinalIgnoreCase) ? "0" : version;
         }
 
-        private long ParseSize(string size)
+        private static long ParseSize(string size)
         {
             if (string.Equals(size, "0B [N/A]", StringComparison.OrdinalIgnoreCase))
             {

@@ -108,7 +108,7 @@ namespace DotNet3dsToolkit.Ctr
                 }
             }
 
-            Header.Partitions = partitionHeaders.ToArray();
+            Header.Partitions = [.. partitionHeaders];
 
             var headerData = Header.ToByteArray();
             await data.WriteAsync(0, headerData);

@@ -4,7 +4,7 @@ public class DiagClient
 {
     internal DiagClientGlobals Globals;
 
-    public DiagClientImpl Impl => new DiagClientImpl(this);
+    public DiagClientImpl Impl => new(this);
     internal HorizonClient Hos => Globals.Hos;
 
     public DiagClient(HorizonClient horizonClient)

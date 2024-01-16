@@ -24,10 +24,8 @@ public static class Rsa
         {
             var param = new RSAParameters { Modulus = modulus.ToArray(), Exponent = exponent.ToArray() };
 
-            using (var rsa = RSA.Create(param))
-            {
-                return rsa.VerifyData(message, signature, HashAlgorithmName.SHA256, padding);
-            }
+            using var rsa = RSA.Create(param);
+            return rsa.VerifyData(message, signature, HashAlgorithmName.SHA256, padding);
         }
         // Catch the OutOfMemoryException to workaround an issue with OpenSSL 1.1. dotnet/runtime#78293
         catch (Exception ex) when (ex is CryptographicException or OutOfMemoryException)
@@ -43,10 +41,8 @@ public static class Rsa
         {
             var param = new RSAParameters { Modulus = modulus.ToArray(), Exponent = exponent.ToArray() };
 
-            using (var rsa = RSA.Create(param))
-            {
-                return rsa.VerifyHash(message, signature, HashAlgorithmName.SHA256, RSASignaturePadding.Pss);
-            }
+            using var rsa = RSA.Create(param);
+            return rsa.VerifyHash(message, signature, HashAlgorithmName.SHA256, RSASignaturePadding.Pss);
         }
         catch (CryptographicException)
         {
@@ -238,7 +234,7 @@ public static class Rsa
 
         if (t < 0)
         {
-            t = t + n;
+            t += n;
         }
 
         return t;

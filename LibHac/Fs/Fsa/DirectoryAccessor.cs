@@ -12,7 +12,7 @@ namespace LibHac.Fs.Impl;
 internal class DirectoryAccessor : IDisposable
 {
     private UniqueRef<IDirectory> _directory;
-    private FileSystemAccessor _parentFileSystem;
+    private readonly FileSystemAccessor _parentFileSystem;
 
     public DirectoryAccessor(ref UniqueRef<IDirectory> directory, FileSystemAccessor parentFileSystem)
     {

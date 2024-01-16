@@ -58,7 +58,7 @@ public class AesCtrCounterExtendedStorage : IStorage
     public static readonly int IvSize = Aes.BlockSize;
     public static readonly int NodeSize = 1024 * 16;
 
-    private BucketTree _table;
+    private readonly BucketTree _table;
     private ValueSubStorage _dataStorage;
     private Array16<byte> _key;
     private uint _secureValue;
@@ -122,40 +122,6 @@ public class AesCtrCounterExtendedStorage : IStorage
     public bool IsInitialized()
     {
         return _table.IsInitialized();
-    }
-
-    // ReSharper disable once UnusedMember.Local
-    private Result Initialize(MemoryResource allocator, ReadOnlySpan<byte> key, uint secureValue,
-        in ValueSubStorage dataStorage, in ValueSubStorage tableStorage)
-    {
-        Unsafe.SkipInit(out BucketTree.Header header);
-
-        Result res = tableStorage.Read(0, SpanHelpers.AsByteSpan(ref header));
-        if (res.IsFailure()) return res.Miss();
-
-        res = header.Verify();
-        if (res.IsFailure()) return res.Miss();
-
-        long nodeStorageSize = QueryNodeStorageSize(header.EntryCount);
-        long entryStorageSize = QueryEntryStorageSize(header.EntryCount);
-        long nodeStorageOffset = QueryHeaderStorageSize();
-        long entryStorageOffset = nodeStorageOffset + nodeStorageSize;
-
-        using var decryptor = new UniqueRef<IDecryptor>();
-        res = CreateSoftwareDecryptor(ref decryptor.Ref);
-        if (res.IsFailure()) return res.Miss();
-
-        res = tableStorage.GetSize(out long storageSize);
-        if (res.IsFailure()) return res.Miss();
-
-        if (nodeStorageOffset + nodeStorageSize + entryStorageSize > storageSize)
-            return ResultFs.InvalidAesCtrCounterExtendedMetaStorageSize.Log();
-
-        using var entryStorage = new ValueSubStorage(in tableStorage, entryStorageOffset, entryStorageSize);
-        using var nodeStorage = new ValueSubStorage(in tableStorage, nodeStorageOffset, nodeStorageSize);
-
-        return Initialize(allocator, key, secureValue, counterOffset: 0, in dataStorage, in nodeStorage,
-            in entryStorage, header.EntryCount, ref decryptor.Ref);
     }
 
     public Result Initialize(MemoryResource allocator, ReadOnlySpan<byte> key, uint secureValue, long counterOffset,
@@ -419,9 +385,9 @@ public class AesCtrCounterExtendedStorage : IStorage
 
     private class ExternalDecryptor : IDecryptor
     {
-        private DecryptFunction _decryptFunction;
-        private int _keyIndex;
-        private int _keyGeneration;
+        private readonly DecryptFunction _decryptFunction;
+        private readonly int _keyIndex;
+        private readonly int _keyGeneration;
 
         public ExternalDecryptor(DecryptFunction decryptFunction, int keyIndex, int keyGeneration)
         {

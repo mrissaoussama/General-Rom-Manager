@@ -32,7 +32,7 @@ public class SaveDataFileSystemCore : IFileSystem
         FileTable = new HierarchicalSaveFileTable(dirTableStorage, fileTableStorage);
     }
 
-    private Result CheckIfNormalized(in Path path)
+    private static Result CheckIfNormalized(in Path path)
     {
         Result res = PathNormalizer.IsNormalized(out bool isNormalized, out _, path.GetString());
         if (res.IsFailure()) return res.Miss();

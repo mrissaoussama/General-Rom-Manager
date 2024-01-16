@@ -9,9 +9,9 @@ namespace LibHac.Tools.FsSystem;
 public class FileReader
 {
     private const int BufferSize = 0x10;
-    private IFile _file;
-    private byte[] _buffer;
-    private long _start;
+    private readonly IFile _file;
+    private readonly byte[] _buffer;
+    private readonly long _start;
 
     public long Position { get; set; }
 

@@ -61,7 +61,7 @@ public partial class SdmmcApi
     public const int DeviceCidSize = 0x10;
     public const int DeviceCsdSize = 0x10;
 
-    private FileSystemServer _fsServer;
+    private readonly FileSystemServer _fsServer;
     internal HorizonClient Hos => _fsServer.Hos;
 
     public SdmmcApi(FileSystemServer fsServer)
@@ -105,7 +105,7 @@ public partial class SdmmcApi
         throw new NotImplementedException();
     }
 
-    public void Deactivate(Port port)
+    public static void Deactivate(Port port)
     {
         if (port == Port.SdCard0)
         {

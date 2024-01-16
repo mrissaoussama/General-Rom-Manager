@@ -54,7 +54,7 @@ public class SparseStorage : IndirectStorage
         }
     }
 
-    private ZeroStorage _zeroStorage;
+    private readonly ZeroStorage _zeroStorage;
 
     public SparseStorage()
     {

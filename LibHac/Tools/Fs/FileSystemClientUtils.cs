@@ -168,14 +168,14 @@ public static class FileSystemClientUtils
     {
         Result res = fs.GetEntryType(out DirectoryEntryType type, path.ToU8Span());
 
-        return (res.IsSuccess() && type == DirectoryEntryType.Directory);
+        return res.IsSuccess() && type == DirectoryEntryType.Directory;
     }
 
     public static bool FileExists(this FileSystemClient fs, string path)
     {
         Result res = fs.GetEntryType(out DirectoryEntryType type, path.ToU8Span());
 
-        return (res.IsSuccess() && type == DirectoryEntryType.File);
+        return res.IsSuccess() && type == DirectoryEntryType.File;
     }
 
     public static void EnsureDirectoryExists(this FileSystemClient fs, string path)

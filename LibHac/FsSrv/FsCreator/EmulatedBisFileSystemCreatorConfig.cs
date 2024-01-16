@@ -78,14 +78,14 @@ public class EmulatedBisFileSystemCreatorConfig
         return path != null;
     }
 
-    private int GetArrayIndex(BisPartitionId id)
+    private static int GetArrayIndex(BisPartitionId id)
     {
         Debug.Assert(IsValidPartitionId(id));
 
         return id - BisPartitionId.CalibrationFile;
     }
 
-    private bool IsValidPartitionId(BisPartitionId id)
+    private static bool IsValidPartitionId(BisPartitionId id)
     {
         return id >= BisPartitionId.CalibrationFile && id <= BisPartitionId.System;
     }

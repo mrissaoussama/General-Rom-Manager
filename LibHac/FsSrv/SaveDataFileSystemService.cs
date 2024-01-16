@@ -39,11 +39,11 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
     private const int SaveDataBlockSize = 0x4000;
 
     private WeakRef<SaveDataFileSystemService> _selfReference;
-    private SaveDataFileSystemServiceImpl _serviceImpl;
-    private ulong _processId;
+    private readonly SaveDataFileSystemServiceImpl _serviceImpl;
+    private readonly ulong _processId;
     private Path.Stored _saveDataRootPath;
-    private SemaphoreAdapter _openEntryCountSemaphore;
-    private SemaphoreAdapter _saveDataMountCountSemaphore;
+    private readonly SemaphoreAdapter _openEntryCountSemaphore;
+    private readonly SemaphoreAdapter _saveDataMountCountSemaphore;
 
     private HorizonClient Hos => _serviceImpl.Hos;
 
@@ -894,7 +894,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
     }
 
     // ReSharper disable once UnusedParameter.Global
-    public Result UpdateSaveDataMacForDebug(SaveDataSpaceId spaceId, ulong saveDataId)
+    public static Result UpdateSaveDataMacForDebug(SaveDataSpaceId spaceId, ulong saveDataId)
     {
         if (saveDataId == SaveIndexerId)
             return ResultFs.InvalidArgument.Log();
@@ -1189,7 +1189,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         if (dataSize < 0 || journalSize < 0)
             return ResultFs.InvalidSize.Log();
 
-        Result res = _serviceImpl.QuerySaveDataTotalSize(out long totalSize, SaveDataBlockSize, dataSize, journalSize);
+        Result res = SaveDataFileSystemServiceImpl.QuerySaveDataTotalSize(out long totalSize, SaveDataBlockSize, dataSize, journalSize);
         if (res.IsFailure()) return res.Miss();
 
         outTotalSize = totalSize;
@@ -1551,7 +1551,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         if (res.IsFailure()) return res.Miss();
 
         using Path saveDataRootPath = _saveDataRootPath.DangerousGetPath();
-        bool useAsyncFileSystem = !_serviceImpl.IsAllowedDirectorySaveData(spaceId, in saveDataRootPath);
+        bool useAsyncFileSystem = !SaveDataFileSystemServiceImpl.IsAllowedDirectorySaveData(spaceId, in saveDataRootPath);
 
         using var fileSystem = new SharedRef<IFileSystem>();
 
@@ -1667,7 +1667,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
             return ResultFs.PermissionDenied.Log();
 
         using Path saveDataRootPath = _saveDataRootPath.DangerousGetPath();
-        bool useAsyncFileSystem = !_serviceImpl.IsAllowedDirectorySaveData(spaceId, in saveDataRootPath);
+        bool useAsyncFileSystem = !SaveDataFileSystemServiceImpl.IsAllowedDirectorySaveData(spaceId, in saveDataRootPath);
 
         using var fileSystem = new SharedRef<IFileSystem>();
 
@@ -2551,7 +2551,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         return CleanUpSaveData(accessor.Get).Ret();
     }
 
-    private Result CleanUpSaveData(SaveDataIndexerAccessor accessor)
+    private static Result CleanUpSaveData(SaveDataIndexerAccessor accessor)
     {
         // Todo: Implement
         return Result.Success;
@@ -2568,7 +2568,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         return CompleteSaveDataExtension(accessor.Get).Ret();
     }
 
-    private Result CompleteSaveDataExtension(SaveDataIndexerAccessor accessor)
+    private static Result CompleteSaveDataExtension(SaveDataIndexerAccessor accessor)
     {
         // Todo: Implement
         return Result.Success;
@@ -2593,7 +2593,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         return Result.Success;
     }
 
-    public Result FixSaveData()
+    public static Result FixSaveData()
     {
         // Todo: Implement
         return Result.Success;

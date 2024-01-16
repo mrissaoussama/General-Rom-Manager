@@ -10,13 +10,13 @@ public struct Array8<T>
     public const int Length = 8;
 
     private T _0;
-    private T _1;
-    private T _2;
-    private T _3;
-    private T _4;
-    private T _5;
-    private T _6;
-    private T _7;
+    private readonly T _1;
+    private readonly T _2;
+    private readonly T _3;
+    private readonly T _4;
+    private readonly T _5;
+    private readonly T _6;
+    private readonly T _7;
 
     [UnscopedRef] public ref T this[int i] => ref Items[i];
 

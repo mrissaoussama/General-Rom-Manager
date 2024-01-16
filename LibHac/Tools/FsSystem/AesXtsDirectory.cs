@@ -8,10 +8,10 @@ namespace LibHac.Tools.FsSystem;
 
 public class AesXtsDirectory : IDirectory
 {
-    private U8String _path;
-    private OpenDirectoryMode _mode;
+    private readonly U8String _path;
+    private readonly OpenDirectoryMode _mode;
 
-    private IFileSystem _baseFileSystem;
+    private readonly IFileSystem _baseFileSystem;
     private UniqueRef<IDirectory> _baseDirectory;
 
     public AesXtsDirectory(IFileSystem baseFs, ref UniqueRef<IDirectory> baseDir, U8String path, OpenDirectoryMode mode)

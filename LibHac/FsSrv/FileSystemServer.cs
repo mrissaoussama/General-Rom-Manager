@@ -10,8 +10,8 @@ public class FileSystemServer : IDisposable
 {
     internal FileSystemServerGlobals Globals;
 
-    public FileSystemServerImpl Impl => new FileSystemServerImpl(this);
-    public StorageService Storage => new StorageService(this);
+    public FileSystemServerImpl Impl => new(this);
+    public StorageService Storage => new(this);
     internal HorizonClient Hos => Globals.Hos;
 
     /// <summary>

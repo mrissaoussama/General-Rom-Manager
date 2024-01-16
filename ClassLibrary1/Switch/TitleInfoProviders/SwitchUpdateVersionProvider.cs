@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
+using RomManagerShared.Utils;
 
 namespace RomManagerShared.Switch.TitleInfoProviders
 {
@@ -10,7 +11,7 @@ namespace RomManagerShared.Switch.TitleInfoProviders
         public string Source { get; set; }
 
         private Dictionary<string, Dictionary<string, DateTime>> versionDatabase;
-        private SwitchTitledbDownloader titledbDownloader;
+        private readonly SwitchTitledbDownloader titledbDownloader;
 
         public SwitchUpdateVersionProvider(string versionFilepath)
         {
@@ -46,7 +47,7 @@ namespace RomManagerShared.Switch.TitleInfoProviders
                 throw;
             }
 
-            versionDatabase ??= new Dictionary<string, Dictionary<string, DateTime>>();
+            versionDatabase ??= [];
         }
         public async Task<string> GetLatestVersion(string titleId)
         {

@@ -34,10 +34,10 @@ public class ConcatenationFileSystem : IFileSystem
 {
     private class ConcatenationFile : IFile
     {
-        private OpenMode _mode;
-        private List<IFile> _fileArray;
-        private long _internalFileSize;
-        private IFileSystem _baseFileSystem;
+        private readonly OpenMode _mode;
+        private readonly List<IFile> _fileArray;
+        private readonly long _internalFileSize;
+        private readonly IFileSystem _baseFileSystem;
         private Path.Stored _path;
 
         public ConcatenationFile(OpenMode mode, ref List<IFile> internalFiles, long internalFileSize, IFileSystem baseFileSystem)
@@ -377,11 +377,11 @@ public class ConcatenationFileSystem : IFileSystem
 
     private class ConcatenationDirectory : IDirectory
     {
-        private OpenDirectoryMode _mode;
+        private readonly OpenDirectoryMode _mode;
         private UniqueRef<IDirectory> _baseDirectory;
         private Path.Stored _path;
-        private IFileSystem _baseFileSystem;
-        private ConcatenationFileSystem _concatenationFileSystem;
+        private readonly IFileSystem _baseFileSystem;
+        private readonly ConcatenationFileSystem _concatenationFileSystem;
 
         public ConcatenationDirectory(OpenDirectoryMode mode, ref UniqueRef<IDirectory> baseDirectory,
             ConcatenationFileSystem concatFileSystem, IFileSystem baseFileSystem)
@@ -493,7 +493,7 @@ public class ConcatenationFileSystem : IFileSystem
     public static readonly long DefaultInternalFileSize = 0xFFFF0000; // Hard-coded value used by FS
 
     private UniqueRef<IAttributeFileSystem> _baseFileSystem;
-    private long _internalFileSize;
+    private readonly long _internalFileSize;
     private SdkMutexType _mutex;
 
     /// <summary>

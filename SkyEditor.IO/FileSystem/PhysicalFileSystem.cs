@@ -126,7 +126,7 @@ namespace SkyEditor.IO.FileSystem
 
         public virtual long GetFileLength(string filename)
         {
-            return (new FileInfo(FixPath(filename))).Length;
+            return new FileInfo(FixPath(filename)).Length;
         }
 
         public virtual string[] GetFiles(string path, string searchPattern, bool topDirectoryOnly)

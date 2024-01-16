@@ -15,10 +15,10 @@ internal class ProgramRegistryManager : IDisposable
 {
     // Note: FS keeps each ProgramInfo in a shared_ptr, but there aren't any non-memory resources
     // that need to be freed, so we use plain ProgramInfos
-    private LinkedList<ProgramInfo> _programInfoList;
+    private readonly LinkedList<ProgramInfo> _programInfoList;
     private SdkMutexType _mutex;
 
-    private FileSystemServer _fsServer;
+    private readonly FileSystemServer _fsServer;
 
     public ProgramRegistryManager(FileSystemServer fsServer)
     {

@@ -27,7 +27,7 @@ namespace SkyEditor.IO.FileSystem
             foreach (var item in parts)
             {
                 regexString.Append(Regex.Escape(item));
-                if (item != parts[parts.Length - 1])
+                if (item != parts[parts.Length-1])
                 {
                     regexString.Append(".?");
                 }

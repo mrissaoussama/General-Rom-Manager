@@ -35,7 +35,7 @@ public class DirectorySaveDataFileSystem : ISaveDataFileSystem
     private static ReadOnlySpan<byte> SynchronizingDirectoryName => "/_"u8;
     private static ReadOnlySpan<byte> LockFileName => "/.lock"u8;
 
-    private IFileSystem _baseFs;
+    private readonly IFileSystem _baseFs;
     private SdkMutexType _mutex;
     private UniqueRef<IFileSystem> _uniqueBaseFs;
 
@@ -52,7 +52,7 @@ public class DirectorySaveDataFileSystem : ISaveDataFileSystem
     private RandomDataGenerator _randomGenerator;
 
     // LibHac additions
-    private FileSystemClient _fsClient;
+    private readonly FileSystemClient _fsClient;
 
     // Addition to ensure only one directory save data fs is opened at a time
     private UniqueRef<IFile> _lockFile;
@@ -60,7 +60,7 @@ public class DirectorySaveDataFileSystem : ISaveDataFileSystem
     private class DirectorySaveDataFile : IFile
     {
         private UniqueRef<IFile> _baseFile;
-        private DirectorySaveDataFileSystem _parentFs;
+        private readonly DirectorySaveDataFileSystem _parentFs;
         private OpenMode _mode;
 
         public DirectorySaveDataFile(ref UniqueRef<IFile> baseFile, DirectorySaveDataFileSystem parentFs, OpenMode mode)
@@ -553,19 +553,15 @@ public class DirectorySaveDataFileSystem : ISaveDataFileSystem
             using ScopedLock<SdkMutexType> scopedLock =
                 ScopedLock.Lock(ref _fsClient.Globals.DirectorySaveDataFileSystem.SynchronizeDirectoryMutex);
 
-            using (var buffer = new RentedArray<byte>(IdealWorkBufferSize))
-            {
-                return Utility.CopyDirectoryRecursively(_baseFs, in destPath, in sourcePath, ref directoryEntry,
-                    buffer.Span);
-            }
+            using var buffer = new RentedArray<byte>(IdealWorkBufferSize);
+            return Utility.CopyDirectoryRecursively(_baseFs, in destPath, in sourcePath, ref directoryEntry,
+                buffer.Span);
         }
         else
         {
-            using (var buffer = new RentedArray<byte>(IdealWorkBufferSize))
-            {
-                return Utility.CopyDirectoryRecursively(_baseFs, in destPath, in sourcePath, ref directoryEntry,
-                    buffer.Span);
-            }
+            using var buffer = new RentedArray<byte>(IdealWorkBufferSize);
+            return Utility.CopyDirectoryRecursively(_baseFs, in destPath, in sourcePath, ref directoryEntry,
+                buffer.Span);
         }
     }
 

@@ -25,10 +25,10 @@ internal class FileAccessor : IDisposable
     private const string NeedFlushMessage = "Error: nn::fs::CloseFile() failed because the file was not flushed.\n";
 
     private UniqueRef<IFile> _file;
-    private FileSystemAccessor _parentFileSystem;
+    private readonly FileSystemAccessor _parentFileSystem;
     private WriteState _writeState;
     private Result _lastResult;
-    private OpenMode _openMode;
+    private readonly OpenMode _openMode;
     private Box<FilePathHash> _filePathHash;
     private int _pathHashIndex;
 

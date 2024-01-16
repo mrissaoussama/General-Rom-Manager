@@ -2,10 +2,10 @@
 {
     public class SwitchTitledbDownloader
     {
-        private  string TitledbUrl =RomManagerConfiguration.GetSwitchTitleDBUrl();
-        private  string VersionsUrl =RomManagerConfiguration.GetSwitchVersionsUrl();
-        private  string VersionsPath =RomManagerConfiguration.GetSwitchVersionsPath();
-        private string TitledbPath = RomManagerConfiguration.GetSwitchTitleDBPath();
+        private readonly string TitledbUrl =RomManagerConfiguration.GetSwitchTitleDBUrl();
+        private readonly string VersionsUrl =RomManagerConfiguration.GetSwitchVersionsUrl();
+        private readonly string VersionsPath =RomManagerConfiguration.GetSwitchVersionsPath();
+        private readonly string TitledbPath = RomManagerConfiguration.GetSwitchTitleDBPath();
 
         public async Task DownloadTitledbFile()
         {
@@ -17,49 +17,48 @@
             await DownloadFile(VersionsUrl, VersionsPath);
         }
 
-        private async Task DownloadFile(string fileUrl, string localFileName)
+        private static async Task DownloadFile(string fileUrl, string localFileName)
         {
-            using (var httpClient = new HttpClient())
+            using var httpClient = new HttpClient();
+            try
             {
-                try
+                var response = await httpClient.GetAsync(fileUrl);
+
+                if (response.IsSuccessStatusCode)
                 {
-                    var response = await httpClient.GetAsync(fileUrl);
+                    var content = await response.Content.ReadAsByteArrayAsync();
+                    var localFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, localFileName);
 
-                    if (response.IsSuccessStatusCode)
+                    if (File.Exists(localFilePath))
                     {
-                        var content = await response.Content.ReadAsByteArrayAsync();
-                        var localFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, localFileName);
+                        var localFileSize = new FileInfo(localFilePath).Length;
 
-                        if (File.Exists(localFilePath))
+                        if (content.Length > localFileSize)
                         {
-                            var localFileSize = new FileInfo(localFilePath).Length;
-
-                            if (content.Length > localFileSize)
-                            {
-                                Directory.CreateDirectory(Path.GetDirectoryName(localFilePath));
-                                File.WriteAllBytes(localFilePath, content);
-                                Console.WriteLine($"Updated {localFileName} file.");
-                            }
-                            else
-                            {
-                                Console.WriteLine($"Local {localFileName} file is up to date.");
-                            }
+                            Directory.CreateDirectory(Path.GetDirectoryName(localFilePath));
+                            File.WriteAllBytes(localFilePath, content);
+                            Console.WriteLine($"Updated {localFileName} file.");
                         }
                         else
-                        {Directory.CreateDirectory(Path.GetDirectoryName(localFilePath));
-                            File.WriteAllBytes(localFilePath, content);
-                            Console.WriteLine($"Downloaded {localFileName} file.");
+                        {
+                            Console.WriteLine($"Local {localFileName} file is up to date.");
                         }
                     }
                     else
                     {
-                        Console.WriteLine($"Failed to download {localFileName} file. Status Code: {response.StatusCode}");
+                        Directory.CreateDirectory(Path.GetDirectoryName(localFilePath));
+                        File.WriteAllBytes(localFilePath, content);
+                        Console.WriteLine($"Downloaded {localFileName} file.");
                     }
                 }
-                catch (Exception ex)
+                else
                 {
-                    Console.WriteLine($"Error downloading {localFileName} file: {ex.Message}");
+                    Console.WriteLine($"Failed to download {localFileName} file. Status Code: {response.StatusCode}");
                 }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error downloading {localFileName} file: {ex.Message}");
             }
         }
     }

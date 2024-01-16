@@ -7,9 +7,9 @@ namespace LibHac.FsSrv;
 
 public class ExternalKeySet
 {
-    private readonly object _locker = new object();
+    private readonly object _locker = new();
 
-    private Dictionary<RightsId, AccessKey> ExternalKeys { get; set; } = new Dictionary<RightsId, AccessKey>();
+    private Dictionary<RightsId, AccessKey> ExternalKeys { get; set; } = [];
 
     public Result Add(RightsId rightsId, AccessKey key)
     {

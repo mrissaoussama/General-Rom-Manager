@@ -13,7 +13,7 @@ public class Aes128CtrStorage : SectorStorage
     private readonly Aes128CtrTransform _decryptor;
 
     protected readonly byte[] Counter;
-    private readonly object _locker = new object();
+    private readonly object _locker = new();
 
     public Aes128CtrStorage(IStorage baseStorage, byte[] key, byte[] counter, bool leaveOpen)
         : base(baseStorage, BlockSize, leaveOpen)

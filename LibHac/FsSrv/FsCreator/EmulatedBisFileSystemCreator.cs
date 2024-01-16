@@ -95,7 +95,7 @@ public class EmulatedBisFileSystemCreator : IBuiltInStorageFileSystemCreator
         return Config.SetPath(rootPath, partitionId);
     }
 
-    private bool IsValidPartitionId(BisPartitionId id)
+    private static bool IsValidPartitionId(BisPartitionId id)
     {
         return id >= BisPartitionId.CalibrationFile && id <= BisPartitionId.System;
     }
@@ -116,7 +116,7 @@ public class EmulatedBisFileSystemCreator : IBuiltInStorageFileSystemCreator
     /// <param name="id">The partition ID of the path to get.</param>
     /// <returns>The default path for the specified partition.</returns>
     /// <remarks>These paths are the same paths that Nintendo uses on Windows.</remarks>
-    private string GetDefaultPartitionPath(BisPartitionId id)
+    private static string GetDefaultPartitionPath(BisPartitionId id)
     {
         Debug.Assert(IsValidPartitionId(id));
 

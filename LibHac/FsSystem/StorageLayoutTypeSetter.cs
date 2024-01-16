@@ -49,7 +49,7 @@ internal struct ScopedStorageLayoutTypeSetter : IDisposable
 internal class StorageLayoutTypeSetStorage : IStorage
 {
     private SharedRef<IStorage> _baseStorage;
-    private StorageLayoutType _storageFlag;
+    private readonly StorageLayoutType _storageFlag;
 
     public StorageLayoutTypeSetStorage(ref SharedRef<IStorage> baseStorage, StorageLayoutType storageFlag)
     {
@@ -117,7 +117,7 @@ internal class StorageLayoutTypeSetFile : IFile
     private IFile _baseFile;
     private UniqueRef<IFile> _baseFileUnique;
     private SharedRef<IFile> _baseFileShared;
-    private StorageLayoutType _storageFlag;
+    private readonly StorageLayoutType _storageFlag;
 
     public StorageLayoutTypeSetFile(ref UniqueRef<IFile> baseFile, StorageLayoutType storageFlag)
     {
@@ -195,7 +195,7 @@ internal class StorageLayoutTypeSetFile : IFile
 internal class StorageLayoutTypeSetDirectory : IDirectory
 {
     private UniqueRef<IDirectory> _baseDirectory;
-    private StorageLayoutType _storageFlag;
+    private readonly StorageLayoutType _storageFlag;
 
     public StorageLayoutTypeSetDirectory(ref UniqueRef<IDirectory> baseDirectory, StorageLayoutType storageFlag)
     {
@@ -233,7 +233,7 @@ internal class StorageLayoutTypeSetDirectory : IDirectory
 internal class StorageLayoutTypeSetFileSystem : IFileSystem
 {
     private SharedRef<IFileSystem> _baseFileSystem;
-    private StorageLayoutType _storageFlag;
+    private readonly StorageLayoutType _storageFlag;
 
     public StorageLayoutTypeSetFileSystem(ref SharedRef<IFileSystem> baseFileSystem, StorageLayoutType storageFlag)
     {

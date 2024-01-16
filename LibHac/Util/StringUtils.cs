@@ -91,8 +91,8 @@ public static class StringUtils
 
         while (true)
         {
-            int c1 = ((uint)i < (uint)s1.Length ? s1[i] : 0);
-            int c2 = ((uint)i < (uint)s2.Length ? s2[i] : 0);
+            int c1 = (uint)i < (uint)s1.Length ? s1[i] : 0;
+            int c2 = (uint)i < (uint)s2.Length ? s2[i] : 0;
 
             if (c1 != c2)
                 return c1 - c2;
@@ -108,8 +108,8 @@ public static class StringUtils
     {
         for (int i = 0; i < maxLen; i++)
         {
-            int c1 = ((uint)i < (uint)s1.Length ? s1[i] : 0);
-            int c2 = ((uint)i < (uint)s2.Length ? s2[i] : 0);
+            int c1 = (uint)i < (uint)s1.Length ? s1[i] : 0;
+            int c2 = (uint)i < (uint)s2.Length ? s2[i] : 0;
 
             if (c1 != c2)
                 return c1 - c2;
@@ -127,8 +127,8 @@ public static class StringUtils
 
         while (true)
         {
-            int c1 = ((uint)i < (uint)s1.Length ? ToLowerAsciiInvariant(s1[i]) : 0);
-            int c2 = ((uint)i < (uint)s2.Length ? ToLowerAsciiInvariant(s2[i]) : 0);
+            int c1 = (uint)i < (uint)s1.Length ? ToLowerAsciiInvariant(s1[i]) : 0;
+            int c2 = (uint)i < (uint)s2.Length ? ToLowerAsciiInvariant(s2[i]) : 0;
 
             if (c1 != c2)
                 return c1 - c2;
@@ -144,8 +144,8 @@ public static class StringUtils
     {
         for (int i = 0; i < maxLen; i++)
         {
-            int c1 = ((uint)i < (uint)s1.Length ? ToLowerAsciiInvariant(s1[i]) : 0);
-            int c2 = ((uint)i < (uint)s2.Length ? ToLowerAsciiInvariant(s2[i]) : 0);
+            int c1 = (uint)i < (uint)s1.Length ? ToLowerAsciiInvariant(s1[i]) : 0;
+            int c2 = (uint)i < (uint)s2.Length ? ToLowerAsciiInvariant(s2[i]) : 0;
 
             if (c1 != c2)
                 return c1 - c2;

@@ -60,13 +60,13 @@ internal struct FileSystemProxyImplGlobals
 /// <remarks>Based on nnSdk 13.4.0 (FS 13.1.0)</remarks>
 public class FileSystemProxyImpl : IFileSystemProxy, IFileSystemProxyForLoader
 {
-    private FileSystemProxyCoreImpl _fsProxyCore;
+    private readonly FileSystemProxyCoreImpl _fsProxyCore;
     private SharedRef<NcaFileSystemService> _ncaFsService;
     private SharedRef<SaveDataFileSystemService> _saveFsService;
     private ulong _currentProcess;
 
     // LibHac addition
-    private FileSystemServer _fsServer;
+    private readonly FileSystemServer _fsServer;
     private ref FileSystemProxyImplGlobals Globals => ref _fsServer.Globals.FileSystemProxyImpl;
 
     internal FileSystemProxyImpl(FileSystemServer server)
@@ -321,7 +321,7 @@ public class FileSystemProxyImpl : IFileSystemProxy, IFileSystemProxyForLoader
         Result res = GetSaveDataFileSystemService(out SaveDataFileSystemService saveFsService);
         if (res.IsFailure()) return res.Miss();
 
-        return saveFsService.UpdateSaveDataMacForDebug(spaceId, saveDataId);
+        return SaveDataFileSystemService.UpdateSaveDataMacForDebug(spaceId, saveDataId);
     }
 
     public Result CreateSaveDataFileSystem(in SaveDataAttribute attribute, in SaveDataCreationInfo creationInfo,

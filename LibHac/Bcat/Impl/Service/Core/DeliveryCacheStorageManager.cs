@@ -14,7 +14,7 @@ internal class DeliveryCacheStorageManager
 
     private BcatServer Server { get; }
 
-    private readonly object _locker = new object();
+    private readonly object _locker = new();
     private Entry[] Entries { get; } = new Entry[MaxEntryCount];
     private bool DisableStorage { get; set; }
 

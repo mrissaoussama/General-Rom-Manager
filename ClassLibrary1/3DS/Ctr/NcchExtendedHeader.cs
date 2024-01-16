@@ -221,7 +221,7 @@ namespace DotNet3dsToolkit.Ctr
                     accessControl[i] = await data.ReadInt64Async(0x50 + 8 * i);
                 });
                 capabilities.ServiceAccessControl = accessControl;
-                capabilities.ExtendedServiceAccessControl = new long[] { await data.ReadInt64Async(0x150), await data.ReadInt64Async(0x158) };
+                capabilities.ExtendedServiceAccessControl = [await data.ReadInt64Async(0x150), await data.ReadInt64Async(0x158)];
                 capabilities.Reserved = await data.ReadArrayAsync(0x160, 0xF);
                 capabilities.ResourceLimitCategory = await data.ReadByteAsync(0x16F);
                 return capabilities;
@@ -389,7 +389,7 @@ namespace DotNet3dsToolkit.Ctr
                         ExtdataId = await data.ReadInt64Async(0),
                         SystemSaveDataIds = await data.ReadInt64Async(0x8),
                         StorageAccessibleUniqueIds = await data.ReadInt64Async(0x10),
-                        FilesystemAccessInfo = (FilesystemAccessAttributes)(await data.ReadInt64Async(0x18))
+                        FilesystemAccessInfo = (FilesystemAccessAttributes)await data.ReadInt64Async(0x18)
                     };
                 }
 
@@ -491,7 +491,7 @@ namespace DotNet3dsToolkit.Ctr
             {
                 return new Arm9AccessControl
                 {
-                    Descriptors = (Descriptor)(await data.ReadInt64Async(0)),
+                    Descriptors = (Descriptor)await data.ReadInt64Async(0),
                     Descriptors2 = await data.ReadArrayAsync(0x8, 0x7),
                     Version = await data.ReadByteAsync(0xF)
                 };

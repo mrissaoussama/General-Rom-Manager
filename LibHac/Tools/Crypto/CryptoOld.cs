@@ -27,19 +27,17 @@ public static class CryptoOld
 
     public static bool DecryptRsaOaep(ReadOnlySpan<byte> data, Span<byte> destination, RSAParameters rsaParams, out int bytesWritten)
     {
-        using (var rsa = RSA.Create())
+        using var rsa = RSA.Create();
+        try
         {
-            try
-            {
-                rsa.ImportParameters(rsaParams);
+            rsa.ImportParameters(rsaParams);
 
-                return rsa.TryDecrypt(data, destination, RSAEncryptionPadding.OaepSHA256, out bytesWritten);
-            }
-            catch (CryptographicException)
-            {
-                bytesWritten = 0;
-                return false;
-            }
+            return rsa.TryDecrypt(data, destination, RSAEncryptionPadding.OaepSHA256, out bytesWritten);
+        }
+        catch (CryptographicException)
+        {
+            bytesWritten = 0;
+            return false;
         }
     }
 }

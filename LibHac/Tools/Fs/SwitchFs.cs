@@ -27,8 +27,8 @@ public class SwitchFs : IDisposable
 
     public Dictionary<string, SwitchFsNca> Ncas { get; } = new Dictionary<string, SwitchFsNca>(StringComparer.OrdinalIgnoreCase);
     public Dictionary<string, SaveDataFileSystem> Saves { get; } = new Dictionary<string, SaveDataFileSystem>(StringComparer.OrdinalIgnoreCase);
-    public Dictionary<ulong, Title> Titles { get; } = new Dictionary<ulong, Title>();
-    public Dictionary<ulong, Application> Applications { get; } = new Dictionary<ulong, Application>();
+    public Dictionary<ulong, Title> Titles { get; } = [];
+    public Dictionary<ulong, Application> Applications { get; } = [];
 
     public SwitchFs(KeySet keySet, IFileSystem contentFileSystem, IFileSystem saveFileSystem)
     {
@@ -272,7 +272,7 @@ public class SwitchFs : IDisposable
         }
     }
 
-    private string GetNcaFilename(string name, SwitchFsNca nca)
+    private static string GetNcaFilename(string name, SwitchFsNca nca)
     {
         if (nca.Nca.Header.ContentType != NcaContentType.Meta || !name.EndsWith(".cnmt.nca"))
         {
@@ -352,7 +352,7 @@ public class Title
 {
     public ulong Id { get; internal set; }
     public TitleVersion Version { get; internal set; }
-    public List<SwitchFsNca> Ncas { get; } = new List<SwitchFsNca>();
+    public List<SwitchFsNca> Ncas { get; } = [];
     public Cnmt Metadata { get; internal set; }
 
     public string Name { get; internal set; }
@@ -371,7 +371,7 @@ public class Application
 {
     public Title Main { get; private set; }
     public Title Patch { get; private set; }
-    public List<Title> AddOnContent { get; } = new List<Title>();
+    public List<Title> AddOnContent { get; } = [];
 
     public ulong TitleId { get; private set; }
     public TitleVersion Version { get; private set; }

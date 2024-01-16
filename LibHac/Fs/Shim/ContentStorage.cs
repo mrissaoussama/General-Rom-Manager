@@ -22,7 +22,7 @@ public static class ContentStorage
 {
     private class ContentStorageCommonMountNameGenerator : ICommonMountNameGenerator
     {
-        private ContentStorageId _storageId;
+        private readonly ContentStorageId _storageId;
 
         public ContentStorageCommonMountNameGenerator(ContentStorageId storageId)
         {

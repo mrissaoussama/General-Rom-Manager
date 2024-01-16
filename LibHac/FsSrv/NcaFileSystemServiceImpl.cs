@@ -25,8 +25,8 @@ public class NcaFileSystemServiceImpl
 {
     private Configuration _config;
     // UpdatePartitionPath
-    private ExternalKeySet _externalKeyManager;
-    private LocationResolverSet _locationResolverSet;
+    private readonly ExternalKeySet _externalKeyManager;
+    private readonly LocationResolverSet _locationResolverSet;
     // SystemDataUpdateEventManager
     private EncryptionSeed _encryptionSeed;
     private int _romFsRemountForDataCorruptionCount;
@@ -472,7 +472,7 @@ public class NcaFileSystemServiceImpl
         return Result.Success;
     }
 
-    private Result CheckDirOrNcaOrNsp(ref U8Span path, out bool isDirectory)
+    private static Result CheckDirOrNcaOrNsp(ref U8Span path, out bool isDirectory)
     {
         UnsafeHelpers.SkipParamInit(out isDirectory);
 
@@ -876,7 +876,7 @@ public class NcaFileSystemServiceImpl
         return registry.GetProgramInfoByProgramId(out programInfo, programId);
     }
 
-    private Result GetPartitionIndex(out int index, FileSystemProxyType fspType)
+    private static Result GetPartitionIndex(out int index, FileSystemProxyType fspType)
     {
         switch (fspType)
         {

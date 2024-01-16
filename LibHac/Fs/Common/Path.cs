@@ -103,7 +103,7 @@ public ref struct Path
     [DebuggerDisplay("{" + nameof(ToString) + "(),nq}")]
     public struct Stored : IDisposable
     {
-        private static readonly byte[] EmptyBuffer = { 0 };
+        private static readonly byte[] EmptyBuffer = [0];
 
         private byte[] _buffer;
         private int _length;

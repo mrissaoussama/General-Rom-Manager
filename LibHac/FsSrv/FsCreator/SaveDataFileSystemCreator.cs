@@ -17,13 +17,13 @@ public class SaveDataFileSystemCreator : ISaveDataFileSystemCreator
     private static readonly bool EnforceSaveTypeRestrictions = false;
 
     // ReSharper disable once NotAccessedField.Local
-    private IBufferManager _bufferManager;
-    private RandomDataGenerator _randomGenerator;
+    private readonly IBufferManager _bufferManager;
+    private readonly RandomDataGenerator _randomGenerator;
 
     // LibHac Additions
     // ReSharper disable once NotAccessedField.Local
-    private KeySet _keySet;
-    private FileSystemServer _fsServer;
+    private readonly KeySet _keySet;
+    private readonly FileSystemServer _fsServer;
 
     public SaveDataFileSystemCreator(FileSystemServer fsServer, KeySet keySet, IBufferManager bufferManager,
         RandomDataGenerator randomGenerator)

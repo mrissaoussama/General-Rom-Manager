@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using RomManagerShared.Base;
 
 namespace RomManagerShared.Switch
 {
@@ -12,15 +13,15 @@ namespace RomManagerShared.Switch
         {
             if (titleId.EndsWith("000") && titleId.Length == 16)
             {
-                return typeof(SwitchGameMetaData);
+                return typeof(SwitchGame);
             }
             else if (titleId.EndsWith("800") && titleId.Length == 16)
             {
-                return typeof(SwitchUpdateMetaData);
+                return typeof(SwitchUpdate);
             }
             else if (titleId.Length == 16 && IsHexBetween001AndFFF(titleId.Substring(13, 3)) && !titleId.Substring(13, 3).Equals("800", StringComparison.OrdinalIgnoreCase))
             {
-                return typeof(SwitchDLCMetaData);
+                return typeof(SwitchDLC);
             }
             else
             {
@@ -28,9 +29,9 @@ namespace RomManagerShared.Switch
                 return null;
             }
         }
-        public static List<List<IRom>> GroupRomList(List<IRom> RomList)
+        public static List<List<Rom>> GroupRomList(List<Rom> RomList)
         {
-            Dictionary<string, List<IRom>> romGroups = new Dictionary<string, List<IRom>>();
+            Dictionary<string, List<Rom>> romGroups = [];
 
             foreach (var rom in RomList)
             {
@@ -38,13 +39,13 @@ namespace RomManagerShared.Switch
 
                 if (!romGroups.ContainsKey(modifiedTitleId))
                 {
-                    romGroups[modifiedTitleId] = new List<IRom>();
+                    romGroups[modifiedTitleId] = [];
                 }
 
                 romGroups[modifiedTitleId].Add(rom);
             }
 
-            List<List<IRom>> groupedRomList = romGroups.Values.ToList();
+            List<List<Rom>> groupedRomList = [.. romGroups.Values];
 
             return groupedRomList;
         }

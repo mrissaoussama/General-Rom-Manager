@@ -52,7 +52,7 @@ public static class FileSystemServerInitializer
         saveService.CleanUpTemporaryStorage().IgnoreResult();
         saveService.CleanUpSaveData().IgnoreResult();
         saveService.CompleteSaveDataExtension().IgnoreResult();
-        saveService.FixSaveData().IgnoreResult();
+        SaveDataFileSystemService.FixSaveData().IgnoreResult();
         saveService.RecoverMultiCommit().IgnoreResult();
 
         config.StorageDeviceManagerFactory.SetReady(StorageDevicePortId.SdCard, null);

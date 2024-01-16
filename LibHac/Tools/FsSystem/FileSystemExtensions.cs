@@ -333,14 +333,14 @@ public static class FileSystemExtensions
     {
         Result res = fs.GetEntryType(out DirectoryEntryType type, path.ToU8Span());
 
-        return (res.IsSuccess() && type == DirectoryEntryType.Directory);
+        return res.IsSuccess() && type == DirectoryEntryType.Directory;
     }
 
     public static bool FileExists(this IFileSystem fs, string path)
     {
         Result res = fs.GetEntryType(out DirectoryEntryType type, path.ToU8Span());
 
-        return (res.IsSuccess() && type == DirectoryEntryType.File);
+        return res.IsSuccess() && type == DirectoryEntryType.File;
     }
 
     public static Result EnsureDirectoryExists(this IFileSystem fs, string path)

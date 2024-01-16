@@ -1,56 +1,52 @@
-﻿namespace RomManagerShared
+﻿using RomManagerShared.Base;
+using RomManagerShared.Utils;
+
+namespace RomManagerShared
 {
     public class RomParserExecutor
     {
-        private readonly List<IRomParser> parsers = new List<IRomParser>();
+        public  List<IRomParser> Parsers = [];
 
         public RomParserExecutor AddParser(IRomParser parser)
         {
-            parsers.Add(parser);
+            Parsers.Add(parser);
+            Parsers = [.. Parsers.OrderByDescending(p => p.Extensions.Count)];
             return this;
         }
 
-        public async Task<List<IRom>> ExecuteParsers(string file)
+        public async Task<List<Rom>> ExecuteParsers(string file)
         {
-
-            List<IRom> mergedRomList = new List<IRom>();
-            foreach (var parser in parsers)
+            List<Rom> mergedRomList = [];
+            foreach (var parser in Parsers)
             {
-                var parsedRomList = new List<IRom>();
+                var parsedRomList = new List<Rom>();
                 try
                 {
                     parsedRomList = await parser.ProcessFile(file);
-
                 }
                 catch (Exception ex)
                 {
-                    string logFilePath = "error.log"; // Replace with your desired log file path
-
                     FileUtils.Log( $"file '{file}' threw exception {ex.Message}.{Environment.NewLine}");
-                    FileUtils.MoveFileToErrorFiles(file); 
-
-                    return new List<IRom>();
-                }
-                if (parsedRomList is null)
-                {
-                    Console.WriteLine($"null list on {file}");
-
-                    continue;
-                }
-                var nulllist = parsedRomList.Where(x => x == null).ToList();
-                if (nulllist.Count > 0)
-
-                {
-                    Console.WriteLine($"null rom on {file}");
                 }
                 mergedRomList.AddRange(parsedRomList);
-
             }
-
             return mergedRomList;
         }
 
 
+        public HashSet<string> GetSupportedExtensions()
+        {
+            if (Parsers.Count == 0)
+            {
+                return [];
+            }
+            HashSet<string> extensionhashset = [];
+            foreach (var parser in Parsers)
+            {
+                extensionhashset.UnionWith(parser.Extensions);
+            }
+            return extensionhashset;
+        }
     }
 
 }

@@ -208,7 +208,7 @@ public class InMemoryFileSystem : IAttributeFileSystem
 
         protected override Result DoFlush()
         {
-            return BaseStream.Flush();
+            return MemoryStreamAccessor.Flush();
         }
 
         protected override Result DoSetSize(long size)
@@ -381,7 +381,7 @@ public class InMemoryFileSystem : IAttributeFileSystem
             }
         }
 
-        public Result Flush()
+        public static Result Flush()
         {
             return Result.Success;
         }
@@ -434,7 +434,7 @@ public class InMemoryFileSystem : IAttributeFileSystem
 
     private class FileTable
     {
-        private DirectoryNode _root;
+        private readonly DirectoryNode _root;
 
         public FileTable()
         {
@@ -581,7 +581,7 @@ public class InMemoryFileSystem : IAttributeFileSystem
             return Result.Success;
         }
 
-        private Result AddFile(U8Span name, DirectoryNode parent)
+        private static Result AddFile(U8Span name, DirectoryNode parent)
         {
             if (TryFindChildDirectory(name, parent, out _))
             {
@@ -603,7 +603,7 @@ public class InMemoryFileSystem : IAttributeFileSystem
             return Result.Success;
         }
 
-        private Result AddDirectory(U8Span name, DirectoryNode parent)
+        private static Result AddDirectory(U8Span name, DirectoryNode parent)
         {
             if (TryFindChildDirectory(name, parent, out _))
             {
@@ -667,7 +667,7 @@ public class InMemoryFileSystem : IAttributeFileSystem
             return Result.Success;
         }
 
-        private bool TryFindChildDirectory(U8Span name, DirectoryNode parent, out DirectoryNode child)
+        private static bool TryFindChildDirectory(U8Span name, DirectoryNode parent, out DirectoryNode child)
         {
             DirectoryNode currentChild = parent.ChildDirectory;
 
@@ -686,7 +686,7 @@ public class InMemoryFileSystem : IAttributeFileSystem
             return false;
         }
 
-        private bool TryFindChildFile(U8Span name, DirectoryNode parent, out FileNode child)
+        private static bool TryFindChildFile(U8Span name, DirectoryNode parent, out FileNode child)
         {
             FileNode currentChild = parent.ChildFile;
 
@@ -705,7 +705,7 @@ public class InMemoryFileSystem : IAttributeFileSystem
             return false;
         }
 
-        private void LinkDirectory(DirectoryNode dir, DirectoryNode parentDir)
+        private static void LinkDirectory(DirectoryNode dir, DirectoryNode parentDir)
         {
             Debug.Assert(dir.Parent == null);
             Debug.Assert(dir.Next == null);
@@ -715,7 +715,7 @@ public class InMemoryFileSystem : IAttributeFileSystem
             parentDir.ChildDirectory = dir;
         }
 
-        private bool UnlinkDirectory(DirectoryNode dir)
+        private static bool UnlinkDirectory(DirectoryNode dir)
         {
             Debug.Assert(dir.Parent != null);
 
@@ -750,7 +750,7 @@ public class InMemoryFileSystem : IAttributeFileSystem
             return false;
         }
 
-        private void LinkFile(FileNode file, DirectoryNode parentDir)
+        private static void LinkFile(FileNode file, DirectoryNode parentDir)
         {
             Debug.Assert(file.Parent == null);
             Debug.Assert(file.Next == null);
@@ -760,7 +760,7 @@ public class InMemoryFileSystem : IAttributeFileSystem
             parentDir.ChildFile = file;
         }
 
-        private bool UnlinkFile(FileNode file)
+        private static bool UnlinkFile(FileNode file)
         {
             Debug.Assert(file.Parent != null);
 

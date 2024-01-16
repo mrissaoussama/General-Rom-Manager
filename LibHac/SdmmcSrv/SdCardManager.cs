@@ -76,7 +76,7 @@ public class SdCardManager : IStorageDeviceManager, IStorageDeviceOperator, ISdm
     {
         if (_openCount > 0 && _sdmmc.IsSdCardRemoved(_port))
         {
-            _sdmmc.Deactivate(_port);
+            SdmmcApi.Deactivate(_port);
             _handle++;
             _openCount = 0;
         }
@@ -263,7 +263,7 @@ public class SdCardManager : IStorageDeviceManager, IStorageDeviceOperator, ISdm
 
         if (_isInitialized)
         {
-            _sdmmc.Deactivate(_port);
+            SdmmcApi.Deactivate(_port);
             _handle++;
             _openCount = OpenCountFinalized;
         }
@@ -277,7 +277,7 @@ public class SdCardManager : IStorageDeviceManager, IStorageDeviceOperator, ISdm
 
         if (_openCount > 0)
         {
-            _sdmmc.Deactivate(_port);
+            SdmmcApi.Deactivate(_port);
             _handle++;
             _openCount = 0;
         }
@@ -324,7 +324,7 @@ public class SdCardManager : IStorageDeviceManager, IStorageDeviceOperator, ISdm
 
             if (_openCount == 0)
             {
-                _sdmmc.Deactivate(_port);
+                SdmmcApi.Deactivate(_port);
                 _handle++;
             }
         }

@@ -8,10 +8,10 @@ namespace LibHac.Os.Impl;
 
 public class MultiWaitTargetImpl : IDisposable
 {
-    private EventWaitHandle _cancelEvent;
+    private readonly EventWaitHandle _cancelEvent;
 
     // LibHac addition
-    private OsState _os;
+    private readonly OsState _os;
 
     public MultiWaitTargetImpl(OsState os)
     {
@@ -57,23 +57,23 @@ public class MultiWaitTargetImpl : IDisposable
         return Result.Success;
     }
 
-    public Result ReplyAndReceive(out int index, Span<WaitHandle> handles, int num, WaitHandle replyTarget)
+    public static Result ReplyAndReceive(out int index, Span<WaitHandle> handles, int num, WaitHandle replyTarget)
     {
         return ReplyAndReceiveImpl(out index, handles, num, replyTarget, TimeSpan.FromNanoSeconds(long.MaxValue));
     }
 
-    public Result TimedReplyAndReceive(out int index, Span<WaitHandle> handles, int num, WaitHandle replyTarget,
+    public static Result TimedReplyAndReceive(out int index, Span<WaitHandle> handles, int num, WaitHandle replyTarget,
         TimeSpan timeout)
     {
         return ReplyAndReceiveImpl(out index, handles, num, replyTarget, timeout);
     }
 
-    public void SetCurrentThreadHandleForCancelWait()
+    public static void SetCurrentThreadHandleForCancelWait()
     {
         /* ... */
     }
 
-    public void ClearCurrentThreadHandleForCancelWait()
+    public static void ClearCurrentThreadHandleForCancelWait()
     {
         /* ... */
     }
@@ -104,7 +104,7 @@ public class MultiWaitTargetImpl : IDisposable
         return Result.Success;
     }
 
-    private Result ReplyAndReceiveImpl(out int outIndex, Span<WaitHandle> handles, int num, WaitHandle replyTarget,
+    private static Result ReplyAndReceiveImpl(out int outIndex, Span<WaitHandle> handles, int num, WaitHandle replyTarget,
         TimeSpan timeout)
     {
         UnsafeHelpers.SkipParamInit(out outIndex);

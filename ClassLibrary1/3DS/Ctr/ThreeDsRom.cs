@@ -67,8 +67,8 @@ return shortDescription;
                 uint regionFlag = BitConverter.ToUInt32(regionBytes, 0);
 
                 // Check each bitmask and return the corresponding region
-                Dictionary<uint, string> regionBitmasks = new Dictionary<uint, string>
-        {
+                Dictionary<uint, string> regionBitmasks = new()
+                {
             { 0x01, "JP" },
             { 0x02, "US" },
             { 0x04, "EUR" },
@@ -290,7 +290,7 @@ return shortDescription;
             List<ProcessingProgressedToken>? extractionProgressedTokens = null;
             if (progressReportToken != null)
             {
-                extractionProgressedTokens = new List<ProcessingProgressedToken>();
+                extractionProgressedTokens = [];
                 progressReportToken.IsIndeterminate = false;
             }
 
@@ -560,7 +560,7 @@ return shortDescription;
         /// <summary>
         /// Keeps track of files that have been logically deleted
         /// </summary>
-        private List<string> BlacklistedPaths => new List<string>();
+        private static List<string> BlacklistedPaths => new();
 
         /// <summary>
         /// Path in the current I/O provider where temporary files are stored
@@ -624,7 +624,7 @@ return shortDescription;
             {
                 parts.Add(string.Empty);
             }
-            return parts.ToArray();
+            return [.. parts];
         }
 
         void IFileSystem.ResetWorkingDirectory()
@@ -956,7 +956,7 @@ return shortDescription;
                 }
             }
 
-            return output.ToArray();
+            return [.. output];
         }
 
         string[] IReadOnlyFileSystem.GetDirectories(string path, bool topDirectoryOnly)
@@ -1002,7 +1002,7 @@ return shortDescription;
                 }
             }
 
-            return output.ToArray();
+            return [.. output];
         }
 
         byte[] IReadOnlyFileSystem.ReadAllBytes(string filename)
@@ -1119,7 +1119,7 @@ return shortDescription;
             throw new NotImplementedException();
 
             var path = "/temp/files/" + Guid.NewGuid().ToString();
-            (this as IFileSystem).WriteAllBytes(path, new byte[] { });
+            (this as IFileSystem).WriteAllBytes(path, Array.Empty<byte>());
             return path;
         }
 

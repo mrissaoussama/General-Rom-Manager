@@ -24,7 +24,7 @@ public class FileInterfaceAdapter : IFileSf
 {
     private SharedRef<FileSystemInterfaceAdapter> _parentFs;
     private UniqueRef<IFile> _baseFile;
-    private bool _allowAllOperations;
+    private readonly bool _allowAllOperations;
 
     public FileInterfaceAdapter(ref UniqueRef<IFile> baseFile,
         ref SharedRef<FileSystemInterfaceAdapter> parentFileSystem, bool allowAllOperations)
@@ -245,7 +245,7 @@ public class FileSystemInterfaceAdapter : IFileSystemSf
 {
     private SharedRef<IFileSystem> _baseFileSystem;
     private PathFlags _pathFlags;
-    private bool _allowAllOperations;
+    private readonly bool _allowAllOperations;
 
     // In FS, FileSystemInterfaceAdapter is derived from ISharedObject, so that's used for ref-counting when
     // creating files and directories. We don't have an ISharedObject, so a self-reference is used instead.

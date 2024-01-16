@@ -1,4 +1,4 @@
-﻿using RomManagerShared;
+﻿using RomManagerShared.Base;
 
 namespace RomManagerShared.Switch.TitleInfoProviders
 {
@@ -14,7 +14,7 @@ namespace RomManagerShared.Switch.TitleInfoProviders
 
         // Add database-related fields or dependencies
 
-        public async Task<IRom> GetTitleInfo(IRom rom)
+        public async Task<Rom> GetTitleInfo(Rom rom)
         {
             return null;
         }

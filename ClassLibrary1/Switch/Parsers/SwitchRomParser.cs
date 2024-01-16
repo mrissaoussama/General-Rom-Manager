@@ -1,5 +1,4 @@
-﻿using RomManagerShared;
-using LibHac;
+﻿using LibHac;
 using LibHac.Common;
 using LibHac.Common.Keys;
 using LibHac.Fs;
@@ -17,14 +16,16 @@ using System.Linq;
 using System.Runtime.Intrinsics.Arm;
 using System.Text;
 using System.Threading.Tasks;
+using RomManagerShared.Base;
 
 namespace RomManagerShared.Switch.Parsers
 {
     public class SwitchRomParser : IRomParser
     {
+        public HashSet<string> Extensions { get; set; }
         public string prodKeys;
-        public string titleKeys; KeySet keyset;
-        List<IRom> RomList;
+        public string titleKeys; readonly KeySet keyset;
+        List<Rom> RomList;
         string switchRomPath;
         PartitionFileSystem NSPPartitionFileSystem;
         XciPartition XCIPartitionFileSystem;
@@ -32,17 +33,19 @@ namespace RomManagerShared.Switch.Parsers
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         public SwitchRomParser()
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-       {
+        {
+            Extensions = ["xci", "nsp", "nsz", "xcz"];
+
             prodKeys = Environment.ExpandEnvironmentVariables(@"%USERPROFILE%\.switch\prod.keys");
             titleKeys = Environment.ExpandEnvironmentVariables(@"%USERPROFILE%\.switch\title.keys");
             keyset = new KeySet();
             ExternalKeyReader.ReadKeyFile(keyset, titleKeysFilename: titleKeys, prodKeysFilename: prodKeys); ;
 
         }
-        public async Task<List<IRom>> ProcessFile(string switchRomPath)
+        public async Task<List<Rom>> ProcessFile(string switchRomPath)
         {
             this.switchRomPath = switchRomPath;
-            RomList = new List<IRom>();
+            RomList = [];
             try
             {
                 localStorage = new LocalStorage(switchRomPath, FileAccess.Read);
@@ -78,7 +81,7 @@ namespace RomManagerShared.Switch.Parsers
 
         private Task EnumerateRomList()
         {
-            List<DirectoryEntryEx> entries = new List<DirectoryEntryEx>();
+            List<DirectoryEntryEx> entries = [];
             SwitchFs switchFs;
             if (NSPPartitionFileSystem is not null)
             {
@@ -94,7 +97,7 @@ namespace RomManagerShared.Switch.Parsers
 
                 if (app.Main != null)
                 {
-                    var gameMetaData = new SwitchGameMetaData();
+                    var gameMetaData = new SwitchGame();
                     gameMetaData.TitleName = app.Main.Name;
                     gameMetaData.TitleID = app.Main.Id.ToString("X16");
                     gameMetaData.Size = app.Main.GetSize();
@@ -105,7 +108,7 @@ namespace RomManagerShared.Switch.Parsers
                 }
                 if (app.Patch != null)
                 {
-                    var updateMetaData = new SwitchUpdateMetaData();
+                    var updateMetaData = new SwitchUpdate();
                     updateMetaData.TitleID = app.Patch.Id.ToString("X16");
                     updateMetaData.Size = app.Patch.GetSize();
                     updateMetaData.Version = app.Patch.Version.Version.ToString();
@@ -122,7 +125,7 @@ namespace RomManagerShared.Switch.Parsers
                     foreach (var addOnContent in app.AddOnContent)
                     {
                         dlcIndex++;
-                        var dlcMetaData = new SwitchUpdateMetaData();
+                        var dlcMetaData = new SwitchUpdate();
                         dlcMetaData.TitleID = addOnContent.Id.ToString("X16");
                         dlcMetaData.Size = addOnContent.GetSize();
                         dlcMetaData.Version = addOnContent.Version.Version.ToString();

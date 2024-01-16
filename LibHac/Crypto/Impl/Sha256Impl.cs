@@ -42,7 +42,7 @@ public struct Sha256Impl
 
         if (_state == HashState.Initialized)
         {
-            _baseHash.TransformFinalBlock(new byte[0], 0, 0);
+            _baseHash.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
             _state = HashState.Done;
         }
 

@@ -96,7 +96,7 @@ public class PartitionFileSystemCore<TMetaData, TFormat, THeader, TEntry> : IFil
     /// <remarks>Based on nnSdk 16.2.0 (FS 16.0.0)</remarks>
     private class PartitionFile : IFile
     {
-        private TEntry _partitionEntry;
+        private readonly TEntry _partitionEntry;
         private readonly PartitionFileSystemCore<TMetaData, TFormat, THeader, TEntry> _parent;
         private readonly OpenMode _mode;
 

@@ -10,7 +10,7 @@ namespace LibHac.Tools.FsSystem;
 /// will return the root directory name, i.e. an empty string.</remarks>
 public ref struct PathParser
 {
-    private ReadOnlySpan<byte> _path;
+    private readonly ReadOnlySpan<byte> _path;
     private int _offset;
     private int _length;
     private bool _finished;

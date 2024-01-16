@@ -21,12 +21,12 @@ public class AesXtsStorageExternal : IStorage
     public const int KeySize = Aes.KeySize128;
     public const int IvSize = Aes.KeySize128;
 
-    private IStorage _baseStorage;
+    private readonly IStorage _baseStorage;
     private Array2<Array16<byte>> _key;
     private Array16<byte> _iv;
-    private uint _blockSize;
-    private CryptAesXtsFunction _encryptFunction;
-    private CryptAesXtsFunction _decryptFunction;
+    private readonly uint _blockSize;
+    private readonly CryptAesXtsFunction _encryptFunction;
+    private readonly CryptAesXtsFunction _decryptFunction;
 
     // The original class uses a template for both the shared and non-shared IStorage which avoids needing this field.
     private SharedRef<IStorage> _baseStorageShared;

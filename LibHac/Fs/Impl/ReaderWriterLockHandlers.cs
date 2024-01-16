@@ -8,8 +8,8 @@ namespace LibHac.Fs.Impl;
 /// </summary>
 public class UniqueLock : IDisposable
 {
-    private ReaderWriterLockSlim _lock;
-    private bool _hasLock;
+    private readonly ReaderWriterLockSlim _lock;
+    private readonly bool _hasLock;
 
     public UniqueLock(ReaderWriterLockSlim readerWriterLock)
     {
@@ -32,8 +32,8 @@ public class UniqueLock : IDisposable
 /// </summary>
 public class SharedLock : IDisposable
 {
-    private ReaderWriterLockSlim _lock;
-    private bool _hasLock;
+    private readonly ReaderWriterLockSlim _lock;
+    private readonly bool _hasLock;
 
     public SharedLock(ReaderWriterLockSlim readerWriterLock)
     {

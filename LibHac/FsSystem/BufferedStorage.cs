@@ -43,7 +43,7 @@ public class BufferedStorage : IStorage
         private int _referenceCount;
 
         // Instead of storing pointers to the next Cache we store indexes
-        private int _index;
+        private readonly int _index;
         private int _nextIndex;
         private int _prevIndex;
 
@@ -862,7 +862,7 @@ public class BufferedStorage : IStorage
     private ref struct UniqueCache
     {
         private Ref<Cache> _cache;
-        private BufferedStorage _bufferedStorage;
+        private readonly BufferedStorage _bufferedStorage;
 
         public UniqueCache(BufferedStorage bufferedStorage)
         {

@@ -15,7 +15,7 @@ public class SwitchStorage : IStorage
 {
     private SharedRef<IStorage> _trueStorage;
     private SharedRef<IStorage> _falseStorage;
-    private Func<bool> _storageSelectionFunction;
+    private readonly Func<bool> _storageSelectionFunction;
 
     public SwitchStorage(in SharedRef<IStorage> trueStorage, in SharedRef<IStorage> falseStorage,
         Func<bool> storageSelectionFunction)

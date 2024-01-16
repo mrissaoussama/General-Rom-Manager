@@ -15,24 +15,24 @@ namespace LibHac.FsSrv;
 /// <remarks>Based on nnSdk 13.4.0 (FS 13.1.0)</remarks>
 internal class SaveDataIndexerManager : ISaveDataIndexerManager, IDisposable
 {
-    private MemoryResource _memoryResource;
+    private readonly MemoryResource _memoryResource;
     private readonly ulong _indexerSaveDataId;
-    private SdkMutex _bisIndexerMutex;
+    private readonly SdkMutex _bisIndexerMutex;
     private Optional<SaveDataIndexer> _bisIndexer;
-    private SdkMutex _tempIndexerMutex;
-    private SaveDataIndexerLite _tempIndexer;
+    private readonly SdkMutex _tempIndexerMutex;
+    private readonly SaveDataIndexerLite _tempIndexer;
     private SdkMutex _sdIndexerMutex;
     private Optional<SaveDataIndexer> _sdIndexer;
     private StorageDeviceHandle _sdCardHandle;
-    private IDeviceHandleManager _sdHandleManager;
-    private SdkMutex _properBisIndexerMutex;
+    private readonly IDeviceHandleManager _sdHandleManager;
+    private readonly SdkMutex _properBisIndexerMutex;
     private Optional<SaveDataIndexer> _properBisIndexer;
-    private SdkMutex _safeIndexerMutex;
+    private readonly SdkMutex _safeIndexerMutex;
     private Optional<SaveDataIndexer> _safeIndexer;
     private readonly bool _isBisUserRedirectionEnabled;
 
     // LibHac addition
-    private FileSystemClient _fsClient;
+    private readonly FileSystemClient _fsClient;
 
     public SaveDataIndexerManager(FileSystemClient fsClient, ulong saveDataId, MemoryResource memoryResource,
         IDeviceHandleManager sdCardHandleManager, bool isBisUserRedirectionEnabled)

@@ -10,10 +10,10 @@ public struct Array5<T>
     public const int Length = 5;
 
     private T _0;
-    private T _1;
-    private T _2;
-    private T _3;
-    private T _4;
+    private readonly T _1;
+    private readonly T _2;
+    private readonly T _3;
+    private readonly T _4;
 
     [UnscopedRef] public ref T this[int i] => ref Items[i];
 

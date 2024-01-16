@@ -28,18 +28,18 @@ public class SaveDataFileSystemServiceImpl : IDisposable
     private Configuration _config;
     private EncryptionSeed _encryptionSeed;
 
-    private SaveDataFileSystemCacheManager _saveFileSystemCacheManager;
-    private SaveDataExtraDataAccessorCacheManager _saveExtraDataCacheManager;
+    private readonly SaveDataFileSystemCacheManager _saveFileSystemCacheManager;
+    private readonly SaveDataExtraDataAccessorCacheManager _saveExtraDataCacheManager;
     // Save data porter manager
     private bool _isSdCardAccessible;
-    private TimeStampGetter _timeStampGetter;
+    private readonly TimeStampGetter _timeStampGetter;
 
     internal HorizonClient Hos => _config.FsServer.Hos;
     internal FileSystemServer FsServer => _config.FsServer;
 
     private class TimeStampGetter : ISaveDataCommitTimeStampGetter
     {
-        private SaveDataFileSystemServiceImpl _saveService;
+        private readonly SaveDataFileSystemServiceImpl _saveService;
 
         public TimeStampGetter(SaveDataFileSystemServiceImpl saveService)
         {
@@ -296,7 +296,7 @@ public class SaveDataFileSystemServiceImpl : IDisposable
         FinishExtendSaveDataFileSystem(saveDataId, spaceId).IgnoreResult();
     }
 
-    public Result QuerySaveDataTotalSize(out long totalSize, int blockSize, long dataSize, long journalSize)
+    public static Result QuerySaveDataTotalSize(out long totalSize, int blockSize, long dataSize, long journalSize)
     {
         // Todo: Implement
         totalSize = 0;
@@ -635,7 +635,7 @@ public class SaveDataFileSystemServiceImpl : IDisposable
         return _config.TimeService.GetCurrentPosixTime(out timeStamp);
     }
 
-    private bool IsSaveEmulated(in Path saveDataRootPath)
+    private static bool IsSaveEmulated(in Path saveDataRootPath)
     {
         return !saveDataRootPath.IsEmpty();
     }
@@ -819,7 +819,7 @@ public class SaveDataFileSystemServiceImpl : IDisposable
     /// <summary>
     /// Checks if a save is to be stored on a host device.
     /// </summary>
-    public bool IsAllowedDirectorySaveData(SaveDataSpaceId spaceId, in Path saveDataRootPath)
+    public static bool IsAllowedDirectorySaveData(SaveDataSpaceId spaceId, in Path saveDataRootPath)
     {
         return spaceId == SaveDataSpaceId.User && IsSaveEmulated(in saveDataRootPath);
     }

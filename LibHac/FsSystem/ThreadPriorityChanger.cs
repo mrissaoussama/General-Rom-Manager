@@ -30,7 +30,7 @@ public struct ScopedThreadPriorityChangerByAccessPriority : IDisposable
         Write
     }
 
-    private ScopedThreadPriorityChanger _scopedChanger;
+    private readonly ScopedThreadPriorityChanger _scopedChanger;
 
     public ScopedThreadPriorityChangerByAccessPriority(AccessMode mode)
     {

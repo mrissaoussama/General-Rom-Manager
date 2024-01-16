@@ -35,10 +35,8 @@ public static class StorageExtensions
             return new SubStorage(storage, start, length);
         }
 
-        using (var sharedStorage = new SharedRef<IStorage>(storage))
-        {
-            return new SubStorage(in sharedStorage, start, length);
-        }
+        using var sharedStorage = new SharedRef<IStorage>(storage);
+        return new SubStorage(in sharedStorage, start, length);
     }
 
     public static Stream AsStream(this IStorage storage) => new StorageStream(storage, FileAccess.ReadWrite, true);
@@ -134,15 +132,13 @@ public static class StorageExtensions
     {
         input.GetSize(out long inputSize).ThrowIfFailure();
 
-        using (var outFile = new FileStream(filename, FileMode.Create, FileAccess.Write))
-        {
-            input.CopyToStream(outFile, inputSize, progress);
-        }
+        using var outFile = new FileStream(filename, FileMode.Create, FileAccess.Write);
+        input.CopyToStream(outFile, inputSize, progress);
     }
 
     public static byte[] ToArray(this IStorage storage)
     {
-        if (storage == null) return new byte[0];
+        if (storage == null) return Array.Empty<byte>();
 
         storage.GetSize(out long storageSize).ThrowIfFailure();
 
@@ -153,7 +149,7 @@ public static class StorageExtensions
 
     public static T[] ToArray<T>(this IStorage storage) where T : unmanaged
     {
-        if (storage == null) return new T[0];
+        if (storage == null) return Array.Empty<T>();
 
         storage.GetSize(out long storageSize).ThrowIfFailure();
 

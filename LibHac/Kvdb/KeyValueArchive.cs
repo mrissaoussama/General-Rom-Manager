@@ -58,7 +58,7 @@ internal struct KeyValueArchiveSizeCalculator
 
 internal ref struct KeyValueArchiveBufferReader
 {
-    private ReadOnlySpan<byte> _buffer;
+    private readonly ReadOnlySpan<byte> _buffer;
     private int _offset;
 
     public KeyValueArchiveBufferReader(ReadOnlySpan<byte> buffer)
@@ -161,7 +161,7 @@ internal ref struct KeyValueArchiveBufferReader
 
 internal ref struct KeyValueArchiveBufferWriter
 {
-    private Span<byte> _buffer;
+    private readonly Span<byte> _buffer;
     private int _offset;
 
     public KeyValueArchiveBufferWriter(Span<byte> buffer)

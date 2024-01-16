@@ -209,7 +209,7 @@ public class FileHandleStorage : IStorage
     private SdkMutexType _mutex;
 
     // LibHac addition because we don't use global state for the FS client
-    private FileSystemClient _fsClient;
+    private readonly FileSystemClient _fsClient;
 
     /// <summary>
     /// Initializes a new <see cref="FileHandleStorage"/> with the provided <see cref="FileHandle"/>.

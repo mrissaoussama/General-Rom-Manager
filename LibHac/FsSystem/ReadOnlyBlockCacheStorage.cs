@@ -19,9 +19,9 @@ namespace LibHac.FsSystem;
 public class ReadOnlyBlockCacheStorage : IStorage
 {
     private SdkMutexType _mutex;
-    private BlockCache _blockCache;
+    private readonly BlockCache _blockCache;
     private SharedRef<IStorage> _baseStorage;
-    private int _blockSize;
+    private readonly int _blockSize;
 
     public ReadOnlyBlockCacheStorage(ref SharedRef<IStorage> baseStorage, int blockSize, Memory<byte> buffer,
         int cacheBlockCount)

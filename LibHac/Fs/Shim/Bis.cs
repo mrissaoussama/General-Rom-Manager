@@ -25,7 +25,7 @@ public static class Bis
 {
     private class BisCommonMountNameGenerator : ICommonMountNameGenerator
     {
-        private BisPartitionId _partitionId;
+        private readonly BisPartitionId _partitionId;
 
         public BisCommonMountNameGenerator(BisPartitionId partitionId)
         {

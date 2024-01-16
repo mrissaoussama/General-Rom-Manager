@@ -54,7 +54,7 @@ public readonly struct BlitStruct<T> where T : unmanaged
     /// <summary>
     /// Creates a <see cref="BlitSpan{T}"/> from the current <see cref="BlitStruct{T}"/>.
     /// </summary>
-    public BlitSpan<T> BlitSpan => new BlitSpan<T>(_buffer);
+    public BlitSpan<T> BlitSpan => new(_buffer);
 
     /// <summary>
     /// Calculates the length of memory in bytes that would be needed to store <paramref name="elementCount"/>

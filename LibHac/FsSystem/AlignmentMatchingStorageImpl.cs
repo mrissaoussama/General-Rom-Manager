@@ -147,7 +147,7 @@ public static class AlignmentMatchingStorageImpl
             long headOffset = Alignment.AlignDown(offset, dataAlignment);
             int headSize = (int)(coveredOffset - offset);
 
-            Assert.SdkAssert((offset - headOffset) + headSize <= workBuffer.Length);
+            Assert.SdkAssert(offset - headOffset + headSize <= workBuffer.Length);
 
             // Read the existing block, copy the partial block to the appropriate portion,
             // and write the modified block back to the base storage.

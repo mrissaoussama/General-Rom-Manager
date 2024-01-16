@@ -277,7 +277,7 @@ public class HierarchicalIntegrityVerificationStorage : IStorage
             DataStorage = 6
         }
 
-        private ValueSubStorage[] _storages;
+        private readonly ValueSubStorage[] _storages;
 
         public HierarchicalStorageInformation(in HierarchicalStorageInformation other)
         {
@@ -327,24 +327,24 @@ public class HierarchicalIntegrityVerificationStorage : IStorage
     internal const int HashSize = Sha256.DigestSize;
 
     internal const int AccessCountMax = 5;
-    internal TimeSpan AccessTimeout => TimeSpan.FromMilliSeconds(10);
+    internal static TimeSpan AccessTimeout => TimeSpan.FromMilliSeconds(10);
 
     private const sbyte BaseBufferLevel = 0x10;
 
     private FileSystemBufferManagerSet _bufferManagers;
     private SdkRecursiveMutex _mutex;
-    private IntegrityVerificationStorage[] _integrityStorages;
-    private BlockCacheBufferedStorage[] _bufferedStorages;
+    private readonly IntegrityVerificationStorage[] _integrityStorages;
+    private readonly BlockCacheBufferedStorage[] _bufferedStorages;
     private Semaphore _readSemaphore;
     private Semaphore _writeSemaphore;
     private long _dataSize;
     private int _layerCount;
 
     // LibHac addition
-    private FileSystemServer _fsServer;
+    private readonly FileSystemServer _fsServer;
 
     private static readonly byte[][] KeyArray =
-        { MasterKey.ToArray(), L1Key.ToArray(), L2Key.ToArray(), L3Key.ToArray(), L4Key.ToArray(), L5Key.ToArray() };
+        [MasterKey.ToArray(), L1Key.ToArray(), L2Key.ToArray(), L3Key.ToArray(), L4Key.ToArray(), L5Key.ToArray()];
 
     public HierarchicalIntegrityVerificationStorage(FileSystemServer fsServer)
     {

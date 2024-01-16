@@ -13,9 +13,9 @@ namespace LibHac.FsSrv.Impl;
 public class SaveDataFileSystemCacheRegister : IFileSystem
 {
     private SharedRef<ISaveDataFileSystem> _baseFileSystem;
-    private SaveDataFileSystemCacheManager _cacheManager;
-    private SaveDataSpaceId _spaceId;
-    private ulong _saveDataId;
+    private readonly SaveDataFileSystemCacheManager _cacheManager;
+    private readonly SaveDataSpaceId _spaceId;
+    private readonly ulong _saveDataId;
 
     public SaveDataFileSystemCacheRegister(ref SharedRef<ISaveDataFileSystem> baseFileSystem,
         SaveDataFileSystemCacheManager cacheManager, SaveDataSpaceId spaceId, ulong saveDataId)

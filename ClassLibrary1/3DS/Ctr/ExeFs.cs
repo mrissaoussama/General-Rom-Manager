@@ -185,7 +185,7 @@ namespace DotNet3dsToolkit.Ctr
             }
 
             data.InsertRange(0, header);
-            return data.ToArray();
+            return [.. data];
         }
 
         public long GetBinaryLength()

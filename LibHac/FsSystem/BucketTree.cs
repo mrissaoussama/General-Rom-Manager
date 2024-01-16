@@ -16,8 +16,8 @@ file struct StorageNode
 {
     private static int NodeHeaderSize => Unsafe.SizeOf<BucketTree.NodeHeader>();
 
-    private Offset _start;
-    private int _count;
+    private readonly Offset _start;
+    private readonly int _count;
     private int _index;
 
     public StorageNode(long offset, long size, int count)
@@ -107,8 +107,8 @@ file struct StorageNode
         public static Offset operator ++(Offset left) => left + 1;
         public static Offset operator --(Offset left) => left - 1;
 
-        public static Offset operator +(Offset left, long right) => new Offset(left._offset + right * left._stride, left._stride);
-        public static Offset operator -(Offset left, long right) => new Offset(left._offset - right * left._stride, left._stride);
+        public static Offset operator +(Offset left, long right) => new(left._offset + right * left._stride, left._stride);
+        public static Offset operator -(Offset left, long right) => new(left._offset - right * left._stride, left._stride);
 
         public static long operator -(Offset left, Offset right) =>
             (left._offset - right._offset) / left._stride;
@@ -679,7 +679,7 @@ public partial class BucketTree : IDisposable
 
     private int GetEntrySetIndex(int nodeIndex, int offsetIndex)
     {
-        return (_offsetCount - _nodeL1.GetHeader().EntryCount) + (_offsetCount * nodeIndex) + offsetIndex;
+        return _offsetCount - _nodeL1.GetHeader().EntryCount + (_offsetCount * nodeIndex) + offsetIndex;
     }
 
     private Result ScanContinuousReading<TEntry>(out ContinuousReadingInfo info,

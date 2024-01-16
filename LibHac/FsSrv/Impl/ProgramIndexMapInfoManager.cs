@@ -13,7 +13,7 @@ namespace LibHac.FsSrv.Impl;
 /// <remarks>Based on nnSdk 13.4.0 (FS 13.1.0)</remarks>
 public class ProgramIndexMapInfoManager : IDisposable
 {
-    private LinkedList<ProgramIndexMapInfo> _mapEntries;
+    private readonly LinkedList<ProgramIndexMapInfo> _mapEntries;
     private SdkMutexType _mutex;
 
     public ProgramIndexMapInfoManager()

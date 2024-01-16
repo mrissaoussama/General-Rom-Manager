@@ -33,12 +33,12 @@ public readonly struct U8String
         return new U8String(_buffer.AsSpan(start, length).ToArray());
     }
 
-    public static implicit operator U8Span(U8String value) => new U8Span(value._buffer);
+    public static implicit operator U8Span(U8String value) => new(value._buffer);
 
     public static implicit operator ReadOnlySpan<byte>(U8String value) => value.Value;
 
     public static explicit operator string(U8String value) => value.ToString();
-    public static explicit operator U8String(string value) => new U8String(value);
+    public static explicit operator U8String(string value) => new(value);
 
     public override string ToString()
     {

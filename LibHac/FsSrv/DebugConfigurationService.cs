@@ -14,8 +14,8 @@ namespace LibHac.FsSrv;
 /// <remarks>Based on nnSdk 14.3.0 (FS 14.1.0)</remarks>
 public struct DebugConfigurationService
 {
-    private DebugConfigurationServiceImpl _serviceImpl;
-    private ulong _processId;
+    private readonly DebugConfigurationServiceImpl _serviceImpl;
+    private readonly ulong _processId;
 
     // LibHac addition
     private readonly FileSystemServer _fsServer;

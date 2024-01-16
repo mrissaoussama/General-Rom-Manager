@@ -59,8 +59,8 @@ public class InitialProcessBinaryReader : IDisposable
         if ((uint)index >= _header.ProcessCount)
             return ResultLibHac.ArgumentOutOfRange.Log();
 
-        (int offset, int size) range = _offsets[index];
-        outStorage.Reset(new SubStorage(in _storage, range.offset, range.size));
+        (int offset, int size) = _offsets[index];
+        outStorage.Reset(new SubStorage(in _storage, offset, size));
         return Result.Success;
     }
 

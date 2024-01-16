@@ -10,7 +10,7 @@ public struct Array2<T>
     public const int Length = 2;
 
     private T _0;
-    private T _1;
+    private readonly T _1;
 
     [UnscopedRef] public ref T this[int i] => ref Items[i];
 

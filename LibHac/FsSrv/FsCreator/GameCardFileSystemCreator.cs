@@ -28,9 +28,9 @@ public class GameCardRootPartition : IDisposable
 
     private UniqueRef<Sha256PartitionFileSystemMeta> _partitionFsMeta;
     private SharedRef<IStorage> _alignedRootStorage;
-    private GameCardHandle _gcHandle;
-    private long _metaDataSize;
-    private IGameCardStorageCreator _gameCardStorageCreator;
+    private readonly GameCardHandle _gcHandle;
+    private readonly long _metaDataSize;
+    private readonly IGameCardStorageCreator _gameCardStorageCreator;
     private byte[] _logoPartitionData;
     private SharedRef<IStorage> _logoPartitionStorage;
     private SdkMutexType _mutex;
@@ -212,8 +212,8 @@ public class GameCardRootPartition : IDisposable
 /// <remarks>Based on nnSdk 16.2.0 (FS 16.0.0)</remarks>
 public class GameCardFileSystemCreator : IGameCardFileSystemCreator
 {
-    private MemoryResource _allocator;
-    private GameCardStorageCreator _gameCardStorageCreator;
+    private readonly MemoryResource _allocator;
+    private readonly GameCardStorageCreator _gameCardStorageCreator;
     private UniqueRef<GameCardRootPartition> _rootPartition;
     private SdkMutexType _mutex;
 
@@ -324,7 +324,7 @@ public class GameCardFileSystemCreator : IGameCardFileSystemCreator
         return Result.Success;
     }
 
-    private Result GetSaltFromCompatibilityType(out Optional<byte> outSalt, byte compatibilityType)
+    private static Result GetSaltFromCompatibilityType(out Optional<byte> outSalt, byte compatibilityType)
     {
         switch ((GameCardCompatibilityType)compatibilityType)
         {

@@ -38,7 +38,7 @@ public struct Package1MetaData
     public byte KeyGeneration;
     public byte Version;
 
-    [UnscopedRef] public U8Span BuildDate => new U8Span(_buildDate);
+    [UnscopedRef] public U8Span BuildDate => new(_buildDate);
     [UnscopedRef] public ReadOnlySpan<byte> Iv => SpanHelpers.CreateSpan(ref MemoryMarshal.GetReference(_buildDate.Items), 0x10);
 }
 

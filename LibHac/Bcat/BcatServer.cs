@@ -12,10 +12,10 @@ public class BcatServer
     private const int ServiceTypeCount = 4;
 
     internal HorizonClient Hos { get; }
-    private SharedRef<ServiceCreator>[] _serviceCreators;
+    private readonly SharedRef<ServiceCreator>[] _serviceCreators;
 
-    private readonly object _bcatServiceInitLocker = new object();
-    private readonly object _storageManagerInitLocker = new object();
+    private readonly object _bcatServiceInitLocker = new();
+    private readonly object _storageManagerInitLocker = new();
 
     private DeliveryCacheStorageManager StorageManager { get; set; }
 

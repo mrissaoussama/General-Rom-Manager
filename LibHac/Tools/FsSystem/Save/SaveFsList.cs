@@ -360,7 +360,7 @@ internal class SaveFsList<T> where T : struct
         Storage.Write(offset, entry);
     }
 
-    private ref SaveFsEntry GetEntryFromBytes(Span<byte> entry)
+    private static ref SaveFsEntry GetEntryFromBytes(Span<byte> entry)
     {
         return ref MemoryMarshal.Cast<byte, SaveFsEntry>(entry)[0];
     }
@@ -369,7 +369,7 @@ internal class SaveFsList<T> where T : struct
     private struct SaveFsEntry
     {
         public int Parent;
-        private NameDummy Name;
+        private readonly NameDummy Name;
         public T Value;
         public int Next;
     }

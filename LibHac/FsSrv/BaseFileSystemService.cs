@@ -259,11 +259,11 @@ public readonly struct BaseFileSystemService
         return _serviceImpl.FormatSdCardProxyFileSystem();
     }
 
-    public Result IsExFatSupported(out bool isSupported)
+    public  Result IsExFatSupported(out bool isSupported)
     {
         // No permissions are needed to call this method
 
-        isSupported = _serviceImpl.IsExFatSupported();
+        isSupported = BaseFileSystemServiceImpl.IsExFatSupported();
         return Result.Success;
     }
 

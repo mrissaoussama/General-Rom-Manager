@@ -14,7 +14,7 @@ namespace LibHac.FsSrv.FsCreator;
 public class FatFileSystemCreator : IFatFileSystemCreator
 {
     // ReSharper disable once NotAccessedField.Local
-    private MemoryResource _allocator;
+    private readonly MemoryResource _allocator;
     private FatError _fatFsError;
     private SdkMutexType _fatErrorMutex;
     private FatReport _bisSystemReport;

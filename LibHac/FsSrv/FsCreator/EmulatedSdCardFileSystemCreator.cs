@@ -12,10 +12,10 @@ public class EmulatedSdCardFileSystemCreator : ISdCardProxyFileSystemCreator, ID
 {
     private const string DefaultPath = "/sdcard";
 
-    private SdmmcApi _sdmmc;
+    private readonly SdmmcApi _sdmmc;
     private SharedRef<IFileSystem> _rootFileSystem;
     private SharedRef<IFileSystem> _sdCardFileSystem;
-    private string _path;
+    private readonly string _path;
 
     public EmulatedSdCardFileSystemCreator(SdmmcApi sdmmc, ref SharedRef<IFileSystem> rootFileSystem)
     {

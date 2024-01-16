@@ -44,11 +44,11 @@ namespace DotNet3dsToolkit.Ctr
                 partitions.Add(new NcsdPartitionInfo
                 {
                     CryptType = header[0x118 + i],
-                    Offset = BitConverter.ToInt32(header, 0x120 + (i * 2) * 4),
+                    Offset = BitConverter.ToInt32(header, 0x120 + i * 2 * 4),
                     Length = BitConverter.ToInt32(header, 0x120 + (i * 2 + 1) * 4)
                 });
             }
-            Partitions = partitions.ToArray();
+            Partitions = [.. partitions];
         }
 
         /// <summary>
@@ -89,7 +89,7 @@ namespace DotNet3dsToolkit.Ctr
             for (int i = 0; i < Partitions.Length; i++)
             {
                 buffer[0x118 + i] = Partitions[i].CryptType;
-                BitConverter.GetBytes(Partitions[i].Offset).CopyTo(buffer, 0x120 + (i * 2) * 4);
+                BitConverter.GetBytes(Partitions[i].Offset).CopyTo(buffer, 0x120 + i * 2 * 4);
                 BitConverter.GetBytes(Partitions[i].Length).CopyTo(buffer, 0x120 + (i * 2 + 1) * 4);
             }
             return buffer;

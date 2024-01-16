@@ -12,7 +12,7 @@ namespace LibHac.FsSrv.Impl;
 internal class DeviceEventSimulationStorage : IStorage
 {
     private SharedRef<IStorage> _baseStorage;
-    private IDeviceEventSimulator _deviceEventSimulator;
+    private readonly IDeviceEventSimulator _deviceEventSimulator;
 
     public DeviceEventSimulationStorage(ref SharedRef<IStorage> baseStorage, IDeviceEventSimulator deviceEventSimulator)
     {

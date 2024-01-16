@@ -58,12 +58,12 @@ public class SaveDataOpenTypeSetFileStorage : FileStorageBasedFileSystem
     private bool _isNormalStorageOpened;
     private bool _isInternalStorageOpened;
     private bool _isInternalStorageInvalidated;
-    private SaveDataSpaceId _spaceId;
-    private ulong _saveDataId;
+    private readonly SaveDataSpaceId _spaceId;
+    private readonly ulong _saveDataId;
     private SdkMutexType _mutex;
 
     // LibHac addition
-    private FileSystemServer _fsServer;
+    private readonly FileSystemServer _fsServer;
     private ref SaveDataSharedFileStorageGlobals Globals => ref _fsServer.Globals.SaveDataSharedFileStorage;
 
     public SaveDataOpenTypeSetFileStorage(FileSystemServer fsServer, SaveDataSpaceId spaceId, ulong saveDataId)
@@ -166,7 +166,7 @@ public class SaveDataOpenTypeSetFileStorage : FileStorageBasedFileSystem
 public class SaveDataSharedFileStorage : IStorage
 {
     private SharedRef<SaveDataOpenTypeSetFileStorage> _baseStorage;
-    private SaveDataOpenTypeSetFileStorage.OpenType _type;
+    private readonly SaveDataOpenTypeSetFileStorage.OpenType _type;
 
     public SaveDataSharedFileStorage(ref SharedRef<SaveDataOpenTypeSetFileStorage> baseStorage,
         SaveDataOpenTypeSetFileStorage.OpenType type)
@@ -275,8 +275,8 @@ public class SaveDataFileStorageHolder
     private struct Entry
     {
         private SharedRef<SaveDataOpenTypeSetFileStorage> _storage;
-        private SaveDataSpaceId _spaceId;
-        private ulong _saveDataId;
+        private readonly SaveDataSpaceId _spaceId;
+        private readonly ulong _saveDataId;
 
         public Entry(ref SharedRef<SaveDataOpenTypeSetFileStorage> storage, SaveDataSpaceId spaceId,
             ulong saveDataId)
@@ -302,10 +302,10 @@ public class SaveDataFileStorageHolder
         }
     }
 
-    private LinkedList<Entry> _entryList;
+    private readonly LinkedList<Entry> _entryList;
 
     // LibHac additions
-    private FileSystemServer _fsServer;
+    private readonly FileSystemServer _fsServer;
     private ref SaveDataSharedFileStorageGlobals Globals => ref _fsServer.Globals.SaveDataSharedFileStorage;
 
     public SaveDataFileStorageHolder(FileSystemServer fsServer)

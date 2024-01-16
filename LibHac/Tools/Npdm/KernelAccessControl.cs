@@ -167,6 +167,6 @@ public class KernelAccessControl
             }
         }
 
-        Items = items.ToList();
+        Items = [.. items];
     }
 }

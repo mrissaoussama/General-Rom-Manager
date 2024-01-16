@@ -11,7 +11,7 @@ public struct Array65<T>
     public const int Length = 65;
 
     private Array64<T> _0;
-    private T _64;
+    private readonly T _64;
 
     [UnscopedRef] public ref T this[int i] => ref Items[i];
 

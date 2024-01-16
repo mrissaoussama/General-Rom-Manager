@@ -22,10 +22,10 @@ internal class NcaFileSystemService : IRomFileSystemAccessFailureManager
     private const int RomSemaphoreCount = 10;
 
     private WeakRef<NcaFileSystemService> _selfReference;
-    private NcaFileSystemServiceImpl _serviceImpl;
-    private ulong _processId;
-    private SemaphoreAdapter _aocMountCountSemaphore;
-    private SemaphoreAdapter _romMountCountSemaphore;
+    private readonly NcaFileSystemServiceImpl _serviceImpl;
+    private readonly ulong _processId;
+    private readonly SemaphoreAdapter _aocMountCountSemaphore;
+    private readonly SemaphoreAdapter _romMountCountSemaphore;
 
     private NcaFileSystemService(NcaFileSystemServiceImpl serviceImpl, ulong processId)
     {
@@ -58,11 +58,6 @@ internal class NcaFileSystemService : IRomFileSystemAccessFailureManager
     private Result GetProgramInfo(out ProgramInfo programInfo)
     {
         return _serviceImpl.GetProgramInfoByProcessId(out programInfo, _processId);
-    }
-
-    private Result GetProgramInfoByProcessId(out ProgramInfo programInfo, ulong processId)
-    {
-        return _serviceImpl.GetProgramInfoByProcessId(out programInfo, processId);
     }
 
     private Result GetProgramInfoByProgramId(out ProgramInfo programInfo, ulong programId)
@@ -180,16 +175,6 @@ internal class NcaFileSystemService : IRomFileSystemAccessFailureManager
 
     public Result OpenDataStorageByPath(ref SharedRef<IFileSystemSf> outFileSystem, in FspPath path,
         FileSystemProxyType fsType)
-    {
-        throw new NotImplementedException();
-    }
-
-    private Result TryAcquireAddOnContentOpenCountSemaphore(ref UniqueRef<IUniqueLock> outSemaphoreLock)
-    {
-        throw new NotImplementedException();
-    }
-
-    private Result TryAcquireRomMountCountSemaphore(ref UniqueRef<IUniqueLock> outSemaphoreLock)
     {
         throw new NotImplementedException();
     }

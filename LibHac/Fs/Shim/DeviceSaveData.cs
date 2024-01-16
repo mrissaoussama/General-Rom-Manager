@@ -17,7 +17,7 @@ public static class DeviceSaveData
 {
     private class DeviceSaveDataAttributeGetter : ISaveDataAttributeGetter
     {
-        private ProgramId _programId;
+        private readonly ProgramId _programId;
 
         public DeviceSaveDataAttributeGetter(ProgramId programId)
         {

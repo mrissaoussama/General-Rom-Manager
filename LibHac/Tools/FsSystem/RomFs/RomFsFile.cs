@@ -63,7 +63,7 @@ public class RomFsFile : IFile
         return ResultFs.NotImplemented.Log();
     }
 
-    public Result ConvertToApplicationResult(Result result)
+    public static Result ConvertToApplicationResult(Result result)
     {
         return RomFsFileSystem.ConvertRomFsDriverPrivateResult(result);
     }

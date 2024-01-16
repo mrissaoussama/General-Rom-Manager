@@ -12,8 +12,8 @@ namespace LibHac.FsSystem;
 /// <remarks>Based on nnSdk 13.4.0 (FS 13.1.0)</remarks>
 public class StorageFile : IFile
 {
-    private IStorage _baseStorage;
-    private OpenMode _mode;
+    private readonly IStorage _baseStorage;
+    private readonly OpenMode _mode;
 
     public StorageFile(IStorage baseStorage, OpenMode mode)
     {

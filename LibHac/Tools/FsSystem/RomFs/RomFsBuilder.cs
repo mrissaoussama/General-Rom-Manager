@@ -22,7 +22,7 @@ public class RomFsBuilder
     private const int HeaderSize = 0x50;
     private const int HeaderWithPaddingSize = 0x200;
 
-    private List<IStorage> Sources { get; } = new List<IStorage>();
+    private List<IStorage> Sources { get; } = [];
     private HierarchicalRomFileTable<RomFileInfo> FileTable { get; } = new HierarchicalRomFileTable<RomFileInfo>();
     private long CurrentOffset { get; set; }
 
@@ -85,8 +85,10 @@ public class RomFsBuilder
         byte[] header = new byte[HeaderWithPaddingSize];
         var headerWriter = new BinaryWriter(new MemoryStream(header));
 
-        var sources = new List<IStorage>();
-        sources.Add(new MemoryStorage(header));
+        var sources = new List<IStorage>
+        {
+            new MemoryStorage(header)
+        };
         sources.AddRange(Sources);
 
         long fileLength = sources.Sum(x =>

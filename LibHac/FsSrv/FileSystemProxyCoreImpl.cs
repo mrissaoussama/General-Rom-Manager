@@ -13,8 +13,8 @@ namespace LibHac.FsSrv;
 
 public class FileSystemProxyCoreImpl
 {
-    private FileSystemCreatorInterfaces _fsCreators;
-    private BaseFileSystemServiceImpl _baseFileSystemService;
+    private readonly FileSystemCreatorInterfaces _fsCreators;
+    private readonly BaseFileSystemServiceImpl _baseFileSystemService;
     private EncryptionSeed _sdEncryptionSeed;
 
     public FileSystemProxyCoreImpl(FileSystemCreatorInterfaces fsCreators, BaseFileSystemServiceImpl baseFsService)

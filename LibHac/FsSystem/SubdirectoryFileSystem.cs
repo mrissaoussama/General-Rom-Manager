@@ -11,7 +11,7 @@ namespace LibHac.FsSystem;
 /// <remarks>Based on nnSdk 13.4.0 (FS 13.1.0)</remarks>
 public class SubdirectoryFileSystem : IFileSystem
 {
-    private IFileSystem _baseFileSystem;
+    private readonly IFileSystem _baseFileSystem;
     private SharedRef<IFileSystem> _baseFileSystemShared;
     private Path.Stored _rootPath;
 

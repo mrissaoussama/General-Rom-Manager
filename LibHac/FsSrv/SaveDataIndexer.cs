@@ -55,7 +55,7 @@ public class SaveDataIndexer : ISaveDataIndexer
         private bool _isMounted;
 
         // LibHac addition
-        private FileSystemClient _fsClient;
+        private readonly FileSystemClient _fsClient;
 
         public ScopedMount(FileSystemClient fsClient)
         {
@@ -195,21 +195,21 @@ public class SaveDataIndexer : ISaveDataIndexer
     }
 
     private Array48<byte> _mountName;
-    private ulong _indexerSaveDataId;
-    private SaveDataSpaceId _spaceId;
-    private MemoryResource _memoryResource;
-    private MemoryResource _bufferMemoryResource;
-    private FlatMapKeyValueStore<SaveDataAttribute> _kvDatabase;
+    private readonly ulong _indexerSaveDataId;
+    private readonly SaveDataSpaceId _spaceId;
+    private readonly MemoryResource _memoryResource;
+    private readonly MemoryResource _bufferMemoryResource;
+    private readonly FlatMapKeyValueStore<SaveDataAttribute> _kvDatabase;
     private SdkMutexType _mutex;
     private bool _isInitialized;
     private bool _isLoaded;
     private ulong _lastPublishedId;
     private int _handle;
-    private LinkedList<ReaderAccessor> _openReaders;
+    private readonly LinkedList<ReaderAccessor> _openReaders;
     private bool _isDelayedReaderUnregistrationRequired;
 
     // LibHac addition
-    private FileSystemClient _fsClient;
+    private readonly FileSystemClient _fsClient;
 
     public SaveDataIndexer(FileSystemClient fsClient, U8Span mountName, SaveDataSpaceId spaceId, ulong saveDataId,
         MemoryResource memoryResource)

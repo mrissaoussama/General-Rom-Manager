@@ -15,7 +15,7 @@ public static class ScopedLock
 [NonCopyableDisposable]
 public ref struct ScopedLock<TMutex> where TMutex : IBasicLockable
 {
-    private Ref<TMutex> _mutex;
+    private readonly Ref<TMutex> _mutex;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ScopedLock(ref TMutex mutex)

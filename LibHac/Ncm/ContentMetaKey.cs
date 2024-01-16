@@ -10,7 +10,7 @@ public class ContentMetaKey : IComparable<ContentMetaKey>, IComparable, IEquatab
     public ContentMetaType Type { get; private set; }
     public ContentMetaAttribute Attributes { get; private set; }
 
-    public int ExportSize => 0x10;
+    public static int ExportSize => 0x10;
     private bool _isFrozen;
 
     public void ToBytes(Span<byte> output)

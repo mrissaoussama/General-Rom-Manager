@@ -12,7 +12,7 @@ public class CachedStorage : IStorage
     private bool LeaveOpen { get; }
 
     private LinkedList<CacheBlock> Blocks { get; } = new LinkedList<CacheBlock>();
-    private Dictionary<long, LinkedListNode<CacheBlock>> BlockDict { get; } = new Dictionary<long, LinkedListNode<CacheBlock>>();
+    private Dictionary<long, LinkedListNode<CacheBlock>> BlockDict { get; } = [];
 
     public CachedStorage(IStorage baseStorage, int blockSize, int cacheSize, bool leaveOpen)
     {

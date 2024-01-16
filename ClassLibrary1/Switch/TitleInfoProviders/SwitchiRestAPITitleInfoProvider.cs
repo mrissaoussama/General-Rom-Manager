@@ -1,4 +1,4 @@
-﻿using RomManagerShared;
+﻿using RomManagerShared.Base;
 
 namespace RomManagerShared.Switch
 {
@@ -9,7 +9,7 @@ namespace RomManagerShared.Switch
         public string Source { get; set; }
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
-        public async Task<IRom> GetTitleInfo(IRom rom)
+        public async Task<Rom> GetTitleInfo(Rom rom)
         {
             return null;
         }

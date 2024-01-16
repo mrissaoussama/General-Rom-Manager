@@ -97,12 +97,12 @@ namespace LibHac.Fs.Shim
             }
 
             private int _position;
-            private List<CacheEntry> _entryList;
+            private readonly List<CacheEntry> _entryList;
 
             public CacheStorageListCache()
             {
                 _position = 0;
-                _entryList = new List<CacheEntry>();
+                _entryList = [];
             }
 
             public void Dispose() { }

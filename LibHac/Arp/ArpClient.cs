@@ -7,10 +7,10 @@ namespace LibHac.Arp;
 
 public class ArpClient : IDisposable
 {
-    private HorizonClient _hosClient;
+    private readonly HorizonClient _hosClient;
     private SharedRef<IReader> _reader;
 
-    private readonly object _readerInitLocker = new object();
+    private readonly object _readerInitLocker = new();
 
     internal ArpClient(HorizonClient horizonClient)
     {

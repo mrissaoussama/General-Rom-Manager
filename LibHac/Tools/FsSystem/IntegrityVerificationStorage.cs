@@ -20,7 +20,7 @@ public class IntegrityVerificationStorage : SectorStorage
     private IntegrityStorageType Type { get; }
 
     private readonly IHash _hash = Sha256.CreateSha256Generator();
-    private readonly object _locker = new object();
+    private readonly object _locker = new();
 
     public IntegrityVerificationStorage(IntegrityVerificationInfo info, IStorage hashStorage,
         IntegrityCheckLevel integrityCheckLevel, bool leaveOpen)

@@ -31,10 +31,10 @@ internal struct AccessControlGlobals
 public class AccessControl
 {
     private Optional<AccessControlBits> _accessBits;
-    private LinkedList<ContentOwnerInfo> _contentOwners;
-    private LinkedList<SaveDataOwnerInfo> _saveDataOwners;
+    private readonly LinkedList<ContentOwnerInfo> _contentOwners;
+    private readonly LinkedList<SaveDataOwnerInfo> _saveDataOwners;
 
-    private FileSystemServer _fsServer;
+    private readonly FileSystemServer _fsServer;
     private ref AccessControlGlobals Globals => ref _fsServer.Globals.AccessControl;
 
     public AccessControl(FileSystemServer fsServer, ReadOnlySpan<byte> accessControlData,

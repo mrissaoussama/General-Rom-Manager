@@ -10,7 +10,7 @@ internal interface IObserverHolder
 
 internal class ObserverManager<TObserver, TItem> where TObserver : IObserverHolder
 {
-    private LinkedList<TObserver> _observers;
+    private readonly LinkedList<TObserver> _observers;
     private ReaderWriterLock _rwLock;
 
     public delegate void Function(ref TObserver observer, in TItem item);

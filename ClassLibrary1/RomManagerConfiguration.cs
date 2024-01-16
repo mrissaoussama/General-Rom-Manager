@@ -64,5 +64,31 @@ namespace RomManagerShared
             return path;
 
         }
+
+        public static string GetPluginsPath()
+        {
+            var path = Configuration.GetSection("PluginsPath").Value;
+            if (path is null)
+                return "Plugins";
+            return path;
+        }
+        public static string? GetWiiGameTDBPath()
+        {
+            return Configuration.GetSection("Wii:GameTDB:Path").Value;
+        }
+
+        public static string? GetWiiGameTDBUrl()
+        {
+            return Configuration.GetSection("Wii:GameTDB:Url").Value;
+        }
+
+        public static string? GetWiiWadCommonKeyPath()
+        {
+            return Configuration.GetSection("Wii:Wad:CommonKeyPath").Value;
+        }
+        public static string? GetPS4ToolsPath()
+        {
+            return Configuration.GetSection("PS4:PS4ToolsPath").Value;
+        }
     }
 }

@@ -631,7 +631,7 @@ public class FlatMapKeyValueStore<TKey> : IDisposable where TKey : unmanaged, IE
     /// </summary>
     public struct Iterator
     {
-        private KeyValue[] _entries;
+        private readonly KeyValue[] _entries;
         private int _index;
         private int _length;
 
@@ -704,9 +704,9 @@ public class FlatMapKeyValueStore<TKey> : IDisposable where TKey : unmanaged, IE
     /// </summary>
     public struct ConstIterator
     {
-        private KeyValue[] _entries;
+        private readonly KeyValue[] _entries;
         private int _index;
-        private int _length;
+        private readonly int _length;
 
         public ConstIterator(KeyValue[] entries, int startIndex, int length)
         {

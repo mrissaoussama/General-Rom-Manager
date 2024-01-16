@@ -20,11 +20,11 @@ public class AesXtsStorage : IStorage
     public static readonly int KeySize = Aes.KeySize128;
     public static readonly int IvSize = Aes.KeySize128;
 
-    private IStorage _baseStorage;
+    private readonly IStorage _baseStorage;
     private Array16<byte> _key1;
     private Array16<byte> _key2;
     private Array16<byte> _iv;
-    private int _blockSize;
+    private readonly int _blockSize;
     private SdkMutexType _mutex;
 
     // LibHac addition: This field goes unused if initialized with a plain IStorage.

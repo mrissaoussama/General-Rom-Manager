@@ -66,7 +66,7 @@ internal class PatrolReader
     private ulong _allocateFailureCount;
 
     // LibHac addition
-    private SdmmcApi _sdmmc;
+    private readonly SdmmcApi _sdmmc;
 
     private static ReadOnlySpan<byte> PatrolStateKey => "U{W5>1Kq#Gt`f6r86o`9|*||hTy9U2C\0"u8;
 

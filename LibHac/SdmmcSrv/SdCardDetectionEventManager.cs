@@ -17,12 +17,12 @@ internal class SdCardDetectionEventManager : CardDeviceDetectionEventManager
         CallbackArgs.Port = port;
         _sdmmc = sdmmc;
 
-        _sdmmc.RegisterSdCardDetectionEventCallback(port, DetectionEventCallback, CallbackArgs);
+        SdmmcApi.RegisterSdCardDetectionEventCallback(port, DetectionEventCallback, CallbackArgs);
     }
 
     public override void Dispose()
     {
-        _sdmmc.UnregisterSdCardDetectionEventCallback(CallbackArgs.Port);
+        SdmmcApi.UnregisterSdCardDetectionEventCallback(CallbackArgs.Port);
 
         base.Dispose();
     }

@@ -21,10 +21,10 @@ namespace LibHac.SdmmcSrv;
 /// <remarks>Based on nnSdk 16.2.0 (FS 16.0.0)</remarks>
 internal class SdmmcStorage : IStorage
 {
-    private Port _port;
+    private readonly Port _port;
 
     // LibHac additions
-    private SdmmcApi _sdmmc;
+    private readonly SdmmcApi _sdmmc;
 
     public SdmmcStorage(Port port, SdmmcApi sdmmc)
     {
@@ -154,7 +154,7 @@ internal class SdmmcStorage : IStorage
 /// <remarks>Based on nnSdk 16.2.0 (FS 16.0.0)</remarks>
 internal class SdmmcStorageInterfaceAdapter : IStorageSf
 {
-    private IStorage _baseStorage;
+    private readonly IStorage _baseStorage;
 
     public SdmmcStorageInterfaceAdapter(IStorage baseStorage)
     {

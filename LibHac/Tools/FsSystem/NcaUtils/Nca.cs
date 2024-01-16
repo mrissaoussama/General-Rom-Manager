@@ -63,7 +63,7 @@ public class Nca
         return decryptedKey;
     }
 
-    private static readonly string[] KakNames = { "application", "ocean", "system" };
+    private static readonly string[] KakNames = ["application", "ocean", "system"];
 
     public byte[] GetEncryptedTitleKey()
     {
@@ -488,7 +488,7 @@ public class Nca
         return OpenFileSystem(storage, header);
     }
 
-    private IFileSystem OpenFileSystem(IStorage storage, NcaFsHeader header)
+    private static IFileSystem OpenFileSystem(IStorage storage, NcaFsHeader header)
     {
         switch (header.FormatType)
         {
@@ -740,8 +740,10 @@ public class Nca
     {
         const int sectorSize = NcaHeader.HeaderSectorSize;
 
-        var sources = new List<IStorage>();
-        sources.Add(new CachedStorage(new Aes128XtsStorage(BaseStorage.Slice(0, 0x400), KeySet.HeaderKey, sectorSize, true, decrypting), 1, true));
+        var sources = new List<IStorage>
+        {
+            new CachedStorage(new Aes128XtsStorage(BaseStorage.Slice(0, 0x400), KeySet.HeaderKey, sectorSize, true, decrypting), 1, true)
+        };
 
         for (int i = 0x400; i < size; i += sectorSize)
         {

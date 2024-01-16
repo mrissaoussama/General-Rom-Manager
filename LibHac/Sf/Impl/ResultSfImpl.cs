@@ -18,9 +18,9 @@ public static class ResultSfImpl
     public const int ModuleSf = 10;
 
     /// <summary>Error code: 2010-0800; Range: 800-899</summary>
-    public static Result.Base.Abstract RequestContextChanged { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => new Result.Base.Abstract(ModuleSf, 800, 899); }
+    public static Result.Base.Abstract RequestContextChanged { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => new(ModuleSf, 800, 899); }
         /// <summary>Error code: 2010-0801; Range: 801-809</summary>
-        public static Result.Base.Abstract RequestInvalidated { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => new Result.Base.Abstract(ModuleSf, 801, 809); }
+        public static Result.Base.Abstract RequestInvalidated { [MethodImpl(MethodImplOptions.AggressiveInlining)] get => new(ModuleSf, 801, 809); }
             /// <summary>Error code: 2010-0802; Inner value: 0x6440a</summary>
-            public static Result.Base RequestInvalidatedByUser => new Result.Base(ModuleSf, 802);
+            public static Result.Base RequestInvalidatedByUser => new(ModuleSf, 802);
 }

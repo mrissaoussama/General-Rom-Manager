@@ -13,7 +13,7 @@ public class LayeredFileSystem : IFileSystem
     /// List of source <see cref="IFileSystem"/>s.
     /// Filesystems at the beginning of the list will take precedence over those later in the list.
     /// </summary>
-    private List<IFileSystem> Sources { get; } = new List<IFileSystem>();
+    private List<IFileSystem> Sources { get; } = [];
 
     /// <summary>
     /// Creates a new <see cref="LayeredFileSystem"/> from the input <see cref="IFileSystem"/> objects.
@@ -65,7 +65,7 @@ public class LayeredFileSystem : IFileSystem
                     }
                     else if (multipleSources is null)
                     {
-                        multipleSources = new List<IFileSystem> { singleSource, fs };
+                        multipleSources = [singleSource, fs];
                     }
                     else
                     {
@@ -209,7 +209,7 @@ public class LayeredFileSystem : IFileSystem
         private OpenDirectoryMode Mode { get; }
 
         // todo: Efficient way to remove duplicates
-        private HashSet<string> Names { get; } = new HashSet<string>();
+        private HashSet<string> Names { get; } = [];
 
         public MergedDirectory(List<IFileSystem> sourceFileSystems, OpenDirectoryMode mode)
         {

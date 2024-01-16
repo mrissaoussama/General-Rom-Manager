@@ -1,5 +1,5 @@
-﻿using RomManagerShared;
-using RomManagerShared.Switch;
+﻿using RomManagerShared.Base;
+using RomManagerShared.Interfaces;
 using RomManagerShared.Switch.Parsers;
 using RomManagerShared.Switch.TitleInfoProviders;
 using RomManagerShared.ThreeDS.TitleInfoProviders;
@@ -13,13 +13,13 @@ namespace RomManagerShared.ThreeDS
 {
     public class ThreeDSManager : IConsoleManager
     {
-        private ThreeDSJsonTitleInfoProvider titleInfoProvider;
+        private readonly ThreeDSJsonTitleInfoProvider titleInfoProvider;
 
-        public List<IRom> RomList { get; set; }
+        public List<Rom> RomList { get; set; }
 
         public ThreeDSManager()
         {
-            RomList = new();
+            RomList = [];
 
             RomParserExecutor = new RomParserExecutor();
             RomParserExecutor.AddParser(new ThreeDsRomParser());
@@ -49,5 +49,6 @@ namespace RomManagerShared.ThreeDS
         {
             await titleInfoProvider.LoadTitleDatabaseAsync();
         }
+
     }
 }

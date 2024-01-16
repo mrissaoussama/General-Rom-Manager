@@ -2,7 +2,7 @@
 
 public class MultiWaitHolderOfNativeHandle : MultiWaitHolderOfNativeWaitObject
 {
-    private OsNativeHandle _handle;
+    private readonly OsNativeHandle _handle;
 
     internal MultiWaitHolderOfNativeHandle(OsNativeHandle handle)
     {

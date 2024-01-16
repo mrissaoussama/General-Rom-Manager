@@ -21,12 +21,12 @@ namespace LibHac.FsSrv.Impl;
 /// <remarks>Based on nnSdk 14.3.0</remarks>
 public class DeviceOperator : IDeviceOperator
 {
-    private AccessControl _accessControl;
+    private readonly AccessControl _accessControl;
     // ReSharper disable once NotAccessedField.Local
-    private ulong _processId;
+    private readonly ulong _processId;
 
     // LibHac addition
-    private FileSystemServer _fsServer;
+    private readonly FileSystemServer _fsServer;
 
     public DeviceOperator(FileSystemServer fsServer, AccessControl accessControl, ulong processId)
     {

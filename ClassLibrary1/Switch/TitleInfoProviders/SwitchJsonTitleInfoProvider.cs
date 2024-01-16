@@ -1,4 +1,5 @@
-﻿using RomManagerShared;
+﻿using RomManagerShared.Base;
+using RomManagerShared.Utils;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -70,7 +71,7 @@ namespace RomManagerShared.Switch.TitleInfoProviders
     {
         public string Source { get; set; }
         public Dictionary<string, JsonElement> TitlesDatabase { get; set; }
-        private SwitchTitledbDownloader titledbDownloader;
+        private readonly SwitchTitledbDownloader titledbDownloader;
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         public SwitchJsonTitleInfoProvider(string jsonFilePath)
@@ -96,7 +97,7 @@ namespace RomManagerShared.Switch.TitleInfoProviders
 #pragma warning restore CS8601 // Possible null reference assignment.
         }
 
-        public async Task<IRom> GetTitleInfo(IRom rom)
+        public async Task<Rom> GetTitleInfo(Rom rom)
         {
             try
             {
@@ -108,14 +109,14 @@ namespace RomManagerShared.Switch.TitleInfoProviders
                         // Create an instance of the metadataClass and apply the values from romDto
                         var metadataInstance = Activator.CreateInstance(metadataClass);
 #pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-                        RomUtils.CopyIRomProperties(rom, (IRom)metadataInstance);
+                        RomUtils.CopyIRomProperties(rom, (Rom)metadataInstance);
 #pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
-                        rom = (IRom)metadataInstance;
+                        rom = (Rom)metadataInstance;
                     }
 
                     rom = MapToIRom(rom, titleInfo, metadataClass);
 
-                    if (metadataClass == typeof(SwitchUpdateMetaData))
+                    if (metadataClass == typeof(SwitchUpdate))
                     {
                         rom.TitleName = GetUpdateName(rom, rom.Version);
                     }
@@ -136,14 +137,14 @@ namespace RomManagerShared.Switch.TitleInfoProviders
 
     
 
-        private string GetUpdateName(IRom rom, string version)
+        private string GetUpdateName(Rom rom, string version)
         {
             rom.TitleID = rom.TitleID.Remove(rom.TitleID.Length - 3, 3);
             rom.TitleID += "000";
             
             if (TitlesDatabase.TryGetValue(rom.TitleID, out var titleInfo))
             {
-                var gamerom = MapToIRom(rom, titleInfo, typeof(SwitchGameMetaData));
+                var gamerom = MapToIRom(rom, titleInfo, typeof(SwitchGame));
                 var updateName = $"{gamerom.TitleName}[{version}]";
                 return updateName;
             }
@@ -151,7 +152,7 @@ namespace RomManagerShared.Switch.TitleInfoProviders
         }
 
  
-        private IRom MapToIRom(IRom rom, JsonElement titleInfo, Type metadataClass)
+        private static Rom MapToIRom(Rom rom, JsonElement titleInfo, Type metadataClass)
         {
             if (metadataClass != null)
             {
@@ -169,7 +170,7 @@ namespace RomManagerShared.Switch.TitleInfoProviders
             }
         }
 
-        private void CopyNonNullValues(SwitchJsonRomDTO romDto, IRom rom)
+        private static void CopyNonNullValues(SwitchJsonRomDTO romDto, Rom rom)
         {
             // Set IsDemo to false if it's null
             rom.IsDemo = romDto.IsDemo ?? false;
@@ -185,7 +186,7 @@ namespace RomManagerShared.Switch.TitleInfoProviders
             }
             rom.Region = romDto.Region ?? rom.Region;
             rom.Icon = romDto.Icon ?? rom.Icon;
-            rom.Rating = romDto.Rating ?? rom.Rating;
+            rom.Rating = romDto.Rating.ToString() ?? rom.Rating;
             rom.Publisher = romDto.Publisher ?? rom.Publisher;
             rom.RatingContent = romDto.RatingContent ?? rom.RatingContent;
             rom.Genres = romDto.Genres ?? rom.Genres;

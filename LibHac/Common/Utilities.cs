@@ -121,10 +121,8 @@ public static class Utilities
     {
         input.Position = 0;
 
-        using (var outFile = new FileStream(filename, FileMode.Create, FileAccess.Write))
-        {
-            input.CopyStream(outFile, input.Length, progress);
-        }
+        using var outFile = new FileStream(filename, FileMode.Create, FileAccess.Write);
+        input.CopyStream(outFile, input.Length, progress);
     }
 
     public static string ReadAsciiZ(this BinaryReader reader, int maxLength = Int32.MaxValue)
@@ -232,7 +230,7 @@ public static class Utilities
         }
 
         // Divide by 1024 to get fractional value
-        readable = readable / 1024;
+        readable /= 1024;
         // Return formatted number with suffix
         return readable.ToString("0.### ") + suffix;
     }

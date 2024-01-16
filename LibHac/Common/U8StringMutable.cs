@@ -37,15 +37,15 @@ public readonly struct U8StringMutable
         return new U8StringMutable(_buffer.AsSpan(start, length).ToArray());
     }
 
-    public static implicit operator U8String(U8StringMutable value) => new U8String(value._buffer);
-    public static implicit operator U8SpanMutable(U8StringMutable value) => new U8SpanMutable(value._buffer);
-    public static implicit operator U8Span(U8StringMutable value) => new U8Span(value._buffer);
+    public static implicit operator U8String(U8StringMutable value) => new(value._buffer);
+    public static implicit operator U8SpanMutable(U8StringMutable value) => new(value._buffer);
+    public static implicit operator U8Span(U8StringMutable value) => new(value._buffer);
 
     public static implicit operator ReadOnlySpan<byte>(U8StringMutable value) => value.Value;
     public static implicit operator Span<byte>(U8StringMutable value) => value.Value;
 
     public static explicit operator string(U8StringMutable value) => value.ToString();
-    public static explicit operator U8StringMutable(string value) => new U8StringMutable(value);
+    public static explicit operator U8StringMutable(string value) => new(value);
 
     public override string ToString()
     {

@@ -47,7 +47,7 @@ internal class LocationResolverSet : IDisposable
     private SdkMutexType _mutex;
 
     // LibHac addition
-    private FileSystemServer _fsServer;
+    private readonly FileSystemServer _fsServer;
     private HorizonClient Hos => _fsServer.Hos;
 
     public LocationResolverSet(FileSystemServer fsServer)

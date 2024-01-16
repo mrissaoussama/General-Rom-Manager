@@ -18,7 +18,7 @@ internal class GameCardStorageDevice : GameCardStorageInterfaceAdapter, IStorage
 {
     private SharedRef<IGameCardManager> _manager;
     private GameCardHandle _handle;
-    private bool _isSecure;
+    private readonly bool _isSecure;
     private Array16<byte> _cardDeviceId;
     private Array32<byte> _cardImageHash;
 

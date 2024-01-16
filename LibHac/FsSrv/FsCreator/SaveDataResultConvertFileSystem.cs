@@ -13,7 +13,7 @@ namespace LibHac.FsSrv.FsCreator;
 /// <remarks>Based on nnSdk 14.3.0 (FS 14.1.0)</remarks>
 public class SaveDataResultConvertFile : IResultConvertFile
 {
-    private bool _isReconstructible;
+    private readonly bool _isReconstructible;
 
     public SaveDataResultConvertFile(ref UniqueRef<IFile> baseFile, bool isReconstructible) : base(ref baseFile)
     {
@@ -33,7 +33,7 @@ public class SaveDataResultConvertFile : IResultConvertFile
 /// <remarks>Based on nnSdk 14.3.0 (FS 14.1.0)</remarks>
 public class SaveDataResultConvertDirectory : IResultConvertDirectory
 {
-    private bool _isReconstructible;
+    private readonly bool _isReconstructible;
 
     public SaveDataResultConvertDirectory(ref UniqueRef<IDirectory> baseDirectory, bool isReconstructible) : base(
         ref baseDirectory)
@@ -54,7 +54,7 @@ public class SaveDataResultConvertDirectory : IResultConvertDirectory
 /// <remarks>Based on nnSdk 14.3.0 (FS 14.1.0)</remarks>
 public class SaveDataResultConvertFileSystem : IResultConvertFileSystem<ISaveDataFileSystem>
 {
-    private bool _isReconstructible;
+    private readonly bool _isReconstructible;
 
     public SaveDataResultConvertFileSystem(ref SharedRef<ISaveDataFileSystem> baseFileSystem, bool isReconstructible) :
         base(ref baseFileSystem)

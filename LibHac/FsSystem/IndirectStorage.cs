@@ -19,7 +19,7 @@ public class IndirectStorage : IStorage
     public static readonly int StorageCount = 2;
     public static readonly int NodeSize = 1024 * 16;
 
-    private BucketTree _table;
+    private readonly BucketTree _table;
     private Array2<ValueSubStorage> _dataStorage;
 
     [StructLayout(LayoutKind.Sequential, Pack = 4)]

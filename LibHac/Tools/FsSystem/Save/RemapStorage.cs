@@ -276,7 +276,7 @@ public class MapEntry
 
 public class RemapSegment
 {
-    public List<MapEntry> Entries { get; } = new List<MapEntry>();
+    public List<MapEntry> Entries { get; } = [];
     public long Offset { get; internal set; }
     public long Length { get; internal set; }
 }

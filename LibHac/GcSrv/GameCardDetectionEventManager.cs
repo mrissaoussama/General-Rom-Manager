@@ -9,7 +9,7 @@ namespace LibHac.GcSrv;
 /// <remarks>Based on nnSdk 16.2.0 (FS 16.0.0)</remarks>
 internal class GameCardDetectionEventManager : CardDeviceDetectionEventManager
 {
-    private IGcApi _gc;
+    private readonly IGcApi _gc;
 
     public GameCardDetectionEventManager(IGcApi gc)
     {

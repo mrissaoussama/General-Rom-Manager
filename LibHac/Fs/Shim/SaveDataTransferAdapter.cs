@@ -18,7 +18,7 @@ public class SaveDataChunkIterator : ISaveDataChunkIterator
     private SharedRef<FsSrv.Sf.ISaveDataChunkIterator> _baseInterface;
 
     // LibHac addition
-    private FileSystemClient _fsClient;
+    private readonly FileSystemClient _fsClient;
 
     public SaveDataChunkIterator(FileSystemClient fs, ref SharedRef<FsSrv.Sf.ISaveDataChunkIterator> baseInterface)
     {
@@ -67,7 +67,7 @@ public class SaveDataChunkExporter : ISaveDataChunkExporter
     private SharedRef<FsSrv.Sf.ISaveDataChunkExporter> _baseInterface;
 
     // LibHac addition
-    private FileSystemClient _fsClient;
+    private readonly FileSystemClient _fsClient;
 
     public SaveDataChunkExporter(FileSystemClient fs, ref SharedRef<FsSrv.Sf.ISaveDataChunkExporter> baseInterface)
     {
@@ -114,7 +114,7 @@ public class SaveDataChunkImporter : ISaveDataChunkImporter
     private SharedRef<FsSrv.Sf.ISaveDataChunkImporter> _baseInterface;
 
     // LibHac addition
-    private FileSystemClient _fsClient;
+    private readonly FileSystemClient _fsClient;
 
     public SaveDataChunkImporter(FileSystemClient fs, ref SharedRef<FsSrv.Sf.ISaveDataChunkImporter> baseInterface)
     {
@@ -147,7 +147,7 @@ public class SaveDataExporterVersion2 : ISaveDataDivisionExporter
     private SharedRef<FsSrv.Sf.ISaveDataDivisionExporter> _baseInterface;
 
     // LibHac addition
-    private FileSystemClient _fsClient;
+    private readonly FileSystemClient _fsClient;
 
     public SaveDataExporterVersion2(FileSystemClient fs,
         ref SharedRef<FsSrv.Sf.ISaveDataDivisionExporter> baseInterface)
@@ -326,7 +326,7 @@ public class SaveDataImporterVersion2 : ISaveDataDivisionImporter
     private SharedRef<FsSrv.Sf.ISaveDataDivisionImporter> _baseInterface;
 
     // LibHac addition
-    private FileSystemClient _fsClient;
+    private readonly FileSystemClient _fsClient;
 
     public SaveDataImporterVersion2(FileSystemClient fs,
         ref SharedRef<FsSrv.Sf.ISaveDataDivisionImporter> baseInterface)

@@ -12,7 +12,7 @@ public class Delta
     private IStorage OriginalStorage { get; set; }
     private IStorage DeltaStorage { get; }
     public DeltaHeader Header { get; }
-    private List<DeltaSegment> Segments { get; } = new List<DeltaSegment>();
+    private List<DeltaSegment> Segments { get; } = [];
 
     public Delta(IStorage deltaStorage, IStorage originalData) : this(deltaStorage)
     {
