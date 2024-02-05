@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace RomManagerShared.GameBoy
+﻿namespace RomManagerShared.GameBoy
 {
     public class GameBoyMetadata
     {
@@ -21,18 +15,14 @@ namespace RomManagerShared.GameBoy
         public string MaskRomVersionNumber { get; set; }
         public string HeaderChecksum { get; set; }
         public byte[] StoredGlobalChecksum { get; internal set; }
-        public string CgbFlagcode { get; internal set; }
-
-        public string GetGameTypeChar()
+        public string CgbFlagcode { get; internal set; }        public string GetGameTypeChar()
         {
             if (GameCode.Length == 4)
             {
                 return GameCode[0].ToString();
             }
             return "";
-        }
-
-        public string GetCountryChar()
+        }        public string GetCountryChar()
         {
             if (GameCode.Length == 4)
             {

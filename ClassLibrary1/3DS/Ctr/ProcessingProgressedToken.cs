@@ -1,18 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading;
-
-namespace DotNet3dsToolkit
+﻿namespace DotNet3dsToolkit
 {
     public class ProcessingProgressedToken
     {
         /// <summary>
         /// Raised when either <see cref="TotalFileCount"/> or <see cref="ProcessedFileCount"/> changed
         /// </summary>
-        public event EventHandler FileCountChanged;
-
-        /// <summary>
+        public event EventHandler FileCountChanged;        /// <summary>
         /// Number of files that have been extracted
         /// </summary>
         public int ProcessedFileCount
@@ -27,9 +20,7 @@ namespace DotNet3dsToolkit
                 FileCountChanged?.Invoke(this, new EventArgs());
             }
         }
-        private int _processedFileCount;
-
-        /// <summary>
+        private int _processedFileCount;        /// <summary>
         /// Total number of files
         /// </summary>
         public int TotalFileCount
@@ -44,9 +35,7 @@ namespace DotNet3dsToolkit
                 FileCountChanged?.Invoke(this, new EventArgs());
             }
         }
-        private int _totalFileCount;
-
-        public void IncrementProcessedFileCount()
+        private int _totalFileCount;        public void IncrementProcessedFileCount()
         {
             Interlocked.Increment(ref _processedFileCount);
             FileCountChanged?.Invoke(this, new EventArgs());

@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace RomManagerShared.SNES
+﻿namespace RomManagerShared.SNES
 {
     public class SNESMetadata
     {

@@ -34,56 +34,135 @@ using RomManagerShared.GameBoyAdvance;
 using RomManagerShared.DS;
 using RomManagerShared.SNES;
 using RomManagerShared.PSP;
-//HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
+using RomManagerShared.Interfaces;
+using RomManagerShared.N64;
+
 RomManagerConfiguration.Load("config.json");
-//PluginManager.LoadPlugins(RomManagerConfiguration.GetPluginsPath()); ;
-
-
 //var result = ((UInt64)(276759 & 0xFFFFFF) << 8) | (0x0004000000000000);
-//var id = result.ToString("X16");
-//string filename = "L:\\New folder\\3DSCia\\New folder\\0004000e00081e00 - MGS Snake Eater 3D (USA) Update v1.1 ENC.cia";
 var rompath = "D:\\nsp\\";
-var rompath4 = "D:\\nsp\\1";
-var wiirompath = "C:\\Users\\oussama\\Downloads\\Animal Crossing (USA)\\psp";
-//var rompath2 = "D:\\cia";
-//var ciadirectory = "L:\\3DSCia\\Cias";
-//var manager = new ThreeDSManager();
-//await manager.Setup();
-var manager = new PSPManager();
+var rompath4 = "D:\\nsp\\errorfiles";
+var wiirompath = "C:\\Users\\oussama\\Downloads\\roms\\";
+
+HashTypeEnum type = HashTypeEnum.CRC32;
+var hashlist=await HashUtils.CalculateFileHashes(System.IO.Path.Combine(rompath4, "1.nsp"), Enum.GetValues<HashTypeEnum>());
+hashlist.ForEach(x => Console.WriteLine(x.ToString()));
+var Managers = new List<IConsoleManager>
+{
+    new NintendoSwitchManager(),
+    new ThreeDSManager(),
+    new DSManager(),
+    new GameBoyManager(),
+    new GameBoyAdvanceManager(),
+    new PS4Manager(),
+    new PSPManager(),
+    new SNESManager(),
+    new WiiManager(),
+    new Nintendo64Manager(),
+};
+var manager = Managers[9];
+Console.WriteLine($"Setup: {manager.GetType()}");
 await manager.Setup();
 var ext = manager.RomParserExecutor.GetSupportedExtensions();
-var filelist = FileUtils.GetFilesInDirectoryWithExtensions(wiirompath,ext );
+Console.WriteLine($"Supported Extensions: {string.Join(", ", ext)}");
+List<string> filelist = new();
+int i = 0; IEnumerable<IEnumerable<string>> splits = null;
 
-int i = 0;
-var splits = from item in filelist
-             group item by i++ % 5 into part
-             select part.AsEnumerable() ;
+await ScanFiles();
+Console.WriteLine($"Files found: {filelist.Count}");
 List<Task> tasks = [];
-var cancellationTokenSource = new CancellationTokenSource();
 
-foreach (var filegroup in splits)
+async Task ScanFiles()
 {
-    foreach (var file in filegroup)
+     filelist = FileUtils.GetFilesInDirectoryWithExtensions(wiirompath, ext);
+    manager.RomList.Clear();
+    if (manager is IRomMissingContentChecker)
     {
-        tasks.Add(manager.ProcessFile(file));
-
+        (manager as IRomMissingContentChecker).GroupedRomList.Clear();
     }
-    await Task.WhenAll(tasks);
-    tasks.Clear();
+        splits = from item in filelist
+             group item by i++ % 5 into part
+                                      select part.AsEnumerable();
 }
 
-//manager.RomList.ForEach(x => Console.WriteLine($"{x.TitleID} {x.TitleName} {x.GetType().Name}"));
-//FileRenamer.RenameFiles(manager.RomList, "{TitleName} [{TitleID}] [{Region}] [v{Version}] [{DLCCount}]");
-//var missingupdates = await manager.ListMissingUpdates();
-//foreach (var missingupdate in missingupdates)
-//{
-//    Console.WriteLine($"Title Id {missingupdate.Item1} Local Update:{missingupdate.Item2} Latest Update: {missingupdate.Item3}");
-//    File.AppendAllText("missingupdate.txt",missingupdate.Item1+":"+ missingupdate.Item3+Environment.NewLine);
-//}
-//foreach (var romGroup in manager.GroupedRomList)
-//{
-//   RomUtils.OrganizeRomsInFolders(romGroup);
+await ProcessFiles();
 
-//}
+async Task ProcessFiles()
+{
+    foreach (var filegroup in splits)
+    {
+        foreach (var file in filegroup)
+        {
+            tasks.Add(manager.ProcessFile(file));
+        }
+        await Task.WhenAll(tasks);
+        tasks.Clear();
+    }
+}
+
+PrintRoms(manager.RomList);
+
+void PrintRoms(IEnumerable<Rom> romList)
+{
+    romList.ToList().ForEach(x => Console.WriteLine($"{x.TitleID} {x.Titles?.FirstOrDefault()?.ToString()} {x.GetType().Name}"));
+}
+
+Console.WriteLine("//////////////////////////////////////////");
+Console.WriteLine($"roms found: {manager.RomList.Count}");
+
+Console.WriteLine("Options:");
+bool canUpdate = false;
+
+if (manager is IRomMissingContentChecker)
+{
+    canUpdate = true;
+    Console.WriteLine("Press 0 to check for missing updates");
+    Console.WriteLine("Press 1 to organize roms by group");
+    Console.WriteLine("Press 2 to organize roms to folders (will move updates and dlcs to game folder");
+}
+Console.WriteLine("Press 3 to rename roms with format {TitleName} [{TitleID}] [{Region}] [v{Version}] [{DLCCount}]");
+Console.WriteLine("Press 4 to Rescan files");
+Console.WriteLine("Press 5 to parse scanned files again");
+
+
+while (true)
+{
+    switch (Console.ReadLine())
+    {
+        case "0":
+            if (canUpdate is false) break;
+            var missingupdates = await ((IRomMissingContentChecker)manager).GetMissingUpdates();
+            missingupdates.ToList().ForEach(x => Console.WriteLine(x.ToString()));
+            break;
+        case "3":
+            FileRenamer.RenameFiles(manager.RomList, "{TitleName} [{TitleID}] [{Region}] [v{Version}] [{DLCCount}]");
+            break;
+        case "1":
+            ((IRomMissingContentChecker)manager).LoadGroupRomList();
+            break;
+        case "2":
+            foreach (var romGroup in ((IRomMissingContentChecker)manager).GroupedRomList)
+            {
+                RomUtils.OrganizeRomsInFolders(romGroup, ((IRomMissingContentChecker)manager).GroupedRomList);
+
+            }
+            break;
+        case "4":
+            Console.WriteLine($"Scanning files...");
+            await ScanFiles();
+            Console.WriteLine($"Files found: {filelist.Count}");
+
+            break;
+        case "5":
+            Console.WriteLine($"Scanning roms...");
+            await ProcessFiles();
+            Console.WriteLine($"roms found: {manager.RomList.Count}");
+            PrintRoms(manager.RomList);
+
+            break;
+        default: Console.WriteLine("option not valid");break;
+    }
+}
+
+
 Console.ReadLine();
 Console.ReadLine();

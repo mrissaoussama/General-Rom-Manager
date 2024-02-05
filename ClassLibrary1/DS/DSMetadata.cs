@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace RomManagerShared.DS
+﻿namespace RomManagerShared.DS
 {
-    public class DSMetadata 
+    public class DSMetadata
     {
         public string Title { get; set; }
         public string GameCode { get; set; }

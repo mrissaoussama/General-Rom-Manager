@@ -1,34 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO;
-using RomManagerShared.Utils;
-using RomManagerShared.GameBoy;
+﻿using RomManagerShared.Base;
 using RomManagerShared.GameBoyAdvance;
-using RomManagerShared.Base;
+using RomManagerShared.Utils;
 namespace RomManagerShared.DS
 {
     public static class DSUtils
     {
-        private static readonly string[] Extensions = ["nds"];
-
-        private const int NintendoLogoOffset = 0xC0;
-
-        public static bool IsDSRom(string filePath,bool checkExtensionOnly=false)
+        private static readonly string[] Extensions = ["nds"];        private const int NintendoLogoOffset = 0xC0;        public static bool IsDSRom(string filePath, bool checkExtensionOnly = false)
         {
             string fileName = Path.GetFileName(filePath);
-            string extension = fileName.Substring(fileName.LastIndexOf(".") + 1);
-
-            if (!Extensions.Contains(extension) && checkExtensionOnly==true)
+            string extension = fileName.Substring(fileName.LastIndexOf(".") + 1);            if (!Extensions.Contains(extension) && checkExtensionOnly == true)
             {
                 return false;
-            }
-
-            byte[] buf = new byte[NintendoLogoOffset + GameBoyAdvanceUtils.GameBoyAdvanceNintendoLogo.Length];
-
-            using (FileStream fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+            }            byte[] buf = new byte[NintendoLogoOffset + GameBoyAdvanceUtils.GameBoyAdvanceNintendoLogo.Length];            using (FileStream fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
             {
                 int readBytes = fileStream.Read(buf, 0, buf.Length);
                 if (readBytes != NintendoLogoOffset + GameBoyAdvanceUtils.GameBoyAdvanceNintendoLogo.Length)
@@ -36,9 +19,7 @@ namespace RomManagerShared.DS
                     return false;
                 }
             }
-            return BinUtils.CompareBytes(buf, GameBoyAdvanceUtils.GameBoyAdvanceNintendoLogo);
-
-        }
+            return BinUtils.CompareBytes(buf, GameBoyAdvanceUtils.GameBoyAdvanceNintendoLogo);        }
         public static string GetGameType(char firstCharacter)
         {
             return firstCharacter switch
@@ -61,89 +42,84 @@ namespace RomManagerShared.DS
             switch (lastCharacter)
             {
                 case 'J':
-                    DSrom.Region = "Japan";
-                    DSrom.Languages.Add("JP");
+                    DSrom.AddRegion(Region.Japan);
+                    DSrom.AddLanguage(Language.Japanese);
                     break;
                 case 'P':
-                    DSrom.Region = "Europe";
+                    DSrom.AddRegion(Region.Europe);
                     break;
                 case 'F':
-                    DSrom.Region = "French";
-                    DSrom.Languages.Add("FR");
+                    DSrom.AddRegion(Region.France);
+                    DSrom.AddLanguage(Language.French);
                     break;
                 case 'S':
-                    DSrom.Region = "Spain";
-                    DSrom.Languages.Add("ES");
+                    DSrom.AddRegion(Region.Spain);
+                    DSrom.AddLanguage(Language.Spanish);
                     break;
                 case 'E':
-                    DSrom.Region = "USA";
-                    DSrom.Languages.Add("EN");
+                    DSrom.AddRegion(Region.USA);
+                    DSrom.AddLanguage(Language.English);
                     break;
                 case 'D':
-                    DSrom.Region = "Germany";
-                    DSrom.Languages.Add("DE");
+                    DSrom.AddRegion(Region.Germany);
+                    DSrom.AddLanguage(Language.German);
                     break;
                 case 'I':
-                    DSrom.Region = "Italy";
-                    DSrom.Languages.Add("IT");
+                    DSrom.AddRegion(Region.Italy);
+                    DSrom.AddLanguage(Language.Italian);
                     break;
                 case 'A':
-                    DSrom.Region = "Asian";
+                    DSrom.AddRegion(Region.Asia);
                     break;
                 case 'B':
-                    DSrom.Region = "N/A";
+                    DSrom.AddRegion(Region.Unknown);
                     break;
                 case 'C':
-                    DSrom.Region = "Chinese";
-                    DSrom.Languages.Add("CN");
+                    DSrom.AddRegion(Region.China);
+                    DSrom.AddLanguage(Language.Chinese);
                     break;
-
                 case 'K':
-                    DSrom.Region = "Korean";
-                    DSrom.Languages.Add("KR");
+                    DSrom.AddRegion(Region.Korea);
+                    DSrom.AddLanguage(Language.Korean);
                     break;
                 case 'M':
-                    DSrom.Region = "Swedish";
-                    DSrom.Languages.Add("SV");
+                    DSrom.AddRegion(Region.Sweden);
+                    DSrom.AddLanguage(Language.Swedish);
                     break;
                 case 'Q':
-                    DSrom.Region = "Danish";
-                    DSrom.Languages.Add("DA");
+                    DSrom.AddRegion(Region.Denmark);
+                    DSrom.AddLanguage(Language.Danish);
                     break;
                 case 'U':
-                    DSrom.Region = "Australia";
+                    DSrom.AddRegion(Region.Australia);
                     break;
-
                 case 'N':
-                    DSrom.Region = "Norwegia";
-                    DSrom.Languages.Add("NN");
+                    DSrom.AddRegion(Region.Norwegia);
+                    DSrom.AddLanguage(Language.Norwegian);
                     break;
                 case 'R':
-                    DSrom.Region = "Russia";
-                    DSrom.Languages.Add("RU");
+                    DSrom.AddRegion(Region.Russia);
+                    DSrom.AddLanguage(Language.Russian);
                     break;
                 case 'V':
-                    DSrom.Region = "EUR+AUS";
+                    DSrom.AddRegion(Region.Australia);
+                    DSrom.AddRegion(Region.Europe);
                     break;
                 case 'W':
                 case 'X':
                 case 'Y':
                 case 'Z':
-                    DSrom.Region = "Europe";
+                    DSrom.AddRegion(Region.Europe);
                     break;
                 case 'L':
-                    DSrom.Languages.Add("EN");
+                    DSrom.AddLanguage(Language.English);
                     break;
                 case 'T':
-                    DSrom.Region = "USA+AUS";
-                    DSrom.Languages.Add("EN");
+                    DSrom.AddRegion(Region.USA);
+                    DSrom.AddRegion(Region.Australia);
+                    DSrom.AddLanguage(Language.English);
                     break;
                 default:
                     break;
             }
-
-        }
-    }
-    
-
-}
+        }    }}

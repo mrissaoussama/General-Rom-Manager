@@ -1,32 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text.Json;
-using RomManagerShared.Utils;
-
+﻿using RomManagerShared.Utils;using System.Text.Json;
 namespace RomManagerShared.Switch.TitleInfoProviders
 {
     public class SwitchUpdateVersionProvider : IUpdateVersionProvider
     {
-        public string Source { get; set; }
-
-        private Dictionary<string, Dictionary<string, DateTime>> versionDatabase;
-        private readonly SwitchTitledbDownloader titledbDownloader;
-
-        public SwitchUpdateVersionProvider(string versionFilepath)
+        public string Source { get; set; }        private Dictionary<string, Dictionary<string, DateTime>> versionDatabase;
+        private readonly GithubDownloader titledbDownloader;        public SwitchUpdateVersionProvider(string versionFilepath)
         {
-            titledbDownloader = new SwitchTitledbDownloader();
-
-            Source = versionFilepath;
+            titledbDownloader = new GithubDownloader();            Source = versionFilepath;
             if (string.IsNullOrEmpty(versionFilepath))
             {
                 FileUtils.Log("switch version filepath is null");
                 return;
-            }
-
-        }
-
-        public async Task LoadVersionDatabaseAsync()
+            }        }        public async Task LoadVersionDatabaseAsync()
         {
             if (versionDatabase is not null)
                 return;
@@ -45,9 +30,7 @@ namespace RomManagerShared.Switch.TitleInfoProviders
             {
                 FileUtils.Log($"Error loading versions.json: {ex.Message}");
                 throw;
-            }
-
-            versionDatabase ??= [];
+            }            versionDatabase ??= [];
         }
         public async Task<string> GetLatestVersion(string titleId)
         {
@@ -57,9 +40,7 @@ namespace RomManagerShared.Switch.TitleInfoProviders
             commonTitleId = commonTitleId.ToLower();
             var titleidexists = versionDatabase.TryGetValue(commonTitleId, out var versions);
             if (titleidexists)
-            {
-
-                foreach (var version in versions)
+            {                foreach (var version in versions)
                 {
                     if (string.Compare(version.Key.ToString(), latestVersion) > 0)
                     {
@@ -68,7 +49,5 @@ namespace RomManagerShared.Switch.TitleInfoProviders
                 }
             }
             return latestVersion; // Return "-1" if title ID not found
-        }
-
-    }
+        }    }
 }

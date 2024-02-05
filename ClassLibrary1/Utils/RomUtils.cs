@@ -1,31 +1,23 @@
 ﻿using RomManagerShared.Base;
-using RomManagerShared.ThreeDS.TitleInfoProviders;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Intrinsics.Arm;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace RomManagerShared.Utils
 {
     public class RomUtils
     {
-        public static void CopyIRomProperties(Rom source, Rom destination)
+        static HashSet<string> processedPaths = [];
+        public static void CopyRomProperties(Rom source, Rom destination)
         {
             // Set values from source to destination
             destination.TitleID = source.TitleID;
             destination.Version = source.Version;
-            destination.Region = source.Region;
+            destination.Regions = source.Regions;
             destination.Icon = source.Icon;
-            destination.Rating = source.Rating;
+            destination.Ratings = source.Ratings;
             destination.Publisher = source.Publisher;
-            destination.RatingContent = source.RatingContent;
             destination.Genres = source.Genres;
             destination.Languages = source.Languages;
             destination.Developer = source.Developer;
             destination.Size = source.Size;
-            destination.Description = source.Description;
+            destination.Descriptions = source.Descriptions;
             destination.MinimumFirmware = source.MinimumFirmware;
             destination.IsDemo = source.IsDemo;
             destination.NumberOfPlayers = source.NumberOfPlayers;
@@ -33,10 +25,10 @@ namespace RomManagerShared.Utils
             destination.Banner = source.Banner;
             destination.Images = source.Images;
             destination.Path = source.Path;
-            destination.TitleName = source.Description;
+            destination.Titles = source.Titles;
         }
 
-        public static void OrganizeRomsInFolders(List<Rom> romList)
+        public static void OrganizeRomsInFolders(HashSet<Rom> romList, HashSet<HashSet<Rom>> groupedRomList, bool organizeGamesOnly = false)
         {
             if (romList == null || romList.Count == 0)
             {
@@ -44,23 +36,35 @@ namespace RomManagerShared.Utils
                 return;
             }
 
-            // Find the first IGame instance in the list
-            Game firstGame = romList.OfType<Game>().FirstOrDefault();
+            Rom? firstRom = romList.OfType<Game>().FirstOrDefault();
 
-            if (firstGame == null)
+            if (firstRom == null)
             {
-                Console.WriteLine("No IGame instance found in the list.");
-                return;
+                if (organizeGamesOnly == true)
+                {
+                    Console.WriteLine("No Game instance found in the list.");
+                    return;
+                }
+                else
+                {
+                    firstRom = romList.First();
+                }
             }
 
-            // Create a folder named after the first IGame's title name
-            string folderName = firstGame.TitleName;
+            string? folderName = string.Empty;
+            if (!romList.OfType<Game>().Any())
+            {
+                folderName = firstRom.TitleID;
+
+            }
+            else { folderName = firstRom.Titles?.FirstOrDefault()?.Value ?? firstRom.TitleID; }
             var invalidChars = Path.GetInvalidFileNameChars();
-            folderName = new string(folderName
+            string cleanedFolderName = new string(folderName
                 .Select(c => invalidChars.Contains(c) ? ' ' : c)
                 .ToArray());
-            string folderPath = Path.GetDirectoryName(firstGame.Path);
-            string folderFullPath = Path.Combine(folderPath, folderName);
+
+            string folderPath = Path.GetDirectoryName(firstRom.Path);
+            string folderFullPath = Path.Combine(folderPath, cleanedFolderName);
 
             // Check if the last folder and the one before it have the same name
             string[] folderFullPathnames = folderFullPath.Split(Path.DirectorySeparatorChar);
@@ -68,23 +72,24 @@ namespace RomManagerShared.Utils
             {
                 folderFullPath = folderPath;
             }
-            else
-            {
-                Directory.CreateDirectory(folderFullPath);
-            }
-
-            HashSet<string> processedPaths = [];
 
             foreach (var rom in romList)
             {
+                if (rom == null || string.IsNullOrEmpty(rom.Path))
+                {
+                    Console.WriteLine("Invalid ROM found. Skipping.");
+                    continue;
+                }
+
                 string originalFileName = Path.GetFileName(rom.Path);
                 string destinationPath = Path.Combine(folderFullPath, originalFileName);
 
-                if (processedPaths.Contains(destinationPath) || destinationPath == rom.Path)
+                if (processedPaths.Contains(rom.Path) || destinationPath.Equals(rom.Path, StringComparison.OrdinalIgnoreCase))
                 {
-                    // Skip processing duplicate paths
+                    FileUtils.Log("skipped " + rom.Path);
                     continue;
                 }
+                Directory.CreateDirectory(folderFullPath);
 
                 // Check if the destination folder is the same as the source folder
                 if (!destinationPath.Equals(rom.Path, StringComparison.OrdinalIgnoreCase))
@@ -94,30 +99,48 @@ namespace RomManagerShared.Utils
                         int count = 1;
                         string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(originalFileName);
                         string fileExtension = Path.GetExtension(originalFileName);
-
                         while (File.Exists(destinationPath))
                         {
                             originalFileName = $"{fileNameWithoutExtension} ({count}){fileExtension}";
                             destinationPath = Path.Combine(folderFullPath, originalFileName);
                             count++;
                         }
-
                         Console.WriteLine($"File '{originalFileName}' already exists in the folder. Renaming to '{originalFileName}'.");
                     }
 
-                    File.Move(rom.Path, destinationPath);
-                    rom.Path = destinationPath;
+                    try
+                    {
+                        File.Move(rom.Path, destinationPath);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error moving file '{originalFileName}': {ex.Message}");
+                        continue;
+                    }
+
+                    // Mark the path as processed
+                    processedPaths.Add(rom.Path);
+
+                    // Update paths in groupedRomList
+                    UpdateGroupedRomPaths(groupedRomList, rom.Path, destinationPath);
 
                     Console.WriteLine($"Moved '{originalFileName}' to '{folderName}' folder.");
                 }
-
-                // Mark the path as processed
-                processedPaths.Add(destinationPath);
             }
         }
+        private static void UpdateGroupedRomPaths(HashSet<HashSet<Rom>> groupedRomList, string sourcePath, string destinationPath)
+        {
+            var list = groupedRomList.ToList();
 
-    }
-
-
-
-}
+            for (int i = 0; i < list.Count; i++)
+            {
+                for (int j = 0; j < list[i].Count; j++)
+                {
+                    var group = list[i].ToList();
+                    if (group[j].Path == sourcePath)
+                    {
+                        group[j].Path = destinationPath;
+                    }
+                }
+            }
+        }    }}

@@ -1,11 +1,7 @@
-﻿using System.Threading.Tasks;
-
-namespace RomManagerShared.Base
+﻿namespace RomManagerShared.Base
 {
     public interface IRomParser
     {
         HashSet<string> Extensions { get; set; }
-        Task<List<Rom>> ProcessFile(string path);
-
-    }
+        Task<HashSet<Rom>> ProcessFile(string path);    }
 }

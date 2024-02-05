@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace DotNet3dsToolkit.Infrastructure
+﻿namespace DotNet3dsToolkit.Infrastructure
 {
     public static class PathUtilities
     {
@@ -22,9 +16,7 @@ namespace DotNet3dsToolkit.Infrastructure
                 otherPathString += "/";
             }
             var absolutePath = new Uri("file://" + targetPath.Replace('\\', '/'));
-            var otherPath = new Uri("file://" + otherPathString);
-
-            return Uri.UnescapeDataString(otherPath.MakeRelativeUri(absolutePath).OriginalString);
+            var otherPath = new Uri("file://" + otherPathString);            return Uri.UnescapeDataString(otherPath.MakeRelativeUri(absolutePath).OriginalString);
         }
     }
 }

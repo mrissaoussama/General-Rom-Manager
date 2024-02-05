@@ -1,14 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using RomManagerShared.Base;
-
-namespace RomManagerShared.ThreeDS
+﻿using RomManagerShared.Base;namespace RomManagerShared.ThreeDS
 {
     public interface IThreeDSRom { }
-    public class ThreeDSGame:Game, IThreeDSRom
+    public class ThreeDSGame : Game, IThreeDSRom
     {
         public ThreeDSGame() : base()
         {

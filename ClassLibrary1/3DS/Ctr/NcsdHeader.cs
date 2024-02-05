@@ -1,11 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace DotNet3dsToolkit.Ctr
-{
-
-    /// <summary>
+﻿using System.Text;namespace DotNet3dsToolkit.Ctr
+{    /// <summary>
     /// A NCSD Header
     /// </summary>
     /// <remarks>
@@ -16,29 +10,19 @@ namespace DotNet3dsToolkit.Ctr
         public NcsdHeader()
         {
             Magic = "NCSD";
-        }
-
-        public NcsdHeader(byte[] header)
+        }        public NcsdHeader(byte[] header)
         {
             if (header == null)
             {
                 throw new ArgumentNullException(nameof(header));
-            }
-
-            if (header.Length < 0x1500)
+            }            if (header.Length < 0x1500)
             {
                 throw new ArgumentException(Properties.Resources.NcsdHeader_ConstructorDataTooSmall, nameof(header));
-            }
-
-            Signature = new byte[0x100];
-            Array.Copy(header, 0, Signature, 0, 0x100);
-
-            Magic = Encoding.ASCII.GetString(header, 0x100, 4);
+            }            Signature = new byte[0x100];
+            Array.Copy(header, 0, Signature, 0, 0x100);            Magic = Encoding.ASCII.GetString(header, 0x100, 4);
             ImageSize = BitConverter.ToInt32(header, 0x104);
             MediaId = BitConverter.ToInt64(header, 0x108);
-            PartitionsFsType = BitConverter.ToInt64(header, 0x110);
-
-            var partitions = new List<NcsdPartitionInfo>();
+            PartitionsFsType = BitConverter.ToInt64(header, 0x110);            var partitions = new List<NcsdPartitionInfo>();
             for (int i = 0; i < 8; i++)
             {
                 partitions.Add(new NcsdPartitionInfo
@@ -49,36 +33,23 @@ namespace DotNet3dsToolkit.Ctr
                 });
             }
             Partitions = [.. partitions];
-        }
-
-        /// <summary>
+        }        /// <summary>
         /// RSA-2048 SHA-256 signature of the NCSD header
         /// </summary>
-        public byte[] Signature { get; set; } // Offset: 0, Size: 0x100
-
-        /// <summary>
+        public byte[] Signature { get; set; } // Offset: 0, Size: 0x100        /// <summary>
         /// Magic Number 'NCSD'
         /// </summary>
-        public string Magic { get; set; } // Offset: 0x100, Size: 0x4
-
-        /// <summary>
+        public string Magic { get; set; } // Offset: 0x100, Size: 0x4        /// <summary>
         /// Size of the NCSD image, in media units (1 media unit = 0x200 bytes)
         /// </summary>
         public int ImageSize { get; set; } // Offset: 0x104, Size: 0x4
-
-        public long MediaId { get; set; } // Offset: 0x108, Size: 0x8
-
-        /// <summary>
+        public long MediaId { get; set; } // Offset: 0x108, Size: 0x8        /// <summary>
         /// Partitions FS type (0=None, 1=Normal, 3=FIRM, 4=AGB_FIRM save)
         /// </summary>
         public long PartitionsFsType { get; set; } // Offset: 0x110, Size: 0x8
-
-        // Crypt type offset 0x118, size of each entry: 1 byte
-        // Offset and length in media units offset: 0x120, length 4 bytes each
-
-        public NcsdPartitionInfo[] Partitions { get; set; }
-
-        public virtual byte[] ToByteArray()
+                                                   // Crypt type offset 0x118, size of each entry: 1 byte
+                                                   // Offset and length in media units offset: 0x120, length 4 bytes each
+        public NcsdPartitionInfo[] Partitions { get; set; }        public virtual byte[] ToByteArray()
         {
             var buffer = new byte[0x200];
             Signature.CopyTo(buffer, 0);

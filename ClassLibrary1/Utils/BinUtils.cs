@@ -1,7 +1,5 @@
 ﻿using System.Security.Cryptography;
-using System.Text;
-
-namespace RomManagerShared.Utils
+using System.Text;namespace RomManagerShared.Utils
 {
     public static class BinUtils
     {
@@ -26,47 +24,40 @@ namespace RomManagerShared.Utils
         public static string ByteToString(byte[] buff)
         {
             return BitConverter.ToString(buff);
-        }
-
-        public static string ByteToHex(byte value)
+        }        public static string ByteToHex(byte value)
         {
             return value.ToString("X2");
         }
-       /// <summary>
-       /// returns true if 2 byte arrays with equal length have the same values
-       /// </summary>
-       /// <param name="a"></param>
-       /// <param name="b"></param>
-       /// <returns></returns>
+        /// <summary>
+        /// returns true if 2 byte arrays with equal length have the same values
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
         public static bool CompareBytes(byte[] a, byte[] b)
         {
             if (a.Length != b.Length)
             {
                 return false;
-            }
-
-            for (int i = 0; i < a.Length; i++)
+            }            for (int i = 0; i < a.Length; i++)
             {
                 if (a[i] != b[i])
                 {
                     return false;
                 }
-            }
-
-            return true;
+            }            return true;
         }
-//        public static void SaveThumbnail(SwitchGame nspMetaData, string filePath)
-//        {
-//            using (Image thumbnailImage = Base64StringToImage(nspMetaData.Thumbnail))
-//            {
-//                var thumbnailPath = filePath + ".jpg";
-//                Console.WriteLine($"Saved thumbnail to: {thumbnailPath}!");
-//#pragma warning disable CA1416 // Validate platform compatibility
-//                thumbnailImage.Save(thumbnailPath);
-//#pragma warning restore CA1416 // Validate platform compatibility
-//            }
-//        }
-
+        //        public static void SaveThumbnail(SwitchGame nspMetaData, string filePath)
+        //        {
+        //            using (Image thumbnailImage = Base64StringToImage(nspMetaData.Thumbnail))
+        //            {
+        //                var thumbnailPath = filePath + ".jpg";
+        //                Console.WriteLine($"Saved thumbnail to: {thumbnailPath}!");
+        //#pragma warning disable CA1416 // Validate platform compatibility
+        //                thumbnailImage.Save(thumbnailPath);
+        //#pragma warning restore CA1416 // Validate platform compatibility
+        //            }
+        //        }
         //        public static Image Base64StringToImage(string input)
         //        {
         //            var bytes = Convert.FromBase64String(input);
@@ -89,39 +80,27 @@ namespace RomManagerShared.Utils
         }
         public static byte[] ReadBytes(string filePath, int offset, int length)
         {
-            byte[] bytes;
-
-            using (FileStream fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+            byte[] bytes;            using (FileStream fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
             {
                 bytes = new byte[length];
                 fileStream.Seek(offset, SeekOrigin.Begin);
                 fileStream.Read(bytes, 0, length);
-            }
-
-            return bytes;
+            }            return bytes;
         }
         public static string ReadUnicodeString(string filePath, int offset, int length)
         {
-            byte[] unicodeBytes;
-
-            using (FileStream fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+            byte[] unicodeBytes;            using (FileStream fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
             {
                 unicodeBytes = new byte[length * 2];
                 fileStream.Seek(offset, SeekOrigin.Begin);
                 fileStream.Read(unicodeBytes, 0, length * 2);
-            }
-
-            // Assuming little-endian encoding for Unicode
-            string unicodeString = Encoding.Unicode.GetString(unicodeBytes);
-
-            // Remove any null characters at the end of the string
+            }            // Assuming little-endian encoding for Unicode
+            string unicodeString = Encoding.Unicode.GetString(unicodeBytes);            // Remove any null characters at the end of the string
             int nullCharIndex = unicodeString.IndexOf('\0');
             if (nullCharIndex != -1)
             {
                 unicodeString = unicodeString.Substring(0, nullCharIndex);
-            }
-
-            return unicodeString;
+            }            return unicodeString;
         }
     }
 }

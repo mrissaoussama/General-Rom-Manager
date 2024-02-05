@@ -1,64 +1,54 @@
 ﻿using RomManagerShared.Base;
 using RomManagerShared.Utils;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Param_SFO;
-using System.Security.Cryptography;
 namespace RomManagerShared.GameBoyAdvance.Parsers
 {
     public class GameBoyAdvanceRomParser : IRomParser
     {
         public GameBoyAdvanceRomParser()
         {
-            Extensions = ["gba","agb"] ;
+            Extensions = ["gba", "agb"];
         }
         public HashSet<string> Extensions { get; set; }
-        
-            public Task<List<Rom>> ProcessFile(string path)
+        public Task<HashSet<Rom>> ProcessFile(string path)
         {
             GameBoyAdvanceGame GameBoyAdvancerom = new();
             var metadatareader = new GameBoyAdvanceMetadataReader();
-            var metadata=metadatareader.GetMetadata(path);
+            var metadata = metadatareader.GetMetadata(path);
             GameBoyAdvancerom.Version = metadata.VersionCode;
-            GameBoyAdvancerom.TitleName = metadata.Title;
+            GameBoyAdvancerom.AddTitleName(metadata.Title);
             GameBoyAdvancerom.TitleID = metadata.GameCode;
             char lastCharacter = metadata.GameCode[3];
             switch (lastCharacter)
             {
                 case 'J':
-                    { 
-                    GameBoyAdvancerom.Region="Japan";
-                    GameBoyAdvancerom.Languages.Add("JP"); break;
-                    }
+                    GameBoyAdvancerom.AddRegion(Region.Japan);
+                    GameBoyAdvancerom.AddLanguage(Language.Japanese);
+                    break;
                 case 'P':
-                    GameBoyAdvancerom.Region = "Europe";
-                     break; 
+                    GameBoyAdvancerom.AddRegion(Region.Europe);
+                    break;
                 case 'F':
-                    GameBoyAdvancerom.Region = "French";
-                    GameBoyAdvancerom.Languages.Add("FR"); break;
+                    GameBoyAdvancerom.AddRegion(Region.France);
+                    GameBoyAdvancerom.AddLanguage(Language.French);
+                    break;
                 case 'S':
-                    GameBoyAdvancerom.Region = "Spain";
-                    GameBoyAdvancerom.Languages.Add("ES"); break;
+                    GameBoyAdvancerom.AddRegion(Region.Spain);
+                    GameBoyAdvancerom.AddLanguage(Language.Spanish);
+                    break;
                 case 'E':
-                    GameBoyAdvancerom.Region = "USA";
-                    GameBoyAdvancerom.Languages.Add("EN"); break;
+                    GameBoyAdvancerom.AddRegion(Region.USA);
+                    GameBoyAdvancerom.AddLanguage(Language.English);
+                    break;
                 case 'D':
-                   GameBoyAdvancerom.Region = "Germany";
-                    GameBoyAdvancerom.Languages.Add("DE"); break;
+                    GameBoyAdvancerom.AddRegion(Region.Germany);
+                    GameBoyAdvancerom.AddLanguage(Language.German);
+                    break;
                 case 'I':
-                    GameBoyAdvancerom.Region = "Italy";
-                    GameBoyAdvancerom.Languages.Add("IT"); break;
-              
-            }        
-            GameBoyAdvancerom.Size = FileUtils.GetFileSize(path);
-   
-            Console.WriteLine(GameBoyAdvancerom.ToString());
-            List<Rom> list = [GameBoyAdvancerom];
-     
-            return Task.FromResult(list);
+                    GameBoyAdvancerom.AddRegion(Region.Italy);
+                    GameBoyAdvancerom.AddLanguage(Language.Italian);
+                    break;
+            }            GameBoyAdvancerom.Size = FileUtils.GetFileSize(path);            Console.WriteLine(GameBoyAdvancerom.ToString());
+            HashSet<Rom> list = [GameBoyAdvancerom];            return Task.FromResult(list);
         }
     }
 }

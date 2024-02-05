@@ -1,13 +1,23 @@
-{//maybe think of a better structure
+{ //maybe think of a better structure, ex: not having to repeat paths
   "PluginsPath": "Plugins",
-
+  "SqliteDBPath": "RomDB.sqlite",
   "ErrorLogPath": "ErrorLog.txt",
   "Switch": {
     "TitleDB": {
-      "TitledbUrl": "https://github.com/blawar/titledb/raw/master/US.en.json",
+      "TitleDBUrl": "https://github.com/blawar/titledb/raw/master/",
       "VersionsUrl": "https://github.com/blawar/titledb/raw/master/versions.json",
-      "TitledbSavePath": "Switch\\TitleDB\\US.en.json",
-      "VersionsSavePath": "Switch\\TitleDB\\versions.json"
+      "RegionFiles": [
+        "US.en.json",
+        "FR.fr.json",
+        "GB.en.json",
+        "JP.ja.json"
+      ],
+
+      "TitleDBSavePath": "Switch\\TitleDB\\",
+      "VersionsSavePath": "Switch\\TitleDB\\versions.json",
+      "GlobalTitleDBUrl": "https://tinfoil.media/repo/db/titles.json",
+      "GlobalTitleDBPath": "titles.json"
+
     }
   },
   "ThreeDS": {
@@ -23,7 +33,7 @@
       "SavePath": "ThreeDS\\TitleDB\\"
     }
   },
-  "Wii" :{
+  "Wii": {
     "GameTDB": {
       "Url": "https://www.gametdb.com/wiitdb.zip",
       "Path": "Wii\\GameTDB\\wiitdb.xml"

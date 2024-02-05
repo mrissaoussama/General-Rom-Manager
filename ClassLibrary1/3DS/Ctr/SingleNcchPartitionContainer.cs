@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace DotNet3dsToolkit.Ctr
+﻿namespace DotNet3dsToolkit.Ctr
 {
     public class SingleNcchPartitionContainer : INcchPartitionContainer, IDisposable
     {
@@ -11,17 +7,9 @@ namespace DotNet3dsToolkit.Ctr
             if (partitionIndex < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(partitionIndex), "Partition index must be 0 or greater");
-            }
-
-            Partitions = new NcchPartition[partitionIndex + 1];
+            }            Partitions = new NcchPartition[partitionIndex + 1];
             Partitions[partitionIndex] = partition ?? throw new ArgumentNullException(nameof(partition));
-        }
-
-        public NcchPartition[] Partitions { get; }
-
-        public bool IsDlcContainer => false;
-
-        public void Dispose()
+        }        public NcchPartition[] Partitions { get; }        public bool IsDlcContainer => false;        public void Dispose()
         {
             if (Partitions != null)
             {

@@ -1,11 +1,4 @@
 ﻿using SkyEditor.IO.Binary;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace DotNet3dsToolkit.Infrastructure
 {
     /// <summary>
@@ -15,14 +8,12 @@ namespace DotNet3dsToolkit.Infrastructure
     {
         public FileDeletingBinaryFile(string filename) : base(filename)
         {
-        }
-
-        public override void Dispose()
+        }        public override void Dispose()
         {
             base.Dispose();
             if (File.Exists(Filename))
             {
-                File.Delete(Filename);             
+                File.Delete(Filename);
             }
         }
     }

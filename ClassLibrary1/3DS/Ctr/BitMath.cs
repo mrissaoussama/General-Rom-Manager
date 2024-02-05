@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace DotNet3dsToolkit
+﻿namespace DotNet3dsToolkit
 {
     public static class BitMath
     {
@@ -10,9 +6,7 @@ namespace DotNet3dsToolkit
         {
             int mask = ~(alignment - 1);
             return (offset + (alignment - 1)) & mask;
-        }
-
-        public static long Align(long offset, int alignment)
+        }        public static long Align(long offset, int alignment)
         {
             long mask = ~(alignment - 1);
             return (offset + (alignment - 1)) & mask;

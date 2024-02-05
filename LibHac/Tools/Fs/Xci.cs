@@ -13,7 +13,7 @@ public class Xci
 
     internal IStorage BaseStorage { get; }
     private object InitLocker { get; } = new object();
-    private XciPartition RootPartition { get; set; }
+    public XciPartition RootPartition { get; set; }
 
     public Xci(KeySet keySet, IStorage storage)
     {

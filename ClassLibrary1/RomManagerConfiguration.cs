@@ -1,33 +1,40 @@
 ﻿using Microsoft.Extensions.Configuration;
-using System;
-using Microsoft.Extensions.Configuration.Json;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace RomManagerShared
 {
     public static class RomManagerConfiguration
     {
-        public static IConfigurationRoot Configuration { get; set; }
-
-        static public bool ConfigurationLoaded { get; set; }
+        public static IConfigurationRoot Configuration { get; set; }        static public bool ConfigurationLoaded { get; set; }
+        static string? BaseFolder { get; set; }
         public static void Load(string jsonConfigPath)
         {
             var builder = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile(jsonConfigPath, optional: false);
             Configuration = builder.Build();
+            BaseFolder = GetBaseFolderPath();
+            if (!string.IsNullOrEmpty(BaseFolder))
+                Directory.CreateDirectory(BaseFolder);
+            else BaseFolder = string.Empty;
+        }
+
+        public static string? GetBaseFolderPath()
+        {
+            string appDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            return Path.Combine(appDataFolder, "GeneralRomManager\\");
+        }
+        public static string? GetSqliteDBPath()
+        {
+            
+            return Path.Combine(BaseFolder, Configuration.GetSection("SqliteDBPath").Value);
         }
 
         public static string? GetSwitchTitleDBPath()
         {
-            return Configuration.GetSection("Switch:TitleDB:TitledbSavePath").Value;
+            return BaseFolder + Configuration.GetSection("Switch:TitleDB:TitleDBSavePath").Value;
         }
         public static string? GetSwitchTitleDBUrl()
         {
-            return Configuration.GetSection("Switch:TitleDB:TitledbUrl").Value;
+            return Configuration.GetSection("Switch:TitleDB:TitleDBUrl").Value;
         }
         public static string? GetSwitchVersionsUrl()
         {
@@ -35,60 +42,55 @@ namespace RomManagerShared
         }
         public static string? GetSwitchVersionsPath()
         {
-            return Configuration.GetSection("Switch:TitleDB:VersionsSavePath").Value;
-        }
-
-        public static string? GetThreeDSTitleDBPath()
+            return BaseFolder + Configuration.GetSection("Switch:TitleDB:VersionsSavePath").Value;
+        }        public static string? GetThreeDSTitleDBPath()
         {
-            return Configuration.GetSection("ThreeDS:TitleDB:SavePath").Value;
+            return BaseFolder + Configuration.GetSection("ThreeDS:TitleDB:SavePath").Value;
         }
         public static string? GetThreeDSTitleDBBaseUrl()
         {
             return Configuration.GetSection("ThreeDS:TitleDB:BaseUrl").Value;
         }
         public static string[]? GetThreeDSTitleDBRegionFiles()
-        {
-
-            var regionFilesSection = Configuration.GetSection("ThreeDS:TitleDB:RegionFiles");
-
-            var regionFiles = regionFilesSection.GetChildren().Select(section => section.Value).ToArray();
-
-            return regionFiles!;
+        {            var regionFilesSection = Configuration.GetSection("ThreeDS:TitleDB:RegionFiles");            var regionFiles = regionFilesSection.GetChildren().Select(section => section.Value).ToArray();            return regionFiles!;
         }
-
-        public static string GetErrorLogPath()
+        public static string[]? GetSwitchTitleDBRegionFiles()
+        {            var regionFilesSection = Configuration.GetSection("Switch:TitleDB:RegionFiles");            var regionFiles = regionFilesSection.GetChildren().Select(section => section.Value).ToArray();            return regionFiles!;
+        }        public static string GetErrorLogPath()
         {
-            var path= Configuration.GetSection("ErrorLogPath").Value;
+            var path = BaseFolder + Configuration.GetSection("ErrorLogPath").Value;
             if (path is null)
                 return "ErrorLog.txt";
-            return path;
-
-        }
-
-        public static string GetPluginsPath()
+            return path;        }        public static string GetPluginsPath()
         {
-            var path = Configuration.GetSection("PluginsPath").Value;
+            var path = BaseFolder + Configuration.GetSection("PluginsPath").Value;
             if (path is null)
                 return "Plugins";
             return path;
         }
         public static string? GetWiiGameTDBPath()
         {
-            return Configuration.GetSection("Wii:GameTDB:Path").Value;
-        }
-
-        public static string? GetWiiGameTDBUrl()
+            return BaseFolder + Configuration.GetSection("Wii:GameTDB:Path").Value;
+        }        public static string? GetWiiGameTDBUrl()
         {
             return Configuration.GetSection("Wii:GameTDB:Url").Value;
-        }
-
-        public static string? GetWiiWadCommonKeyPath()
+        }        public static string? GetWiiWadCommonKeyPath()
         {
-            return Configuration.GetSection("Wii:Wad:CommonKeyPath").Value;
+            return BaseFolder + Configuration.GetSection("Wii:Wad:CommonKeyPath").Value;
         }
         public static string? GetPS4ToolsPath()
         {
-            return Configuration.GetSection("PS4:PS4ToolsPath").Value;
+            return BaseFolder + Configuration.GetSection("PS4:PS4ToolsPath").Value;
+        }
+
+        internal static string GetSwitchGlobalTitleDBUrl()
+        {
+            return Configuration.GetSection("Switch:TitleDB:GlobalTitleDBUrl").Value;
+        }
+
+        internal static string GetSwitchGlobalTitleDBPath()
+        {
+            return Configuration.GetSection("Switch:TitleDB:GlobalTitleDBPath").Value;
         }
     }
 }

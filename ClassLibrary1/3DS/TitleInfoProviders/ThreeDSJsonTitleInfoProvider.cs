@@ -1,29 +1,17 @@
 ﻿using RomManagerShared.Base;
 using RomManagerShared.Utils;
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
-using System.Runtime.Intrinsics.Arm;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
-
 namespace RomManagerShared.ThreeDS.TitleInfoProviders
 {
     public class ThreeDSJsonTitleInfoProvider : ITitleInfoProvider
     {
         public string Source { get; set; }
         public Dictionary<string, JsonElement> TitlesDatabase { get; set; }
-        private readonly ThreeDSTitledbDownloader titledbDownloader;
-
-        public ThreeDSJsonTitleInfoProvider(string jsonFilesDirectory)
+        private readonly ThreeDSTitleDBDownloader titledbDownloader;        public ThreeDSJsonTitleInfoProvider(string jsonFilesDirectory)
         {
-            titledbDownloader = new ThreeDSTitledbDownloader();
+            titledbDownloader = new ThreeDSTitleDBDownloader();
             Source = jsonFilesDirectory;
-        }
-
-        public async Task LoadTitleDatabaseAsync()
+        }        public async Task LoadTitleDatabaseAsync()
         {
             if (TitlesDatabase is not null)
                 return;
@@ -34,23 +22,17 @@ namespace RomManagerShared.ThreeDS.TitleInfoProviders
             var regionfiles = RomManagerConfiguration.GetThreeDSTitleDBRegionFiles();
             if (regionfiles is null || regionfiles.Length == 0)
             {
-                FileUtils.Log("Region files unavailable");
+                FileUtils.Log("3ds Region files unavailable");
                 return;
             }
             if (!File.Exists(Source))
                 await titledbDownloader.DownloadRegionFiles();
-            TitlesDatabase = [];
-
-            foreach (var regionFile in regionfiles)
+            TitlesDatabase = [];            foreach (var regionFile in regionfiles)
             {
-                string regionFilePath = Path.Combine(Source, regionFile);
-
-                try
+                string regionFilePath = Path.Combine(Source, regionFile);                try
                 {
                     var jsonContent = await File.ReadAllTextAsync(regionFilePath);
-                    var regionTitles = JsonSerializer.Deserialize<List<JsonElement>>(jsonContent);
-
-                    foreach (var title in regionTitles)
+                    var regionTitles = JsonSerializer.Deserialize<List<JsonElement>>(jsonContent);                    foreach (var title in regionTitles)
                     {
                         // Assuming "TitleID" is unique, you can use it as the key
                         var titleId = title.GetProperty("TitleID").GetString();
@@ -63,9 +45,7 @@ namespace RomManagerShared.ThreeDS.TitleInfoProviders
                     Console.WriteLine($"Error deserializing JSON from file '{regionFilePath}': {ex.Message}");
                 }
             }
-        }
-
-        public async Task<Rom> GetTitleInfo(Rom rom)
+        }        public async Task<Rom> GetTitleInfo(Rom rom)
         {
             if (TitlesDatabase.TryGetValue(rom.TitleID, out var titleInfoElement))
             {
@@ -78,65 +58,34 @@ namespace RomManagerShared.ThreeDS.TitleInfoProviders
                     ProductCode = titleInfoElement.GetProperty("Product Code").GetString(),
                     Publisher = titleInfoElement.GetProperty("Publisher").GetString(),
                     Size = ParseSize(titleInfoElement.GetProperty("Size").GetString())
-                };
-
-                rom.TitleName = titleInfoDto.Name;
-                if(rom.Version==null ||rom.Version=="0"||int.Parse(rom.Version)<0)
-                rom.Version = titleInfoDto.Version;
+                };                rom.AddTitleName(titleInfoDto.Name);
+                if (rom.Version == null || rom.Version == "0" || int.Parse(rom.Version) < 0)
+                    rom.Version = titleInfoDto.Version;
                 rom.Publisher = titleInfoDto.Publisher;
                 rom.ProductCode = titleInfoDto.ProductCode;
                 rom.Size = titleInfoDto.Size;
             }
-                if (rom.TitleID.Contains("0004008C"))
-                {
-                    string gameName = GetRelatedGameRomName(rom.TitleID);
-                    if (rom is ThreeDSDLC)
-                    {
-                        if (!string.IsNullOrEmpty(gameName))
-                            rom.TitleName = gameName + " DLC";
-                        else
-                            rom.TitleName = rom.TitleID + " " + "DLC";
-                    }
-                    else if (rom is ThreeDSUpdate)
-                    {
-                        if (!string.IsNullOrEmpty(gameName))
-                            rom.TitleName = gameName + " Update";
-                        else
-                            rom.TitleName = rom.TitleID + " " + "Update";
-                    }
-                }
-                return rom;
-            
-        }
 
-        private static string NormalizeVersion(string version)
+            return rom;        }        private static string NormalizeVersion(string version)
         {
             return string.Equals(version, "N/A", StringComparison.OrdinalIgnoreCase) ? "0" : version;
-        }
-
-        private static long ParseSize(string size)
+        }        private static long ParseSize(string size)
         {
             if (string.Equals(size, "0B [N/A]", StringComparison.OrdinalIgnoreCase))
             {
                 return 0;
-            }
-
-            string sizeInBytes = size.Split(' ')[0];
+            }            string sizeInBytes = size.Split(' ')[0];
             return long.TryParse(sizeInBytes, out var sizeValue) ? sizeValue : 0;
-        }
-
-        private string GetRelatedGameRomName(string titleID)
+        }        private string GetRelatedGameRomName(string titleID)
         {
-            titleID=titleID.Replace("0004008C", "00040000");
+            titleID = titleID.Replace("0004008C", "00040000");
             if (TitlesDatabase.TryGetValue(titleID, out var titleInfoElement))
             {
                 var name = titleInfoElement.GetProperty("Name").GetString();
                 return name ?? "";
             }
             return "";
-        }
-
-        public class ThreeDSJsonDTO
+        }        public class ThreeDSJsonDTO
         {
             public string Name { get; set; }
             public string UID { get; set; }

@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO;
-using RomManagerShared.Utils;
+﻿using RomManagerShared.Utils;
 namespace RomManagerShared.GameBoyAdvance
 {
     public static class GameBoyAdvanceUtils
@@ -21,21 +15,14 @@ namespace RomManagerShared.GameBoyAdvance
             0x78, 0x00, 0x90, 0xCB, 0x88, 0x11, 0x3A, 0x94, 0x65, 0xC0, 0x7C, 0x63, 0x87, 0xF0, 0x3C, 0xAF,
             0xD6, 0x25, 0xE4, 0x8B, 0x38, 0x0A, 0xAC, 0x72, 0x21, 0xD4, 0xF8, 0x07
     };
-        private const int NintendoLogoOffset = 4; 
-
-        public static bool IsGameBoyAdvanceRom(string filePath,bool checkExtensionOnly=false)
+        private const int NintendoLogoOffset = 4;
+        public static bool IsGameBoyAdvanceRom(string filePath, bool checkExtensionOnly = false)
         {
             string fileName = Path.GetFileName(filePath);
-            string extension = fileName.Substring(fileName.LastIndexOf(".") + 1);
-
-            if (!Extensions.Contains(extension) && checkExtensionOnly==true)
+            string extension = fileName.Substring(fileName.LastIndexOf(".") + 1);            if (!Extensions.Contains(extension) && checkExtensionOnly == true)
             {
                 return false;
-            }
-
-            byte[] buf = new byte[NintendoLogoOffset + GameBoyAdvanceNintendoLogo.Length];
-
-            using (FileStream fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+            }            byte[] buf = new byte[NintendoLogoOffset + GameBoyAdvanceNintendoLogo.Length];            using (FileStream fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
             {
                 int readBytes = fileStream.Read(buf, 0, buf.Length);
                 if (readBytes != NintendoLogoOffset + GameBoyAdvanceNintendoLogo.Length)
@@ -43,11 +30,5 @@ namespace RomManagerShared.GameBoyAdvance
                     return false;
                 }
             }
-            return BinUtils.CompareBytes(buf, GameBoyAdvanceNintendoLogo);
-
-        }
-
-        private static readonly string[] Extensions = ["gba","agb"];
-    }
-
-}
+            return BinUtils.CompareBytes(buf, GameBoyAdvanceNintendoLogo);        }        private static readonly string[] Extensions = ["gba", "agb"];
+    }}

@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using RomManagerShared.Base;
-
-namespace RomManagerShared.Switch
+﻿using RomManagerShared.Base;namespace RomManagerShared.Switch
 {
     public class SwitchUtils
     {
@@ -29,40 +22,31 @@ namespace RomManagerShared.Switch
                 return null;
             }
         }
-        public static List<List<Rom>> GroupRomList(List<Rom> RomList)
+        public static HashSet<HashSet<Rom>> GroupRomList(IEnumerable<Rom> romList)
         {
-            Dictionary<string, List<Rom>> romGroups = [];
-
-            foreach (var rom in RomList)
+            Dictionary<string, HashSet<Rom>> romGroups = [];            foreach (var rom in romList)
             {
-                string modifiedTitleId = GetIdentifyingTitleID(rom.TitleID);
-
-                if (!romGroups.ContainsKey(modifiedTitleId))
+                if (rom.TitleID is null)
+                    continue;                string modifiedTitleId = GetIdentifyingTitleID(rom.TitleID);                if (!romGroups.ContainsKey(modifiedTitleId))
                 {
                     romGroups[modifiedTitleId] = [];
-                }
-
-                romGroups[modifiedTitleId].Add(rom);
+                }                romGroups[modifiedTitleId].Add(rom);
             }
-
-            List<List<Rom>> groupedRomList = [.. romGroups.Values];
-
+            HashSet<HashSet<Rom>> groupedRomList = new(
+      romGroups.Values.Select(group => new HashSet<Rom>(
+          group.OrderBy(rom => rom is Game)
+      ))
+  );
             return groupedRomList;
-        }
-
-        private static string GetIdentifyingTitleID(string titleId)
+        }        public static string GetIdentifyingTitleID(string titleId)
         {
             return titleId.Substring(0, titleId.Length - 3);
-        }
-
-        public static bool IsHexBetween001AndFFF(string hexValue)
+        }        public static bool IsHexBetween001AndFFF(string hexValue)
         {
             int decimalValue;
             return int.TryParse(hexValue, System.Globalization.NumberStyles.HexNumber, null, out decimalValue)
                 && decimalValue >= 1
                 && decimalValue <= 4095
                 && decimalValue != 2048; // Exclude "800"
-        }
-
-    }
+        }    }
 }

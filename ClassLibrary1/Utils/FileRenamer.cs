@@ -1,160 +1,123 @@
-﻿using LibHac.Gc.Impl;
-using RomManagerShared.Base;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
-
-namespace RomManagerShared.Utils
+﻿using RomManagerShared.Base;
+using System.Text.RegularExpressions;namespace RomManagerShared.Utils
 {
     public class FileRenamer
     {
-        public static void RenameFiles(List<Rom> romList, string formatString)
+        public static void RenameFiles(IEnumerable<Rom> romList, string formatString)
         {
             if (romList is null)
             {
                 Console.WriteLine("rom list null");
                 return;
             }
-            if (romList.Count == 0)
+            if (!romList.Any())
             {
                 Console.WriteLine("No ROMs to rename.");
                 return;
-            }
-
-            var romGroups = romList.GroupBy(rom => rom.Path);
+            }            var romGroups = romList.GroupBy(rom => rom.Path);
             foreach (var romGroup in romGroups)
             {
                 var group = romGroup.ToList();
                 RenameFilesInGroup(group, formatString);
             }
-        }
-
-        private static void RenameFilesInGroup(List<Rom> romGroup, string formatString)
+        }        private static void RenameFilesInGroup(IEnumerable<Rom> romGroup, string formatString)
         {
-            if (romGroup.Count == 0)
+            if (!romGroup.Any())
             {
                 return;
-            }
-
-#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-            string commonDirectory = Path.GetDirectoryName(romGroup[0].Path);
-#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
-
+            }            string commonDirectory = Path.GetDirectoryName(romGroup.First().Path);
             string newFileName = GenerateFileName(romGroup, formatString);
             Console.WriteLine(newFileName);
-            if (newFileName == Path.GetFileName(romGroup[0].Path))
+            if (newFileName == Path.GetFileName(romGroup.First().Path))
             {
                 return;
             }
             string newpath = "";
             try
             {
-                newpath = RenameFile(Path.Combine(commonDirectory, romGroup[0].Path), newFileName);
+                var sourcePath = Path.Combine(commonDirectory, romGroup.First().Path);
+                if (Path.GetFileName(sourcePath) != newFileName)
+                    newpath = RenameFile(sourcePath, newFileName);
             }
             catch (Exception ex)
-            {
-
-            }
+            {            }
             foreach (var rom in romGroup)
             {
                 rom.Path = newpath;
             }
         }
+        static string[] VersionPlaceholders = ["{Version}"];
+        static string[] DLCPlaceholders = ["{DLCCount}"];
 
-        private static string GenerateFileName(List<Rom> romGroup, string formatString)
+        private static string GenerateFileName(IEnumerable<Rom> romGroup, string formatString)
         {
-            Rom? romToRename = null;
-            if (romGroup.Count > 1)
-            {
-                foreach (var rom in romGroup)
-                {
-                    if (rom is Game gameMetaData)
-                    {
-                        romToRename = rom;
-                        break;
-                    }
-                    else romToRename = romGroup.First();
-
-                }
-            }
-            else { romToRename = romGroup.First(); }
-
+            Rom romToRename = romGroup.FirstOrDefault(rom => rom is Game) ?? romGroup.First();
             string fileName = formatString;
-            fileName = fileName.Replace("{TitleName}", romToRename!.TitleName).Trim();
-            fileName = fileName.Replace("{TitleID}", romToRename.TitleID).Trim();
-            var region = romToRename.Region;
-            if (string.IsNullOrEmpty(region))
-            {
-                fileName = fileName.Replace("[{Region}]", "").Trim();
-                fileName = fileName.Replace("{Region}", "").Trim();
-            }
-            else
-            {
-                fileName = fileName.Replace("{Region}", region).Trim();
-            }
-            var version = GetVersion(romGroup);
-            if (romGroup.Count == 1 && romGroup[0] is DLC)
-            {
-                fileName = fileName.Replace("[v{Version}]", "").Trim();
-                fileName = fileName.Replace("v{Version}", "").Trim();
-                fileName = fileName.Replace("[{Version}]", "").Trim();
-                fileName = fileName.Replace("{Version}", "").Trim();
-            }
-            else
-            {
-                fileName = fileName.Replace("{Version}", version).Trim();
-            }
-            var dlcCount = GetDLCCount(romGroup);
-            if (romGroup.Count == 1 && (romGroup[0] is DLC || romGroup[0] is Update))
-            {
-                fileName = fileName.Replace("[d{DLCCount}]", "").Trim();
-                fileName = fileName.Replace("d{DLCCount}", "").Trim();
-                fileName = fileName.Replace("[{DLCCount}]", "").Trim();
-                fileName = fileName.Replace("{DLCCount}", "").Trim();
 
+            ReplacePlaceholder(ref fileName, "{TitleName}", romToRename.Titles?.FirstOrDefault()?.Value ?? "");
+            ReplacePlaceholder(ref fileName, "{TitleID}", romToRename.TitleID ?? "");
+
+            if (romToRename.Regions?.Count > 0 == true && romToRename.Regions.First() != Region.Unknown)
+            {
+                ReplacePlaceholders(ref fileName, ["[{Region}]", "{Region}"], string.Join(",", romToRename.Regions));
             }
             else
             {
-                fileName = fileName.Replace("{DLCCount}", dlcCount.ToString()).Trim();
+                ReplacePlaceholders(ref fileName, ["[{Region}]", "{Region}"], "");
             }
-            fileName += Path.GetExtension(romGroup[0].Path);
+
+            var version = GetVersion(romGroup) ?? "";
+            var dlcCount = GetDLCCount(romGroup);
+            if (romToRename is not Game || dlcCount == 0)
+            {
+                ReplacePlaceholders(ref fileName, ["[d{DLCCount}]", "[{DLCCount}]", "d{DLCCount}"], "");
+            }
+            else
+            {
+                ReplacePlaceholders(ref fileName, DLCPlaceholders, dlcCount.ToString());
+            }
+
+            if (version == "")
+            {
+                ReplacePlaceholders(ref fileName, ["[v{Version}]", "v{Version}", "[{Version}]"], "");
+            }
+            else
+            {
+                ReplacePlaceholders(ref fileName, VersionPlaceholders, version);
+            }
+
+            fileName += Path.GetExtension(romGroup.First().Path);
             return fileName;
         }
 
-        private static string GetVersion(List<Rom> romGroup)
+        private static void ReplacePlaceholder(ref string input, string placeholder, string replacement)
         {
-            if (romGroup.Count == 1)
-            {
-                return romGroup[0].Version.ToString();
-            }
+            input = input.Replace(placeholder, replacement).Trim();
+        }
 
-            foreach (var rom in romGroup)
+        private static void ReplacePlaceholders(ref string input, string[] placeholderlist, string value)
+        {
+            foreach (var placeholder in placeholderlist)
+            {
+                ReplacePlaceholder(ref input, placeholder, value);
+            }
+        }
+        private static string? GetVersion(IEnumerable<Rom> romGroup)
+        {
+            if (romGroup.Count() == 1)
+            {
+                return romGroup.First()?.Version?.ToString();
+            }            foreach (var rom in romGroup)
             {
                 if (rom is Update updateMetaData)
                 {
-                    return updateMetaData.Version.ToString();
+                    return updateMetaData.Version?.ToString();
                 }
             }
-
-            // No UpdateMetadata found, use the version of the first ROM
-            return romGroup[0].Version.ToString();
-        }
-
-        private static int GetDLCCount(List<Rom> romGroup)
+            return romGroup.First()?.Version?.ToString();
+        }        private static int GetDLCCount(IEnumerable<Rom> romGroup)
         {
-            int dlcCount = 0;
-
-            foreach (var rom in romGroup)
-            {
-                if (rom is DLC)
-                {
-                    dlcCount++;
-                }
-            }
-
-            return dlcCount;
+            return romGroup.Count(rom => rom is DLC);
         }
         private static string RenameFile(string sourcePath, string newFileName)
         {
@@ -163,19 +126,20 @@ namespace RomManagerShared.Utils
                 string directory = Path.GetDirectoryName(sourcePath);
                 string extension = Path.GetExtension(newFileName);
                 int count = 1;
-                string originalNewFileName = newFileName;
                 var invalidChars = Path.GetInvalidFileNameChars();
-                string newFileNameCleaned = new(newFileName
+                string newFileNameCleaned = new string(newFileName
                     .Select(c => invalidChars.Contains(c) ? ' ' : c)
                     .ToArray());
+                newFileNameCleaned = Regex.Replace(newFileNameCleaned, @"\s+", " ");
                 string newFilePath = Path.Combine(directory, newFileNameCleaned);
-                int maxRetries = 5;
-                while (File.Exists(newFilePath))
+
+                while (File.Exists(newFilePath) && sourcePath != newFileName)
                 {
                     newFileNameCleaned = $"{Path.GetFileNameWithoutExtension(newFileNameCleaned)} ({count}){extension}";
                     count++;
                     newFilePath = Path.Combine(directory, newFileNameCleaned);
                 }
+
                 File.Move(sourcePath, newFilePath);
                 return newFilePath;
             }
@@ -185,5 +149,6 @@ namespace RomManagerShared.Utils
                 return sourcePath;
             }
         }
+
     }
 }
