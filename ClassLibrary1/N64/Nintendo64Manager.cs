@@ -1,7 +1,7 @@
 ﻿using RomManagerShared.Base;
-using RomManagerShared.N64.Parsers;
+using RomManagerShared.Nintendo64.Parsers;
 using RomManagerShared.Interfaces;
-namespace RomManagerShared.N64
+namespace RomManagerShared.Nintendo64
 {
     public class Nintendo64Manager : IConsoleManager
     {

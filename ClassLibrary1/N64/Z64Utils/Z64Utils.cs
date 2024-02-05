@@ -1,14 +1,14 @@
 ﻿using System.Text;
 using RomManagerShared.Base;
-namespace RomManagerShared.N64.Z64Utils
+namespace RomManagerShared.Nintendo64.Z64Utils
 {
 
    public class Z64Utils
     {
-        public static N64Game ParseRom(string filePath)
+        public static Nintendo64Game ParseRom(string filePath)
         {
-   N64RomMetadata n64Rom = new N64RomMetadata(filePath);
-            N64Game game = new()
+   Nintendo64RomMetadata n64Rom = new Nintendo64RomMetadata(filePath);
+            Nintendo64Game game = new()
             {
                 TitleID = n64Rom.CartID
            ,Path = filePath
@@ -53,12 +53,12 @@ namespace RomManagerShared.N64.Z64Utils
 
 
   
-    public enum N64CountryCode
+    public enum Nintendo64CountryCode
     {
         European = 0x50,
     }
 
-    public class N64RomMetadata
+    public class Nintendo64RomMetadata
     {
         public static int BomSwap(int a) => (a << 24) | ((a & 0xFF00) << 8) | ((a & 0xFF0000) >> 8) | (a >> 24);
         public static uint BomSwap(uint a) => (a << 24) | ((a & 0xFF00) << 8) | ((a & 0xFF0000) >> 8) | (a >> 24);
@@ -200,11 +200,11 @@ namespace RomManagerShared.N64.Z64Utils
 
         public byte[] RawRom { get; set; }
 
-        public N64RomMetadata(string file) : this(File.ReadAllBytes(file))
+        public Nintendo64RomMetadata(string file) : this(File.ReadAllBytes(file))
         {
 
         }
-        public N64RomMetadata(byte[] data)
+        public Nintendo64RomMetadata(byte[] data)
         {
             if (data.Length < 0x1000 || data.Length % 4 != 0)
                 throw new Exception("Invalid n64 ROM Size");

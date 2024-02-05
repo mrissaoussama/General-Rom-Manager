@@ -2,7 +2,6 @@
 using RomManagerShared;
 using System.Text.Json;
 using System.IO;
-using testconsole;
 using RomManagerShared.Switch;
 using LibHac.FsSystem;
 using LibHac.Common.Keys;
@@ -35,13 +34,17 @@ using RomManagerShared.DS;
 using RomManagerShared.SNES;
 using RomManagerShared.PSP;
 using RomManagerShared.Interfaces;
-using RomManagerShared.N64;
+using RomManagerShared.Nintendo64;
+using RomManagerShared.SegaSaturn;
+using RomManagerShared.PSVita;
+using RomManagerShared.OriginalXbox;
 
 RomManagerConfiguration.Load("config.json");
 //var result = ((UInt64)(276759 & 0xFFFFFF) << 8) | (0x0004000000000000);
 var rompath = "D:\\nsp\\";
 var rompath4 = "D:\\nsp\\errorfiles";
 var wiirompath = "C:\\Users\\oussama\\Downloads\\roms\\";
+
 
 HashTypeEnum type = HashTypeEnum.CRC32;
 var hashlist=await HashUtils.CalculateFileHashes(System.IO.Path.Combine(rompath4, "1.nsp"), Enum.GetValues<HashTypeEnum>());
@@ -58,8 +61,11 @@ var Managers = new List<IConsoleManager>
     new SNESManager(),
     new WiiManager(),
     new Nintendo64Manager(),
+    new SegaSaturnManager(),
+    new PSVitaManager(),
+    new OriginalXboxManager(),
 };
-var manager = Managers[9];
+var manager = Managers[12];
 Console.WriteLine($"Setup: {manager.GetType()}");
 await manager.Setup();
 var ext = manager.RomParserExecutor.GetSupportedExtensions();
@@ -70,7 +76,6 @@ int i = 0; IEnumerable<IEnumerable<string>> splits = null;
 await ScanFiles();
 Console.WriteLine($"Files found: {filelist.Count}");
 List<Task> tasks = [];
-
 async Task ScanFiles()
 {
      filelist = FileUtils.GetFilesInDirectoryWithExtensions(wiirompath, ext);

@@ -26,7 +26,8 @@ namespace RomManagerShared.Base
         public string? ProductCode { get;  set; }
         public string? MinimumFirmware { get;  set; }
         public int NumberOfPlayers { get;  set; }
-        public bool IsDemo { get; internal set; }
+        public bool IsDemo { get;  set; }
+        public bool IsFolderFormat { get; set; }
         public HashSet<Game> RomHacks { get;  set; }
         public HashSet<Update> Updates { get;  set; }
         public HashSet<DLC> DLCs { get;  set; }

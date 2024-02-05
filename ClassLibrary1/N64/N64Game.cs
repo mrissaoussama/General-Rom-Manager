@@ -1,10 +1,10 @@
 ﻿using RomManagerShared.Base;
-namespace RomManagerShared.N64
+namespace RomManagerShared.Nintendo64
 {
-    public interface IN64Rom { }
-    public class N64Game : Game, IN64Rom
+    public interface INintendo64Rom { }
+    public class Nintendo64Game : Game, INintendo64Rom
     {
-        public N64Game() : base()
+        public Nintendo64Game() : base()
         {
         }
     }}

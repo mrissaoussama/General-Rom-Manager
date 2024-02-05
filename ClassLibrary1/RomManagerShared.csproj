@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">  <PropertyGroup>
+﻿<Project Sdk="Microsoft.NET.Sdk">  <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -28,6 +28,7 @@
 	  <PackageReference Include="SkyEditor.Utilities.AsyncFor" Version="5.0.0" />
 	  <PackageReference Include="Syroot.BinaryData" Version="5.2.2" />
 	  <PackageReference Include="System.Drawing.Common" Version="8.0.1" />
+	  <PackageReference Include="System.IO.Compression.ZipFile" Version="4.3.0" />
 	  <PackageReference Include="System.IO.Hashing" Version="8.0.0" />
 	</ItemGroup>
 	<ItemGroup>

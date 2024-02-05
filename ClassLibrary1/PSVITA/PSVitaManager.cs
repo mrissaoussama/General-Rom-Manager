@@ -1,14 +1,13 @@
 ﻿using RomManagerShared.Base;
+using RomManagerShared.PSVita.Parsers;
 using RomManagerShared.Interfaces;
-using RomManagerShared.SegaSaturn;
-using RomManagerShared.SNES.Parsers;
-namespace RomManagerShared.SNES
+namespace RomManagerShared.PSVita
 {
-    public class SNESManager : IConsoleManager
+    public class PSVitaManager : IConsoleManager
     {
         public RomParserExecutor RomParserExecutor { get; set; }
         public HashSet<Rom> RomList { get; set; }
-        public SNESManager()
+        public PSVitaManager()
         {
             RomList = [];
             RomParserExecutor = new RomParserExecutor();
@@ -20,12 +19,9 @@ namespace RomManagerShared.SNES
         }
         public Task Setup()
         {
-            RomParserExecutor.AddParser(new SNESRomParser());
+            RomParserExecutor.AddParser(new PSVitaVPKRomParser());
+            RomParserExecutor.AddParser(new PSVitaFolderRomParser());
             return Task.CompletedTask;
-        }
-        public static bool IsValidRom(string path)
-        {
-            return SNESUtils.IsSNESRom(path);
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using RomManagerShared.Base;
+using RomManagerShared.DS;
 using RomManagerShared.Utils;
 namespace RomManagerShared.GameBoyAdvance.Parsers
 {
@@ -47,7 +48,9 @@ namespace RomManagerShared.GameBoyAdvance.Parsers
                     GameBoyAdvancerom.AddRegion(Region.Italy);
                     GameBoyAdvancerom.AddLanguage(Language.Italian);
                     break;
-            }            GameBoyAdvancerom.Size = FileUtils.GetFileSize(path);            Console.WriteLine(GameBoyAdvancerom.ToString());
+            }            GameBoyAdvancerom.Size = FileUtils.GetFileSize(path);
+            GameBoyAdvancerom.Path = path;
+            Console.WriteLine(GameBoyAdvancerom.ToString());
             HashSet<Rom> list = [GameBoyAdvancerom];            return Task.FromResult(list);
         }
     }

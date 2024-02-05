@@ -1,5 +1,5 @@
 ﻿using RomManagerShared.Base;
-using RomManagerShared.N64;
+using RomManagerShared.Nintendo64;
 using RomManagerShared.Utils;
 using System;
 using System.Collections.Generic;
@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RomManagerShared.N64.Parsers
+namespace RomManagerShared.Nintendo64.Parsers
 {
     public class Nintendo64RomParser : IRomParser
     {
@@ -18,7 +18,7 @@ namespace RomManagerShared.N64.Parsers
         public HashSet<string> Extensions { get; set; }
         public Task<HashSet<Rom>> ProcessFile(string path)
         {
-            N64Game n64rom = Z64Utils.Z64Utils.ParseRom(path);
+            Nintendo64Game n64rom = Z64Utils.Z64Utils.ParseRom(path);
             HashSet<Rom> list = [n64rom];
             return Task.FromResult(list);
         }

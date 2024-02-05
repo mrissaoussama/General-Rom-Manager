@@ -19,6 +19,7 @@ namespace RomManagerShared.GameBoy.Parsers
             gameboyrom.TitleID = metadata.GameCode;
             //gameboyrom.Hash = metadata.HeaderChecksum;
             gameboyrom.Size = FileUtils.GetFileSize(path);
+            gameboyrom.Path = path;
             if (metadata.DestinationCode == "00")
             {
                 gameboyrom.AddRegion(Region.Japan);

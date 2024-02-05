@@ -36,7 +36,7 @@ namespace RomManagerShared
             }
             if (mergedRomList.Count == 0)
             {
-                FileUtils.MoveFileToErrorFiles(file);
+             //   FileUtils.MoveFileToErrorFiles(file);
             }
             return mergedRomList;
         }

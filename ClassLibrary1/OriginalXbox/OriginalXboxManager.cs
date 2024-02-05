@@ -1,14 +1,13 @@
 ﻿using RomManagerShared.Base;
+using RomManagerShared.OriginalXbox.Parsers;
 using RomManagerShared.Interfaces;
-using RomManagerShared.SegaSaturn;
-using RomManagerShared.SNES.Parsers;
-namespace RomManagerShared.SNES
+namespace RomManagerShared.OriginalXbox
 {
-    public class SNESManager : IConsoleManager
+    public class OriginalXboxManager : IConsoleManager
     {
         public RomParserExecutor RomParserExecutor { get; set; }
         public HashSet<Rom> RomList { get; set; }
-        public SNESManager()
+        public OriginalXboxManager()
         {
             RomList = [];
             RomParserExecutor = new RomParserExecutor();
@@ -20,12 +19,8 @@ namespace RomManagerShared.SNES
         }
         public Task Setup()
         {
-            RomParserExecutor.AddParser(new SNESRomParser());
+            RomParserExecutor.AddParser(new OriginalXboxRomParser());
             return Task.CompletedTask;
-        }
-        public static bool IsValidRom(string path)
-        {
-            return SNESUtils.IsSNESRom(path);
         }
     }
 }

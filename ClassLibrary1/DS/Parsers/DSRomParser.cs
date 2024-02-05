@@ -1,4 +1,5 @@
 ﻿using RomManagerShared.Base;
+using RomManagerShared.GameBoy;
 using RomManagerShared.Utils;
 namespace RomManagerShared.DS.Parsers
 {
@@ -18,6 +19,8 @@ namespace RomManagerShared.DS.Parsers
             DSrom.TitleID = metadata.GameCode;
             DSrom.Version = metadata.RomVersion;
             DSrom.Size = FileUtils.GetFileSize(path);
+            DSrom.Path = path;
+
             Console.WriteLine(DSrom.ToString());
             HashSet<Rom> list = [DSrom];
             return Task.FromResult(list);
