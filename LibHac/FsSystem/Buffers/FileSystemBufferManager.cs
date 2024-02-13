@@ -334,8 +334,8 @@ public class FileSystemBufferManager : IBufferManager
                         Unsafe.SizeOf<Entry>();
 
             // Copy the entries back by one.
-            Span<Entry> source = entryBuffer.Slice(index + 1, _entryCount - (index + 1));
-            Span<Entry> dest = entryBuffer.Slice(index);
+            Span<Entry> source = entryBuffer[(index + 1).._entryCount];
+            Span<Entry> dest = entryBuffer[index..];
             source.CopyTo(dest);
 
             // Decrement our entry count.

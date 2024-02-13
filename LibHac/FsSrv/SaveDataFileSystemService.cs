@@ -2472,7 +2472,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         res = GetProgramInfoByProgramId(out ProgramInfo targetProgramInfo, programId.Value);
         if (res.IsFailure()) return res.Miss();
 
-        targetProgramInfo.AccessControl.ListSaveDataOwnedId(out readCount, ids.Slice(0, bufferIdCount), startIndex);
+        targetProgramInfo.AccessControl.ListSaveDataOwnedId(out readCount, ids[..bufferIdCount], startIndex);
         return Result.Success;
     }
 

@@ -35,7 +35,7 @@ public static class CharacterEncoding
         4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 7, 8
     };
 
-    private static ReadOnlySpan<sbyte> Utf8NBytesTable => Utf8NBytesInnerTable.Slice(1);
+    private static ReadOnlySpan<sbyte> Utf8NBytesTable => Utf8NBytesInnerTable[1..];
 
     private static CharacterEncodingResult ConvertStringUtf8ToUtf16Impl(out int codeUnitsWritten,
         out int codeUnitsRead, Span<ushort> destination, ReadOnlySpan<byte> source)
@@ -66,8 +66,8 @@ public static class CharacterEncoding
             {
                 case 1:
                     dst[0] = src[0];
-                    src = src.Slice(1);
-                    dst = dst.Slice(1);
+                    src = src[1..];
+                    dst = dst[1..];
                     break;
 
                 case 2:
@@ -82,8 +82,8 @@ public static class CharacterEncoding
                                 ((src[1] & 0x3Fu) << 0);
 
                     dst[0] = (ushort)codePoint;
-                    src = src.Slice(2);
-                    dst = dst.Slice(1);
+                    src = src[2..];
+                    dst = dst[1..];
                     break;
 
                 case 3:
@@ -106,8 +106,8 @@ public static class CharacterEncoding
                         goto ReturnInvalidFormat;
 
                     dst[0] = (ushort)codePoint;
-                    src = src.Slice(3);
-                    dst = dst.Slice(1);
+                    src = src[3..];
+                    dst = dst[1..];
                     break;
 
                 case 4:
@@ -138,8 +138,8 @@ public static class CharacterEncoding
 
                     dst[0] = highSurrogate;
                     dst[1] = lowSurrogate;
-                    src = src.Slice(4);
-                    dst = dst.Slice(2);
+                    src = src[4..];
+                    dst = dst[2..];
                     break;
 
                 default:
@@ -185,8 +185,8 @@ public static class CharacterEncoding
                     goto ReturnInsufficientLength;
 
                 dst[0] = (byte)codeUnit1;
-                src = src.Slice(1);
-                dst = dst.Slice(1);
+                src = src[1..];
+                dst = dst[1..];
             }
             else if ((codeUnit1 & 0xF800) == 0)
             {
@@ -195,8 +195,8 @@ public static class CharacterEncoding
 
                 dst[0] = (byte)(0xC0 | (codeUnit1 >> 6) & 0x1F);
                 dst[1] = (byte)(0x80 | codeUnit1 & 0x3F);
-                src = src.Slice(1);
-                dst = dst.Slice(2);
+                src = src[1..];
+                dst = dst[2..];
             }
             else if (codeUnit1 < 0xD800 || codeUnit1 >= 0xE000)
             {
@@ -206,8 +206,8 @@ public static class CharacterEncoding
                 dst[0] = (byte)(0xE0 | (codeUnit1 >> 12) & 0xF);
                 dst[1] = (byte)(0x80 | (codeUnit1 >> 6) & 0x3F);
                 dst[2] = (byte)(0x80 | codeUnit1 & 0x3F);
-                src = src.Slice(1);
-                dst = dst.Slice(3);
+                src = src[1..];
+                dst = dst[3..];
             }
             else
             {
@@ -231,7 +231,7 @@ public static class CharacterEncoding
                         utf32 = ((codeUnit1 - 0xD800u) << 10) + codeUnit2 + 0x2400;
 
                         dst[0] = (byte)(0xF0 | (utf32 >> 18));
-                        dst = dst.Slice(1);
+                        dst = dst[1..];
                     }
 
                     goto ReturnInvalidFormat;
@@ -246,7 +246,7 @@ public static class CharacterEncoding
                         // We have an unpaired surrogate. Output the first UTF-8 code unit of the code point
                         // ConvertCharacterUtf16ToUtf32 gave us. Nintendo's reason for doing this is unclear.
                         dst[0] = (byte)(0xF0 | (utf32 >> 18));
-                        dst = dst.Slice(1);
+                        dst = dst[1..];
                     }
 
                     goto ReturnInvalidFormat;
@@ -259,8 +259,8 @@ public static class CharacterEncoding
                 dst[1] = (byte)(0x80 | (utf32 >> 12) & 0x3F);
                 dst[2] = (byte)(0x80 | (utf32 >> 6) & 0x3F);
                 dst[3] = (byte)(0x80 | (utf32 >> 0) & 0x3F);
-                src = src.Slice(2);
-                dst = dst.Slice(4);
+                src = src[2..];
+                dst = dst[4..];
             }
         }
 
@@ -308,8 +308,8 @@ public static class CharacterEncoding
             {
                 case 1:
                     dst[0] = src[0];
-                    src = src.Slice(1);
-                    dst = dst.Slice(1);
+                    src = src[1..];
+                    dst = dst[1..];
                     break;
 
                 case 2:
@@ -324,8 +324,8 @@ public static class CharacterEncoding
                                 ((src[1] & 0x3Fu) << 0);
 
                     dst[0] = codePoint;
-                    src = src.Slice(2);
-                    dst = dst.Slice(1);
+                    src = src[2..];
+                    dst = dst[1..];
                     break;
 
                 case 3:
@@ -348,8 +348,8 @@ public static class CharacterEncoding
                         goto ReturnInvalidFormat;
 
                     dst[0] = codePoint;
-                    src = src.Slice(3);
-                    dst = dst.Slice(1);
+                    src = src[3..];
+                    dst = dst[1..];
                     break;
 
                 case 4:
@@ -372,8 +372,8 @@ public static class CharacterEncoding
                         goto ReturnInvalidFormat;
 
                     dst[0] = codePoint;
-                    src = src.Slice(4);
-                    dst = dst.Slice(1);
+                    src = src[4..];
+                    dst = dst[1..];
                     break;
 
                 default:
@@ -419,7 +419,7 @@ public static class CharacterEncoding
                     goto ReturnInsufficientLength;
 
                 dst[0] = (byte)codePoint;
-                dst = dst.Slice(1);
+                dst = dst[1..];
             }
             else if (codePoint < 0x800)
             {
@@ -428,7 +428,7 @@ public static class CharacterEncoding
 
                 dst[0] = (byte)(0xC0 | codePoint >> 6);
                 dst[1] = (byte)(0x80 | codePoint & 0x3F);
-                dst = dst.Slice(2);
+                dst = dst[2..];
             }
             else if (codePoint < 0x10000)
             {
@@ -441,7 +441,7 @@ public static class CharacterEncoding
                 dst[0] = (byte)(0xE0 | (codePoint >> 12) & 0xF);
                 dst[1] = (byte)(0x80 | (codePoint >> 6) & 0x3F);
                 dst[2] = (byte)(0x80 | (codePoint >> 0) & 0x3F);
-                dst = dst.Slice(3);
+                dst = dst[3..];
             }
             else if (codePoint < 0x110000)
             {
@@ -452,14 +452,14 @@ public static class CharacterEncoding
                 dst[1] = (byte)(0x80 | (codePoint >> 12) & 0x3F);
                 dst[2] = (byte)(0x80 | (codePoint >> 6) & 0x3F);
                 dst[3] = (byte)(0x80 | (codePoint >> 0) & 0x3F);
-                dst = dst.Slice(4);
+                dst = dst[4..];
             }
             else
             {
                 goto ReturnInvalidFormat;
             }
 
-            src = src.Slice(1);
+            src = src[1..];
         }
 
         codeUnitsWritten = destination.Length - dst.Length;
@@ -531,7 +531,7 @@ public static class CharacterEncoding
         Assert.SdkRequires(0 <= sourceLength, $"{nameof(sourceLength)} must not be negative.");
         Assert.SdkRequires(sourceLength <= source.Length);
 
-        return ConvertStringUtf8ToUtf16Impl(out _, out _, destination, source.Slice(0, sourceLength));
+        return ConvertStringUtf8ToUtf16Impl(out _, out _, destination, source[..sourceLength]);
     }
 
     public static CharacterEncodingResult ConvertStringUtf8ToUtf16Native(Span<char> destination,
@@ -548,7 +548,7 @@ public static class CharacterEncoding
         Assert.SdkAssert(0 <= length);
 
         CharacterEncodingResult result = ConvertStringUtf8ToUtf16Impl(out int writtenCount, out _,
-            destination.Slice(0, destination.Length - 1), source.Slice(0, length));
+            destination[..^1], source[..length]);
 
         if (result == CharacterEncodingResult.Success)
             destination[writtenCount] = 0;
@@ -568,7 +568,7 @@ public static class CharacterEncoding
         Assert.SdkRequires(0 <= sourceLength, $"{nameof(sourceLength)} must not be negative.");
         Assert.SdkRequires(sourceLength <= source.Length);
 
-        return ConvertStringUtf16ToUtf8Impl(out _, out _, destination, source.Slice(0, sourceLength));
+        return ConvertStringUtf16ToUtf8Impl(out _, out _, destination, source[..sourceLength]);
     }
 
     public static CharacterEncodingResult ConvertStringUtf16NativeToUtf8(Span<byte> destination,
@@ -585,7 +585,7 @@ public static class CharacterEncoding
         Assert.SdkAssert(0 <= length);
 
         CharacterEncodingResult result = ConvertStringUtf16ToUtf8Impl(out int writtenCount, out _,
-            destination.Slice(0, destination.Length - 1), source.Slice(0, length));
+            destination[..^1], source[..length]);
 
         if (result == CharacterEncodingResult.Success)
             destination[writtenCount] = 0;
@@ -609,7 +609,7 @@ public static class CharacterEncoding
         Assert.SdkRequires(sourceLength <= source.Length);
 
         int totalLength = 0;
-        source = source.Slice(0, sourceLength);
+        source = source[..sourceLength];
 
         while (source.Length > 0)
         {
@@ -620,7 +620,7 @@ public static class CharacterEncoding
                 return CharacterEncodingResult.InvalidFormat;
 
             totalLength += writtenCount;
-            source = source.Slice(readCount);
+            source = source[readCount..];
         }
 
         Assert.SdkAssert(0 <= totalLength);
@@ -649,7 +649,7 @@ public static class CharacterEncoding
         Assert.SdkRequires(sourceLength <= source.Length);
 
         int totalLength = 0;
-        source = source.Slice(0, sourceLength);
+        source = source[..sourceLength];
 
         while (source.Length > 0)
         {
@@ -660,7 +660,7 @@ public static class CharacterEncoding
                 return CharacterEncodingResult.InvalidFormat;
 
             totalLength += writtenCount;
-            source = source.Slice(readCount);
+            source = source[readCount..];
         }
 
         Assert.SdkAssert(0 <= totalLength);
@@ -698,7 +698,7 @@ public static class CharacterEncoding
         Assert.SdkRequires(0 <= sourceLength, $"{nameof(sourceLength)} must not be negative.");
         Assert.SdkRequires(sourceLength <= source.Length);
 
-        return ConvertStringUtf8ToUtf32Impl(out _, out _, destination, source.Slice(0, sourceLength));
+        return ConvertStringUtf8ToUtf32Impl(out _, out _, destination, source[..sourceLength]);
     }
 
     public static CharacterEncodingResult ConvertStringUtf8ToUtf32(Span<uint> destination,
@@ -709,7 +709,7 @@ public static class CharacterEncoding
         Assert.SdkAssert(0 <= sourceLength);
 
         CharacterEncodingResult result = ConvertStringUtf8ToUtf32Impl(out int writtenCount, out _,
-            destination.Slice(0, destination.Length - 1), source.Slice(0, sourceLength));
+            destination[..^1], source[..sourceLength]);
 
         if (result == CharacterEncodingResult.Success)
             destination[writtenCount] = 0;
@@ -723,7 +723,7 @@ public static class CharacterEncoding
         Assert.SdkRequires(0 <= sourceLength, $"{nameof(sourceLength)} must not be negative.");
         Assert.SdkRequires(sourceLength <= source.Length);
 
-        return ConvertStringUtf32ToUtf8Impl(out _, out _, destination, source.Slice(0, sourceLength));
+        return ConvertStringUtf32ToUtf8Impl(out _, out _, destination, source[..sourceLength]);
     }
 
     public static CharacterEncodingResult ConvertStringUtf32ToUtf8(Span<byte> destination,
@@ -734,7 +734,7 @@ public static class CharacterEncoding
         Assert.SdkAssert(0 <= sourceLength);
 
         CharacterEncodingResult result = ConvertStringUtf32ToUtf8Impl(out int writtenCount, out _,
-            destination.Slice(0, destination.Length - 1), source.Slice(0, sourceLength));
+            destination[..^1], source[..sourceLength]);
 
         if (result == CharacterEncodingResult.Success)
             destination[writtenCount] = 0;
@@ -752,7 +752,7 @@ public static class CharacterEncoding
         Assert.SdkRequires(sourceLength <= source.Length);
 
         int totalLength = 0;
-        source = source.Slice(0, sourceLength);
+        source = source[..sourceLength];
 
         while (source.Length > 0)
         {
@@ -763,7 +763,7 @@ public static class CharacterEncoding
                 return CharacterEncodingResult.InvalidFormat;
 
             totalLength += writtenCount;
-            source = source.Slice(readCount);
+            source = source[readCount..];
         }
 
         Assert.SdkAssert(0 <= totalLength);
@@ -792,7 +792,7 @@ public static class CharacterEncoding
         Assert.SdkRequires(sourceLength <= source.Length);
 
         int totalLength = 0;
-        source = source.Slice(0, sourceLength);
+        source = source[..sourceLength];
 
         while (source.Length > 0)
         {
@@ -803,7 +803,7 @@ public static class CharacterEncoding
                 return CharacterEncodingResult.InvalidFormat;
 
             totalLength += writtenCount;
-            source = source.Slice(readCount);
+            source = source[readCount..];
         }
 
         Assert.SdkAssert(0 <= totalLength);
@@ -1042,7 +1042,7 @@ public static class CharacterEncoding
         {
             case 1:
                 destinationChar[0] = str[0];
-                source = str.Slice(1);
+                source = str[1..];
                 break;
 
             case 2:
@@ -1054,7 +1054,7 @@ public static class CharacterEncoding
 
                 destinationChar[0] = str[0];
                 destinationChar[1] = str[1];
-                source = str.Slice(2);
+                source = str[2..];
                 break;
 
             case 3:
@@ -1074,7 +1074,7 @@ public static class CharacterEncoding
                 destinationChar[0] = str[0];
                 destinationChar[1] = str[1];
                 destinationChar[2] = str[2];
-                source = str.Slice(3);
+                source = str[3..];
                 break;
 
             case 4:
@@ -1096,7 +1096,7 @@ public static class CharacterEncoding
                 destinationChar[1] = str[1];
                 destinationChar[2] = str[2];
                 destinationChar[3] = str[3];
-                source = str.Slice(4);
+                source = str[4..];
                 break;
 
             default:

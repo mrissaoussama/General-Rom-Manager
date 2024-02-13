@@ -515,7 +515,7 @@ public class FileSystemProxyImpl : IFileSystemProxy, IFileSystemProxyForLoader
 
         if (path.Str.At(0) == DirectorySeparator && path.Str.At(1) != DirectorySeparator)
         {
-            res = pathNormalized.Initialize(path.Str.Slice(1));
+            res = pathNormalized.Initialize(path.Str[1..]);
             if (res.IsFailure()) return res.Miss();
         }
         else

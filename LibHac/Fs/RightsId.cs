@@ -31,7 +31,7 @@ public struct RightsId : IEquatable<RightsId>
 
     public readonly string DebugDisplay()
     {
-        ReadOnlySpan<byte> highBytes = Value.ItemsRo.Slice(0, 8);
+        ReadOnlySpan<byte> highBytes = Value.ItemsRo[..8];
         ReadOnlySpan<byte> lowBytes = Value.ItemsRo.Slice(8, 8);
 
         return $"{highBytes.ToHexString()} {lowBytes.ToHexString()}";

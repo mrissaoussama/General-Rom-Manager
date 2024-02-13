@@ -86,7 +86,7 @@ public class AccessControl
         if (data.ContentOwnerInfoSize > 0)
         {
             int infoCount =
-                BinaryPrimitives.ReadInt32LittleEndian(accessControlData.Slice(data.ContentOwnerInfoOffset));
+                BinaryPrimitives.ReadInt32LittleEndian(accessControlData[data.ContentOwnerInfoOffset..]);
 
             // Get the list of content owner IDs in the descriptor, if any
             ReadOnlySpan<ulong> allowedIds = MemoryMarshal.Cast<byte, ulong>(
@@ -132,7 +132,7 @@ public class AccessControl
         if (data.SaveDataOwnerInfoSize > 0)
         {
             int infoCount =
-                BinaryPrimitives.ReadInt32LittleEndian(accessControlData.Slice(data.SaveDataOwnerInfoOffset));
+                BinaryPrimitives.ReadInt32LittleEndian(accessControlData[data.SaveDataOwnerInfoOffset..]);
 
             // Get the list of save data owner IDs in the descriptor, if any
             int allowedIdsOffset = Unsafe.SizeOf<AccessControlDescriptor>() +

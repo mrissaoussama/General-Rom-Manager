@@ -1,15 +1,14 @@
-﻿namespace DotNet3dsToolkit
+﻿namespace DotNet3dsToolkit;
+
+public static class BitMath
 {
-    public static class BitMath
+    public static int Align(int offset, int alignment)
     {
-        public static int Align(int offset, int alignment)
-        {
-            int mask = ~(alignment - 1);
-            return (offset + (alignment - 1)) & mask;
-        }        public static long Align(long offset, int alignment)
-        {
-            long mask = ~(alignment - 1);
-            return (offset + (alignment - 1)) & mask;
-        }
+        int mask = ~(alignment - 1);
+        return (offset + (alignment - 1)) & mask;
+    }    public static long Align(long offset, int alignment)
+    {
+        long mask = ~(alignment - 1);
+        return (offset + (alignment - 1)) & mask;
     }
 }

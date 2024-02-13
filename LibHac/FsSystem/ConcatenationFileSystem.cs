@@ -301,10 +301,12 @@ public class ConcatenationFileSystem : IFileSystem
                     if (outBuffer.Length != Unsafe.SizeOf<QueryRangeInfo>())
                         return ResultFs.InvalidSize.Log();
 
-                    var closure = new OperateRangeClosure();
-                    closure.InBuffer = inBuffer;
-                    closure.OperationId = operationId;
-                    closure.InfoMerged.Clear();
+                        var closure = new OperateRangeClosure
+                        {
+                            InBuffer = inBuffer,
+                            OperationId = operationId
+                        };
+                        closure.InfoMerged.Clear();
 
                     Result res = DoOperateRangeImpl(offset, size, QueryRangeImpl, ref closure);
                     if (res.IsFailure()) return res.Miss();
@@ -886,8 +888,10 @@ public class ConcatenationFileSystem : IFileSystem
         static Result OnFile(in Path path, in DirectoryEntry entry, ref FsIterationTaskClosure closure) =>
             closure.SourceFileSystem.DeleteFile(in path).Ret();
 
-        var closure = new FsIterationTaskClosure();
-        closure.SourceFileSystem = this;
+        var closure = new FsIterationTaskClosure
+        {
+            SourceFileSystem = this
+        };
 
         var directoryEntry = new DirectoryEntry();
         return CleanupDirectoryRecursively(this, in path, ref directoryEntry, OnEnterDir, OnExitDir, OnFile,

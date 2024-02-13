@@ -241,7 +241,7 @@ public class PartitionFileSystemCore<TMetaData, TFormat, THeader, TEntry> : IFil
                     // Easy case: the portion we're reading contains the entire hashed region.
                     sha.Initialize();
 
-                    res = fs._parent._baseStorage.Read(readOffset, destination.Slice(0, (int)readSize));
+                    res = fs._parent._baseStorage.Read(readOffset, destination[..(int)readSize]);
                     if (res.IsFailure()) return res.Miss();
 
                     sha.Update(destination.Slice((int)(hashTargetStart - offset), fs._partitionEntry.HashTargetSize));
@@ -267,7 +267,7 @@ public class PartitionFileSystemCore<TMetaData, TFormat, THeader, TEntry> : IFil
                     {
                         // Read the next chunk of the hash target and update the hash.
                         int currentReadSize = Math.Min(bufferForHashTargetSize, remainingHashTargetSize);
-                        Span<byte> currentHashTargetBuffer = bufferForHashTarget.Slice(0, currentReadSize);
+                        Span<byte> currentHashTargetBuffer = bufferForHashTarget[..currentReadSize];
 
                         res = fs._parent._baseStorage.Read(currentHashTargetOffset, currentHashTargetBuffer);
                         if (res.IsFailure()) return res.Miss();
@@ -281,7 +281,7 @@ public class PartitionFileSystemCore<TMetaData, TFormat, THeader, TEntry> : IFil
                             int hashTargetBufferOffset = (int)Math.Max(readOffset - currentHashTargetOffset, 0);
                             int copySize = (int)Math.Min(currentReadSize - hashTargetBufferOffset, remainingSize);
 
-                            bufferForHashTarget.Slice(hashTargetBufferOffset, copySize).CopyTo(destination.Slice(destBufferOffset));
+                            bufferForHashTarget.Slice(hashTargetBufferOffset, copySize).CopyTo(destination[destBufferOffset..]);
 
                             remainingSize -= copySize;
                             destBufferOffset += copySize;
@@ -300,14 +300,14 @@ public class PartitionFileSystemCore<TMetaData, TFormat, THeader, TEntry> : IFil
 
                 if (!CryptoUtil.IsSameBytes(fs._partitionEntry.Hash, hash, hash.Length))
                 {
-                    destination.Slice(0, (int)readSize).Clear();
+                    destination[..(int)readSize].Clear();
                     return ResultFs.Sha256PartitionHashVerificationFailed.Log();
                 }
             }
             else
             {
                 // We aren't reading hashed data, so we can just read from the base storage.
-                res = fs._parent._baseStorage.Read(entryStart + offset, destination.Slice(0, (int)readSize));
+                res = fs._parent._baseStorage.Read(entryStart + offset, destination[..(int)readSize]);
                 if (res.IsFailure()) return res.Miss();
             }
 
@@ -324,7 +324,7 @@ public class PartitionFileSystemCore<TMetaData, TFormat, THeader, TEntry> : IFil
             if (res.IsFailure()) return res.Miss();
 
             res = fs._parent._baseStorage.Read(fs._parent._metaDataSize + fs._partitionEntry.Offset + offset,
-                destination.Slice(0, (int)readSize));
+                destination[..(int)readSize]);
             if (res.IsFailure()) return res.Miss();
 
             bytesRead = readSize;
@@ -476,7 +476,7 @@ public class PartitionFileSystemCore<TMetaData, TFormat, THeader, TEntry> : IFil
         if (path.Length == 0)
             return ResultFs.PathNotFound.Log();
 
-        int entryIndex = _metaData.GetEntryIndex(path.Slice(1));
+        int entryIndex = _metaData.GetEntryIndex(path[1..]);
         if (entryIndex < 0)
             return ResultFs.PathNotFound.Log();
 
@@ -501,7 +501,7 @@ public class PartitionFileSystemCore<TMetaData, TFormat, THeader, TEntry> : IFil
             return Result.Success;
         }
 
-        if (_metaData.GetEntryIndex(pathString.Slice(1)) >= 0)
+        if (_metaData.GetEntryIndex(pathString[1..]) >= 0)
         {
             entryType = DirectoryEntryType.File;
             return Result.Success;
@@ -519,7 +519,7 @@ public class PartitionFileSystemCore<TMetaData, TFormat, THeader, TEntry> : IFil
         if (path.GetString().Length == 0)
             return ResultFs.PathNotFound.Log();
 
-        int entryIndex = _metaData.GetEntryIndex(path.GetString().Slice(1));
+        int entryIndex = _metaData.GetEntryIndex(path.GetString()[1..]);
         if (entryIndex < 0)
             return ResultFs.PathNotFound.Log();
 

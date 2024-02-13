@@ -1,10 +1,10 @@
 ﻿using RomManagerShared.Base;
-namespace RomManagerShared.SNES
+namespace RomManagerShared.SNES;
+
+public interface ISNESRom { }
+public class SNESGame : Game, ISNESRom
 {
-    public interface ISNESRom { }
-    public class SNESGame : Game, ISNESRom
+    public SNESGame() : base()
     {
-        public SNESGame() : base()
-        {
-        }
-    }}
+    }
+}

@@ -52,7 +52,7 @@ public class CachedStorage : IStorage
 
                 int bytesToRead = (int)Math.Min(remaining, BlockSize - blockPos);
 
-                block.Buffer.AsSpan(blockPos, bytesToRead).CopyTo(destination.Slice(outOffset));
+                block.Buffer.AsSpan(blockPos, bytesToRead).CopyTo(destination[outOffset..]);
 
                 outOffset += bytesToRead;
                 inOffset += bytesToRead;

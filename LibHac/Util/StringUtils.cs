@@ -231,12 +231,12 @@ public static class StringUtils
     {
         int length = GetLength(value);
 
-        return Encoding.UTF8.GetString(value.Slice(0, length));
+        return Encoding.UTF8.GetString(value[..length]);
     }
 
     public static string Utf8ZToString(ReadOnlySpan<byte> value)
     {
-        return Utf8ToString(value.Slice(0, GetLength(value)));
+        return Utf8ToString(value[..GetLength(value)]);
     }
 
     public static bool IsAlpha(byte c)
@@ -263,7 +263,7 @@ public static class StringUtils
 
         if ((uint)outputBytes.Length >= bytesLength)
         {
-            Span<byte> bytes = outputBytes.Slice(0, (int)bytesLength);
+            Span<byte> bytes = outputBytes[..(int)bytesLength];
             return HexConverter.TryDecodeFromUtf16(chars, bytes);
         }
 
@@ -299,7 +299,7 @@ public static class StringUtils
 
         if ((uint)outputBytes.Length >= bytesLength)
         {
-            Span<byte> bytes = outputBytes.Slice(0, (int)bytesLength);
+            Span<byte> bytes = outputBytes[..(int)bytesLength];
 
             if (!HexConverter.TryDecodeFromUtf16(chars, bytes))
             {

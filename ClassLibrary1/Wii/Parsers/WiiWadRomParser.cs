@@ -1,25 +1,26 @@
 ﻿using RomManagerShared.Base;
-namespace RomManagerShared.Wii.Parsers
+namespace RomManagerShared.Wii.Parsers;
+
+public class WiiWadRomParser : IRomParser
 {
-    public class WiiWadRomParser : IRomParser
+    public HashSet<string> Extensions { get; set; }
+    public WiiWadRomParser()
     {
-        public HashSet<string> Extensions { get; set; }
-        public WiiWadRomParser()
+        Extensions = ["wad"];
+    }    public Task<HashSet<Rom>> ProcessFile(string path)
+    {
+        WadInfo wadInfo = new();
+        byte[] wadfile = WadInfo.LoadFileToByteArray(path);
+        WiiWadGame wiiWadGame = new()
         {
-            Extensions = ["wad"];
-        }        public Task<HashSet<Rom>> ProcessFile(string path)
-        {
-            WadInfo wadInfo = new();
-            byte[] wadfile = WadInfo.LoadFileToByteArray(path);
-            WiiWadGame wiiWadGame = new();
-            wiiWadGame.TitleID = wadInfo.GetTitleID(wadfile, 0);
+            TitleID = wadInfo.GetTitleID(wadfile, 0),
             //  wiiWadGame.Region = wadInfo.GetRegionFlag(wadfile);
-            wiiWadGame.ChannelType = wadInfo.GetChannelType(wadfile, 0);
-            wiiWadGame.Version = wadInfo.GetTitleVersion(wadfile).ToString();
-            //wiiWadGame.Languages=[..wadInfo.GetChannelTitles(wadfile)];
-            wiiWadGame.AddTitleName(wadInfo.GetChannelTitles(wadfile)[1]);
-            HashSet<Rom> list = [wiiWadGame];
-            return Task.FromResult(list);
-        }
+            ChannelType = wadInfo.GetChannelType(wadfile, 0),
+            Version = wadInfo.GetTitleVersion(wadfile).ToString()
+        };
+        //wiiWadGame.Languages=[..wadInfo.GetChannelTitles(wadfile)];
+        wiiWadGame.AddTitleName(wadInfo.GetChannelTitles(wadfile)[1]);
+        HashSet<Rom> list = [wiiWadGame];
+        return Task.FromResult(list);
     }
 }

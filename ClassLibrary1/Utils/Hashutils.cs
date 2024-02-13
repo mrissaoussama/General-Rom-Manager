@@ -1,19 +1,11 @@
-﻿using System;
-using System.IO;
+﻿using RomManagerShared.Base;
 using System.Security.Cryptography;
-using DamienG.Security.Cryptography;
-using RomManagerShared.Base;
-
+namespace RomManagerShared.Utils;
 public static class HashUtils
 {
-    public static async Task<List<RomHash>> CalculateRomHashes( Rom rom, IEnumerable<HashTypeEnum> hashTypes)
+    public static async Task<List<RomHash>> CalculateRomHashes(Rom rom, IEnumerable<HashTypeEnum> hashTypes)
     {
-        if (rom == null)
-        {
-            throw new ArgumentException("Invalid Rom object");
-        }
-        return await CalculateFileHashes(rom.Path, hashTypes);
-
+        return rom == null ? throw new ArgumentException("Invalid Rom object") : await CalculateFileHashes(rom.Path, hashTypes);
     }
     public static async Task<List<RomHash>> CalculateFileHashes(string path, IEnumerable<HashTypeEnum> hashTypes)
     {
@@ -34,7 +26,7 @@ public static class HashUtils
     }
     private async static Task<RomHash> CreateRomHash(HashTypeEnum hashType, Stream stream)
     {
-        RomHash hash = new RomHash
+        RomHash hash = new()
         {
             Type = hashType,
             CreationDate = DateTime.Now,
@@ -44,7 +36,7 @@ public static class HashUtils
         switch (hashType)
         {
             case HashTypeEnum.CRC32:
-                hash.Value =await CalculateHash(new Crc32() ,stream);;
+                hash.Value = await CalculateHash(new Crc32(), stream); ;
                 break;
             case HashTypeEnum.MD5:
                 hash.Value = await CalculateHash(MD5.Create(), stream);
@@ -64,7 +56,7 @@ public static class HashUtils
 
     private static async Task<string> CalculateHash(HashAlgorithm hashAlgorithm, Stream stream)
     {
-      var hash= await hashAlgorithm.ComputeHashAsync(stream);
+        var hash = await hashAlgorithm.ComputeHashAsync(stream);
         //using (hashAlgorithm)
         //{
         //    byte[] buffer = new byte[4096];
@@ -77,16 +69,15 @@ public static class HashUtils
 
         //    hashAlgorithm.TransformFinalBlock(buffer, 0, 0);
 
-          return BitConverter.ToString(hash).Replace("-", "");
+        return BitConverter.ToString(hash).Replace("-", "");
         //}
     }
 
- 
+
 }
 
 // source https://github.com/damieng/DamienGKit/blob/master/CSharp/DamienG.Library/Security/Cryptography/Crc32.cs
-namespace DamienG.Security.Cryptography
-{
+
     /// <summary>
     /// Implements a 32-bit CRC hash algorithm compatible with Zip etc.
     /// </summary>
@@ -222,7 +213,7 @@ namespace DamienG.Security.Cryptography
         {
             var hash = seed;
             for (var i = start; i < start + size; i++)
-                hash = (hash >> 8) ^ table[buffer[i] ^ hash & 0xff];
+                hash = (hash >> 8) ^ table[buffer[i] ^ (hash & 0xff)];
             return hash;
         }
 
@@ -242,4 +233,3 @@ namespace DamienG.Security.Cryptography
             return result;
         }
     }
-}

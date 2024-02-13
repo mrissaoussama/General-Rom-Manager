@@ -56,7 +56,7 @@ public static class MountUtility
         if (mountLen <= 0)
             return ResultFs.InvalidMountName.Log();
 
-        U8Span subPath = path.Slice(mountLen + 1);
+        U8Span subPath = path[(mountLen + 1)..];
 
         bool startsWithDir = subPath.Length > 0 &&
                              (subPath[0] == DirectorySeparator || subPath[0] == AltDirectorySeparator);
@@ -64,7 +64,7 @@ public static class MountUtility
         if (!startsWithDir)
             return ResultFs.InvalidPathFormat.Log();
 
-        path.Value.Slice(0, mountLen).CopyTo(mountName.Name);
+        path.Value[..mountLen].CopyTo(mountName.Name);
         mountName.Name[mountLen] = NullTerminator;
 
         outSubPath = subPath;
@@ -292,7 +292,7 @@ public static class MountUtility
         if (mountNameLength + commonPathLength > commonPathBuffer.Length)
             return ResultFs.TooLongPath.Log();
 
-        StringUtils.Copy(commonPathBuffer.Slice(mountNameLength), subPath);
+        StringUtils.Copy(commonPathBuffer[mountNameLength..], subPath);
         return Result.Success;
     }
 }

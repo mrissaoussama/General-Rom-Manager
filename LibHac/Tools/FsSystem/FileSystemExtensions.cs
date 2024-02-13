@@ -79,10 +79,12 @@ public static class FileSystemExtensions
             return closure.DestinationPathBuffer.RemoveChild();
         }
 
-        var taskClosure = new Utility.FsIterationTaskClosure();
-        taskClosure.Buffer = workBuffer;
-        taskClosure.SourceFileSystem = sourceFileSystem;
-        taskClosure.DestFileSystem = destinationFileSystem;
+        var taskClosure = new Utility.FsIterationTaskClosure
+        {
+            Buffer = workBuffer,
+            SourceFileSystem = sourceFileSystem,
+            DestFileSystem = destinationFileSystem
+        };
 
         Result res = taskClosure.DestinationPathBuffer.Initialize(destinationPath);
         if (res.IsFailure()) return res.Miss();
@@ -124,7 +126,7 @@ public static class FileSystemExtensions
             res = sourceFile.Get.Read(out long bytesRead, offset, workBuffer, ReadOption.None);
             if (res.IsFailure()) return res.Miss();
 
-            res = destFile.Get.Write(offset, workBuffer.Slice(0, (int)bytesRead), WriteOption.None);
+            res = destFile.Get.Write(offset, workBuffer[..(int)bytesRead], WriteOption.None);
             if (res.IsFailure()) return res.Miss();
 
             remaining -= bytesRead;
@@ -205,8 +207,10 @@ public static class FileSystemExtensions
         string name = StringUtils.Utf8ZToString(entry.Name);
         string path = PathTools.Combine(parentPath, name);
 
-        var entryEx = new DirectoryEntryEx(name, path, entry.Type, entry.Size);
-        entryEx.Attributes = entry.Attributes;
+        var entryEx = new DirectoryEntryEx(name, path, entry.Type, entry.Size)
+        {
+            Attributes = entry.Attributes
+        };
 
         return entryEx;
     }

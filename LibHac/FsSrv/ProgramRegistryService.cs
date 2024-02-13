@@ -66,7 +66,7 @@ internal readonly struct ProgramIndexRegistryService
             return ResultFs.InvalidSize.Log();
 
         // Register the map info
-        return _serviceImpl.ResetProgramIndexMapInfo(mapInfo.Slice(0, programCount));
+        return _serviceImpl.ResetProgramIndexMapInfo(mapInfo[..programCount]);
     }
 
     /// <summary>

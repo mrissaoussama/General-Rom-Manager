@@ -106,7 +106,7 @@ namespace LibHac.FsSystem
             if (metaBuffer.Length < metaDataSize)
                 return ResultFs.InvalidSize.Log();
 
-            Span<byte> metaSpan = metaBuffer.Span.Slice(0, metaDataSize);
+            Span<byte> metaSpan = metaBuffer.Span[..metaDataSize];
 
             // Validate size for header.
             if (metaDataSize < Unsafe.SizeOf<THeader>())
@@ -247,7 +247,7 @@ namespace LibHac.FsSystem
                     return Result.ConvertResultToReturnType<int>(ResultFs.InvalidPartitionEntryOffset.Value);
 
                 int maxNameLen = header.NameTableSize - entries[i].NameOffset;
-                if (StringUtils.Compare(nameTable.Slice(entries[i].NameOffset), entryName, maxNameLen) == 0)
+                if (StringUtils.Compare(nameTable[entries[i].NameOffset..], entryName, maxNameLen) == 0)
                 {
                     return i;
                 }
@@ -277,7 +277,7 @@ namespace LibHac.FsSystem
             Abort.DoAbortUnless(IsInitialized, ResultFs.PreconditionViolation.Value);
             Abort.DoAbortUnless(entryIndex < Header.EntryCount, ResultFs.PreconditionViolation.Value);
 
-            return new U8Span(NameTable.Slice(GetEntry(entryIndex).NameOffset));
+            return new U8Span(NameTable[GetEntry(entryIndex).NameOffset..]);
         }
     }
 }
@@ -315,7 +315,7 @@ namespace LibHac.FsSystem
             if (MetaDataBuffer.IsNull)
                 return ResultFs.AllocationMemoryFailedInPartitionFileSystemMetaB.Log();
 
-            Span<byte> metaDataSpan = MetaDataBuffer.Span.Slice(0, (int)MetaDataSize);
+            Span<byte> metaDataSpan = MetaDataBuffer.Span[..(int)MetaDataSize];
 
             res = baseStorage.Read(offset: 0, metaDataSpan);
             if (res.IsFailure()) return res.Miss();

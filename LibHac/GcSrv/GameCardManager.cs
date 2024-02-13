@@ -817,7 +817,7 @@ public class GameCardManager : IStorageDeviceManager, IStorageDeviceOperator, IG
             }
 
             case GameCardManagerOperationIdValue.WriteToGameCardDirectly:
-                return WriteToGameCardDirectly(offset, outBuffer.Buffer.Slice(0, (int)size)).Ret();
+                return WriteToGameCardDirectly(offset, outBuffer.Buffer[..(int)size]).Ret();
 
             default:
                 return ResultFs.InvalidArgument.Log();

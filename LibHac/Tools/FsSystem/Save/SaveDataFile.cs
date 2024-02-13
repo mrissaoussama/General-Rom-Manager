@@ -37,7 +37,7 @@ public class SaveDataFile : IFile
             return Result.Success;
         }
 
-        res = BaseStorage.Read(offset, destination.Slice(0, (int)toRead));
+        res = BaseStorage.Read(offset, destination[..(int)toRead]);
         if (res.IsFailure()) return res.Miss();
 
         bytesRead = toRead;

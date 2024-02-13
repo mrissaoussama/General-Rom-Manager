@@ -71,9 +71,10 @@ public class Delta
 
     private void ParseDeltaStructure()
     {
-        var reader = new FileReader(DeltaStorage.AsFile(OpenMode.Read));
-
-        reader.Position = Header.HeaderSize;
+        var reader = new FileReader(DeltaStorage.AsFile(OpenMode.Read))
+        {
+            Position = Header.HeaderSize
+        };
 
         long offset = 0;
 

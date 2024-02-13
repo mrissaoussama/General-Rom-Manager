@@ -1,7 +1,7 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">  <PropertyGroup>
+<Project Sdk="Microsoft.NET.Sdk">  <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
+    <Nullable>enable</Nullable>   <LangVersion>preview</LangVersion>
   </PropertyGroup>  <ItemGroup>
     <ProjectReference Include="..\LibHac\LibHac.csproj" />
     <ProjectReference Include="..\SkyEditor.IO\SkyEditor.IO.csproj" />
@@ -11,6 +11,15 @@
 		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 		<None Update="PS4\PS4_Tools.dll">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="Utils\PKGUtils\PSN_get_pkg_info.py">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="Utils\PKGUtils\PSN_get_pkg_inforequirements.txt">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="WiiU\Parsers\cdecrypt.exe">
 		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>

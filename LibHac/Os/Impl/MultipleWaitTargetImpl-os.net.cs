@@ -84,7 +84,7 @@ public class MultiWaitTargetImpl : IDisposable
         Abort.DoAbortUnless(num + 1 < handles.Length);
 
         handles[num] = _cancelEvent;
-        int index = WaitHandle.WaitAny(handles.Slice(0, num + 1).ToArray(), timeoutMs);
+        int index = WaitHandle.WaitAny(handles[..(num + 1)].ToArray(), timeoutMs);
 
         if (index == WaitHandle.WaitTimeout)
         {

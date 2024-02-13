@@ -28,7 +28,7 @@ public class RomFsFile : IFile
 
         long storageOffset = Offset + offset;
 
-        res = ConvertToApplicationResult(BaseStorage.Read(storageOffset, destination.Slice(0, (int)toRead)));
+        res = ConvertToApplicationResult(BaseStorage.Read(storageOffset, destination[..(int)toRead]));
         if (res.IsFailure()) return res.Miss();
 
         bytesRead = toRead;

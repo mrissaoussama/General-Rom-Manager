@@ -38,16 +38,20 @@ using RomManagerShared.Nintendo64;
 using RomManagerShared.SegaSaturn;
 using RomManagerShared.PSVita;
 using RomManagerShared.OriginalXbox;
-
+using RomManagerShared.Xbox360;
+using RomManagerShared.Utils.PKGUtils;
+using RomManagerShared.PS3;
+using RomManagerShared.PS2;
+using RomManagerShared.WiiU;
+//await WiiUWikiBrewScraper.ScrapeTitles();
+Console.WriteLine(WiiUWikiBrewScraper.titles);
 RomManagerConfiguration.Load("config.json");
 //var result = ((UInt64)(276759 & 0xFFFFFF) << 8) | (0x0004000000000000);
 var rompath = "D:\\nsp\\";
 var rompath4 = "D:\\nsp\\errorfiles";
 var wiirompath = "C:\\Users\\oussama\\Downloads\\roms\\";
-
-
-HashTypeEnum type = HashTypeEnum.CRC32;
-var hashlist=await HashUtils.CalculateFileHashes(System.IO.Path.Combine(rompath4, "1.nsp"), Enum.GetValues<HashTypeEnum>());
+var pkgpath = "C:\\Users\\oussama\\Downloads\\roms\\ps3\\1.pkg";
+    var hashlist=await HashUtils.CalculateFileHashes(System.IO.Path.Combine(rompath4, "1.nsp"), Enum.GetValues<HashTypeEnum>());
 hashlist.ForEach(x => Console.WriteLine(x.ToString()));
 var Managers = new List<IConsoleManager>
 {
@@ -56,21 +60,26 @@ var Managers = new List<IConsoleManager>
     new DSManager(),
     new GameBoyManager(),
     new GameBoyAdvanceManager(),
-    new PS4Manager(),
+    new PS4Manager(),//5
     new PSPManager(),
     new SNESManager(),
     new WiiManager(),
     new Nintendo64Manager(),
-    new SegaSaturnManager(),
+    new SegaSaturnManager(),//10
     new PSVitaManager(),
     new OriginalXboxManager(),
+    new Xbox360Manager(),
+    new PS3Manager(),
+    new PS2Manager(),
+    new NintendoWiiUManager(),
+
 };
-var manager = Managers[12];
+var manager = Managers[16];
 Console.WriteLine($"Setup: {manager.GetType()}");
 await manager.Setup();
 var ext = manager.RomParserExecutor.GetSupportedExtensions();
 Console.WriteLine($"Supported Extensions: {string.Join(", ", ext)}");
-List<string> filelist = new();
+List<string> filelist = [];
 int i = 0; IEnumerable<IEnumerable<string>> splits = null;
 
 await ScanFiles();

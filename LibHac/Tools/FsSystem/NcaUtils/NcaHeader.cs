@@ -35,7 +35,7 @@ public struct NcaHeader
 
     private ref NcaHeaderStruct Header => ref Unsafe.As<byte, NcaHeaderStruct>(ref _header.Span[0]);
 
-    public Span<byte> Signature1 => _header.Span.Slice(0, 0x100);
+    public Span<byte> Signature1 => _header.Span[..0x100];
     public Span<byte> Signature2 => _header.Span.Slice(0x100, 0x100);
 
     public uint Magic
@@ -298,7 +298,7 @@ public struct NcaHeader
         // Key areas using fixed, unencrypted keys always use the same keys.
         // Check for these keys by comparing the key area with the known hash of the fixed body keys.
         Unsafe.SkipInit(out Buffer32 hash);
-        Sha256.GenerateSha256Hash(keyArea.Slice(0, 0x20), hash);
+        Sha256.GenerateSha256Hash(keyArea[..0x20], hash);
 
         if (Nca0FixedBodyKeySha256Hash.SequenceEqual(hash))
         {

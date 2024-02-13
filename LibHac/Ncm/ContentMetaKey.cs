@@ -18,7 +18,7 @@ public class ContentMetaKey : IComparable<ContentMetaKey>, IComparable, IEquatab
         if (output.Length < ExportSize) throw new InvalidOperationException("Output buffer is too small.");
 
         BinaryPrimitives.WriteUInt64LittleEndian(output, TitleId);
-        BinaryPrimitives.WriteUInt32LittleEndian(output.Slice(8), Version);
+        BinaryPrimitives.WriteUInt32LittleEndian(output[8..], Version);
         output[0xC] = (byte)Type;
         output[0xD] = (byte)Attributes;
     }
@@ -29,7 +29,7 @@ public class ContentMetaKey : IComparable<ContentMetaKey>, IComparable, IEquatab
         if (input.Length < ExportSize) throw new InvalidOperationException("Input data is too short.");
 
         TitleId = BinaryPrimitives.ReadUInt64LittleEndian(input);
-        Version = BinaryPrimitives.ReadUInt32LittleEndian(input.Slice(8));
+        Version = BinaryPrimitives.ReadUInt32LittleEndian(input[8..]);
         Type = (ContentMetaType)input[0xC];
         Attributes = (ContentMetaAttribute)input[0xD];
     }

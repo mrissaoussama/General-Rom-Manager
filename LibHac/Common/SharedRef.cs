@@ -130,10 +130,11 @@ public struct SharedRef<T> : IDisposable where T : class, IDisposable
 
     public static SharedRef<T> CreateMove<TFrom>(ref SharedRef<TFrom> other) where TFrom : class, T
     {
-        var sharedRef = new SharedRef<T>();
-
-        sharedRef._value = Unsafe.As<TFrom, T>(ref other._value);
-        sharedRef._refCount = other._refCount;
+        var sharedRef = new SharedRef<T>
+        {
+            _value = Unsafe.As<TFrom, T>(ref other._value),
+            _refCount = other._refCount
+        };
 
         other._value = null;
         other._refCount = null;
@@ -143,10 +144,11 @@ public struct SharedRef<T> : IDisposable where T : class, IDisposable
 
     public static SharedRef<T> CreateCopy<TFrom>(in SharedRef<TFrom> other) where TFrom : class, T
     {
-        var sharedRef = new SharedRef<T>();
-
-        sharedRef._value = Unsafe.As<TFrom, T>(ref Unsafe.AsRef(in other._value));
-        sharedRef._refCount = other._refCount;
+        var sharedRef = new SharedRef<T>
+        {
+            _value = Unsafe.As<TFrom, T>(ref Unsafe.AsRef(in other._value)),
+            _refCount = other._refCount
+        };
 
         sharedRef._refCount?.Increment();
 
@@ -326,10 +328,11 @@ public struct WeakRef<T> : IDisposable where T : class, IDisposable
 
     public static WeakRef<T> CreateMove<TFrom>(ref WeakRef<TFrom> other) where TFrom : class, T
     {
-        var weakRef = new WeakRef<T>();
-
-        weakRef._value = Unsafe.As<TFrom, T>(ref other._value);
-        weakRef._refCount = other._refCount;
+        var weakRef = new WeakRef<T>
+        {
+            _value = Unsafe.As<TFrom, T>(ref other._value),
+            _refCount = other._refCount
+        };
 
         other._value = null;
         other._refCount = null;

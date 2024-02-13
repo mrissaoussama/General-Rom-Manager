@@ -1,16 +1,14 @@
 ﻿
-namespace RomManagerShared.Base
+namespace RomManagerShared.Base;
+
+public class RegionHelper
 {
-    public class RegionHelper
+    public static Region ParseRegion(string r)
     {
-        public static Region ParseRegion(string r)
+        return r switch
         {
-            switch (r)
-            {
-                case "JP":
-                    return Region.Japan;
-                default: return Region.Unknown;
-            }
-        }
+            "JP" => Region.Japan,
+            _ => Region.Unknown,
+        };
     }
 }

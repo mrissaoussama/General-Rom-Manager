@@ -444,7 +444,7 @@ public class BufferedStorage : IStorage
             Assert.SdkEqual(fetchParam.Offset, offset);
             Assert.SdkLessEqual(fetchParam.Buffer.Length, buffer.Length);
 
-            buffer.Slice(0, fetchParam.Buffer.Length).CopyTo(fetchParam.Buffer);
+            buffer[..fetchParam.Buffer.Length].CopyTo(fetchParam.Buffer);
             _offset = fetchParam.Offset;
             Assert.SdkAssert(Hits(offset, 1));
 
@@ -558,7 +558,7 @@ public class BufferedStorage : IStorage
             long baseSize = _bufferedStorage._baseStorageSize;
             long remainingSize = baseSize - storageOffset;
             long cacheSize = Math.Min(blockSize, remainingSize);
-            Span<byte> cacheBuffer = _memoryRange.Span.Slice(0, (int)cacheSize);
+            Span<byte> cacheBuffer = _memoryRange.Span[..(int)cacheSize];
 
             Assert.SdkLessEqual(0, offset);
             Assert.SdkLess(offset, baseSize);
@@ -1547,7 +1547,7 @@ public class BufferedStorage : IStorage
         }
 
         // Read from the base storage.
-        res = _baseStorage.Read(alignedOffset, workBuffer.Slice(0, (int)alignedSize));
+        res = _baseStorage.Read(alignedOffset, workBuffer[..(int)alignedSize]);
         if (res.IsFailure()) return res.Miss();
         if (workBuffer != buffer)
         {
@@ -1575,7 +1575,7 @@ public class BufferedStorage : IStorage
 
                 if (upgradeResult.wasUpgradeSuccessful)
                 {
-                    res = fetchCache.FetchFromBuffer(alignedOffset, workBuffer.Slice(0, (int)alignedSize));
+                    res = fetchCache.FetchFromBuffer(alignedOffset, workBuffer[..(int)alignedSize]);
                     if (res.IsFailure()) return res.Miss();
                     break;
                 }
@@ -1646,7 +1646,7 @@ public class BufferedStorage : IStorage
         while (remainingSize > 0)
         {
             // Determine how much to read this iteration.
-            ReadOnlySpan<byte> currentSource = source.Slice(bufferOffset);
+            ReadOnlySpan<byte> currentSource = source[bufferOffset..];
             int currentSize;
 
             if (!Alignment.IsAligned(currentOffset, (uint)_blockSize))
@@ -1692,7 +1692,7 @@ public class BufferedStorage : IStorage
                     }
                 }
 
-                cache.Write(currentOffset, currentSource.Slice(0, currentSize));
+                cache.Write(currentOffset, currentSource[..currentSize]);
 
                 BufferManagerUtility.EnableBlockingBufferManagerAllocation();
 
@@ -1712,7 +1712,7 @@ public class BufferedStorage : IStorage
                     }
                 }
 
-                res = _baseStorage.Write(currentOffset, currentSource.Slice(0, currentSize));
+                res = _baseStorage.Write(currentOffset, currentSource[..currentSize]);
                 if (res.IsFailure()) return res.Miss();
 
                 BufferManagerUtility.EnableBlockingBufferManagerAllocation();

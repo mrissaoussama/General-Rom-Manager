@@ -144,7 +144,7 @@ public class ProgressBar : IDisposable, IProgressReport
         outputBuilder.Append('\b', _currentText.Length - commonPrefixLength);
 
         // Output new suffix
-        outputBuilder.Append(text.Substring(commonPrefixLength));
+        outputBuilder.Append(text[commonPrefixLength..]);
 
         // If the new text is shorter than the old one: delete overlapping characters
         int overlapCount = _currentText.Length - text.Length;

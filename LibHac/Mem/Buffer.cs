@@ -46,7 +46,7 @@ public struct Buffer : IEquatable<Buffer>
     /// <returns><para>A <see cref="BufferSegment"/> that contains all elements of the current <see cref="Buffer"/> instance
     /// from <paramref name="start"/> to the end of the instance.</para>
     /// <para> The <see cref="BufferSegment"/> must not be accessed after this parent <see cref="Buffer"/> is deallocated.</para></returns>
-    internal BufferSegment GetSegment(int start) => new(_memory.Slice(start));
+    internal BufferSegment GetSegment(int start) => new(_memory[start..]);
     
     /// <summary>
     /// Forms a <see cref="BufferSegment"/> out of the current <see cref="Buffer"/> starting at a specified index for a specified length.

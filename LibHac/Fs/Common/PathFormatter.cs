@@ -112,11 +112,11 @@ public static class PathFormatter
             if (mountLength >= outMountNameBuffer.Length)
                 return ResultFs.TooLongPath.Log();
 
-            path.Slice(0, mountLength).CopyTo(outMountNameBuffer);
+            path[..mountLength].CopyTo(outMountNameBuffer);
             outMountNameBuffer[mountLength] = NullTerminator;
         }
 
-        newPath = path.Slice(mountLength);
+        newPath = path[mountLength..];
         mountNameLength = mountLength;
         return Result.Success;
     }
@@ -147,14 +147,14 @@ public static class PathFormatter
                 if (normalizeBuffer.Length == 0)
                     return ResultFs.NotNormalized.Log();
 
-                currentPath = path.Slice(1);
+                currentPath = path[1..];
             }
-            else if (WindowsPath.IsWindowsDrive(path.Slice(1)))
+            else if (WindowsPath.IsWindowsDrive(path[1..]))
             {
                 if (normalizeBuffer.Length == 0)
                     return ResultFs.NotNormalized.Log();
 
-                currentPath = path.Slice(1);
+                currentPath = path[1..];
             }
         }
 
@@ -190,13 +190,13 @@ public static class PathFormatter
                 if (winPathLength >= normalizeBuffer.Length)
                     return ResultFs.TooLongPath.Log();
 
-                currentPath.Slice(0, winPathLength).CopyTo(normalizeBuffer);
+                currentPath[..winPathLength].CopyTo(normalizeBuffer);
                 normalizeBuffer[winPathLength] = NullTerminator;
-                PathUtility.Replace(normalizeBuffer.Slice(0, winPathLength), AltDirectorySeparator,
+                PathUtility.Replace(normalizeBuffer[..winPathLength], AltDirectorySeparator,
                     DirectorySeparator);
             }
 
-            newPath = currentPath.Slice(winPathLength);
+            newPath = currentPath[winPathLength..];
             windowsPathLength = winPathLength;
             return Result.Success;
         }
@@ -205,7 +205,7 @@ public static class PathFormatter
         {
             int dosPathLength = WindowsPath.GetDosDevicePathPrefixLength();
 
-            if (WindowsPath.IsWindowsDrive(currentPath.Slice(dosPathLength)))
+            if (WindowsPath.IsWindowsDrive(currentPath[dosPathLength..]))
             {
                 dosPathLength += 2;
             }
@@ -219,13 +219,13 @@ public static class PathFormatter
                 if (dosPathLength >= normalizeBuffer.Length)
                     return ResultFs.TooLongPath.Log();
 
-                currentPath.Slice(0, dosPathLength).CopyTo(normalizeBuffer);
+                currentPath[..dosPathLength].CopyTo(normalizeBuffer);
                 normalizeBuffer[dosPathLength] = NullTerminator;
-                PathUtility.Replace(normalizeBuffer.Slice(0, dosPathLength), DirectorySeparator,
+                PathUtility.Replace(normalizeBuffer[..dosPathLength], DirectorySeparator,
                     AltDirectorySeparator);
             }
 
-            newPath = currentPath.Slice(dosPathLength);
+            newPath = currentPath[dosPathLength..];
             windowsPathLength = dosPathLength;
             return Result.Success;
         }
@@ -248,17 +248,17 @@ public static class PathFormatter
                     if (currentComponentOffset != 0)
                     {
                         res = CheckSharedName(
-                            currentPath.Slice(currentComponentOffset, pos - currentComponentOffset));
+                            currentPath[currentComponentOffset..pos]);
                         if (res.IsFailure()) return res.Miss();
 
-                        finalPath = currentPath.Slice(pos);
+                        finalPath = currentPath[pos..];
                         break;
                     }
 
                     if (currentPath.At(pos + 1) == DirectorySeparator || currentPath.At(pos + 1) == AltDirectorySeparator)
                         return ResultFs.InvalidPathFormat.Log();
 
-                    res = CheckHostName(currentPath.Slice(2, pos - 2));
+                    res = CheckHostName(currentPath[2..pos]);
                     if (res.IsFailure()) return res.Miss();
 
                     currentComponentOffset = pos + 1;
@@ -270,10 +270,10 @@ public static class PathFormatter
 
             if (currentComponentOffset != 0 && finalPath == currentPath)
             {
-                res = CheckSharedName(currentPath.Slice(currentComponentOffset, pos - currentComponentOffset));
+                res = CheckSharedName(currentPath[currentComponentOffset..pos]);
                 if (res.IsFailure()) return res.Miss();
 
-                finalPath = currentPath.Slice(pos);
+                finalPath = currentPath[pos..];
             }
 
             ref byte currentPathStart = ref MemoryMarshal.GetReference(currentPath);
@@ -294,9 +294,9 @@ public static class PathFormatter
                 if (uncPrefixLength >= normalizeBuffer.Length)
                     return ResultFs.TooLongPath.Log();
 
-                currentPath.Slice(0, uncPrefixLength).CopyTo(normalizeBuffer);
+                currentPath[..uncPrefixLength].CopyTo(normalizeBuffer);
                 normalizeBuffer[uncPrefixLength] = NullTerminator;
-                PathUtility.Replace(normalizeBuffer.Slice(0, uncPrefixLength), DirectorySeparator, AltDirectorySeparator);
+                PathUtility.Replace(normalizeBuffer[..uncPrefixLength], DirectorySeparator, AltDirectorySeparator);
             }
 
             newPath = finalPath;
@@ -360,7 +360,7 @@ public static class PathFormatter
                 relativePathBuffer[1] = NullTerminator;
             }
 
-            newPath = path.Slice(1);
+            newPath = path[1..];
             length = 1;
             return Result.Success;
         }
@@ -548,7 +548,7 @@ public static class PathFormatter
 
         if (flags.IsMountNameAllowed())
         {
-            res = ParseMountName(out src, out int mountNameLength, outputBuffer.Slice(currentPos), src);
+            res = ParseMountName(out src, out int mountNameLength, outputBuffer[currentPos..], src);
             if (res.IsFailure()) return res.Miss();
 
             currentPos += mountNameLength;
@@ -572,7 +572,7 @@ public static class PathFormatter
             if (currentPos >= outputBuffer.Length)
                 return ResultFs.TooLongPath.Log();
 
-            res = ParseRelativeDotPath(out src, out int relativePathLength, outputBuffer.Slice(currentPos), src);
+            res = ParseRelativeDotPath(out src, out int relativePathLength, outputBuffer[currentPos..], src);
             if (res.IsFailure()) return res.Miss();
 
             currentPos += relativePathLength;
@@ -594,7 +594,7 @@ public static class PathFormatter
             if (currentPos >= outputBuffer.Length)
                 return ResultFs.TooLongPath.Log();
 
-            res = ParseWindowsPath(out src, out int windowsPathLength, outputBuffer.Slice(currentPos), src,
+            res = ParseWindowsPath(out src, out int windowsPathLength, outputBuffer[currentPos..], src,
                 hasMountName);
             if (res.IsFailure()) return res.Miss();
 
@@ -638,7 +638,7 @@ public static class PathFormatter
                 src = srcBufferSlashReplaced.AsSpan(srcOffset);
             }
 
-            res = PathNormalizer.Normalize(outputBuffer.Slice(currentPos), out _, src, isWindowsPath, isDriveRelative,
+            res = PathNormalizer.Normalize(outputBuffer[currentPos..], out _, src, isWindowsPath, isDriveRelative,
                 flags.AreAllCharactersAllowed());
             if (res.IsFailure()) return res.Miss();
 

@@ -167,7 +167,7 @@ public class FlatMapKeyValueStore<TKey> : IDisposable where TKey : unmanaged, IE
         ReadOnlySpan<byte> value = iterator.GetValue();
         int size = Math.Min(valueBuffer.Length, value.Length);
 
-        value.Slice(0, size).CopyTo(valueBuffer);
+        value[..size].CopyTo(valueBuffer);
         valueSize = size;
         return Result.Success;
     }

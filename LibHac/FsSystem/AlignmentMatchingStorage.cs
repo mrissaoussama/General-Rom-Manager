@@ -398,7 +398,7 @@ public class AlignmentMatchingStorageInBulkRead<TBufferAlignment> : IStorage
                 // into the buffer and copy the unaligned portion to the destination buffer.
                 if (alignedSize <= pooledBuffer.GetSize())
                 {
-                    res = _baseStorage.Read(alignedOffset, pooledBuffer.GetBuffer().Slice(0, (int)alignedSize));
+                    res = _baseStorage.Read(alignedOffset, pooledBuffer.GetBuffer()[..(int)alignedSize]);
                     if (res.IsFailure()) return res.Miss();
 
                     pooledBuffer.GetBuffer().Slice((int)(offset - alignedOffset), destination.Length)
@@ -428,7 +428,7 @@ public class AlignmentMatchingStorageInBulkRead<TBufferAlignment> : IStorage
             int headSize = (int)(coreOffset - offset);
             Assert.SdkLess(headSize, destination.Length);
 
-            res = _baseStorage.Read(alignedOffset, pooledBuffer.GetBuffer().Slice(0, (int)_dataAlignment));
+            res = _baseStorage.Read(alignedOffset, pooledBuffer.GetBuffer()[..(int)_dataAlignment]);
             if (res.IsFailure()) return res.Miss();
 
             pooledBuffer.GetBuffer().Slice((int)(offset - alignedOffset), headSize).CopyTo(destination);
@@ -449,10 +449,10 @@ public class AlignmentMatchingStorageInBulkRead<TBufferAlignment> : IStorage
         {
             int tailSize = (int)(offsetEnd - coreOffsetEnd);
 
-            res = _baseStorage.Read(coreOffsetEnd, pooledBuffer.GetBuffer().Slice(0, (int)_dataAlignment));
+            res = _baseStorage.Read(coreOffsetEnd, pooledBuffer.GetBuffer()[..(int)_dataAlignment]);
             if (res.IsFailure()) return res.Miss();
 
-            pooledBuffer.GetBuffer().Slice(0, tailSize).CopyTo(destination.Slice((int)(coreOffsetEnd - offset)));
+            pooledBuffer.GetBuffer()[..tailSize].CopyTo(destination[(int)(coreOffsetEnd - offset)..]);
         }
 
         return Result.Success;

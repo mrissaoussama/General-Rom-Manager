@@ -464,7 +464,7 @@ namespace LibHac.Fs.Impl
                 if (status == OperationStatus.DestinationTooSmall)
                     nameBuffer = Span<byte>.Empty;
                 else
-                    nameBuffer = nameBuffer.Slice(0, bytesWritten);
+                    nameBuffer = nameBuffer[..bytesWritten];
             }
 
             if (nameBuffer.Length == 0 && functionName.Length != 0)
@@ -545,7 +545,7 @@ namespace LibHac.Fs.Impl
                     .Append(LogLineEnd);
             }
 
-            OutputAccessLogImpl(fs, new U8Span(sb.Buffer.Slice(0, sb.Length)));
+            OutputAccessLogImpl(fs, new U8Span(sb.Buffer[..sb.Length]));
         }
 
         private static void OutputAccessLogStartForSystem(FileSystemClientImpl fs)
@@ -556,7 +556,7 @@ namespace LibHac.Fs.Impl
             sb.Append(LogLineStart).Append(LogSdkVersion).Append(LogLibHacVersion).Append(LogSpec).Append(LogNx)
                 .Append(LogForSystem).Append(LogLineEnd);
 
-            OutputAccessLogImpl(fs, new U8Span(sb.Buffer.Slice(0, sb.Length)));
+            OutputAccessLogImpl(fs, new U8Span(sb.Buffer[..sb.Length]));
         }
 
         private static void OutputAccessLogStartGeneratedByCallback(FileSystemClientImpl fs)
@@ -570,7 +570,7 @@ namespace LibHac.Fs.Impl
 
                 if (length <= logBuffer.Length)
                 {
-                    OutputAccessLogImpl(fs, new U8Span(logBuffer.Slice(0, length)));
+                    OutputAccessLogImpl(fs, new U8Span(logBuffer[..length]));
                 }
             }
         }
@@ -590,7 +590,7 @@ namespace LibHac.Fs.Impl
 
             if (fs.Globals.AccessLog.GlobalAccessLogMode.HasFlag(GlobalAccessLogMode.SdCard))
             {
-                OutputAccessLogToSdCardImpl(fs, message.Slice(0, message.Length - 1));
+                OutputAccessLogToSdCardImpl(fs, message[..^1]);
             }
         }
 

@@ -100,7 +100,7 @@ public ref struct U8StringBuilder
         }
 
         // Copy the string to the buffer and right pad if necessary.
-        value.Slice(0, valueLength).CopyTo(Buffer.Slice(Length));
+        value[..valueLength].CopyTo(Buffer[Length..]);
         PadOutput(valueLength);
 
         // Update the length and null-terminate the string.
@@ -156,7 +156,7 @@ public ref struct U8StringBuilder
         while (true)
         {
             // Exclude the null terminator from the buffer because Utf8Formatter doesn't handle it
-            Span<byte> availableBuffer = Buffer.Slice(Length, Capacity - Length);
+            Span<byte> availableBuffer = Buffer[Length..Capacity];
 
             bool bufferLargeEnough = Utf8Formatter.TryFormat(value, availableBuffer, out bytesWritten,
                 new StandardFormat(format, precision));
@@ -199,7 +199,7 @@ public ref struct U8StringBuilder
         while (true)
         {
             // Exclude the null terminator from the buffer because Utf8Formatter doesn't handle it
-            Span<byte> availableBuffer = Buffer.Slice(Length, Capacity - Length);
+            Span<byte> availableBuffer = Buffer[Length..Capacity];
 
             bool bufferLargeEnough = Utf8Formatter.TryFormat(value, availableBuffer, out bytesWritten,
                 new StandardFormat(format, precision));
@@ -238,7 +238,7 @@ public ref struct U8StringBuilder
         while (true)
         {
             // Exclude the null terminator from the buffer because Utf8Formatter doesn't handle it
-            Span<byte> availableBuffer = Buffer.Slice(Length, Capacity - Length);
+            Span<byte> availableBuffer = Buffer[Length..Capacity];
 
             bool bufferLargeEnough = Utf8Formatter.TryFormat(value, availableBuffer, out bytesWritten,
                 new StandardFormat(format, precision));
@@ -277,7 +277,7 @@ public ref struct U8StringBuilder
         while (true)
         {
             // Exclude the null terminator from the buffer because Utf8Formatter doesn't handle it
-            Span<byte> availableBuffer = Buffer.Slice(Length, Capacity - Length);
+            Span<byte> availableBuffer = Buffer[Length..Capacity];
 
             bool bufferLargeEnough = Utf8Formatter.TryFormat(value, availableBuffer, out bytesWritten,
                 new StandardFormat(format, precision));
@@ -388,7 +388,7 @@ public ref struct U8StringBuilder
         byte[] poolArray =
             ArrayPool<byte>.Shared.Rent(Math.Max(Length + requiredAdditionalCapacity, Capacity * 2));
 
-        Buffer.Slice(0, Length).CopyTo(poolArray);
+        Buffer[..Length].CopyTo(poolArray);
         Buffer = poolArray;
 
         byte[] toReturn = _rentedArray;

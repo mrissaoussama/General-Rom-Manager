@@ -1,67 +1,57 @@
-﻿using LibHac.Bcat;
-using PS4_Tools.LibOrbis.PKG;
-using RomManagerShared.Utils;
+﻿using RomManagerShared.Utils;
 using System.IO.Compression;
-using System.Text;
 
-namespace RomManagerShared.PSVita
+namespace RomManagerShared.PSVita;
+
+public static class PSVitaUtils
 {
-    public static class PSVitaUtils
+    public static string vpkSfoFilePath = "sce_sys/param.sfo";
+    public static bool IsPSVitaRom(string filePath, bool checkExtensionOnly = false)
     {
-        public static string vpkSfoFilePath = "sce_sys/param.sfo";
-        public static bool IsPSVitaRom(string filePath, bool checkExtensionOnly = false)
+        if (Path.GetExtension(filePath).Contains("vpk"))
         {
-            if (Path.GetExtension(filePath).Contains("vpk"))
+            try
             {
-                try { 
-                using (ZipArchive zipArchive = ZipFile.OpenRead(filePath))
-                {
-                    ZipArchiveEntry? sfoEntry = zipArchive.GetEntry(vpkSfoFilePath);
+                using ZipArchive zipArchive = ZipFile.OpenRead(filePath);
+                ZipArchiveEntry? sfoEntry = zipArchive.GetEntry(vpkSfoFilePath);
 
-                    if (sfoEntry != null)
-                    {
-                        using (Stream sfoStream = sfoEntry.Open())
-                        using (MemoryStream memoryStream = new MemoryStream())
-                        {
-                            sfoStream.CopyTo(memoryStream);
-
-                                return IsPSVitaSFO(memoryStream);
-
-                            }
-                        }
-                    else
-                    {
-                            FileUtils.Log($"{vpkSfoFilePath} not found in the vpk archive.");
-                            return false;
-                    }
-                }
-                }catch (Exception ex)
+                if (sfoEntry != null)
                 {
-                    FileUtils.Log(ex.Message);
-                    return false;
-                }
-            }
-            else if (Path.GetExtension(filePath).Contains("sfo"))
-            {
-                using (FileStream fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
-                using (MemoryStream memoryStream = new MemoryStream())
-                {
-                    fileStream.CopyTo(memoryStream);
+                    using Stream sfoStream = sfoEntry.Open();
+                    using MemoryStream memoryStream = new();
+                    sfoStream.CopyTo(memoryStream);
 
                     return IsPSVitaSFO(memoryStream);
                 }
+                else
+                {
+                    FileUtils.Log($"{vpkSfoFilePath} not found in the vpk archive.");
+                    return false;
+                }
             }
+            catch (Exception ex)
+            {
+                FileUtils.Log(ex.Message);
                 return false;
+            }
         }
-        public static bool IsPSVitaSFO(MemoryStream memoryStream)
+        else if (Path.GetExtension(filePath).Contains("sfo"))
         {
-            Param_SFO.PARAM_SFO sfo = new(memoryStream);
-            if (sfo.TitleID.Contains("PCS"))
-                return true;
-            return sfo.PlaystationVersion == Param_SFO.PARAM_SFO.Playstation.psvita;
+            using FileStream fileStream = new(filePath, FileMode.Open, FileAccess.Read);
+            using MemoryStream memoryStream = new();
+            fileStream.CopyTo(memoryStream);
+
+            return IsPSVitaSFO(memoryStream);
         }
-        public static bool IsPSVitaSFO(byte[] memoryStream)
-        {
-            Param_SFO.PARAM_SFO sfo = new(memoryStream);
-            return sfo.PlaystationVersion == Param_SFO.PARAM_SFO.Playstation.psvita;
-        }    }}
+        return false;
+    }
+    public static bool IsPSVitaSFO(MemoryStream memoryStream)
+    {
+        Param_SFO.PARAM_SFO sfo = new(memoryStream);
+        return sfo.TitleID.Contains("PCS") || sfo.PlaystationVersion == Param_SFO.PARAM_SFO.Playstation.psvita;
+    }
+    public static bool IsPSVitaSFO(byte[] memoryStream)
+    {
+        Param_SFO.PARAM_SFO sfo = new(memoryStream);
+        return sfo.PlaystationVersion == Param_SFO.PARAM_SFO.Playstation.psvita;
+    }}

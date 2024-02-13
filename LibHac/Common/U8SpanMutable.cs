@@ -54,7 +54,7 @@ public readonly ref struct U8SpanMutable
 
     public U8SpanMutable Slice(int start)
     {
-        return new U8SpanMutable(_buffer.Slice(start));
+        return new U8SpanMutable(_buffer[start..]);
     }
 
     public U8SpanMutable Slice(int start, int length)

@@ -1,8 +1,8 @@
-﻿namespace RomManagerShared.Base
+﻿namespace RomManagerShared.Base;
+
+public interface ITitleInfoProvider
 {
-    public interface ITitleInfoProvider
-    {
-        public string Source { get; set; }
-        public Task LoadTitleDatabaseAsync();
-        Task<Rom> GetTitleInfo(Rom rom);
-    }}
+    public string Source { get; set; }
+    public Task LoadTitleDatabaseAsync();
+    Task<Rom> GetTitleInfo(Rom rom);
+}

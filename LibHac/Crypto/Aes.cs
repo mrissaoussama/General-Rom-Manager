@@ -274,7 +274,7 @@ public static class Aes
             int paddedLength = len + (16 - len % 16);
             paddedMessage = paddedLength < 0x800 ? stackalloc byte[paddedLength] : new byte[paddedLength];
 
-            paddedMessage.Slice(len).Clear();
+            paddedMessage[len..].Clear();
             paddedMessage[len] = 0x80;
             data.CopyTo(paddedMessage);
 
@@ -283,7 +283,7 @@ public static class Aes
         }
 
         EncryptCbc128(paddedMessage, paddedMessage, key, zero); // The result of the previous process will be the input of the last encryption.
-        paddedMessage.Slice(paddedMessage.Length - 0x10).CopyTo(mac);
+        paddedMessage[^0x10..].CopyTo(mac);
     }
 
     private static void LeftShiftBytes(ReadOnlySpan<byte> input, Span<byte> output)

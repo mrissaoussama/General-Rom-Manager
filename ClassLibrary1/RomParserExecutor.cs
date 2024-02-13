@@ -1,57 +1,57 @@
 ﻿using RomManagerShared.Base;
 using RomManagerShared.Utils;
-namespace RomManagerShared
-{
-    public class RomParserExecutor
-    {
-        public List<IRomParser> Parsers = [];
-        public RomParserExecutor AddParser(IRomParser parser)
-        {
-            Parsers.Add(parser);
-            Parsers = [.. Parsers.OrderByDescending(p => p.Extensions.Count)];
-            return this;
-        }
-        public async Task<HashSet<Rom>> ExecuteParsers(string file)
-        {
-            HashSet<Rom> mergedRomList = [];
-            foreach (var parser in Parsers)
+namespace RomManagerShared;
 
+public class RomParserExecutor
+{
+    public List<IRomParser> Parsers = [];
+    public RomParserExecutor AddParser(IRomParser parser)
+    {
+        Parsers.Add(parser);
+        Parsers = [.. Parsers.OrderByDescending(p => p.Extensions.Count)];
+        return this;
+    }
+    public async Task<HashSet<Rom>> ExecuteParsers(string file)
+    {
+        HashSet<Rom> mergedRomList = [];
+        var CompatibleParsers = Parsers.Where(x => x.Extensions.Contains(Path.GetExtension(file).Replace(".", "").ToLower())).ToList();
+        foreach (var parser in CompatibleParsers)
+
+        {
+            var parsedRomList = new HashSet<Rom>();
+            try
             {
-                var parsedRomList = new HashSet<Rom>();
-                try
+                parsedRomList = await parser.ProcessFile(file);
+                if (parsedRomList == null || parsedRomList.Count == 0)
                 {
-                    parsedRomList = await parser.ProcessFile(file);
-                    if (parsedRomList == null || parsedRomList.Count == 0)
-                    {
-                        continue;
-                    }
-                    mergedRomList.UnionWith(parsedRomList);
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    FileUtils.Log($"file '{file}' threw exception {ex.Message}.{Environment.NewLine}");
                     continue;
                 }
+                mergedRomList.UnionWith(parsedRomList);
+                break;
             }
-            if (mergedRomList.Count == 0)
+            catch (Exception ex)
             {
-             //   FileUtils.MoveFileToErrorFiles(file);
+                FileUtils.Log($"file '{file}' threw exception {ex.Message}.{Environment.NewLine}");
+                continue;
             }
-            return mergedRomList;
         }
-        public HashSet<string> GetSupportedExtensions()
+        if (mergedRomList.Count == 0)
         {
-            if (Parsers.Count == 0)
-            {
-                return [];
-            }
-            HashSet<string> extensionhashset = [];
-            foreach (var parser in Parsers)
-            {
-                extensionhashset.UnionWith(parser.Extensions);
-            }
-            return extensionhashset;
+            //   FileUtils.MoveFileToErrorFiles(file);
         }
+        return mergedRomList;
+    }
+    public HashSet<string> GetSupportedExtensions()
+    {
+        if (Parsers.Count == 0)
+        {
+            return [];
+        }
+        HashSet<string> extensionhashset = [];
+        foreach (var parser in Parsers)
+        {
+            extensionhashset.UnionWith(parser.Extensions);
+        }
+        return extensionhashset;
     }
 }

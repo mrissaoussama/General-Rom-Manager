@@ -310,7 +310,7 @@ namespace SkyEditor.IO.Binary.Internal
 #else
                 StreamSemaphore.Wait();
                 SourceStream.Seek(index, SeekOrigin.Begin);
-                SourceStream.Write(value.Slice(0, length));
+                SourceStream.Write(value[..length]);
 #endif
             }
             finally
@@ -394,7 +394,7 @@ namespace SkyEditor.IO.Binary.Internal
 #else
                 await StreamSemaphore.WaitAsync();
                 SourceStream.Seek(index, SeekOrigin.Begin);
-                await SourceStream.WriteAsync(value.Slice(0, length));
+                await SourceStream.WriteAsync(value[..length]);
 #endif
             }
             finally

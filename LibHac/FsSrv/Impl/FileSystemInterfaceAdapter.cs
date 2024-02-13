@@ -59,7 +59,7 @@ public class FileInterfaceAdapter : IFileSf
 
         for (int tryNum = 0; tryNum < maxTryCount; tryNum++)
         {
-            res = _baseFile.Get.Read(out readSize, offset, destination.Buffer.Slice(0, (int)size), option);
+            res = _baseFile.Get.Read(out readSize, offset, destination.Buffer[..(int)size], option);
 
             // Retry on ResultDataCorrupted
             if (!ResultFs.DataCorrupted.Includes(res))
@@ -86,7 +86,7 @@ public class FileInterfaceAdapter : IFileSf
         using var scopedPriorityChanger =
             new ScopedThreadPriorityChangerByAccessPriority(ScopedThreadPriorityChangerByAccessPriority.AccessMode.Write);
 
-        return _baseFile.Get.Write(offset, source.Buffer.Slice(0, (int)size), option);
+        return _baseFile.Get.Write(offset, source.Buffer[..(int)size], option);
     }
 
     public Result Flush()

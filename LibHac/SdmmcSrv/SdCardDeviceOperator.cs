@@ -71,7 +71,7 @@ internal class SdCardDeviceOperator : IStorageDeviceOperator
                 if (buffer.Size < DeviceCidSize)
                     return ResultFs.InvalidSize.Log();
 
-                res = GetFsResult(port, _sdmmc.GetDeviceCid(buffer.Buffer.Slice(0, DeviceCidSize), port));
+                res = GetFsResult(port, _sdmmc.GetDeviceCid(buffer.Buffer[..DeviceCidSize], port));
                 if (res.IsFailure()) return res.Miss();
 
                 bytesWritten = DeviceCidSize;

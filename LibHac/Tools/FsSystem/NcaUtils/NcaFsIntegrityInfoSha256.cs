@@ -35,7 +35,7 @@ public struct NcaFsIntegrityInfoSha256
         set => Data.LevelCount = value;
     }
 
-    public Span<byte> MasterHash => _data.Span.Slice(Sha256Struct.MasterHashOffset, Sha256Struct.MasterHashSize);
+    public Span<byte> MasterHash => _data.Span[..Sha256Struct.MasterHashSize];
 
     public ref long GetLevelOffset(int index) => ref GetLevelInfo(index).Offset;
     public ref long GetLevelSize(int index) => ref GetLevelInfo(index).Size;

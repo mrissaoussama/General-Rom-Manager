@@ -37,7 +37,7 @@ public class LocalFile : IFile
         Result res = DryRead(out long toRead, offset, destination.Length, in option, Mode);
         if (res.IsFailure()) return res.Miss();
 
-        return File.Read(out bytesRead, offset, destination.Slice(0, (int)toRead), option);
+        return File.Read(out bytesRead, offset, destination[..(int)toRead], option);
     }
 
     protected override Result DoWrite(long offset, ReadOnlySpan<byte> source, in WriteOption option)

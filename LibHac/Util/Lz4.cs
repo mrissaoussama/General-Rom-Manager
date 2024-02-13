@@ -106,7 +106,7 @@ public static class Lz4
             //Copy literal chunk
             litCount = GetLength(litCount, cmp);
 
-            cmp.Slice(cmpPos, litCount).CopyTo(dec.Slice(decPos));
+            cmp.Slice(cmpPos, litCount).CopyTo(dec[decPos..]);
 
             cmpPos += litCount;
             decPos += litCount;
@@ -126,7 +126,7 @@ public static class Lz4
 
             if (encCount <= back)
             {
-                dec.Slice(encPos, encCount).CopyTo(dec.Slice(decPos));
+                dec.Slice(encPos, encCount).CopyTo(dec[decPos..]);
 
                 decPos += encCount;
             }

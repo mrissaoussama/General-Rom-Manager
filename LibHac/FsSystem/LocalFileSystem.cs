@@ -924,7 +924,7 @@ public class LocalFileSystem : IAttributeFileSystem
         if (res.IsFailure()) return res.Miss();
 
         OperationStatus status = Utf8.FromUtf16(caseSensitivePath.AsSpan(rootPathLength),
-            buffer.Slice(0, buffer.Length - 1), out _, out int utf8BytesWritten);
+            buffer[..^1], out _, out int utf8BytesWritten);
 
         if (status == OperationStatus.DestinationTooSmall)
             return ResultFs.TooLongPath.Log();
@@ -1015,7 +1015,7 @@ public class LocalFileSystem : IAttributeFileSystem
             return path1 + path2;
         }
 
-        return path1 + path2.Substring(1);
+        return path1 + path2[1..];
     }
 
     private static readonly char[] SplitChars = [(char)DirectorySeparator, (char)AltDirectorySeparator];
@@ -1077,11 +1077,11 @@ public class LocalFileSystem : IAttributeFileSystem
                         if (itemIndex == -1)
                         {
                             itemIndex = entries[0].LastIndexOf((char)DirectorySeparator);
-                            exactPath += entries[0].Substring(itemIndex + 1);
+                            exactPath += entries[0][(itemIndex + 1)..];
                         }
                         else
                         {
-                            exactPath += (char)DirectorySeparator + entries[0].Substring(itemIndex + 1);
+                            exactPath += (char)DirectorySeparator + entries[0][(itemIndex + 1)..];
                         }
                     }
                     else

@@ -1,10 +1,10 @@
 ﻿using RomManagerShared.Base;
-namespace RomManagerShared.GameBoy
+namespace RomManagerShared.GameBoy;
+
+public interface IGameBoyRom { }
+public class GameBoyGame : Game, IGameBoyRom
 {
-    public interface IGameBoyRom { }
-    public class GameBoyGame : Game, IGameBoyRom
+    public GameBoyGame() : base()
     {
-        public GameBoyGame() : base()
-        {
-        }
-    }}
+    }
+}

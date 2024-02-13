@@ -199,7 +199,7 @@ internal static class Utility
             res = sourceFile.Get.Read(out long bytesRead, offset, workBuffer, ReadOption.None);
             if (res.IsFailure()) return res.Miss();
 
-            res = destFile.Get.Write(offset, workBuffer.Slice(0, (int)bytesRead), WriteOption.None);
+            res = destFile.Get.Write(offset, workBuffer[..(int)bytesRead], WriteOption.None);
             if (res.IsFailure()) return res.Miss();
 
             remaining -= bytesRead;
@@ -237,10 +237,12 @@ internal static class Utility
             return closure.DestinationPathBuffer.RemoveChild();
         }
 
-        var closure = new FsIterationTaskClosure();
-        closure.Buffer = workBuffer;
-        closure.SourceFileSystem = sourceFileSystem;
-        closure.DestFileSystem = destinationFileSystem;
+        var closure = new FsIterationTaskClosure
+        {
+            Buffer = workBuffer,
+            SourceFileSystem = sourceFileSystem,
+            DestFileSystem = destinationFileSystem
+        };
 
         Result res = closure.DestinationPathBuffer.Initialize(destinationPath);
         if (res.IsFailure()) return res.Miss();
@@ -255,9 +257,11 @@ internal static class Utility
     public static Result CopyDirectoryRecursively(IFileSystem fileSystem, in Path destinationPath,
         in Path sourcePath, ref DirectoryEntry dirEntry, Span<byte> workBuffer)
     {
-        var closure = new FsIterationTaskClosure();
-        closure.Buffer = workBuffer;
-        closure.SourceFileSystem = fileSystem;
+        var closure = new FsIterationTaskClosure
+        {
+            Buffer = workBuffer,
+            SourceFileSystem = fileSystem
+        };
 
         Result res = closure.DestinationPathBuffer.Initialize(destinationPath);
         if (res.IsFailure()) return res.Miss();
@@ -326,9 +330,11 @@ internal static class Utility
         Result res = PathFunctions.SetUpFixedPath(ref rootPath.Ref(), RootPath);
         if (res.IsFailure()) return res.Miss();
 
-        var closure = new FsIterationTaskClosure();
-        closure.Buffer = workBuffer;
-        closure.SourceFileSystem = fileSystem;
+        var closure = new FsIterationTaskClosure
+        {
+            Buffer = workBuffer,
+            SourceFileSystem = fileSystem
+        };
 
         var dirEntryBuffer = new DirectoryEntry();
 

@@ -102,7 +102,7 @@ public struct AesCtrModeNi
 
         if (remaining != 0)
         {
-            EncryptCtrPartialBlock(input.Slice(blockCount * 0x10), output.Slice(blockCount * 0x10));
+            EncryptCtrPartialBlock(input[(blockCount * 0x10)..], output[(blockCount * 0x10)..]);
         }
 
         return length;

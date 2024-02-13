@@ -330,14 +330,14 @@ public static class ExternalKeyReader
         if (reader.NeedFillBuffer)
         {
             // Move unread text to the front of the buffer
-            buffer.Slice(reader.BufferPos).CopyTo(buffer);
+            buffer[reader.BufferPos..].CopyTo(buffer);
 
-            int charsRead = reader.Reader.ReadBlock(buffer.Slice(buffer.Length - reader.BufferPos));
+            int charsRead = reader.Reader.ReadBlock(buffer[^reader.BufferPos..]);
 
             // ReadBlock will only read less than the buffer size if there's nothing left to read
             if (charsRead != reader.BufferPos)
             {
-                buffer = buffer.Slice(0, buffer.Length - reader.BufferPos + charsRead);
+                buffer = buffer[..(buffer.Length - reader.BufferPos + charsRead)];
                 reader.Buffer = buffer;
                 reader.HasReadEndOfFile = true;
             }
@@ -542,7 +542,7 @@ public static class ExternalKeyReader
 
         // A bad line was encountered if we're in any of the other states
         // Return the line as "CurrentKey"
-        reader.CurrentKey = reader.Buffer.Slice(reader.BufferPos, i - reader.BufferPos);
+        reader.CurrentKey = reader.Buffer[reader.BufferPos..i];
         reader.BufferPos = i;
 
         return ReaderStatus.Error;

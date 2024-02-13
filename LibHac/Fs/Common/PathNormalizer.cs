@@ -107,11 +107,11 @@ public static class PathNormalizer
                     dirLen++;
                 }
 
-                if (IsCurrentDirectory(currentPath.Slice(i)))
+                if (IsCurrentDirectory(currentPath[i..]))
                 {
                     skipNextSeparator = true;
                 }
-                else if (IsParentDirectory(currentPath.Slice(i)))
+                else if (IsParentDirectory(currentPath[i..]))
                 {
                     Assert.SdkAssert(outputBuffer[totalLength - 1] == DirectorySeparator);
 

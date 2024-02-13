@@ -55,7 +55,7 @@ public readonly ref struct U8Span
 
     public U8Span Slice(int start)
     {
-        return new U8Span(_buffer.Slice(start));
+        return new U8Span(_buffer[start..]);
     }
 
     public U8Span Slice(int start, int length)
@@ -80,7 +80,7 @@ public readonly ref struct U8Span
 
         // Allocate an extra byte for the null terminator
         byte[] buffer = new byte[length + 1];
-        _buffer.Slice(0, length).CopyTo(buffer);
+        _buffer[..length].CopyTo(buffer);
 
         return new U8String(buffer);
     }

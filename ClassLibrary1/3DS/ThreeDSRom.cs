@@ -1,22 +1,21 @@
-﻿using RomManagerShared.Base;namespace RomManagerShared.ThreeDS
+﻿using RomManagerShared.Base;namespace RomManagerShared.ThreeDS;
+
+public interface IThreeDSRom { }
+public class ThreeDSGame : Game, IThreeDSRom
 {
-    public interface IThreeDSRom { }
-    public class ThreeDSGame : Game, IThreeDSRom
+    public ThreeDSGame() : base()
     {
-        public ThreeDSGame() : base()
-        {
-        }
     }
-    public class ThreeDSDLC : DLC, IThreeDSRom
+}
+public class ThreeDSDLC : DLC, IThreeDSRom
+{
+    public ThreeDSDLC() : base()
     {
-        public ThreeDSDLC() : base()
-        {
-        }
     }
-    public class ThreeDSUpdate : Update, IThreeDSRom
+}
+public class ThreeDSUpdate : Update, IThreeDSRom
+{
+    public ThreeDSUpdate() : base()
     {
-        public ThreeDSUpdate() : base()
-        {
-        }
     }
 }

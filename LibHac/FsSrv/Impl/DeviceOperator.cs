@@ -42,14 +42,14 @@ public class DeviceOperator : IDeviceOperator
     {
         Assert.True(IntUtil.IsIntValueRepresentable<int, long>(size));
 
-        return buffer.Buffer.Slice(0, (int)size);
+        return buffer.Buffer[..(int)size];
     }
 
     private static ReadOnlySpan<byte> GetSpan(InBuffer buffer, long size)
     {
         Assert.True(IntUtil.IsIntValueRepresentable<int, long>(size));
 
-        return buffer.Buffer.Slice(0, (int)size);
+        return buffer.Buffer[..(int)size];
     }
 
     public Result IsSdCardInserted(out bool outIsInserted)

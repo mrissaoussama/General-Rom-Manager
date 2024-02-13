@@ -77,18 +77,18 @@ internal class SdmmcStorage : IStorage
 
             // Get the number of bytes from source to be written to the aligned buffer, and copy that data to the buffer.
             int unalignedSize = writeSize - paddingSize;
-            source.Slice(0, unalignedSize).CopyTo(pooledBuffer.GetBuffer().Slice(paddingSize));
+            source[..unalignedSize].CopyTo(pooledBuffer.GetBuffer()[paddingSize..]);
 
             // Read the current data into the aligned buffer.
             res = GetFsResult(_port,
-                _sdmmc.Read(pooledBuffer.GetBuffer().Slice(0, paddingSize), _port,
+                _sdmmc.Read(pooledBuffer.GetBuffer()[..paddingSize], _port,
                     BytesToSectors(alignedUpOffset - alignment), BytesToSectors(paddingSize)));
             if (res.IsFailure()) return res.Miss();
 
             // Write the aligned buffer.
             res = GetFsResult(_port,
                 _sdmmc.Write(_port, BytesToSectors(alignedUpOffset - alignment), BytesToSectors(writeSize),
-                    pooledBuffer.GetBuffer().Slice(0, writeSize)));
+                    pooledBuffer.GetBuffer()[..writeSize]));
             if (res.IsFailure()) return res.Miss();
 
             remainingSize -= unalignedSize;
@@ -165,12 +165,12 @@ internal class SdmmcStorageInterfaceAdapter : IStorageSf
 
     public virtual Result Read(long offset, OutBuffer destination, long size)
     {
-        return _baseStorage.Read(offset, destination.Buffer.Slice(0, (int)size)).Ret();
+        return _baseStorage.Read(offset, destination.Buffer[..(int)size]).Ret();
     }
 
     public virtual Result Write(long offset, InBuffer source, long size)
     {
-        return _baseStorage.Write(offset, source.Buffer.Slice(0, (int)size)).Ret();
+        return _baseStorage.Write(offset, source.Buffer[..(int)size]).Ret();
     }
 
     public virtual Result Flush()

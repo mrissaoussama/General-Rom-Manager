@@ -43,7 +43,7 @@ public class StorageInterfaceAdapter : IStorageSf
 
         for (int tryNum = 0; tryNum < maxTryCount; tryNum++)
         {
-            res = _baseStorage.Get.Read(offset, destination.Buffer.Slice(0, (int)size));
+            res = _baseStorage.Get.Read(offset, destination.Buffer[..(int)size]);
 
             // Retry on ResultDataCorrupted
             if (!ResultFs.DataCorrupted.Includes(res))
@@ -67,7 +67,7 @@ public class StorageInterfaceAdapter : IStorageSf
         using var scopedPriorityChanger = new ScopedThreadPriorityChangerByAccessPriority(
             ScopedThreadPriorityChangerByAccessPriority.AccessMode.Write);
 
-        return _baseStorage.Get.Write(offset, source.Buffer.Slice(0, (int)size));
+        return _baseStorage.Get.Write(offset, source.Buffer[..(int)size]);
     }
 
     public Result Flush()

@@ -1,8 +1,7 @@
-﻿namespace RomManagerShared.Switch.TitleInfoProviders
+﻿namespace RomManagerShared.Switch.TitleInfoProviders;
+
+public interface IUpdateVersionProvider
 {
-    public interface IUpdateVersionProvider
-    {
-        public string Source { get; set; }        Task<string> GetLatestVersion(string titleId);
-        Task LoadVersionDatabaseAsync();
-    }
+    public string Source { get; set; }    Task<string> GetLatestVersion(string titleId);
+    Task LoadVersionDatabaseAsync();
 }

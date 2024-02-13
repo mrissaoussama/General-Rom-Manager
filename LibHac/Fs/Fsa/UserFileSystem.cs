@@ -730,8 +730,10 @@ public static class UserFileSystem
             if (attribute.ProgramId == SaveData.InvalidProgramId)
                 attribute.ProgramId = SaveData.AutoResolveCallerProgramId;
 
-            var extraDataMask = new SaveDataExtraData();
-            extraDataMask.Flags = SaveDataFlags.Restore;
+            var extraDataMask = new SaveDataExtraData
+            {
+                Flags = SaveDataFlags.Restore
+            };
 
             var extraData = new SaveDataExtraData();
             extraDataMask.Flags = option.Flags == CommitOptionFlag.SetRestoreFlag

@@ -210,7 +210,7 @@ public class XciHeader
 
         // Generate the key.
         Span<byte> key = stackalloc byte[0x10];
-        Aes.DecryptEcb128(initialData.Slice(0, 0x10), key, keySet.GcTitleKeyKeks[kekIndex]);
+        Aes.DecryptEcb128(initialData[..0x10], key, keySet.GcTitleKeyKeks[kekIndex]);
 
         ref readonly CardInitialData data = ref SpanHelpers.AsReadOnlyStruct<CardInitialData>(initialData);
 

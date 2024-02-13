@@ -1,22 +1,21 @@
-﻿namespace DotNet3dsToolkit.Infrastructure
+﻿namespace DotNet3dsToolkit.Infrastructure;
+
+public static class PathUtilities
 {
-    public static class PathUtilities
+    /// <summary>
+    /// Makes the given path a relative path
+    /// </summary>
+    /// <param name="targetPath">The path to make relative</param>
+    /// <param name="relativeToPath">The path to which <paramref name="targetPath"/> is relative.  Must be a directory</param>
+    /// <returns><paramref name="targetPath"/>, except relative to <paramref name="relativeToPath"/></returns>
+    public static string MakeRelativePath(string targetPath, string relativeToPath)
     {
-        /// <summary>
-        /// Makes the given path a relative path
-        /// </summary>
-        /// <param name="targetPath">The path to make relative</param>
-        /// <param name="relativeToPath">The path to which <paramref name="targetPath"/> is relative.  Must be a directory</param>
-        /// <returns><paramref name="targetPath"/>, except relative to <paramref name="relativeToPath"/></returns>
-        public static string MakeRelativePath(string targetPath, string relativeToPath)
+        var otherPathString = relativeToPath.Replace('\\', '/');
+        if (!otherPathString.EndsWith("/"))
         {
-            var otherPathString = relativeToPath.Replace('\\', '/');
-            if (!otherPathString.EndsWith("/"))
-            {
-                otherPathString += "/";
-            }
-            var absolutePath = new Uri("file://" + targetPath.Replace('\\', '/'));
-            var otherPath = new Uri("file://" + otherPathString);            return Uri.UnescapeDataString(otherPath.MakeRelativeUri(absolutePath).OriginalString);
+            otherPathString += "/";
         }
+        var absolutePath = new Uri("file://" + targetPath.Replace('\\', '/'));
+        var otherPath = new Uri("file://" + otherPathString);        return Uri.UnescapeDataString(otherPath.MakeRelativeUri(absolutePath).OriginalString);
     }
 }

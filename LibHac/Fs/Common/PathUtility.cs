@@ -62,14 +62,14 @@ public static class PathUtility
 
         if (!WindowsPath.IsWindowsPath(pathWithoutMountName, true))
         {
-            Replace(SpanHelpers.AsByteSpan(ref fspPath).Slice(0, 0x300), AltDirectorySeparator, DirectorySeparator);
+            Replace(SpanHelpers.AsByteSpan(ref fspPath)[..0x300], AltDirectorySeparator, DirectorySeparator);
         }
         else
         {
             bool isHostOrNoMountName = skipLength == 0 || StringUtils.Compare(path, CommonMountNames.HostRootFileSystemMountName,
                 CommonMountNames.HostRootFileSystemMountName.Length) == 0;
 
-            if (isHostOrNoMountName && WindowsPath.IsUncPath(path.Slice(skipLength), true, false))
+            if (isHostOrNoMountName && WindowsPath.IsUncPath(path[skipLength..], true, false))
             {
                 SpanHelpers.AsByteSpan(ref fspPath)[skipLength] = AltDirectorySeparator;
                 SpanHelpers.AsByteSpan(ref fspPath)[skipLength + 1] = AltDirectorySeparator;

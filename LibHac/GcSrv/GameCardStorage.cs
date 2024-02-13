@@ -185,12 +185,12 @@ internal abstract class GameCardStorageInterfaceAdapter : IStorageSf
 
     public virtual Result Read(long offset, OutBuffer destination, long size)
     {
-        return _baseStorage.Get.Read(offset, destination.Buffer.Slice(0, (int)size)).Ret();
+        return _baseStorage.Get.Read(offset, destination.Buffer[..(int)size]).Ret();
     }
 
     public virtual Result Write(long offset, InBuffer source, long size)
     {
-        return _baseStorage.Get.Write(offset, source.Buffer.Slice(0, (int)size)).Ret();
+        return _baseStorage.Get.Write(offset, source.Buffer[..(int)size]).Ret();
     }
 
     public virtual Result Flush()

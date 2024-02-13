@@ -2,6 +2,16 @@
   "PluginsPath": "Plugins",
   "SqliteDBPath": "RomDB.sqlite",
   "ErrorLogPath": "ErrorLog.txt",
+  "Xbox360": {
+    "XexToolPath": "Xbox360\\xextool.exe",
+    "ThumbnailCachePath": "Xbox360\\Cache\\Thumbnail"
+  },
+  "OriginalXbox": {
+    "ThumbnailCachePath": "Xbox360\\Cache\\Thumbnail"
+  },
+  "PSP": {
+    "CachePath": "Xbox360\\Cache\\Thumbnail"
+  },
   "Switch": {
     "TitleDB": {
       "TitleDBUrl": "https://github.com/blawar/titledb/raw/master/",
@@ -43,6 +53,12 @@
     },
     "PS4": {
       "PS4ToolsPath": "PS4\\PS4_Tools.dll"
+    }
+  },
+  "WiiU": {
+    "TitleDB": {
+      "TitleDBUrl": "https://raw.githubusercontent.com/libretro/libretro-database/master/dat/Nintendo%20-%20Wii%20U.dat",
+      "TitleDBPath": "WiiU\\TitleDB\\Nintendo - Wii U.dat"
     }
   }
 }

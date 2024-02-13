@@ -68,7 +68,7 @@ internal static class KeyDerivation
                 logger?.LogMessage($"Warning: Keyblob MAC {i:x2} is invalid. Are SBK/TSEC key correct?");
             }
 
-            Aes.DecryptCtr128(s.EncryptedKeyBlobs[i].Bytes.Slice(0x20), s.KeyBlobs[i].Bytes, s.KeyBlobKeys[i],
+            Aes.DecryptCtr128(s.EncryptedKeyBlobs[i].Bytes[0x20..], s.KeyBlobs[i].Bytes, s.KeyBlobKeys[i],
                 s.EncryptedKeyBlobs[i].Counter);
         }
     }

@@ -124,7 +124,7 @@ namespace SkyEditor.IO.Binary.Internal
 
         public void Write(long index, int length, ReadOnlySpan<byte> value)
         {
-            var toCopy = value[..length];
+            var toCopy = value.Slice(0,length);
             if (index < int.MaxValue)
             {
                 toCopy.CopyTo(_rawData.AsSpan().Slice((int)index, length));

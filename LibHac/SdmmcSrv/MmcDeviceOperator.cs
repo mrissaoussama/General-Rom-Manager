@@ -103,7 +103,7 @@ internal class MmcDeviceOperator : IStorageDeviceOperator
                 if (buffer.Size < DeviceCidSize)
                     return ResultFs.InvalidSize.Log();
 
-                res = GetFsResult(port, _sdmmc.GetDeviceCid(buffer.Buffer.Slice(0, DeviceCidSize), port));
+                res = GetFsResult(port, _sdmmc.GetDeviceCid(buffer.Buffer[..DeviceCidSize], port));
                 if (res.IsFailure()) return res.Miss();
 
                 bytesWritten = DeviceCidSize;
@@ -134,7 +134,7 @@ internal class MmcDeviceOperator : IStorageDeviceOperator
                 res = GetFsResult(port, _sdmmc.GetMmcExtendedCsd(pooledBuffer.GetBuffer(), port));
                 if (res.IsFailure()) return res.Miss();
 
-                pooledBuffer.GetBuffer().Slice(0, MmcExtendedCsdSize).CopyTo(buffer.Buffer);
+                pooledBuffer.GetBuffer()[..MmcExtendedCsdSize].CopyTo(buffer.Buffer);
                 bytesWritten = MmcExtendedCsdSize;
 
                 return Result.Success;

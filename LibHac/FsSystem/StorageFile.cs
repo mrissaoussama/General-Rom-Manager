@@ -36,7 +36,7 @@ public class StorageFile : IFile
             return Result.Success;
         }
 
-        res = _baseStorage.Read(offset, destination.Slice(0, (int)readSize));
+        res = _baseStorage.Read(offset, destination[..(int)readSize]);
         if (res.IsFailure()) return res.Miss();
 
         bytesRead = readSize;

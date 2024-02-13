@@ -71,38 +71,48 @@ public static class FileSystemServerInitializer
         bufferManager.Initialize(BufferManagerCacheSize, heapBuffer, BufferManagerBlockSize);
 
         // Todo: Assign based on the value of "IsDevelopment"
-        var debugConfigurationServiceConfig = new DebugConfigurationServiceImpl.Configuration();
-        debugConfigurationServiceConfig.IsDisabled = false;
+        var debugConfigurationServiceConfig = new DebugConfigurationServiceImpl.Configuration
+        {
+            IsDisabled = false
+        };
         var debugConfigurationService = new DebugConfigurationServiceImpl(in debugConfigurationServiceConfig);
 
         var saveDataIndexerManager = new SaveDataIndexerManager(server.Hos.Fs, Fs.SaveData.SaveIndexerId,
             new ArrayPoolMemoryResource(), new SdHandleManager(server), false);
 
-        var programRegistryConfig = new ProgramRegistryServiceImpl.Configuration();
-        programRegistryConfig.FsServer = server;
+        var programRegistryConfig = new ProgramRegistryServiceImpl.Configuration
+        {
+            FsServer = server
+        };
 
         var programRegistryService = new ProgramRegistryServiceImpl(in programRegistryConfig);
 
         ProgramRegistryImpl.Initialize(server, programRegistryService);
 
-        var baseStorageConfig = new BaseStorageServiceImpl.Configuration();
-        baseStorageConfig.BisStorageCreator = config.FsCreators.BuiltInStorageCreator;
-        baseStorageConfig.GameCardStorageCreator = config.FsCreators.GameCardStorageCreator;
-        baseStorageConfig.FsServer = server;
+        var baseStorageConfig = new BaseStorageServiceImpl.Configuration
+        {
+            BisStorageCreator = config.FsCreators.BuiltInStorageCreator,
+            GameCardStorageCreator = config.FsCreators.GameCardStorageCreator,
+            FsServer = server
+        };
         var baseStorageService = new BaseStorageServiceImpl(in baseStorageConfig);
 
         var timeService = new TimeServiceImpl(server);
 
-        var baseFsServiceConfig = new BaseFileSystemServiceImpl.Configuration();
-        baseFsServiceConfig.BisFileSystemCreator = config.FsCreators.BuiltInStorageFileSystemCreator;
-        baseFsServiceConfig.GameCardFileSystemCreator = config.FsCreators.GameCardFileSystemCreator;
-        baseFsServiceConfig.SdCardFileSystemCreator = config.FsCreators.SdCardFileSystemCreator;
-        baseFsServiceConfig.BisWiperCreator = BisWiper.CreateWiper;
-        baseFsServiceConfig.FsServer = server;
+        var baseFsServiceConfig = new BaseFileSystemServiceImpl.Configuration
+        {
+            BisFileSystemCreator = config.FsCreators.BuiltInStorageFileSystemCreator,
+            GameCardFileSystemCreator = config.FsCreators.GameCardFileSystemCreator,
+            SdCardFileSystemCreator = config.FsCreators.SdCardFileSystemCreator,
+            BisWiperCreator = BisWiper.CreateWiper,
+            FsServer = server
+        };
         var baseFsService = new BaseFileSystemServiceImpl(in baseFsServiceConfig);
 
-        var accessFailureManagementServiceConfig = new AccessFailureManagementServiceImpl.Configuration();
-        accessFailureManagementServiceConfig.FsServer = server;
+        var accessFailureManagementServiceConfig = new AccessFailureManagementServiceImpl.Configuration
+        {
+            FsServer = server
+        };
 
         var accessFailureManagementService =
             new AccessFailureManagementServiceImpl(in accessFailureManagementServiceConfig);
@@ -111,57 +121,65 @@ public static class FileSystemServerInitializer
             new InternalProgramIdRangeForSpeedEmulation(SpeedEmulationProgramIdMinimum,
                 SpeedEmulationProgramIdMaximum);
 
-        var ncaFsServiceConfig = new NcaFileSystemServiceImpl.Configuration();
-        ncaFsServiceConfig.BaseFsService = baseFsService;
-        ncaFsServiceConfig.LocalFsCreator = config.FsCreators.LocalFileSystemCreator;
-        ncaFsServiceConfig.TargetManagerFsCreator = config.FsCreators.TargetManagerFileSystemCreator;
-        ncaFsServiceConfig.PartitionFsCreator = config.FsCreators.PartitionFileSystemCreator;
-        ncaFsServiceConfig.RomFsCreator = config.FsCreators.RomFileSystemCreator;
-        ncaFsServiceConfig.StorageOnNcaCreator = config.FsCreators.StorageOnNcaCreator;
-        ncaFsServiceConfig.SubDirectoryFsCreator = config.FsCreators.SubDirectoryFileSystemCreator;
-        ncaFsServiceConfig.EncryptedFsCreator = config.FsCreators.EncryptedFileSystemCreator;
-        ncaFsServiceConfig.ProgramRegistryService = programRegistryService;
-        ncaFsServiceConfig.AccessFailureManagementService = accessFailureManagementService;
-        ncaFsServiceConfig.SpeedEmulationRange = speedEmulationRange;
-        ncaFsServiceConfig.FsServer = server;
+        var ncaFsServiceConfig = new NcaFileSystemServiceImpl.Configuration
+        {
+            BaseFsService = baseFsService,
+            LocalFsCreator = config.FsCreators.LocalFileSystemCreator,
+            TargetManagerFsCreator = config.FsCreators.TargetManagerFileSystemCreator,
+            PartitionFsCreator = config.FsCreators.PartitionFileSystemCreator,
+            RomFsCreator = config.FsCreators.RomFileSystemCreator,
+            StorageOnNcaCreator = config.FsCreators.StorageOnNcaCreator,
+            SubDirectoryFsCreator = config.FsCreators.SubDirectoryFileSystemCreator,
+            EncryptedFsCreator = config.FsCreators.EncryptedFileSystemCreator,
+            ProgramRegistryService = programRegistryService,
+            AccessFailureManagementService = accessFailureManagementService,
+            SpeedEmulationRange = speedEmulationRange,
+            FsServer = server
+        };
 
         var ncaFsService = new NcaFileSystemServiceImpl(in ncaFsServiceConfig, config.ExternalKeySet);
 
-        var saveFsServiceConfig = new SaveDataFileSystemServiceImpl.Configuration();
-        saveFsServiceConfig.BaseFsService = baseFsService;
-        saveFsServiceConfig.TimeService = timeService;
-        saveFsServiceConfig.LocalFsCreator = config.FsCreators.LocalFileSystemCreator;
-        saveFsServiceConfig.TargetManagerFsCreator = config.FsCreators.TargetManagerFileSystemCreator;
-        saveFsServiceConfig.SaveFsCreator = config.FsCreators.SaveDataFileSystemCreator;
-        saveFsServiceConfig.EncryptedFsCreator = config.FsCreators.EncryptedFileSystemCreator;
-        saveFsServiceConfig.ProgramRegistryService = programRegistryService;
-        saveFsServiceConfig.BufferManager = bufferManager;
-        saveFsServiceConfig.GenerateRandomData = config.RandomGenerator;
-        saveFsServiceConfig.IsPseudoSaveData = () => true;
-        saveFsServiceConfig.SaveDataFileSystemCacheCount = 1;
-        saveFsServiceConfig.SaveIndexerManager = saveDataIndexerManager;
-        saveFsServiceConfig.DebugConfigService = debugConfigurationService;
-        saveFsServiceConfig.FsServer = server;
+        var saveFsServiceConfig = new SaveDataFileSystemServiceImpl.Configuration
+        {
+            BaseFsService = baseFsService,
+            TimeService = timeService,
+            LocalFsCreator = config.FsCreators.LocalFileSystemCreator,
+            TargetManagerFsCreator = config.FsCreators.TargetManagerFileSystemCreator,
+            SaveFsCreator = config.FsCreators.SaveDataFileSystemCreator,
+            EncryptedFsCreator = config.FsCreators.EncryptedFileSystemCreator,
+            ProgramRegistryService = programRegistryService,
+            BufferManager = bufferManager,
+            GenerateRandomData = config.RandomGenerator,
+            IsPseudoSaveData = () => true,
+            SaveDataFileSystemCacheCount = 1,
+            SaveIndexerManager = saveDataIndexerManager,
+            DebugConfigService = debugConfigurationService,
+            FsServer = server
+        };
 
         var saveFsService = new SaveDataFileSystemServiceImpl(in saveFsServiceConfig);
 
-        var statusReportServiceConfig = new StatusReportServiceImpl.Configuration();
-        statusReportServiceConfig.NcaFileSystemServiceImpl = ncaFsService;
-        statusReportServiceConfig.SaveDataFileSystemServiceImpl = saveFsService;
-        statusReportServiceConfig.BufferManagerMemoryReport = null;
-        statusReportServiceConfig.ExpHeapMemoryReport = null;
-        statusReportServiceConfig.BufferPoolMemoryReport = null;
-        statusReportServiceConfig.GetPatrolAllocateCounts = null;
-        statusReportServiceConfig.MainThreadStackUsageReporter = new DummyStackUsageReporter();
-        statusReportServiceConfig.IpcWorkerThreadStackUsageReporter = new DummyStackUsageReporter();
-        statusReportServiceConfig.PipeLineWorkerThreadStackUsageReporter = new DummyStackUsageReporter();
-        statusReportServiceConfig.FsServer = server;
+        var statusReportServiceConfig = new StatusReportServiceImpl.Configuration
+        {
+            NcaFileSystemServiceImpl = ncaFsService,
+            SaveDataFileSystemServiceImpl = saveFsService,
+            BufferManagerMemoryReport = null,
+            ExpHeapMemoryReport = null,
+            BufferPoolMemoryReport = null,
+            GetPatrolAllocateCounts = null,
+            MainThreadStackUsageReporter = new DummyStackUsageReporter(),
+            IpcWorkerThreadStackUsageReporter = new DummyStackUsageReporter(),
+            PipeLineWorkerThreadStackUsageReporter = new DummyStackUsageReporter(),
+            FsServer = server
+        };
 
         var statusReportService = new StatusReportServiceImpl(in statusReportServiceConfig);
 
-        var accessLogServiceConfig = new AccessLogServiceImpl.Configuration();
-        accessLogServiceConfig.MinimumProgramIdForSdCardLog = 0x0100000000003000;
-        accessLogServiceConfig.FsServer = server;
+        var accessLogServiceConfig = new AccessLogServiceImpl.Configuration
+        {
+            MinimumProgramIdForSdCardLog = 0x0100000000003000,
+            FsServer = server
+        };
 
         var accessLogService = new AccessLogServiceImpl(in accessLogServiceConfig);
 

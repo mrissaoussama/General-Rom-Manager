@@ -1,21 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace RomManagerShared.Utils;
 
-namespace RomManagerShared.Utils
+public static class StringUtils
 {
-    public static class StringUtils
+    public static string RemoveTrailingNullTerminators(this string s)
     {
-        public static string RemoveTrailingNullTerminators(this string s)
-        {
-            int nullIndex = s.IndexOf('\0');
-            if (nullIndex != -1)
-            {
-                return s.Substring(0, nullIndex);
-            }
-            return s;
-        }
+        int nullIndex = s.IndexOf('\0');
+        return nullIndex != -1 ? s[..nullIndex] : s;
     }
+    //
+    //public static bool IsNullOrEmpty(this string? s)
+    //{
+    //    return string.IsNullOrEmpty(s);
+    //}
 }

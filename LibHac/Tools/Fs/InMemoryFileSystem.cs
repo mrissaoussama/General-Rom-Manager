@@ -438,8 +438,10 @@ public class InMemoryFileSystem : IAttributeFileSystem
 
         public FileTable()
         {
-            _root = new DirectoryNode();
-            _root.Name = new U8String("");
+            _root = new DirectoryNode
+            {
+                Name = new U8String("")
+            };
         }
 
         public Result AddFile(U8Span path)

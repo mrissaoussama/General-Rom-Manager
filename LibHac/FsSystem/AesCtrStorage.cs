@@ -35,7 +35,7 @@ public class AesCtrStorage : IStorage
         Assert.SdkRequiresGreaterEqual(offset, 0);
 
         BinaryPrimitives.WriteUInt64BigEndian(outIv, upperIv);
-        BinaryPrimitives.WriteInt64BigEndian(outIv.Slice(sizeof(long)), offset / BlockSize);
+        BinaryPrimitives.WriteInt64BigEndian(outIv[sizeof(long)..], offset / BlockSize);
     }
 
     public AesCtrStorage(IStorage baseStorage, ReadOnlySpan<byte> key, ReadOnlySpan<byte> iv)
@@ -132,8 +132,8 @@ public class AesCtrStorage : IStorage
             // Determine data we're writing and where.
             int writeSize = useWorkBuffer ? Math.Max(pooledBuffer.GetSize(), remaining) : remaining;
             Span<byte> writeBuffer = useWorkBuffer
-                ? pooledBuffer.GetBuffer().Slice(0, writeSize)
-                : SpanHelpers.CreateSpan(ref MemoryMarshal.GetReference(source), source.Length).Slice(0, writeSize);
+                ? pooledBuffer.GetBuffer()[..writeSize]
+                : SpanHelpers.CreateSpan(ref MemoryMarshal.GetReference(source), source.Length)[..writeSize];
 
             // Encrypt the data, with temporarily increased priority.
             using (new ScopedThreadPriorityChanger(1, ScopedThreadPriorityChanger.Mode.Relative))

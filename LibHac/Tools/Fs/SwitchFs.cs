@@ -279,7 +279,7 @@ public class SwitchFs : IDisposable
             return System.IO.Path.GetFileNameWithoutExtension(name);
         }
 
-        return name.Substring(0, name.Length - ".cnmt.nca".Length);
+        return name[..^".cnmt.nca".Length];
     }
 
     private void DisposeNcas()

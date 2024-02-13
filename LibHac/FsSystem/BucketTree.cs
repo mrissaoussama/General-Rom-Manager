@@ -46,7 +46,7 @@ file struct StorageNode
             int half = end / 2;
             Offset mid = pos + half;
 
-            long offset = BinaryPrimitives.ReadInt64LittleEndian(buffer.Slice((int)mid.Get()));
+            long offset = BinaryPrimitives.ReadInt64LittleEndian(buffer[(int)mid.Get()..]);
 
             if (offset <= virtualAddress)
             {
@@ -383,7 +383,7 @@ public partial class BucketTree : IDisposable
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private Span<TElement> GetWritableArray<TElement>() where TElement : unmanaged
         {
-            return MemoryMarshal.Cast<byte, TElement>(_buffer.Slice(Unsafe.SizeOf<NodeHeader>()));
+            return MemoryMarshal.Cast<byte, TElement>(_buffer[Unsafe.SizeOf<NodeHeader>()..]);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -723,7 +723,7 @@ public partial class BucketTree : IDisposable
             if (_nodeSize + ofs > entryStorageSize)
                 return ResultFs.InvalidBucketTreeNodeEntryCount.Log();
 
-            res = _entryStorage.Read(ofs, buffer.Slice(0, (int)_nodeSize));
+            res = _entryStorage.Read(ofs, buffer[..(int)_nodeSize]);
             if (res.IsFailure()) return res.Miss();
         }
 
@@ -953,7 +953,7 @@ public partial class BucketTree : IDisposable
             if (_tree.IsExistOffsetL2OnL1() && virtualAddress < nodeL1.GetBeginOffset())
             {
                 // The portion of the L2 offsets containing our target offset is stored in the L1 node
-                ReadOnlySpan<long> offsets = nodeL1.GetArray<long>().Slice(nodeL1.GetCount());
+                ReadOnlySpan<long> offsets = nodeL1.GetArray<long>()[nodeL1.GetCount()..];
 
                 // Find the index of the entry containing the requested offset.
                 // If the value is not found, BinarySearch will return the bitwise complement of the
@@ -971,7 +971,7 @@ public partial class BucketTree : IDisposable
             }
             else
             {
-                ReadOnlySpan<long> offsets = nodeL1.GetArray<long>().Slice(0, nodeL1.GetCount());
+                ReadOnlySpan<long> offsets = nodeL1.GetArray<long>()[..nodeL1.GetCount()];
                 int index = offsets.BinarySearch(virtualAddress);
                 if (index < 0) index = (~index) - 1;
 
@@ -1033,7 +1033,7 @@ public partial class BucketTree : IDisposable
             ref ValueSubStorage storage = ref _tree._nodeStorage;
 
             // Read the node.
-            Result res = storage.Read(nodeOffset, buffer.Slice(0, (int)nodeSize));
+            Result res = storage.Read(nodeOffset, buffer[..(int)nodeSize]);
             if (res.IsFailure()) return res.Miss();
 
             // Validate the header.
@@ -1109,7 +1109,7 @@ public partial class BucketTree : IDisposable
             ref ValueSubStorage storage = ref _tree._entryStorage;
 
             // Read the entry set.
-            Result res = storage.Read(entrySetOffset, buffer.Slice(0, (int)entrySetSize));
+            Result res = storage.Read(entrySetOffset, buffer[..(int)entrySetSize]);
             if (res.IsFailure()) return res.Miss();
 
             // Validate the entry set.

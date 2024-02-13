@@ -27,7 +27,7 @@ public class TruncatedSubStorage : SubStorage
         long availableSize = baseStorageSize - offset;
         long sizeToRead = Math.Min(destination.Length, availableSize);
 
-        return base.Read(offset, destination.Slice(0, (int)sizeToRead));
+        return base.Read(offset, destination[..(int)sizeToRead]);
     }
 
     public override Result Write(long offset, ReadOnlySpan<byte> source)
@@ -41,6 +41,6 @@ public class TruncatedSubStorage : SubStorage
         long availableSize = baseStorageSize - offset;
         long sizeToWrite = Math.Min(source.Length, availableSize);
 
-        return base.Write(offset, source.Slice(0, (int)sizeToWrite));
+        return base.Write(offset, source[..(int)sizeToWrite]);
     }
 }

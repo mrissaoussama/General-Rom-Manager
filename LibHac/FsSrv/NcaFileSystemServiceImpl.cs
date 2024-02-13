@@ -324,7 +324,7 @@ public class NcaFileSystemServiceImpl
         if (StringUtils.Compare(path, GameCardFileSystemMountName,
             GameCardFileSystemMountName.Length) == 0)
         {
-            path = path.Slice(GameCardFileSystemMountName.Length);
+            path = path[GameCardFileSystemMountName.Length..];
 
             if (StringUtils.GetLength(path.Value, 9) < 9)
                 return ResultFs.InvalidPath.Log();
@@ -339,13 +339,13 @@ public class NcaFileSystemServiceImpl
             else
                 return ResultFs.InvalidPath.Log();
 
-            path = path.Slice(1);
+            path = path[1..];
             bool handleParsed = Utf8Parser.TryParse(path, out int handle, out int bytesConsumed);
 
             if (!handleParsed || handle == -1 || bytesConsumed != 8)
                 return ResultFs.InvalidPath.Log();
 
-            path = path.Slice(8);
+            path = path[8..];
 
             Result res = _config.BaseFsService.OpenGameCardFileSystem(ref outFileSystem, (uint)handle, partition);
             if (res.IsFailure()) return res.Miss();
@@ -358,7 +358,7 @@ public class NcaFileSystemServiceImpl
         else if (StringUtils.Compare(path, ContentStorageSystemMountName,
                 ContentStorageSystemMountName.Length) == 0)
         {
-            path = path.Slice(ContentStorageSystemMountName.Length);
+            path = path[ContentStorageSystemMountName.Length..];
 
             Result res = OpenContentStorageFileSystem(ref outFileSystem, ContentStorageId.System);
             if (res.IsFailure()) return res.Miss();
@@ -369,7 +369,7 @@ public class NcaFileSystemServiceImpl
         else if (StringUtils.Compare(path, ContentStorageUserMountName,
                 ContentStorageUserMountName.Length) == 0)
         {
-            path = path.Slice(ContentStorageUserMountName.Length);
+            path = path[ContentStorageUserMountName.Length..];
 
             Result res = OpenContentStorageFileSystem(ref outFileSystem, ContentStorageId.User);
             if (res.IsFailure()) return res.Miss();
@@ -380,7 +380,7 @@ public class NcaFileSystemServiceImpl
         else if (StringUtils.Compare(path, ContentStorageSdCardMountName,
                 ContentStorageSdCardMountName.Length) == 0)
         {
-            path = path.Slice(ContentStorageSdCardMountName.Length);
+            path = path[ContentStorageSdCardMountName.Length..];
 
             Result res = OpenContentStorageFileSystem(ref outFileSystem, ContentStorageId.SdCard);
             if (res.IsFailure()) return res.Miss();
@@ -391,7 +391,7 @@ public class NcaFileSystemServiceImpl
         else if (StringUtils.Compare(path, BisCalibrationFilePartitionMountName,
                 BisCalibrationFilePartitionMountName.Length) == 0)
         {
-            path = path.Slice(BisCalibrationFilePartitionMountName.Length);
+            path = path[BisCalibrationFilePartitionMountName.Length..];
 
             Result res = _config.BaseFsService.OpenBisFileSystem(ref outFileSystem, BisPartitionId.CalibrationFile);
             if (res.IsFailure()) return res.Miss();
@@ -400,7 +400,7 @@ public class NcaFileSystemServiceImpl
         else if (StringUtils.Compare(path, BisSafeModePartitionMountName,
                 BisSafeModePartitionMountName.Length) == 0)
         {
-            path = path.Slice(BisSafeModePartitionMountName.Length);
+            path = path[BisSafeModePartitionMountName.Length..];
 
             Result res = _config.BaseFsService.OpenBisFileSystem(ref outFileSystem, BisPartitionId.SafeMode);
             if (res.IsFailure()) return res.Miss();
@@ -409,7 +409,7 @@ public class NcaFileSystemServiceImpl
         else if (StringUtils.Compare(path, BisUserPartitionMountName,
                 BisUserPartitionMountName.Length) == 0)
         {
-            path = path.Slice(BisUserPartitionMountName.Length);
+            path = path[BisUserPartitionMountName.Length..];
 
             Result res = _config.BaseFsService.OpenBisFileSystem(ref outFileSystem, BisPartitionId.User);
             if (res.IsFailure()) return res.Miss();
@@ -418,7 +418,7 @@ public class NcaFileSystemServiceImpl
         else if (StringUtils.Compare(path, BisSystemPartitionMountName,
                 BisSystemPartitionMountName.Length) == 0)
         {
-            path = path.Slice(BisSystemPartitionMountName.Length);
+            path = path[BisSystemPartitionMountName.Length..];
 
             Result res = _config.BaseFsService.OpenBisFileSystem(ref outFileSystem, BisPartitionId.System);
             if (res.IsFailure()) return res.Miss();
@@ -427,7 +427,7 @@ public class NcaFileSystemServiceImpl
         else if (StringUtils.Compare(path, SdCardFileSystemMountName,
                 SdCardFileSystemMountName.Length) == 0)
         {
-            path = path.Slice(SdCardFileSystemMountName.Length);
+            path = path[SdCardFileSystemMountName.Length..];
 
             Result res = _config.BaseFsService.OpenSdCardProxyFileSystem(ref outFileSystem);
             if (res.IsFailure()) return res.Miss();
@@ -436,7 +436,7 @@ public class NcaFileSystemServiceImpl
         else if (StringUtils.Compare(path, HostRootFileSystemMountName,
                 HostRootFileSystemMountName.Length) == 0)
         {
-            path = path.Slice(HostRootFileSystemMountName.Length);
+            path = path[HostRootFileSystemMountName.Length..];
 
             using var rootPathEmpty = new Path();
             Result res = rootPathEmpty.InitializeAsEmpty();
@@ -452,7 +452,7 @@ public class NcaFileSystemServiceImpl
         else if (StringUtils.Compare(path, RegisteredUpdatePartitionMountName,
                 RegisteredUpdatePartitionMountName.Length) == 0)
         {
-            path = path.Slice(RegisteredUpdatePartitionMountName.Length);
+            path = path[RegisteredUpdatePartitionMountName.Length..];
 
             info.CanMountNca = true;
 
@@ -483,7 +483,7 @@ public class NcaFileSystemServiceImpl
             return ResultFs.PathNotFound.Log();
         }
 
-        path = path.Slice(1);
+        path = path[1..];
         int pathLen = StringUtils.GetLength(path);
 
         if (path[pathLen - 1] == '/')
@@ -496,7 +496,7 @@ public class NcaFileSystemServiceImpl
         if (pathLen < 5)
             return ResultFs.PathNotFound.Log();
 
-        ReadOnlySpan<byte> fileExtension = path.Value.Slice(pathLen - 4);
+        ReadOnlySpan<byte> fileExtension = path.Value[(pathLen - 4)..];
 
         ReadOnlySpan<byte> ncaExtension = ".nca"u8;
         ReadOnlySpan<byte> nspExtension = ".nsp"u8;
@@ -557,7 +557,7 @@ public class NcaFileSystemServiceImpl
 
             while (true)
             {
-                currentSpan = path.Slice(nspPathLen);
+                currentSpan = path[nspPathLen..];
                 if (StringUtils.CompareCaseInsensitive(nspExtension, currentSpan, 4) == 0)
                     break;
 
@@ -592,7 +592,7 @@ public class NcaFileSystemServiceImpl
 
         if (res.IsSuccess())
         {
-            path = path.Slice(nspPathLen);
+            path = path[nspPathLen..];
         }
 
         return res;

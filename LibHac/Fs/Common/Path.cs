@@ -624,7 +624,7 @@ public ref struct Path
 
         if (_writeBufferLength > 1)
         {
-            PathUtility.Replace(GetWriteBuffer().Slice(0, _writeBufferLength - 1), AltDirectorySeparator,
+            PathUtility.Replace(GetWriteBuffer()[..(_writeBufferLength - 1)], AltDirectorySeparator,
                 DirectorySeparator);
         }
 
@@ -754,7 +754,7 @@ public ref struct Path
 
         if (childPath.Length != 0 && childPath[0] == DirectorySeparator)
         {
-            childPath = childPath.Slice(1);
+            childPath = childPath[1..];
             childHasLeadingSlash = true;
         }
 
@@ -783,12 +783,12 @@ public ref struct Path
                 // Copy the child part of the path to the destination buffer.
                 if (childBuffer is not null)
                 {
-                    StringUtils.Copy(destBuffer.Slice(parentLength + SeparatorLength),
+                    StringUtils.Copy(destBuffer[(parentLength + SeparatorLength)..],
                         childBuffer.AsSpan(childStartOffset), childLength + NullTerminatorLength);
                 }
                 else
                 {
-                    Span<byte> destBuffer2 = destBuffer.Slice(childStartOffset);
+                    Span<byte> destBuffer2 = destBuffer[childStartOffset..];
 
                     for (int i = childLength; i > 0; i--)
                     {
@@ -862,7 +862,7 @@ public ref struct Path
         {
             if (trimmedChild.Length != 0 && trimmedChild[0] == DirectorySeparator)
             {
-                trimmedChild = trimmedChild.Slice(1);
+                trimmedChild = trimmedChild[1..];
             }
 
             // Nothing to do if the child path is empty or the root directory.
@@ -907,7 +907,7 @@ public ref struct Path
 
             destBuffer[parentLength] = DirectorySeparator;
 
-            int childBytesCopied = StringUtils.Copy(destBuffer.Slice(parentLength + 1), trimmedChild,
+            int childBytesCopied = StringUtils.Copy(destBuffer[(parentLength + 1)..], trimmedChild,
                 childLength + NullTerminatorLength);
 
             if (childBytesCopied != childLength)

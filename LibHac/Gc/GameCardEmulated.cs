@@ -375,7 +375,7 @@ public sealed class GameCardEmulated : IGcApi
         Result res = CheckCardReady();
         if (res.IsFailure()) return res.Miss();
 
-        SpanHelpers.AsReadOnlyByteSpan(in _certificate).Slice(0, GcDeviceCertificateSize).CopyTo(destBuffer);
+        SpanHelpers.AsReadOnlyByteSpan(in _certificate)[..GcDeviceCertificateSize].CopyTo(destBuffer);
         return Result.Success;
     }
 

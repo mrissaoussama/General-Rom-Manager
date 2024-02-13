@@ -110,9 +110,9 @@ public class AesXtsStorageExternal : IStorage
             {
                 Assert.SdkAssert(tmpBuffer.GetSize() >= _blockSize);
 
-                tmpBuffer.GetBuffer().Slice(0, skipSize).Clear();
-                destination.Slice(0, dataSize).CopyTo(tmpBuffer.GetBuffer().Slice(skipSize, dataSize));
-                Span<byte> decryptionBuffer = tmpBuffer.GetBuffer().Slice(0, (int)_blockSize);
+                tmpBuffer.GetBuffer()[..skipSize].Clear();
+                destination[..dataSize].CopyTo(tmpBuffer.GetBuffer().Slice(skipSize, dataSize));
+                Span<byte> decryptionBuffer = tmpBuffer.GetBuffer()[..(int)_blockSize];
 
                 // Decrypt and copy the partial block to the output buffer.
                 res = _decryptFunction(decryptionBuffer, _key[0], _key[1], counter, decryptionBuffer);
@@ -127,18 +127,18 @@ public class AesXtsStorageExternal : IStorage
         }
 
         // Decrypt aligned chunks.
-        Span<byte> currentOutput = destination.Slice(processedSize);
+        Span<byte> currentOutput = destination[processedSize..];
         int remainingSize = destination.Length - processedSize;
 
         while (remainingSize > 0)
         {
-            Span<byte> currentBlock = currentOutput.Slice(0, Math.Min((int)_blockSize, remainingSize));
+            Span<byte> currentBlock = currentOutput[..Math.Min((int)_blockSize, remainingSize)];
 
             res = _decryptFunction(currentBlock, _key[0], _key[1], counter, currentBlock);
             if (res.IsFailure()) return res.Miss();
 
             remainingSize -= currentBlock.Length;
-            currentOutput = currentBlock.Slice(currentBlock.Length);
+            currentOutput = currentBlock[currentBlock.Length..];
 
             Utility.AddCounter(counter, 1);
         }
@@ -195,9 +195,9 @@ public class AesXtsStorageExternal : IStorage
             {
                 Assert.SdkAssert(tmpBuffer.GetSize() >= _blockSize);
 
-                tmpBuffer.GetBuffer().Slice(0, skipSize).Clear();
-                source.Slice(0, dataSize).CopyTo(tmpBuffer.GetBuffer().Slice(skipSize, dataSize));
-                Span<byte> encryptionBuffer = tmpBuffer.GetBuffer().Slice(0, (int)_blockSize);
+                tmpBuffer.GetBuffer()[..skipSize].Clear();
+                source[..dataSize].CopyTo(tmpBuffer.GetBuffer().Slice(skipSize, dataSize));
+                Span<byte> encryptionBuffer = tmpBuffer.GetBuffer()[..(int)_blockSize];
 
                 res = _encryptFunction(encryptionBuffer, _key[0], _key[1], counter, encryptionBuffer);
                 if (res.IsFailure()) return res.Miss();
@@ -249,7 +249,7 @@ public class AesXtsStorageExternal : IStorage
 
             // Write the encrypted data.
             ReadOnlySpan<byte> writeBuffer = useWorkBuffer
-                ? pooledBuffer.GetBuffer().Slice(0, writeSize)
+                ? pooledBuffer.GetBuffer()[..writeSize]
                 : source.Slice(processedSize, writeSize);
 
             res = _baseStorage.Write(currentOffset, writeBuffer);

@@ -78,7 +78,7 @@ public class EmulatedGameCard
         if (outBuffer.Length < 0x20) return ResultFs.GameCardPreconditionViolation.Log();
         if (!IsGameCardInserted()) return ResultFs.GameCardCardNotInserted.Log();
 
-        CardHeader.ImageHash.CopyTo(outBuffer.Slice(0, 0x20));
+        CardHeader.ImageHash.CopyTo(outBuffer[..0x20]);
         return Result.Success;
     }
 
@@ -90,7 +90,7 @@ public class EmulatedGameCard
         // Skip the security mode check
 
         // Instead of caching the CardKeyArea data, read the value directly
-        return CardImageStorage.Read(0x7110, outBuffer.Slice(0, 0x10));
+        return CardImageStorage.Read(0x7110, outBuffer[..0x10]);
     }
 
     internal Result GetCardInfo(out GameCardInfo cardInfo, GameCardHandle handle)

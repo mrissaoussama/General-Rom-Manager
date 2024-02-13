@@ -275,12 +275,12 @@ public class AesCtrCounterExtendedStorage : IStorage
                 AesCtrStorage.MakeIv(counter.Items, upperIv.Value, counterOffset);
 
                 // Decrypt the data from the current entry.
-                res = _decryptor.Get.Decrypt(currentData.Slice(0, (int)dataSize), _key, counter);
+                res = _decryptor.Get.Decrypt(currentData[..(int)dataSize], _key, counter);
                 if (res.IsFailure()) return res.Miss();
             }
 
             // Advance the current offsets.
-            currentData = currentData.Slice((int)dataSize);
+            currentData = currentData[(int)dataSize..];
             currentOffset -= dataSize;
         }
 
@@ -420,7 +420,7 @@ public class AesCtrCounterExtendedStorage : IStorage
             {
                 int currentSize = Math.Min(pooledBuffer.GetSize(), remainingSize);
                 Span<byte> dstBuffer = destination.Slice(currentOffset, currentSize);
-                Span<byte> workBuffer = pooledBuffer.GetBuffer().Slice(0, currentSize);
+                Span<byte> workBuffer = pooledBuffer.GetBuffer()[..currentSize];
 
                 Result res = _decryptFunction(workBuffer, _keyIndex, _keyGeneration, encryptedKey, counter, dstBuffer);
                 if (res.IsFailure()) return res.Miss();

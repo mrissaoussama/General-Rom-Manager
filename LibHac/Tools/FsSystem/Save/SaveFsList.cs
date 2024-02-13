@@ -328,7 +328,7 @@ internal class SaveFsList<T> where T : struct
         newEntry.Parent = key.Parent;
         key.Name.CopyTo(nameSpan);
 
-        nameSpan.Slice(key.Name.Length).Fill(0);
+        nameSpan[key.Name.Length..].Fill(0);
 
         WriteEntry(index, bytes);
     }

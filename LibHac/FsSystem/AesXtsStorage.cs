@@ -37,7 +37,7 @@ public class AesXtsStorage : IStorage
         Assert.SdkRequiresGreaterEqual(offset, 0);
         Assert.SdkRequiresAligned(blockSize, AesBlockSize);
 
-        BinaryPrimitives.WriteInt64BigEndian(outIv.Slice(sizeof(long)), offset / blockSize);
+        BinaryPrimitives.WriteInt64BigEndian(outIv[sizeof(long)..], offset / blockSize);
     }
 
     public AesXtsStorage(IStorage baseStorage, ReadOnlySpan<byte> key1, ReadOnlySpan<byte> key2, ReadOnlySpan<byte> iv,

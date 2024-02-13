@@ -191,7 +191,7 @@ public static class FileSystemClientUtils
         {
             if (path[i] == '/')
             {
-                string subPath = path.Substring(0, i);
+                string subPath = path[..i];
 
                 if (fs.DirectoryExists(subPath))
                 {
@@ -209,7 +209,7 @@ public static class FileSystemClientUtils
         {
             if (path[i] == '/')
             {
-                string subPath = path.Substring(0, i);
+                string subPath = path[..i];
 
                 fs.CreateDirectory(subPath.ToU8Span());
             }

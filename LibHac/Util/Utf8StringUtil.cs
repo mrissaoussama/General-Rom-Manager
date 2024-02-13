@@ -51,10 +51,10 @@ public static class Utf8StringUtil
             if (codePointByteLength > currentStr.Length)
                 return -1;
 
-            if (!VerifyCode(currentStr.Slice(0, codePointByteLength)))
+            if (!VerifyCode(currentStr[..codePointByteLength]))
                 return -1;
 
-            currentStr = currentStr.Slice(codePointByteLength);
+            currentStr = currentStr[codePointByteLength..];
 
             codePointCount++;
         }
@@ -78,7 +78,7 @@ public static class Utf8StringUtil
             if (codePointLength > currentInput.Length)
                 break;
 
-            if (!VerifyCode(currentInput.Slice(0, codePointLength)))
+            if (!VerifyCode(currentInput[..codePointLength]))
                 break;
 
             // Ensure the output is large enough to hold the additional code point
@@ -90,7 +90,7 @@ public static class Utf8StringUtil
                 break;
 
             // Advance to the next code point
-            currentInput = currentInput.Slice(codePointLength);
+            currentInput = currentInput[codePointLength..];
             remainingCount--;
         }
 
@@ -101,7 +101,7 @@ public static class Utf8StringUtil
         Assert.SdkAssert(byteLength + 1 <= output.Length);
 
         if (byteLength != 0)
-            input.Slice(0, byteLength).CopyTo(output);
+            input[..byteLength].CopyTo(output);
 
         output[byteLength] = 0;
         return byteLength;
