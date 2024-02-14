@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using RomManagerShared.Base;
 using RomManagerShared.DS;
 using RomManagerShared.GameBoy;
 using RomManagerShared.GameBoyAdvance;
@@ -7,7 +6,6 @@ using RomManagerShared.Nintendo64;
 using RomManagerShared.OriginalXbox;
 using RomManagerShared.PS2;
 using RomManagerShared.PS3;
-using RomManagerShared.PS4;
 using RomManagerShared.PS4;
 using RomManagerShared.PSP;
 using RomManagerShared.PSVita;
@@ -17,11 +15,6 @@ using RomManagerShared.Switch;
 using RomManagerShared.ThreeDS;
 using RomManagerShared.Wii;
 using RomManagerShared.WiiU;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace RomManagerShared.Database
 {

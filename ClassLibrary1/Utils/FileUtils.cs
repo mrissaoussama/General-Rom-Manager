@@ -57,12 +57,14 @@ public class FileUtils
     }
     public static string CheckForPython()
     {
-        ProcessStartInfo pycheck = new ProcessStartInfo();
-        pycheck.FileName = @"python.exe";
-        pycheck.Arguments = "--version";
-        pycheck.UseShellExecute = false;
-        pycheck.RedirectStandardOutput = true;
-        pycheck.CreateNoWindow = true;
+        ProcessStartInfo pycheck = new()
+        {
+            FileName = @"python.exe",
+            Arguments = "--version",
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            CreateNoWindow = true
+        };
 
         using Process process = Process.Start(pycheck);
         using StreamReader reader = process.StandardOutput;
@@ -96,13 +98,15 @@ public class FileUtils
     {
         try
         {
-            ProcessStartInfo pipInstall = new ProcessStartInfo();
-            pipInstall.FileName = "pip"; // Assuming pip is in the system PATH
-            pipInstall.Arguments = $"install -r \"{requirementsFilePath}\"";
-            pipInstall.UseShellExecute = false;
-            pipInstall.RedirectStandardOutput = true;
-            pipInstall.RedirectStandardError = true;
-            pipInstall.CreateNoWindow = true;
+            ProcessStartInfo pipInstall = new()
+            {
+                FileName = "pip", // Assuming pip is in the system PATH
+                Arguments = $"install -r \"{requirementsFilePath}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
 
             using Process process = Process.Start(pipInstall);
             process.WaitForExit(); // Wait for the process to finish

@@ -1,5 +1,4 @@
-﻿using DiscUtils.Iso9660;using Param_SFO;using RomManagerShared.Base;
-using RomManagerShared.PSP;using RomManagerShared.Utils.PKGUtils;using System.Text;
+﻿using DiscUtils.Iso9660;using RomManagerShared.Base;
 namespace RomManagerShared.PSP.Parsers;
 
 public class PSPISOSFOParser : IRomParser
@@ -17,7 +16,7 @@ public class PSPISOSFOParser : IRomParser
             var sfopath = Path.Combine(RomManagerConfiguration.GetPSPCachePath(), newGuid.ToString() + ".sfo");
             //cd.CopyFile(@"PSP_GAME\PARAM.SFO", sfopath);
           Stream stream= cd.OpenFile(@"PSP_GAME\PARAM.SFO", FileMode.Open);
-            using MemoryStream memoryStream = new MemoryStream();
+            using MemoryStream memoryStream = new();
              stream.CopyTo(memoryStream);
                 byte[] byteArray = memoryStream.ToArray();
                 var rom = ParseSFO(byteArray);

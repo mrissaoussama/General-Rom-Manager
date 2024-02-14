@@ -1,15 +1,6 @@
-﻿using LibHac.Tools.Fs;
-using RomManagerShared.Base;
-using RomManagerShared.Switch;
+﻿using RomManagerShared.Base;
 using RomManagerShared.Utils;
-using RomManagerShared.WiiU;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Xml.Linq;
-
+namespace RomManagerShared.WiiU;
 public class WiiUXmlParser : IRomParser
 {
     public HashSet<string> Extensions { get; set; } = ["xml"];
@@ -24,11 +15,11 @@ public class WiiUXmlParser : IRomParser
         string extension = Path.GetExtension(switchRomPath).TrimStart('.').ToLower();
         if (!Extensions.Contains(extension))
         {
-            return new HashSet<Rom>();
+            return [];
         }
         if (Path.GetFileName(switchRomPath)!="app.xml")
         {
-            return new HashSet<Rom>();
+            return [];
         }
         string DirectoryName = Path.GetDirectoryName(switchRomPath);
 
@@ -55,7 +46,7 @@ public class WiiUXmlParser : IRomParser
                rom= WiiUUtils. ParseMetaXml(metaXmlContent, rom);
             }
 
-            List<string> images = new List<string>();
+            List<string> images = [];
             var iconTexpath = Path.Combine(metaDirectory, "iconTex.tga");
             if (File.Exists(iconTexpath))
                 images.Add(iconTexpath);

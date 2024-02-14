@@ -1,10 +1,6 @@
 ﻿using RomManagerShared.Base;
 using RomManagerShared.Utils;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Runtime.Intrinsics.Arm;
-using System.Threading.Tasks;
 
 namespace RomManagerShared.WiiU.Parsers
 {
@@ -14,12 +10,12 @@ namespace RomManagerShared.WiiU.Parsers
 
         public WiiUTMDTIKParser()
         {
-            Extensions = new HashSet<string> { "tmd" };
+            Extensions = ["tmd"];
         }
 
         public async Task<HashSet<Rom>> ProcessFile(string switchRomPath)
         {
-            HashSet<Rom> list = new HashSet<Rom>();
+            HashSet<Rom> list = [];
             string extension = Path.GetExtension(switchRomPath)?.TrimStart('.').ToLower();
 
             if (!Extensions.Contains(extension))
@@ -40,12 +36,14 @@ namespace RomManagerShared.WiiU.Parsers
             // Run the command-line tool "cdecrypt" with the path to the TMD file
             string cdecryptPath = "cdecrypt"; // Update with the actual path to cdecrypt
             string arguments = $"\"{titleTmdPath}\"";
-            ProcessStartInfo psi = new ProcessStartInfo();
-            psi.FileName = "WiiU\\Parsers\\cdecrypt.exe";
-            psi.Arguments = arguments;
-            psi.UseShellExecute = false;
-            psi.RedirectStandardOutput = true;
-            psi.CreateNoWindow = false;
+            ProcessStartInfo psi = new()
+            {
+                FileName = "WiiU\\Parsers\\cdecrypt.exe",
+                Arguments = arguments,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                CreateNoWindow = false
+            };
 
             using Process process = Process.Start(psi);
             using StreamReader reader = process.StandardOutput;
@@ -66,7 +64,7 @@ namespace RomManagerShared.WiiU.Parsers
             {
                 string metaXmlContent = await File.ReadAllTextAsync(metaMetaXmlPath);
                 rom = WiiUUtils.ParseMetaXml(metaXmlContent, rom);
-                List<string> images = new List<string>();
+                List<string> images = [];
                 var iconTexpath = Path.Combine(metadir, "iconTex.tga");
                 if (File.Exists(iconTexpath))
                     images.Add(iconTexpath);

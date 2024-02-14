@@ -1,6 +1,4 @@
 ﻿using RomManagerShared.Base;
-using RomManagerShared.Utils;
-using System.Collections.Generic;
 using System.Text.RegularExpressions;
 namespace RomManagerShared.PS2;
 

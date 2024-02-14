@@ -1,7 +1,5 @@
 ﻿using DiscUtils.Iso9660;
 using RomManagerShared.Base;
-using RomManagerShared.Utils;
-using System.Text.RegularExpressions;
 namespace RomManagerShared.PS2.Parsers;
 
 public class PS2RomParser : IRomParser

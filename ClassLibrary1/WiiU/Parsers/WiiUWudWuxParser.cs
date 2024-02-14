@@ -1,7 +1,5 @@
 ﻿using RomManagerShared.Base;
-using System.IO;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace RomManagerShared.WiiU.Parsers
 {
@@ -11,12 +9,12 @@ namespace RomManagerShared.WiiU.Parsers
 
         public WiiUWudWuxParser()
         {
-            Extensions = new HashSet<string> { "wud", "wux" };
+            Extensions = ["wud", "wux"];
         }
 
         public async Task<HashSet<Rom>> ProcessFile(string switchRomPath)
         {
-            HashSet<Rom> list = new HashSet<Rom>();
+            HashSet<Rom> list = [];
             string extension = Path.GetExtension(switchRomPath)?.TrimStart('.').ToLower();
 
             if (!Extensions.Contains(extension))
@@ -39,7 +37,7 @@ namespace RomManagerShared.WiiU.Parsers
                 return list;
             }
 
-            WiiUGame wiiUGame = new WiiUGame
+            WiiUGame wiiUGame = new()
             {
                 ProductCode = productCode
             };
@@ -49,13 +47,11 @@ namespace RomManagerShared.WiiU.Parsers
 
         private static async Task<string> GetProductCodeFromOffset(string filePath, long offset)
         {
-            using (FileStream fileStream = File.OpenRead(filePath))
-            {
-                fileStream.Seek(offset, SeekOrigin.Begin);
-                byte[] buffer = new byte[22];
-                await fileStream.ReadAsync(buffer, 0, buffer.Length);
-                return Encoding.ASCII.GetString(buffer);
-            }
+            using FileStream fileStream = File.OpenRead(filePath);
+            fileStream.Seek(offset, SeekOrigin.Begin);
+            byte[] buffer = new byte[22];
+            await fileStream.ReadAsync(buffer);
+            return Encoding.ASCII.GetString(buffer);
         }
     }
 }

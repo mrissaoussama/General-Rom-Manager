@@ -1,9 +1,6 @@
 ﻿using RomManagerShared.Base;
-using RomManagerShared.PSVITA;
 using RomManagerShared.Utils;
 using RomManagerShared.Utils.PKGUtils;
-using System.IO.Compression;
-using System.Xml;
 
 namespace RomManagerShared.PSP.Parsers;
 

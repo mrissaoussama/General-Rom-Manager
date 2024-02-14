@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net;
-using HtmlAgilityPack;
+﻿using HtmlAgilityPack;
 namespace RomManagerShared.WiiU;
 public class TitleDTO
 {
@@ -32,7 +29,7 @@ public class WiiUWikiBrewScraper
         if (!string.IsNullOrEmpty(htmlContent))
         {
             // Load the HTML content into HtmlAgilityPack's HtmlDocument
-            HtmlDocument doc = new HtmlDocument();
+            HtmlDocument doc = new();
             doc.LoadHtml(htmlContent);
 
             // Find all <table> elements
@@ -62,7 +59,7 @@ public class WiiUWikiBrewScraper
     {
         try
         {
-            using HttpClient client = new HttpClient();
+            using HttpClient client = new();
             string html = await client.GetStringAsync(url);            return html;        }
         catch (Exception ex)
         {
@@ -74,7 +71,7 @@ public class WiiUWikiBrewScraper
 
     private static List<TableData> ExtractTableData(HtmlNode table)
     {
-        List<TableData> tablesData = new List<TableData>();
+        List<TableData> tablesData = [];
 
         // Find all <tr> elements within the table
         var rows = table.SelectNodes(".//tr");
@@ -84,7 +81,7 @@ public class WiiUWikiBrewScraper
             // Extract column names from the first row
             var headerRow = rows.First();
             var headerCells = headerRow.SelectNodes(".//th");
-            List<string> columnNames = new List<string>();
+            List<string> columnNames = [];
             if (headerCells != null)
             {
                 foreach (var cell in headerCells)
@@ -93,15 +90,17 @@ public class WiiUWikiBrewScraper
                 }
             }
 
-            TableData tableData = new TableData();
-            tableData.ColumnNames = columnNames;
+            TableData tableData = new()
+            {
+                ColumnNames = columnNames
+            };
 
             // Extract data from subsequent rows
-            List<List<string>> rowDataList = new List<List<string>>();
+            List<List<string>> rowDataList = [];
             foreach (var row in rows.Skip(1)) // Skip header row
             {
                 var cells = row.SelectNodes(".//td");
-                List<string> rowData = new List<string>();
+                List<string> rowData = [];
                 if (cells != null)
                 {
                     foreach (var cell in cells)
@@ -121,7 +120,7 @@ public class WiiUWikiBrewScraper
 
     private static List<TitleDTO> ProcessTableData(List<TableData> tablesData)
     {
-        List<TitleDTO> titles = new List<TitleDTO>();
+        List<TitleDTO> titles = [];
 
         foreach (var tableData in tablesData)
         {
@@ -129,7 +128,7 @@ public class WiiUWikiBrewScraper
 
             foreach (var rowData in tableData.Rows)
             {
-                TitleDTO title = new TitleDTO();
+                TitleDTO title = new();
 
                 for (int i = 0; i < Math.Min(columnNames.Count, rowData.Count); i++)
                 {
