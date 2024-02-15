@@ -1,80 +1,59 @@
-﻿using DotNet3dsToolkit;
-using RomManagerShared;
-using System.Text.Json;
-using System.IO;
-using RomManagerShared.Switch;
-using LibHac.FsSystem;
-using LibHac.Common.Keys;
-using LibHac.Tools.FsSystem.NcaUtils;
-using LibHac.Fs.Impl;
-using LibHac.FsSrv;
-using LibHac.Fs;
-using LibHac.Loader;
-using LibHac.Common;
-using LibHac.Tools.FsSystem;
-using LibHac;
-using LibHac.Fs.Fsa;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using LibHac.Tools.Fs;
-using System.Diagnostics;
+using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using RomManagerShared.Base;
+using RomManagerShared.Interfaces;
 using RomManagerShared.ThreeDS;
-using System.Threading;
-using System.Reflection;
 using RomManagerShared.Utils;
 using RomManagerShared.Wii.Parsers;
 using RomManagerShared.Wii;
-using RomManagerShared.PS4.Parsers;
-using RomManagerShared.PS4;
-using RomManagerShared.Base;
+using RomManagerShared.DS;
 using RomManagerShared.GameBoy;
 using RomManagerShared.GameBoyAdvance;
-using RomManagerShared.DS;
-using RomManagerShared.SNES;
-using RomManagerShared.PSP;
-using RomManagerShared.Interfaces;
 using RomManagerShared.Nintendo64;
-using RomManagerShared.SegaSaturn;
-using RomManagerShared.PSVita;
 using RomManagerShared.OriginalXbox;
-using RomManagerShared.Xbox360;
-using RomManagerShared.Utils.PKGUtils;
-using RomManagerShared.PS3;
 using RomManagerShared.PS2;
+using RomManagerShared.PS3;
+using RomManagerShared.PS4;
+using RomManagerShared.PSP;
+using RomManagerShared.PSVita;
+using RomManagerShared.SegaSaturn;
+using RomManagerShared.SNES;
+using RomManagerShared.Switch;
+using RomManagerShared.ThreeDS.TitleInfoProviders;
 using RomManagerShared.WiiU;
-//await WiiUWikiBrewScraper.ScrapeTitles();
-Console.WriteLine(WiiUWikiBrewScraper.titles);
+using RomManagerShared.Xbox360;
+using RomManagerShared;
+using RomManagerShared.Configuration;
+
+var builder = Host.CreateDefaultBuilder(args)
+    .ConfigureServices((hostContext, services) =>
+    {
+        services.AddSingleton<ThreeDSJsonTitleInfoProvider>();
+        services.AddSingleton<RomParserExecutor>();
+        services.AddSingleton<ConsoleManager<ThreeDSConsole>, ThreeDSManager>();
+        services.AddSingleton<ConsoleManager<NintendoSwitchConsole>, NintendoSwitchManager>();
+        services.AddSingleton<ConsoleManager<NintendoWiiUConsole>, NintendoWiiUManager>();
+    });
+
+ using var host = builder.Build();
 RomManagerConfiguration.Load("config.json");
-//var result = ((UInt64)(276759 & 0xFFFFFF) << 8) | (0x0004000000000000);
+
+
+var manager = host.Services.GetRequiredService<ConsoleManager<NintendoWiiUConsole>>();
+
 var rompath = "D:\\nsp\\";
 var rompath4 = "D:\\nsp\\errorfiles";
 var wiirompath = "C:\\Users\\oussama\\Downloads\\roms\\";
 var pkgpath = "C:\\Users\\oussama\\Downloads\\roms\\ps3\\1.pkg";
-    var hashlist=await HashUtils.CalculateFileHashes(System.IO.Path.Combine(rompath4, "1.nsp"), Enum.GetValues<HashTypeEnum>());
-hashlist.ForEach(x => Console.WriteLine(x.ToString()));
-var Managers = new List<IConsoleManager>
-{
-    new NintendoSwitchManager(),
-    new ThreeDSManager(),
-    new DSManager(),
-    new GameBoyManager(),
-    new GameBoyAdvanceManager(),
-    new PS4Manager(),//5
-    new PSPManager(),
-    new SNESManager(),
-    new WiiManager(),
-    new Nintendo64Manager(),
-    new SegaSaturnManager(),//10
-    new PSVitaManager(),
-    new OriginalXboxManager(),
-    new Xbox360Manager(),
-    new PS3Manager(),
-    new PS2Manager(),
-    new NintendoWiiUManager(),
 
-};
-var manager = Managers[16];
+var hashlist = await HashUtils.CalculateFileHashes(Path.Combine(rompath4, "1.nsp"), Enum.GetValues<HashTypeEnum>());
+hashlist.ForEach(x => Console.WriteLine(x.ToString()));
+
 Console.WriteLine($"Setup: {manager.GetType()}");
 await manager.Setup();
 var ext = manager.RomParserExecutor.GetSupportedExtensions();
@@ -85,17 +64,18 @@ int i = 0; IEnumerable<IEnumerable<string>> splits = null;
 await ScanFiles();
 Console.WriteLine($"Files found: {filelist.Count}");
 List<Task> tasks = [];
+
 async Task ScanFiles()
 {
-     filelist = FileUtils.GetFilesInDirectoryWithExtensions(wiirompath, ext);
+    filelist = FileUtils.GetFilesInDirectoryWithExtensions(wiirompath, ext);
     manager.RomList.Clear();
     if (manager is IRomMissingContentChecker)
     {
         (manager as IRomMissingContentChecker).GroupedRomList.Clear();
     }
-        splits = from item in filelist
+    splits = from item in filelist
              group item by i++ % 5 into part
-                                      select part.AsEnumerable();
+             select part.AsEnumerable();
 }
 
 await ProcessFiles();
@@ -137,10 +117,10 @@ Console.WriteLine("Press 3 to rename roms with format {TitleName} [{TitleID}] [{
 Console.WriteLine("Press 4 to Rescan files");
 Console.WriteLine("Press 5 to parse scanned files again");
 
-
-while (true)
 {
-    switch (Console.ReadLine())
+    //string x = Console.ReadLine();
+    string x = "6";
+    switch (x)
     {
         case "0":
             if (canUpdate is false) break;
@@ -173,10 +153,8 @@ while (true)
             PrintRoms(manager.RomList);
 
             break;
-        default: Console.WriteLine("option not valid");break;
+        default: Console.WriteLine("option not valid"); break;
     }
 }
 
-
-Console.ReadLine();
-Console.ReadLine();
+//Console.ReadLine();

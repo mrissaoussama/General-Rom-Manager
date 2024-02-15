@@ -5,7 +5,7 @@ VisualStudioVersion = 17.0.31611.283
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RomManagerMaui", "RomManagerMaui\RomManagerMaui.csproj", "{8F22F9A6-12C3-4140-83C7-167970964424}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RomManagerShared", "ClassLibrary1\RomManagerShared.csproj", "{CA1859E0-E9EF-4411-88A5-1B9B38DF3DE3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RomManagerShared", "RomManagerShared\RomManagerShared.csproj", "{CA1859E0-E9EF-4411-88A5-1B9B38DF3DE3}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "testconsole", "testconsole\testconsole.csproj", "{05BE01B8-4A57-4DF8-BAF5-C7B89006D58B}"
 EndProject
