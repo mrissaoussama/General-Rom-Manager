@@ -5,8 +5,43 @@ public static class HashUtils
 {
     public static async Task<List<RomHash>> CalculateRomHashes(Rom rom, IEnumerable<HashTypeEnum> hashTypes)
     {
-        return rom == null ? throw new ArgumentException("Invalid Rom object") : await CalculateFileHashes(rom.Path, hashTypes);
+        if (rom == null)
+        {
+            throw new ArgumentException("Invalid Rom object");
+        }
+        rom.Hashes ??= [];
+        if(rom.IsFolderFormat)
+        {var hashes= await CalculateRomFolderHashes(rom, hashTypes); 
+            rom.Hashes.AddRange(hashes);
+
+            return hashes;
+        }
+        else
+        {
+            var hashes= await CalculateFileHashes(rom.Path, hashTypes);
+            rom.Hashes.AddRange(hashes);
+            return hashes;
+        }
     }
+
+    public static async Task<List<RomHash>> CalculateRomFolderHashes(Rom rom, IEnumerable<HashTypeEnum> hashTypes)
+    {
+        if (string.IsNullOrEmpty(rom.Path))
+        {
+            throw new ArgumentException("missing path");
+        }
+        List<RomHash> hashlist = [];
+        var romBaseFolderPath = RomUtils.GetRomBaseFolder(rom);
+        var fileList = Directory.EnumerateFiles(romBaseFolderPath);
+        foreach(var file in fileList)
+        {
+            var filehashes = await CalculateFileHashes(file,hashTypes);
+            hashlist.AddRange(filehashes);
+
+        }
+        return hashlist;
+    }
+
     public static async Task<List<RomHash>> CalculateFileHashes(string path, IEnumerable<HashTypeEnum> hashTypes)
     {
         if (string.IsNullOrEmpty(path))
@@ -19,8 +54,10 @@ public static class HashUtils
         List<RomHash> hashlist = [];
         foreach (var hashType in hashTypes)
         {
-            var romHash = CreateRomHash(hashType, fileStream);
-            hashlist.Add(await romHash);
+            var romHash =await CreateRomHash(hashType, fileStream);
+            romHash.Extension = Path.GetExtension(path).Replace(".", "");
+            romHash.Filename = Path.GetFileNameWithoutExtension(path);
+            hashlist.Add( romHash);
         }
         return hashlist;
     }
@@ -31,8 +68,7 @@ public static class HashUtils
             Type = hashType,
             CreationDate = DateTime.Now,
             Description = "Local"
-        };
-
+        }; stream.Seek(0, SeekOrigin.Begin);
         switch (hashType)
         {
             case HashTypeEnum.CRC32:
@@ -57,23 +93,10 @@ public static class HashUtils
     private static async Task<string> CalculateHash(HashAlgorithm hashAlgorithm, Stream stream)
     {
         var hash = await hashAlgorithm.ComputeHashAsync(stream);
-        //using (hashAlgorithm)
-        //{
-        //    byte[] buffer = new byte[4096];
-        //    int bytesRead;
-
-        //    while ((bytesRead = stream.Read(buffer, 0, buffer.Length)) > 0)
-        //    {
-        //        hashAlgorithm.TransformBlock(buffer, 0, bytesRead, buffer, 0);
-        //    }
-
-        //    hashAlgorithm.TransformFinalBlock(buffer, 0, 0);
-
+ 
         return BitConverter.ToString(hash).Replace("-", "");
-        //}
+       
     }
-
-
 }
 
 // source https://github.com/damieng/DamienGKit/blob/master/CSharp/DamienG.Library/Security/Cryptography/Crc32.cs

@@ -1,15 +1,16 @@
 ﻿using RomManagerShared.Base;
+using RomManagerShared.Interfaces;
 using RomManagerShared.Utils;
 namespace RomManagerShared.GameBoyAdvance.Parsers;
 
-public class GameBoyAdvanceRomParser : IRomParser
+public class GameBoyAdvanceRomParser : IRomParser<GameBoyAdvanceConsole>
 {
     public GameBoyAdvanceRomParser()
     {
         Extensions = ["gba", "agb"];
     }
-    public HashSet<string> Extensions { get; set; }
-    public Task<HashSet<Rom>> ProcessFile(string path)
+    public List<string> Extensions { get; set; }
+    public Task<List<Rom>> ProcessFile(string path)
     {
         GameBoyAdvanceGame GameBoyAdvancerom = new();
         var metadatareader = new GameBoyAdvanceMetadataReader();
@@ -50,6 +51,6 @@ public class GameBoyAdvanceRomParser : IRomParser
         }        GameBoyAdvancerom.Size = FileUtils.GetFileSize(path);
         GameBoyAdvancerom.Path = path;
         Console.WriteLine(GameBoyAdvancerom.ToString());
-        HashSet<Rom> list = [GameBoyAdvancerom];        return Task.FromResult(list);
+        List<Rom> list = [GameBoyAdvancerom];        return Task.FromResult(list);
     }
 }

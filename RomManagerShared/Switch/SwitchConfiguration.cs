@@ -6,7 +6,8 @@ public static class SwitchConfiguration
 {
     public static string GetTitleDBPath()
     {
-        return RomManagerConfiguration.BaseFolder + RomManagerConfiguration.Configuration.GetSection("Switch:TitleDB:TitleDBSavePath").Value!;
+        return RomManagerConfiguration.BaseFolder +
+            RomManagerConfiguration.Configuration.GetSection("Switch:TitleDB:TitleDBSavePath").Value!;
     }
 
     public static string GetTitleDBUrl()
@@ -21,7 +22,8 @@ public static class SwitchConfiguration
 
     public static string GetVersionsPath()
     {
-        return RomManagerConfiguration.BaseFolder + RomManagerConfiguration.Configuration.GetSection("Switch:TitleDB:VersionsSavePath").Value!;
+        return RomManagerConfiguration.BaseFolder + 
+            RomManagerConfiguration.Configuration.GetSection("Switch:TitleDB:VersionsSavePath").Value!;
     }
 
     public static string[]? GetTitleDBRegionFiles()

@@ -4,13 +4,13 @@ namespace RomManagerShared.PS2;
 
 public static class PS2Utils
 {
-    public static HashSet<string> Extensions { get; set; }
+    public static List<string> Extensions { get; set; }
 
     static PS2Utils()
     {
         Extensions = Enumerable.Range(0, 100)
                                  .Select(n => n.ToString("D2"))
-                                 .ToHashSet();
+                                 .ToList();
         Extensions.Add("iso");
     }
     public static Region? GetRegionFile(string path)

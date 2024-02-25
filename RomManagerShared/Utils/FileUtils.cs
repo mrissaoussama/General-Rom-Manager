@@ -136,4 +136,11 @@ public class FileUtils
         }
     }
 
+    public static bool DriveHasEnoughSpace(long fileSize, string destinationFolder)
+    {
+        // Check if there is enough space in the destination folder
+        DriveInfo drive = new DriveInfo(Path.GetPathRoot(destinationFolder));
+        return drive.AvailableFreeSpace > fileSize;
+    }
+
 }

@@ -1,20 +1,21 @@
 ﻿using RomManagerShared.Base;
+using RomManagerShared.Interfaces;
 using RomManagerShared.Utils;
 using RomManagerShared.Utils.ISO2GOD;
 using RomManagerShared.Xbox360.Configuration;
 using System.Drawing;
 namespace RomManagerShared.Xbox360.Parsers;
 
-public class Xbox360XEXRomParser : IRomParser
+public class Xbox360XEXRomParser : IRomParser<Xbox360Console>
 {
     public Xbox360XEXRomParser()
     {
         Extensions = ["xex"];
     }
-    public HashSet<string> Extensions { get; set; }
-    public Task<HashSet<Rom>> ProcessFile(string path)
+    public List<string> Extensions { get; set; }
+    public Task<List<Rom>> ProcessFile(string path)
     {
-        HashSet<Rom> list = [];
+        List<Rom> list = [];
         IsoDetailsResults? results = null;
         try
         {
@@ -32,6 +33,7 @@ public class Xbox360XEXRomParser : IRomParser
             }
             Xbox360rom.Size = FileUtils.GetFileSize(path);
             Xbox360rom.Path = path;
+            Xbox360rom.IsFolderFormat = true;
             list.Add(Xbox360rom);
         }
         catch (Exception ex)

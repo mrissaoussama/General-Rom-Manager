@@ -1,4 +1,5 @@
 ﻿using RomManagerShared.Base;
+using RomManagerShared.Interfaces;
 using RomManagerShared.Utils;
 using RomManagerShared.Wii.Configuration;
 using System.Globalization;
@@ -19,7 +20,7 @@ public class WiiGameTDBXmlRomDTO
     public string? Title { get; internal set; }
     public string? Synopsis { get; internal set; }
 }
-public class WiiGameTDBInfoProvider : ITitleInfoProvider
+public class WiiGameTDBInfoProvider : ITitleInfoProvider<WiiConsole>
 {    public string Source { get; set; }
     public List<WiiGameTDBXmlRomDTO> TitleList { get; private set; }    public async Task LoadTitleDatabaseAsync()
     {
@@ -28,9 +29,8 @@ public class WiiGameTDBInfoProvider : ITitleInfoProvider
         {
             if (!File.Exists(Source))
             {
-                var gametdbdownloader = new GameTDBDownloader();
                 var gameTDBPath = WiiConfiguration.GetGameTDBPath();
-                var gameTDBUrl = WiiConfiguration.GetGameTDBUrl();                await GameTDBDownloader.DownloadAndExtractZip(gameTDBUrl, gameTDBPath);
+                var gameTDBUrl = WiiConfiguration.GetGameTDBUrl();                await FileDownloader.StartFileDownload(gameTDBUrl, gameTDBPath);
             }
             TitleList = [];
             XmlDocument xmlDoc = new();

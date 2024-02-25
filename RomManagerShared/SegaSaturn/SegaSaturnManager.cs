@@ -3,23 +3,11 @@ using RomManagerShared.Interfaces;
 using RomManagerShared.SegaSaturn.Parsers;
 namespace RomManagerShared.SegaSaturn;
 
-public class SegaSaturnManager : IConsoleManager
+public class SegaSaturnManager : ConsoleManager<SegaSaturnConsole>
 {
-    public RomParserExecutor RomParserExecutor { get; set; }
-    public HashSet<Rom> RomList { get; set; }
-    public SegaSaturnManager()
+    public SegaSaturnManager(
+RomParserExecutor<SegaSaturnConsole> romParserExecutor)
+: base(romParserExecutor)
     {
-        RomList = [];
-        RomParserExecutor = new RomParserExecutor();
-    }
-    public async Task ProcessFile(string file)
-    {
-        var processedlist = await RomParserExecutor.ExecuteParsers(file);
-        RomList.UnionWith(processedlist);
-    }
-    public Task Setup()
-    {
-        RomParserExecutor.AddParser(new SegaSaturnRomParser());
-        return Task.CompletedTask;
     }
 }

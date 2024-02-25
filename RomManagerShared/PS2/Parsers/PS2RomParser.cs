@@ -1,18 +1,19 @@
 ﻿using DiscUtils.Iso9660;
 using RomManagerShared.Base;
+using RomManagerShared.Interfaces;
 namespace RomManagerShared.PS2.Parsers;
 
-public class PS2RomParser : IRomParser
+public class PS2RomParser : IRomParser<PS2Console>
 {
     public PS2RomParser()
     {
         Extensions = PS2Utils.Extensions;
     }
-    public HashSet<string> Extensions { get; set; }
+    public List<string> Extensions { get; set; }
   
-    public Task<HashSet<Rom>> ProcessFile(string path)
+    public Task<List<Rom>> ProcessFile(string path)
     {
-        HashSet<Rom> list = [];
+        List<Rom> list = [];
 
         PS2Game gameboyrom = new();
         if (!PS2Utils.IsPS2TitleIDFile(path))

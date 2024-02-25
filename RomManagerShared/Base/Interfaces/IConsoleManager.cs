@@ -1,29 +1,65 @@
-﻿using RomManagerShared.Base;namespace RomManagerShared.Interfaces;
+﻿using RomManagerShared.Base;
 
-public interface IConsoleManager
+namespace RomManagerShared.Interfaces;
+
+public interface IConsoleManager<T>  where T : GamingConsole
 {
-    RomParserExecutor RomParserExecutor { get; set; }
-    HashSet<Rom> RomList { get; set; }
+    RomParserExecutor<T> RomParserExecutor { get; set; }
+    List<Rom> RomList { get; set; }
     Task ProcessFile(string file);
     Task Setup();
 }
-public abstract class ConsoleManager<T> :IConsoleManager where T : GamingConsole
+public abstract class ConsoleManager<T> :IConsoleManager<T> where T : GamingConsole
 {
-    public HashSet<Rom> RomList { get; set; }
-    public RomParserExecutor RomParserExecutor { get; set; }
+    public TitleInfoProviderManager<T>? TitleInfoProviderManager { get; set; }
+    public RomParserExecutor<T> RomParserExecutor { get; set; }
+    public List<Rom> RomList { get; set; }
 
-    public abstract Task ProcessFile(string file);
-    public abstract Task Setup();
+    public ConsoleManager(RomParserExecutor<T> romParserExecutor, TitleInfoProviderManager<T> titleInfoProviderManager)
+    {
+        TitleInfoProviderManager = titleInfoProviderManager;
+        RomList = [];
+        RomParserExecutor = romParserExecutor;
+    }
+    public ConsoleManager(RomParserExecutor<T> romParserExecutor)
+    {
+        RomList = [];
+        RomParserExecutor = romParserExecutor;
+    }
+
+    public virtual async Task ProcessFile(string file)
+    {
+        var processedhash = await RomParserExecutor.ExecuteParsers(file);
+        if (RomParserExecutor.Parsers.Count == 0)
+        {
+           // processedhash= await IdentifyRomFromHash(file);
+        }
+        var processedlist = processedhash.ToList();
+        RomList.AddRange(processedlist);
+    }
+
+    public virtual Task IdentifyRomFromHash(string file)
+    {
+        return Task.CompletedTask;
+    }
+
+
+    public virtual async Task Setup()
+    {
+        if(TitleInfoProviderManager is not null)
+        await TitleInfoProviderManager.Setup();
+    }
+
 }
-
-    public class GamingConsole
+#region console classes
+public class GamingConsole
     {
     public string Name { get; set; } = "";
     }
 
-public class NintendoSwitchConsole : GamingConsole
+public class SwitchConsole : GamingConsole
 {
-    public NintendoSwitchConsole()
+    public SwitchConsole()
     {
         Name = "Switch";
     }
@@ -93,9 +129,9 @@ public class WiiConsole : GamingConsole
     }
 }
 
-public class Nintendo64Console : GamingConsole
+public class N64Console : GamingConsole
 {
-    public Nintendo64Console()
+    public N64Console()
     {
         Name = "Nintendo 64";
     }
@@ -149,11 +185,12 @@ public class PS2Console : GamingConsole
     }
 }
 
-public class NintendoWiiUConsole : GamingConsole
+public class WiiUConsole : GamingConsole
 {
-    public NintendoWiiUConsole()
+    public WiiUConsole()
     {
-        Name = "Nintendo Wii U";
+        Name = "Wii U";
     }
 }
 
+#endregion

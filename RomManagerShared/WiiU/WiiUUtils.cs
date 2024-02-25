@@ -163,9 +163,9 @@ public class WiiUUtils
         rom.ProductCode = productCode;
         return rom;
     }
-    //    public static HashSet<HashSet<Rom>> GroupRomList(IEnumerable<Rom> romList)
+    //    public static List<List<Rom>> GroupRomList(IEnumerable<Rom> romList)
     //    {
-    //        Dictionary<string, HashSet<Rom>> romGroups = [];
+    //        Dictionary<string, List<Rom>> romGroups = [];
     //        foreach (var rom in romList)
     //        {
     //            if (rom.TitleID is null)
@@ -177,8 +177,8 @@ public class WiiUUtils
     //            }
     //            romGroups[modifiedTitleId].Add(rom);
     //        }
-    //        HashSet<HashSet<Rom>> groupedRomList = new(
-    //  romGroups.Values.Select(group => new HashSet<Rom>(
+    //        List<List<Rom>> groupedRomList = new(
+    //  romGroups.Values.Select(group => new List<Rom>(
     //      group.OrderBy(rom => rom is Game)
     //  ))
     //);

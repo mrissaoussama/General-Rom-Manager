@@ -1,21 +1,22 @@
 ﻿using RomManagerShared.Base;
+using RomManagerShared.Interfaces;
 using RomManagerShared.PSVITA;
 using RomManagerShared.Utils;
 using System.IO.Compression;
 
 namespace RomManagerShared.PSVita.Parsers;
 
-public class PSVitaVPKRomParser : IRomParser
+public class PSVitaVPKRomParser : IRomParser<PSVitaConsole>
 {
     public PSVitaVPKRomParser()
     {
         Extensions = ["vpk"];
     }
-    public HashSet<string> Extensions { get; set; }
+    public List<string> Extensions { get; set; }
     //string[] gameCategories = { "AC", "GC", "GDC" };
-    public Task<HashSet<Rom>> ProcessFile(string path)
+    public Task<List<Rom>> ProcessFile(string path)
     {
-        HashSet<Rom> list = [];
+        List<Rom> list = [];
         if (Path.GetExtension(path).Contains("vpk"))
         {
             try

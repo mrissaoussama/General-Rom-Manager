@@ -3,41 +3,29 @@ using RomManagerShared.Interfaces;
 using RomManagerShared.PS4.Parsers;
 namespace RomManagerShared.PS4;
 
-public class PS4Manager : IConsoleManager, IRomMissingContentChecker
+public class PS4Manager : ConsoleManager<PS4Console>, IRomMissingContentChecker
 {
-    public RomParserExecutor RomParserExecutor { get; set; }
-    public HashSet<Rom> RomList { get; set; }
-    public HashSet<HashSet<Rom>> GroupedRomList { get; set; }
+ 
+    public List<List<Rom>> GroupedRomList { get; set; }
     PS4PKGUpdateAndDLCChecker Checker { get; set; }
-    public PS4Manager()
+    public PS4Manager(
+RomParserExecutor<PS4Console> romParserExecutor)
+: base(romParserExecutor)
     {
-        RomList = [];
-        GroupedRomList = [];
-        RomParserExecutor = new RomParserExecutor();
-        Checker = new();
-    }
-    public async Task ProcessFile(string file)
-    {
-        var processedlist = await RomParserExecutor.ExecuteParsers(file);
-        RomList.UnionWith(processedlist);
-    }
-    public Task Setup()
-    {
-        RomParserExecutor.AddParser(new PS4PKGParser());
-        return Task.CompletedTask;
+        GroupedRomList=[]; Checker = new();
     }
     public void LoadGroupRomList()
     {
         GroupedRomList = PS4Utils.GroupRomList(RomList);
     }
-    public async Task<HashSet<Rom>> GetMissingDLC(Rom ps4game)
+    public async Task<List<Rom>> GetMissingDLC(Rom ps4game)
     {
-        HashSet<Rom> dlclist = [];
-        HashSet<Rom> missingdlc = [];
+        List<Rom> dlclist = [];
+        List<Rom> missingdlc = [];
         // list.Add( await checker.CheckForUpdate(rom));
         if (ps4game is not PS4Game)
             return missingdlc;
-        dlclist.UnionWith(await Checker.GetDLCList(ps4game));
+        dlclist.AddRange(await Checker.GetDLCList(ps4game));
         if (dlclist.Count == 0)
         {
             return dlclist;
@@ -85,7 +73,7 @@ public class PS4Manager : IConsoleManager, IRomMissingContentChecker
         return latestUpdate;
     }
 
-    public Task<HashSet<RomMissingUpdates>> GetMissingUpdates()
+    public Task<List<RomMissingUpdates>> GetMissingUpdates()
     {
         throw new NotImplementedException();
     }
@@ -95,7 +83,7 @@ public class PS4Manager : IConsoleManager, IRomMissingContentChecker
         throw new NotImplementedException();
     }
 
-    public Task<HashSet<RomMissingDLCs>> GetMissingDLC()
+    public Task<List<RomMissingDLCs>> GetMissingDLC()
     {
         throw new NotImplementedException();
     }
@@ -105,7 +93,7 @@ public class PS4Manager : IConsoleManager, IRomMissingContentChecker
         throw new NotImplementedException();
     }
 
-    public HashSet<Rom> GetRomGroup(Rom rom)
+    public List<Rom> GetRomGroup(Rom rom)
     {
         throw new NotImplementedException();
     }

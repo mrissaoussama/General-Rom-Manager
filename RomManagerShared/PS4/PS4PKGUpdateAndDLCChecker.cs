@@ -9,8 +9,8 @@ public class PS4PKGUpdateAndDLCChecker
     {
         CheckedTitleIDUpdates = [];
         CheckedTitleIDDLC = [];
-    }    public HashSet<string> CheckedTitleIDUpdates { get; set; }
-    public HashSet<string> CheckedTitleIDDLC { get; set; }    public async Task<Rom?> CheckForUpdate(Rom ps4rom)
+    }    public List<string> CheckedTitleIDUpdates { get; set; }
+    public List<string> CheckedTitleIDDLC { get; set; }    public async Task<Rom?> CheckForUpdate(Rom ps4rom)
     {
         if (CheckedTitleIDUpdates.Contains(ps4rom.TitleID)) { return null; }
         CheckedTitleIDUpdates.Add(ps4rom.TitleID);
@@ -97,11 +97,11 @@ public class PS4PKGUpdateAndDLCChecker
         }
         return dlcs;
     }
-    public async Task<HashSet<Rom>> GetMissingDLC(Rom romToCheck, HashSet<Rom> localroms, HashSet<Rom> DlcList)
+    public async Task<List<Rom>> GetMissingDLC(Rom romToCheck, IEnumerable<Rom> localroms, List<Rom> DlcList)
     {
-        HashSet<Rom> relatedRoms = localroms
+        List<Rom> relatedRoms = localroms
             .Where(rom => rom.TitleID == romToCheck.TitleID && rom != romToCheck && rom is PS4DLC)
-            .ToHashSet();        HashSet<Rom> missingDLCs = [];        foreach (var dlc in DlcList)
+            .ToList();        List<Rom> missingDLCs = [];        foreach (var dlc in DlcList)
         {
             bool productCodeExists = false;            foreach (var relatedRom in relatedRoms)
             {

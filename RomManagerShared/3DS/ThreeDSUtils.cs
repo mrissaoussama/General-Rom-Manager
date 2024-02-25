@@ -1,4 +1,6 @@
-﻿namespace RomManagerShared.ThreeDS;
+﻿using RomManagerShared.Base;
+
+namespace RomManagerShared.ThreeDS;
 
 public class ThreeDSUtils
 {
@@ -26,8 +28,24 @@ public class ThreeDSUtils
     {
         int abcd = int.Parse(titleId.Substring(4, 4), System.Globalization.NumberStyles.HexNumber);
         return abcd;
-    }    internal static Type? GetRomMetadataClass(string titleID)
+    }
+    public static Rom GetRomType(string titleId)
     {
-        throw new NotImplementedException();
+        var romType = DetectContentCategory(titleId);
+        switch (romType)
+        {
+            case TidCategory.Normal:
+                ThreeDSGame game = new();
+                return game;
+            case TidCategory.Update:
+                ThreeDSUpdate update = new();
+                return update;
+            case TidCategory.Dlc:
+            case TidCategory.AddOnContents:
+                ThreeDSDLC dlc = new();
+                return dlc;
+            default:
+                return new ThreeDSGame();
+        }
     }
 }

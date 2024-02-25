@@ -1,24 +1,30 @@
 ﻿using RomManagerShared.Base;
+using RomManagerShared.Interfaces;
 using RomManagerShared.Utils;
 namespace RomManagerShared;
 
-public class RomParserExecutor
+public class RomParserExecutor<T> where T : GamingConsole
 {
-    public List<IRomParser> Parsers = [];
-    public RomParserExecutor AddParser(IRomParser parser)
+    public List<IRomParser<T>> Parsers = [];
+
+    public RomParserExecutor(IEnumerable<IRomParser<T>> titleparsers)
+    {
+        Parsers = titleparsers.ToList() ;
+    }
+
+    public void AddParser(IRomParser<T> parser)
     {
         Parsers.Add(parser);
         Parsers = [.. Parsers.OrderByDescending(p => p.Extensions.Count)];
-        return this;
     }
-    public async Task<HashSet<Rom>> ExecuteParsers(string file)
+    public async Task<List<Rom>> ExecuteParsers(string file)
     {
-        HashSet<Rom> mergedRomList = [];
+        List<Rom> mergedRomList = [];
         var CompatibleParsers = Parsers.Where(x => x.Extensions.Contains(Path.GetExtension(file).Replace(".", "").ToLower())).ToList();
         foreach (var parser in CompatibleParsers)
 
         {
-            var parsedRomList = new HashSet<Rom>();
+            var parsedRomList = new List<Rom>();
             try
             {
                 parsedRomList = await parser.ProcessFile(file);
@@ -26,8 +32,23 @@ public class RomParserExecutor
                 {
                     continue;
                 }
-                mergedRomList.UnionWith(parsedRomList);
-                break;
+                //f title id exists, merged properties
+                for (int i = 0; i < parsedRomList.Count; i++)
+                {
+                    var parsedrom = parsedRomList[i];
+                    foreach (var mergedrom in mergedRomList)
+                    {
+                        if (parsedrom.TitleID == mergedrom.TitleID)
+                        {
+                            RomUtils.CopyNonNullProperties(parsedrom, mergedrom);
+                            parsedRomList.RemoveAt(i);
+                            i--;
+                            break; 
+                        }
+                    }
+                }
+                mergedRomList.AddRange(parsedRomList);
+                
             }
             catch (Exception ex)
             {
@@ -41,17 +62,18 @@ public class RomParserExecutor
         }
         return mergedRomList;
     }
-    public HashSet<string> GetSupportedExtensions()
+    public List<string> GetSupportedExtensions()
     {
         if (Parsers.Count == 0)
         {
             return [];
         }
-        HashSet<string> extensionhashset = [];
+        List<string> extensionList = [];
         foreach (var parser in Parsers)
         {
-            extensionhashset.UnionWith(parser.Extensions);
+            extensionList.AddRange(parser.Extensions);
         }
-        return extensionhashset;
+        return extensionList;
     }
+
 }

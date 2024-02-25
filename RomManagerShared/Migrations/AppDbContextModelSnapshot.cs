@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RomManagerShared.Base.Database;
 
-
 #nullable disable
 
 namespace RomManagerShared.Migrations
@@ -16,199 +15,11 @@ namespace RomManagerShared.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "8.0.2");
-
-            modelBuilder.Entity("DLCUpdate", b =>
-                {
-                    b.Property<int>("DLCsId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("UpdatesId")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("DLCsId", "UpdatesId");
-
-                    b.HasIndex("UpdatesId");
-
-                    b.ToTable("DLCUpdate");
-                });
-
-            modelBuilder.Entity("RomManagerShared.Base.DLC", b =>
-                {
-                    b.Property<int>("Id")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Banner")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int?>("DLCId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Developer")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Discriminator")
-                        .IsRequired()
-                        .HasMaxLength(13)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Genres")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Icon")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Images")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsDemo")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("IsFolderFormat")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Languages")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("MinimumFirmware")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("MinimumGameUpdate")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("NumberOfPlayers")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Path")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ProductCode")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Publisher")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Regions")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateOnly?>("ReleaseDate")
-                        .HasColumnType("TEXT");
-
-                    b.Property<long?>("Size")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Thumbnail")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("TitleID")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Version")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DLCId");
-
-                    b.ToTable("DLC");
-
-                    b.HasDiscriminator<string>("Discriminator").HasValue("DLC");
-
-                    b.UseTphMappingStrategy();
-                });
-
-            modelBuilder.Entity("RomManagerShared.Base.Game", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Banner")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int?>("DLCId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Developer")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Discriminator")
-                        .IsRequired()
-                        .HasMaxLength(21)
-                        .HasColumnType("TEXT");
-
-                    b.Property<int?>("GameId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Genres")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Icon")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Images")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsDemo")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("IsFolderFormat")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Languages")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("MinimumFirmware")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("NumberOfPlayers")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Path")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ProductCode")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Publisher")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Regions")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateOnly?>("ReleaseDate")
-                        .HasColumnType("TEXT");
-
-                    b.Property<long?>("Size")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Thumbnail")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("TitleID")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int?>("UpdateId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Version")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DLCId");
-
-                    b.HasIndex("GameId");
-
-                    b.HasIndex("UpdateId");
-
-                    b.ToTable("Game");
-
-                    b.HasDiscriminator<string>("Discriminator").HasValue("Game");
-
-                    b.UseTphMappingStrategy();
-                });
+            modelBuilder
+                .HasAnnotation("ProductVersion", "8.0.1")
+                .HasAnnotation("Proxies:ChangeTracking", false)
+                .HasAnnotation("Proxies:CheckEquality", false)
+                .HasAnnotation("Proxies:LazyLoading", true);
 
             modelBuilder.Entity("RomManagerShared.Base.Rating", b =>
                 {
@@ -219,12 +30,6 @@ namespace RomManagerShared.Migrations
                     b.Property<int>("Age")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("DLCId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int?>("GameId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<int>("Name")
                         .HasColumnType("INTEGER");
 
@@ -232,18 +37,91 @@ namespace RomManagerShared.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("UpdateId")
+                    b.Property<int?>("RomId")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DLCId");
+                    b.HasIndex("RomId");
 
-                    b.HasIndex("GameId");
+                    b.ToTable("Ratings");
+                });
 
-                    b.HasIndex("UpdateId");
+            modelBuilder.Entity("RomManagerShared.Base.Rom", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
 
-                    b.ToTable("Rating");
+                    b.Property<string>("Banner")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Developer")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Discriminator")
+                        .IsRequired()
+                        .HasMaxLength(21)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Genres")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Icon")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Images")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsDemo")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsFolderFormat")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Languages")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("MinimumFirmware")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("NumberOfPlayers")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Path")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProductCode")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Publisher")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Regions")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly?>("ReleaseDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("Size")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Thumbnail")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TitleID")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Version")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Roms");
+
+                    b.HasDiscriminator<string>("Discriminator").HasValue("Rom");
+
+                    b.UseTphMappingStrategy();
                 });
 
             modelBuilder.Entity("RomManagerShared.Base.RomDescription", b =>
@@ -252,16 +130,10 @@ namespace RomManagerShared.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("DLCId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int?>("GameId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<int>("Language")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("UpdateId")
+                    b.Property<int?>("RomId")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Value")
@@ -270,11 +142,7 @@ namespace RomManagerShared.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DLCId");
-
-                    b.HasIndex("GameId");
-
-                    b.HasIndex("UpdateId");
+                    b.HasIndex("RomId");
 
                     b.ToTable("RomDescription");
                 });
@@ -288,25 +156,22 @@ namespace RomManagerShared.Migrations
                     b.Property<DateTime>("CreationDate")
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("DLCId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("Description")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Extension")
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("GameId")
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("Filename")
+                        .HasColumnType("TEXT");
 
                     b.Property<bool>("IsVerified")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("Type")
+                    b.Property<int?>("RomId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("UpdateId")
+                    b.Property<int>("Type")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Value")
@@ -315,13 +180,9 @@ namespace RomManagerShared.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DLCId");
+                    b.HasIndex("RomId");
 
-                    b.HasIndex("GameId");
-
-                    b.HasIndex("UpdateId");
-
-                    b.ToTable("RomHash");
+                    b.ToTable("RomHashes");
                 });
 
             modelBuilder.Entity("RomManagerShared.Base.RomHashProperty", b =>
@@ -345,7 +206,7 @@ namespace RomManagerShared.Migrations
 
                     b.HasIndex("RomHashId");
 
-                    b.ToTable("RomHashProperty");
+                    b.ToTable("RomHashProperties");
                 });
 
             modelBuilder.Entity("RomManagerShared.Base.RomTitle", b =>
@@ -354,16 +215,10 @@ namespace RomManagerShared.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("DLCId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int?>("GameId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<int>("Language")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("UpdateId")
+                    b.Property<int?>("RomId")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Value")
@@ -372,94 +227,9 @@ namespace RomManagerShared.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DLCId");
-
-                    b.HasIndex("GameId");
-
-                    b.HasIndex("UpdateId");
+                    b.HasIndex("RomId");
 
                     b.ToTable("RomTitle");
-                });
-
-            modelBuilder.Entity("RomManagerShared.Base.Update", b =>
-                {
-                    b.Property<int>("Id")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Banner")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Developer")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Discriminator")
-                        .IsRequired()
-                        .HasMaxLength(13)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Genres")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Icon")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Images")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsDemo")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("IsFolderFormat")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Languages")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("MinimumFirmware")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("NumberOfPlayers")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Path")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("ProductCode")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Publisher")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Regions")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateOnly?>("ReleaseDate")
-                        .HasColumnType("TEXT");
-
-                    b.Property<long?>("Size")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Thumbnail")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("TitleID")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int?>("UpdateId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Version")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UpdateId");
-
-                    b.ToTable("Update");
-
-                    b.HasDiscriminator<string>("Discriminator").HasValue("Update");
-
-                    b.UseTphMappingStrategy();
                 });
 
             modelBuilder.Entity("RomManagerShared.Switch.TitleInfoProviders.SwitchJsonRomDTO", b =>
@@ -499,6 +269,10 @@ namespace RomManagerShared.Migrations
                     b.Property<string>("Languages")
                         .HasColumnType("TEXT")
                         .HasAnnotation("Relational:JsonPropertyName", "languages");
+
+                    b.Property<string>("NsuID")
+                        .HasColumnType("TEXT")
+                        .HasAnnotation("Relational:JsonPropertyName", "nsuId");
 
                     b.Property<int?>("NumberOfPlayers")
                         .HasColumnType("INTEGER")
@@ -542,43 +316,43 @@ namespace RomManagerShared.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TitleID")
+                        .IsUnique();
+
                     b.ToTable("SwitchJsonRomDTOs");
                 });
 
-            modelBuilder.Entity("RomManagerShared.ThreeDS.TitleInfoProviders.ThreeDSJsonTitleInfoProvider+ThreeDSJsonDTO", b =>
+            modelBuilder.Entity("RomManagerShared.ThreeDS.TitleInfoProviders.ThreeDSJsonDTO", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ProductCode")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Publisher")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<long>("Size")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("TitleID")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("UID")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Version")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("TitleID")
+                        .IsUnique();
 
                     b.ToTable("ThreeDSJsonDTOs");
                 });
@@ -630,6 +404,9 @@ namespace RomManagerShared.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TitleID")
+                        .IsUnique();
+
                     b.ToTable("WiiXmlRomDTOs");
                 });
 
@@ -666,6 +443,36 @@ namespace RomManagerShared.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("WiiUWikiBrewTitleDTOs");
+                });
+
+            modelBuilder.Entity("RomManagerShared.Base.DLC", b =>
+                {
+                    b.HasBaseType("RomManagerShared.Base.Rom");
+
+                    b.Property<string>("MinimumGameUpdate")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasDiscriminator().HasValue("DLC");
+                });
+
+            modelBuilder.Entity("RomManagerShared.Base.Game", b =>
+                {
+                    b.HasBaseType("RomManagerShared.Base.Rom");
+
+                    b.Property<int?>("GameId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasIndex("GameId");
+
+                    b.HasDiscriminator().HasValue("Game");
+                });
+
+            modelBuilder.Entity("RomManagerShared.Base.Update", b =>
+                {
+                    b.HasBaseType("RomManagerShared.Base.Rom");
+
+                    b.HasDiscriminator().HasValue("Update");
                 });
 
             modelBuilder.Entity("RomManagerShared.PS3.PS3DLC", b =>
@@ -739,7 +546,7 @@ namespace RomManagerShared.Migrations
                     b.Property<string>("RelatedGameTitleName")
                         .HasColumnType("TEXT");
 
-                    b.ToTable("DLC", t =>
+                    b.ToTable("Roms", t =>
                         {
                             t.Property("RelatedGameTitleID")
                                 .HasColumnName("WiiUDLC_RelatedGameTitleID");
@@ -831,6 +638,21 @@ namespace RomManagerShared.Migrations
                     b.Property<int>("ParentalLevel")
                         .HasColumnType("INTEGER");
 
+                    b.ToTable("Roms", t =>
+                        {
+                            t.Property("Category")
+                                .HasColumnName("PSPGame_Category");
+
+                            t.Property("DiskNumber")
+                                .HasColumnName("PSPGame_DiskNumber");
+
+                            t.Property("DiskTotal")
+                                .HasColumnName("PSPGame_DiskTotal");
+
+                            t.Property("ParentalLevel")
+                                .HasColumnName("PSPGame_ParentalLevel");
+                        });
+
                     b.HasDiscriminator().HasValue("PSPGame");
                 });
 
@@ -909,7 +731,6 @@ namespace RomManagerShared.Migrations
                     b.HasBaseType("RomManagerShared.Base.Update");
 
                     b.Property<string>("Category")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<int>("DiskNumber")
@@ -920,6 +741,21 @@ namespace RomManagerShared.Migrations
 
                     b.Property<int>("ParentalLevel")
                         .HasColumnType("INTEGER");
+
+                    b.ToTable("Roms", t =>
+                        {
+                            t.Property("Category")
+                                .HasColumnName("PSPUpdate_Category");
+
+                            t.Property("DiskNumber")
+                                .HasColumnName("PSPUpdate_DiskNumber");
+
+                            t.Property("DiskTotal")
+                                .HasColumnName("PSPUpdate_DiskTotal");
+
+                            t.Property("ParentalLevel")
+                                .HasColumnName("PSPUpdate_ParentalLevel");
+                        });
 
                     b.HasDiscriminator().HasValue("PSPUpdate");
                 });
@@ -941,6 +777,15 @@ namespace RomManagerShared.Migrations
                     b.Property<string>("RelatedGameTitleName")
                         .HasColumnType("TEXT");
 
+                    b.ToTable("Roms", t =>
+                        {
+                            t.Property("RelatedGameTitleID")
+                                .HasColumnName("SwitchUpdate_RelatedGameTitleID");
+
+                            t.Property("RelatedGameTitleName")
+                                .HasColumnName("SwitchUpdate_RelatedGameTitleName");
+                        });
+
                     b.HasDiscriminator().HasValue("SwitchUpdate");
                 });
 
@@ -961,7 +806,7 @@ namespace RomManagerShared.Migrations
                     b.Property<string>("RelatedGameTitleName")
                         .HasColumnType("TEXT");
 
-                    b.ToTable("Update", t =>
+                    b.ToTable("Roms", t =>
                         {
                             t.Property("RelatedGameTitleID")
                                 .HasColumnName("WiiUUpdate_RelatedGameTitleID");
@@ -980,94 +825,25 @@ namespace RomManagerShared.Migrations
                     b.HasDiscriminator().HasValue("Xbox360Update");
                 });
 
-            modelBuilder.Entity("DLCUpdate", b =>
-                {
-                    b.HasOne("RomManagerShared.Base.DLC", null)
-                        .WithMany()
-                        .HasForeignKey("DLCsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("RomManagerShared.Base.Update", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatesId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("RomManagerShared.Base.DLC", b =>
-                {
-                    b.HasOne("RomManagerShared.Base.DLC", null)
-                        .WithMany("DLCs")
-                        .HasForeignKey("DLCId");
-
-                    b.HasOne("RomManagerShared.Base.Game", "RelatedGame")
-                        .WithMany("DLCs")
-                        .HasForeignKey("Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("RelatedGame");
-                });
-
-            modelBuilder.Entity("RomManagerShared.Base.Game", b =>
-                {
-                    b.HasOne("RomManagerShared.Base.DLC", null)
-                        .WithMany("RomHacks")
-                        .HasForeignKey("DLCId");
-
-                    b.HasOne("RomManagerShared.Base.Game", null)
-                        .WithMany("RomHacks")
-                        .HasForeignKey("GameId");
-
-                    b.HasOne("RomManagerShared.Base.Update", null)
-                        .WithMany("RomHacks")
-                        .HasForeignKey("UpdateId");
-                });
-
             modelBuilder.Entity("RomManagerShared.Base.Rating", b =>
                 {
-                    b.HasOne("RomManagerShared.Base.DLC", null)
+                    b.HasOne("RomManagerShared.Base.Rom", null)
                         .WithMany("Ratings")
-                        .HasForeignKey("DLCId");
-
-                    b.HasOne("RomManagerShared.Base.Game", null)
-                        .WithMany("Ratings")
-                        .HasForeignKey("GameId");
-
-                    b.HasOne("RomManagerShared.Base.Update", null)
-                        .WithMany("Ratings")
-                        .HasForeignKey("UpdateId");
+                        .HasForeignKey("RomId");
                 });
 
             modelBuilder.Entity("RomManagerShared.Base.RomDescription", b =>
                 {
-                    b.HasOne("RomManagerShared.Base.DLC", null)
+                    b.HasOne("RomManagerShared.Base.Rom", null)
                         .WithMany("Descriptions")
-                        .HasForeignKey("DLCId");
-
-                    b.HasOne("RomManagerShared.Base.Game", null)
-                        .WithMany("Descriptions")
-                        .HasForeignKey("GameId");
-
-                    b.HasOne("RomManagerShared.Base.Update", null)
-                        .WithMany("Descriptions")
-                        .HasForeignKey("UpdateId");
+                        .HasForeignKey("RomId");
                 });
 
             modelBuilder.Entity("RomManagerShared.Base.RomHash", b =>
                 {
-                    b.HasOne("RomManagerShared.Base.DLC", null)
+                    b.HasOne("RomManagerShared.Base.Rom", null)
                         .WithMany("Hashes")
-                        .HasForeignKey("DLCId");
-
-                    b.HasOne("RomManagerShared.Base.Game", null)
-                        .WithMany("Hashes")
-                        .HasForeignKey("GameId");
-
-                    b.HasOne("RomManagerShared.Base.Update", null)
-                        .WithMany("Hashes")
-                        .HasForeignKey("UpdateId");
+                        .HasForeignKey("RomId");
                 });
 
             modelBuilder.Entity("RomManagerShared.Base.RomHashProperty", b =>
@@ -1079,17 +855,27 @@ namespace RomManagerShared.Migrations
 
             modelBuilder.Entity("RomManagerShared.Base.RomTitle", b =>
                 {
-                    b.HasOne("RomManagerShared.Base.DLC", null)
+                    b.HasOne("RomManagerShared.Base.Rom", null)
                         .WithMany("Titles")
-                        .HasForeignKey("DLCId");
+                        .HasForeignKey("RomId");
+                });
 
+            modelBuilder.Entity("RomManagerShared.Base.DLC", b =>
+                {
+                    b.HasOne("RomManagerShared.Base.Game", "RelatedGame")
+                        .WithMany("DLCs")
+                        .HasForeignKey("Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("RelatedGame");
+                });
+
+            modelBuilder.Entity("RomManagerShared.Base.Game", b =>
+                {
                     b.HasOne("RomManagerShared.Base.Game", null)
-                        .WithMany("Titles")
+                        .WithMany("RomHacks")
                         .HasForeignKey("GameId");
-
-                    b.HasOne("RomManagerShared.Base.Update", null)
-                        .WithMany("Titles")
-                        .HasForeignKey("UpdateId");
                 });
 
             modelBuilder.Entity("RomManagerShared.Base.Update", b =>
@@ -1100,43 +886,18 @@ namespace RomManagerShared.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("RomManagerShared.Base.Update", null)
-                        .WithMany("Updates")
-                        .HasForeignKey("UpdateId");
-
                     b.Navigation("RelatedGame");
                 });
 
-            modelBuilder.Entity("RomManagerShared.Base.DLC", b =>
+            modelBuilder.Entity("RomManagerShared.Base.Rom", b =>
                 {
-                    b.Navigation("DLCs");
-
                     b.Navigation("Descriptions");
 
                     b.Navigation("Hashes");
 
                     b.Navigation("Ratings");
 
-                    b.Navigation("RomHacks");
-
                     b.Navigation("Titles");
-                });
-
-            modelBuilder.Entity("RomManagerShared.Base.Game", b =>
-                {
-                    b.Navigation("DLCs");
-
-                    b.Navigation("Descriptions");
-
-                    b.Navigation("Hashes");
-
-                    b.Navigation("Ratings");
-
-                    b.Navigation("RomHacks");
-
-                    b.Navigation("Titles");
-
-                    b.Navigation("Updates");
                 });
 
             modelBuilder.Entity("RomManagerShared.Base.RomHash", b =>
@@ -1144,17 +905,11 @@ namespace RomManagerShared.Migrations
                     b.Navigation("Properties");
                 });
 
-            modelBuilder.Entity("RomManagerShared.Base.Update", b =>
+            modelBuilder.Entity("RomManagerShared.Base.Game", b =>
                 {
-                    b.Navigation("Descriptions");
-
-                    b.Navigation("Hashes");
-
-                    b.Navigation("Ratings");
+                    b.Navigation("DLCs");
 
                     b.Navigation("RomHacks");
-
-                    b.Navigation("Titles");
 
                     b.Navigation("Updates");
                 });

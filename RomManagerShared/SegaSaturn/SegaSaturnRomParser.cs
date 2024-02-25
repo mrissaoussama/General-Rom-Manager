@@ -1,17 +1,18 @@
 ﻿using RomManagerShared.Base;
+using RomManagerShared.Interfaces;
 using RomManagerShared.Utils;
 using System.Text;
 
 namespace RomManagerShared.SegaSaturn.Parsers;
 
-public class SegaSaturnRomParser : IRomParser
+public class SegaSaturnRomParser : IRomParser<SegaSaturnConsole>
 {
     public SegaSaturnRomParser()
     {
         Extensions = ["mdf"];
     }
-    public HashSet<string> Extensions { get; set; }
-    public Task<HashSet<Rom>> ProcessFile(string path)
+    public List<string> Extensions { get; set; }
+    public Task<List<Rom>> ProcessFile(string path)
     {
         SegaSaturnGame segaSaturnrom = new();
         using (BinaryReader reader = new(File.OpenRead(path)))
@@ -64,7 +65,7 @@ public class SegaSaturnRomParser : IRomParser
             segaSaturnrom.AddTitleName(gameName);
         }
 
-        HashSet<Rom> list = [segaSaturnrom];
+        List<Rom> list = [segaSaturnrom];
         return Task.FromResult(list);
     }
 

@@ -1,13 +1,13 @@
 ﻿using DiscUtils.Iso9660;using RomManagerShared.Base;
-using System.Text;
+using RomManagerShared.Interfaces;using System.Text;
 namespace RomManagerShared.PSP.Parsers;
 
-public class PSPRomParser : IRomParser
+public class PSPRomParser : IRomParser<PSPConsole>
 {
     public PSPRomParser()
     {
         Extensions = ["iso"];
-    }    public HashSet<string> Extensions { get; set; }    public Task<HashSet<Rom>> ProcessFile(string path)
+    }    public List<string> Extensions { get; set; }    public Task<List<Rom>> ProcessFile(string path)
     {
         PSPGame pspRom = new();        try
         {
@@ -58,7 +58,7 @@ public class PSPRomParser : IRomParser
         catch (Exception ex)
         {
             Console.WriteLine($"An error occurred: {ex.Message}");
-        }        HashSet<Rom> romList = [pspRom];
+        }        List<Rom> romList = [pspRom];
         return Task.FromResult(romList);
     }    private static void SetRegion(PSPGame pspRom)
     {

@@ -1,10 +1,15 @@
 ﻿using RomManagerShared.Base;
+using RomManagerShared.OriginalXbox;
+using RomManagerShared.PS3;
+using RomManagerShared.PSVita;
+using RomManagerShared.WiiU;
+using RomManagerShared.Xbox360;
 using System.Reflection;
 namespace RomManagerShared.Utils;
 
 public class RomUtils
 {
-    static HashSet<string> processedPaths = [];
+    static List<string> processedPaths = [];
     public static void CopyNonNullProperties(object source, object destination)
     {
         if (source == null || destination == null)
@@ -56,7 +61,7 @@ public class RomUtils
             }
         }
     }
-    public static void OrganizeRomsInFolders(HashSet<Rom> romList, HashSet<HashSet<Rom>> groupedRomList, bool organizeGamesOnly = false)
+    public static void OrganizeRomsInFolders(List<Rom> romList, List<List<Rom>> groupedRomList, bool organizeGamesOnly = false)
     {
         if (romList == null || romList.Count == 0)
         {
@@ -151,7 +156,7 @@ public class RomUtils
             }
         }
     }
-    private static void UpdateGroupedRomPaths(HashSet<HashSet<Rom>> groupedRomList, string sourcePath, string destinationPath)
+    private static void UpdateGroupedRomPaths(List<List<Rom>> groupedRomList, string sourcePath, string destinationPath)
     {
         var list = groupedRomList.ToList();
 
@@ -166,7 +171,59 @@ public class RomUtils
                 }
             }
         }
-    }    public static string GetRomListSize(HashSet<Rom> romList)
+    }    public static string GetRomListSize(List<Rom> romList)
     {
         return romList.Sum(x => x.Size).ToString();
-    }}
+    }
+
+    public static string GetRomBaseFolder(Rom rom)
+    {if (rom.Path is null)
+            throw new ArgumentException("rom path invalid");
+       if(rom is IWiiURom)
+        {
+            if(rom.Path.ToLower().EndsWith("app.xml"))
+            {
+                DirectoryInfo directory = Directory.GetParent(Directory.GetParent(rom.Path).FullName);
+                return directory.FullName;
+            }
+            if (rom.Path.ToLower().EndsWith("title.tmd"))
+            {
+                DirectoryInfo directory = Directory.GetParent(rom.Path);
+                return directory.FullName;
+            }
+        }
+       if(rom is IPS3Rom)
+        {
+            if (rom.Path.ToLower().EndsWith("param.sfo"))
+            {
+                DirectoryInfo directory = Directory.GetParent(Directory.GetParent(rom.Path).FullName);
+                return directory.FullName;
+            }
+        }
+        if (rom is IPSVitaRom)
+        {
+            if (rom.Path.ToLower().EndsWith("param.sfo"))
+            {
+                DirectoryInfo directory = Directory.GetParent(Directory.GetParent(rom.Path).FullName);
+                return directory.FullName;
+            }
+        }
+        if (rom is IOriginalXboxRom)
+        {
+            if (rom.Path.ToLower().EndsWith("default.xbe"))
+            {
+                DirectoryInfo directory = Directory.GetParent(rom.Path);
+                return directory.FullName;
+            }
+        }
+        if (rom is IXbox360Rom)
+        {
+            if (rom.Path.ToLower().EndsWith("default.xex"))
+            {
+                DirectoryInfo directory = Directory.GetParent(rom.Path);
+                return directory.FullName;
+            }
+        }
+        throw new Exception("rom type doesn't support folders");
+    }
+}

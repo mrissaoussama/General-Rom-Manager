@@ -1,17 +1,18 @@
 ﻿using Param_SFO;
 using PS4_Tools;
 using RomManagerShared.Base;
+using RomManagerShared.Interfaces;
 using RomManagerShared.Utils;
 namespace RomManagerShared.PS4.Parsers;
 
-public class PS4PKGParser : IRomParser
+public class PS4PKGParser : IRomParser<PS4Console>
 {
     public PS4PKGParser()
     {
         Extensions = ["pkg"];
     }
-    public HashSet<string> Extensions { get; set; }
-    public Task<HashSet<Rom>> ProcessFile(string path)
+    public List<string> Extensions { get; set; }
+    public Task<List<Rom>> ProcessFile(string path)
     {
         PS4_Tools.PKG.SceneRelated.Unprotected_PKG ps4Pkg;
         try
@@ -21,7 +22,7 @@ public class PS4PKGParser : IRomParser
         catch (Exception)
         {
             FileUtils.Log("pkg not valid " + path);
-            return Task.FromResult(Array.Empty<Rom>().ToHashSet()); throw;
+            return Task.FromResult(Array.Empty<Rom>().ToList()); throw;
         }
         Rom ps4rom = ps4Pkg.PKG_Type == PS4_Tools.PKG.SceneRelated.PKGType.Patch
             ? new PS4Update()
@@ -52,6 +53,6 @@ public class PS4PKGParser : IRomParser
         ps4rom.NumberOfPlayers = 0; // YourNumberOfPlayers;
         ps4rom.ReleaseDate = new DateOnly(); // YourReleaseDate;
                                              //  ps4rom.Hash = new byte[0]; // YourHash;
-        HashSet<Rom> list = [ps4rom];        return Task.FromResult(list);
+        List<Rom> list = [ps4rom];        return Task.FromResult(list);
     }
 }

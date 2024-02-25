@@ -1,4 +1,5 @@
 ﻿using RomManagerShared.Base;
+using RomManagerShared.Interfaces;
 using RomManagerShared.Utils;
 using RomManagerShared.Utils.ISO2GOD;
 using RomManagerShared.Xbox360.Configuration;
@@ -6,16 +7,16 @@ using System.ComponentModel;
 using System.Drawing;
 namespace RomManagerShared.Xbox360.Parsers;
 
-public class Xbox360ISORomParser : IRomParser
+public class Xbox360ISORomParser : IRomParser<Xbox360Console>
 {
     public Xbox360ISORomParser()
     {
         Extensions = ["iso"];
     }
-    public HashSet<string> Extensions { get; set; }
-    public Task<HashSet<Rom>> ProcessFile(string path)
+    public List<string> Extensions { get; set; }
+    public Task<List<Rom>> ProcessFile(string path)
     {
-        HashSet<Rom> list = [];
+        List<Rom> list = [];
         IsoDetailsResults? results = null;
         try
         {

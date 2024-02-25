@@ -1,11 +1,21 @@
-﻿namespace RomManagerShared.Base;
+﻿using RomManagerShared.Interfaces;
 
-public interface IRomParser
+namespace RomManagerShared.Base;
+
+public interface IRomParser<T>   where T : GamingConsole
 {
-    HashSet<string> Extensions { get; set; }
-    Task<HashSet<Rom>> ProcessFile(string path);}
+    List<string> Extensions { get; set; }
+    Task<List<Rom>> ProcessFile(string path);}
+//public abstract class RomParser<T> : IRomParser<T> where T : GamingConsole
+//{
+//    public List<string> Extensions { get; set; } = [];
+//   public async Task<List<Rom>> ProcessFile(string path)
+//    {
+//        return [];
+//    }
+//}
 //public interface IRomParser<T> where T : Rom
 //{
-//    HashSet<string> Extensions { get; set; }
-//    Task<HashSet<T>> ProcessFile(string path);
+//    List<string> Extensions { get; set; }
+//    Task<List<T>> ProcessFile(string path);
 //}

@@ -22,9 +22,9 @@ public class SwitchUtils
             return null;
         }
     }
-    public static HashSet<HashSet<Rom>> GroupRomList(IEnumerable<Rom> romList)
+    public static List<List<Rom>> GroupRomList(IEnumerable<Rom> romList)
     {
-        Dictionary<string, HashSet<Rom>> romGroups = [];        foreach (var rom in romList)
+        Dictionary<string, List<Rom>> romGroups = [];        foreach (var rom in romList)
         {
             if (rom.TitleID is null)
                 continue;            string modifiedTitleId = GetIdentifyingTitleID(rom.TitleID);            if (!romGroups.ContainsKey(modifiedTitleId))
@@ -32,8 +32,8 @@ public class SwitchUtils
                 romGroups[modifiedTitleId] = [];
             }            romGroups[modifiedTitleId].Add(rom);
         }
-        HashSet<HashSet<Rom>> groupedRomList = new(
-  romGroups.Values.Select(group => new HashSet<Rom>(
+        List<List<Rom>> groupedRomList = new(
+  romGroups.Values.Select(group => new List<Rom>(
       group.OrderBy(rom => rom is Game)
   ))
 );

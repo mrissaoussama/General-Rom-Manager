@@ -26,7 +26,7 @@
       "TitleDBSavePath": "Switch\\TitleDB\\",
       "VersionsSavePath": "Switch\\TitleDB\\versions.json",
       "GlobalTitleDBUrl": "https://tinfoil.media/repo/db/titles.json",
-      "GlobalTitleDBPath": "titles.json"
+      "GlobalTitleDBPath": "Switch\\TitleDB\\titles.json"
 
     }
   },

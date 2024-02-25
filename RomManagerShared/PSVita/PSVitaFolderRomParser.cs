@@ -1,21 +1,22 @@
 ﻿using RomManagerShared.Base;
+using RomManagerShared.Interfaces;
 using RomManagerShared.PSVITA;
 using RomManagerShared.Utils;
 
 namespace RomManagerShared.PSVita.Parsers;
 
-public class PSVitaFolderRomParser : IRomParser
+public class PSVitaFolderRomParser : IRomParser<PSVitaConsole>
 {
     public PSVitaFolderRomParser()
     {
         Extensions = ["sfo"];
 
     }
-    public HashSet<string> Extensions { get; set; }
+    public List<string> Extensions { get; set; }
     //string[] gameCategories = { "AC", "GC", "GDC" };
-    public Task<HashSet<Rom>> ProcessFile(string path)
+    public Task<List<Rom>> ProcessFile(string path)
     {
-        HashSet<Rom> list = [];
+        List<Rom> list = [];
         if (Path.GetExtension(path).Contains("sfo"))
         {
             try

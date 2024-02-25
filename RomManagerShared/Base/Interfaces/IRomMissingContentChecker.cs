@@ -3,12 +3,12 @@ namespace RomManagerShared.Interfaces;
 
 public interface IRomMissingContentChecker
 {
-    HashSet<HashSet<Rom>> GroupedRomList { get; set; }
+    List<List<Rom>> GroupedRomList { get; set; }
 
-    Task<HashSet<RomMissingUpdates>> GetMissingUpdates();
+    Task<List<RomMissingUpdates>> GetMissingUpdates();
     Task<RomMissingUpdates?> GetMissingUpdates(Rom rom);
-    Task<HashSet<RomMissingDLCs>> GetMissingDLC();
+    Task<List<RomMissingDLCs>> GetMissingDLC();
     Task<RomMissingDLCs> GetMissingDLC(Rom rom);
-    HashSet<Rom> GetRomGroup(Rom rom);
+    List<Rom> GetRomGroup(Rom rom);
     void LoadGroupRomList();
 }

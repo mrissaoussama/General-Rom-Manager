@@ -1,15 +1,16 @@
 ﻿using RomManagerShared.Base;
+using RomManagerShared.Interfaces;
 using RomManagerShared.Utils;
 namespace RomManagerShared.GameBoy.Parsers;
 
-public class GameBoyRomParser : IRomParser
+public class GameBoyRomParser : IRomParser<GameBoyConsole>
 {
     public GameBoyRomParser()
     {
         Extensions = ["gb", "gbc"];
     }
-    public HashSet<string> Extensions { get; set; }
-    public Task<HashSet<Rom>> ProcessFile(string path)
+    public List<string> Extensions { get; set; }
+    public Task<List<Rom>> ProcessFile(string path)
     {
         GameBoyGame gameboyrom = new();
         var metadatareader = new GameBoyMetadataReader();
@@ -29,7 +30,7 @@ public class GameBoyRomParser : IRomParser
             gameboyrom.AddRegion(Region.Unknown);
         }
         Console.WriteLine(gameboyrom.ToString());
-        HashSet<Rom> list = [gameboyrom];
+        List<Rom> list = [gameboyrom];
         return Task.FromResult(list);
     }
 }

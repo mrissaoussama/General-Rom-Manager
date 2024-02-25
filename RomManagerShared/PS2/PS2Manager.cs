@@ -3,23 +3,11 @@ using RomManagerShared.PS2.Parsers;
 using RomManagerShared.Interfaces;
 namespace RomManagerShared.PS2;
 
-public class PS2Manager : IConsoleManager
+public class PS2Manager : ConsoleManager<PS2Console>
 {
-    public RomParserExecutor RomParserExecutor { get; set; }
-    public HashSet<Rom> RomList { get; set; }
-    public PS2Manager()
+    public PS2Manager(
+RomParserExecutor<PS2Console> romParserExecutor)
+: base(romParserExecutor)
     {
-        RomList = [];
-        RomParserExecutor = new RomParserExecutor();
-    }
-    public async Task ProcessFile(string file)
-    {
-        var processedlist = await RomParserExecutor.ExecuteParsers(file);
-        RomList.UnionWith(processedlist);
-    }
-    public Task Setup()
-    {
-        RomParserExecutor.AddParser(new PS2RomParser());
-        return Task.CompletedTask;
     }
 }

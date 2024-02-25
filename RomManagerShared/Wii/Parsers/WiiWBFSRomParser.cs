@@ -1,10 +1,11 @@
 ﻿using RomManagerShared.Base;
+using RomManagerShared.Interfaces;
 using System.Text;
 namespace RomManagerShared.Wii.Parsers;
 
-public class WiiWBFSRomParser : IRomParser
+public class WiiWBFSRomParser : IRomParser<WiiConsole>
 {
-    public HashSet<string> Extensions { get; set; }    private const int TitleIDOffset = 0x200;
+    public List<string> Extensions { get; set; }    private const int TitleIDOffset = 0x200;
     private const int TitleIDLength = 6;
     private const int TitleNameOffset = 0x220;
     private const int TitleNameLength = 160;
@@ -13,9 +14,9 @@ public class WiiWBFSRomParser : IRomParser
     public WiiWBFSRomParser()
     {
         Extensions = ["wbfs"];
-    }    public async Task<HashSet<Rom>> ProcessFile(string path)
+    }    public async Task<List<Rom>> ProcessFile(string path)
     {
-        HashSet<Rom> roms = [];        try
+        List<Rom> roms = [];        try
         {
             using FileStream fs = new(path, FileMode.Open, FileAccess.Read);
             using BinaryReader br = new(fs);

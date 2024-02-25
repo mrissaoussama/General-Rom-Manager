@@ -1,12 +1,12 @@
-﻿using RomManagerShared.Utils;using System.Text.Json;
+﻿using RomManagerShared.Base;using RomManagerShared.Interfaces;using RomManagerShared.Switch.Configuration;using RomManagerShared.Utils;using System.Text.Json;
 namespace RomManagerShared.Switch.TitleInfoProviders;
 
-public class SwitchUpdateVersionProvider : IUpdateVersionProvider
+public class SwitchUpdateVersionProvider : IUpdateVersionProvider<SwitchConsole>
 {
     public string Source { get; set; }    private Dictionary<string, Dictionary<string, DateTime>> versionDatabase;
-    private readonly GithubDownloader titledbDownloader;    public SwitchUpdateVersionProvider(string versionFilepath)
+    public SwitchUpdateVersionProvider(string versionFilepath)
     {
-        titledbDownloader = new GithubDownloader();        Source = versionFilepath;
+        Source = versionFilepath;
         if (string.IsNullOrEmpty(versionFilepath))
         {
             FileUtils.Log("switch version filepath is null");
@@ -20,7 +20,7 @@ public class SwitchUpdateVersionProvider : IUpdateVersionProvider
             return;
         }
         if (!File.Exists(Source))
-            await titledbDownloader.DownloadSwitchVersionsFile();
+            await FileDownloader.DownloadSwitchVersionsFile();
         try
         {
             string jsonContent = File.ReadAllText(Source);
@@ -32,7 +32,7 @@ public class SwitchUpdateVersionProvider : IUpdateVersionProvider
             throw;
         }        versionDatabase ??= [];
     }
-    public async Task<string> GetLatestVersion(string titleId)
+    public async Task<Update> GetLatestVersion(string titleId)
     {
         string commonTitleId = titleId[..^3];
         commonTitleId += "000";
@@ -48,5 +48,9 @@ public class SwitchUpdateVersionProvider : IUpdateVersionProvider
                 }
             }
         }
-        return latestVersion; // Return "-1" if title ID not found
+        SwitchUpdate su = new()
+        {
+            Version = latestVersion
+        };
+        return su; // Return "-1" if title ID not found
     }}

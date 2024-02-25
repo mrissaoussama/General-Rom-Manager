@@ -1,31 +1,32 @@
 ﻿using RomManagerShared.Base;
+using RomManagerShared.Interfaces;
 using RomManagerShared.Utils;
 namespace RomManagerShared.WiiU;
-public class WiiUXmlParser : IRomParser
+public class WiiUXmlParser : IRomParser<WiiUConsole>
 {
-    public HashSet<string> Extensions { get; set; } = ["xml"];
+    public List<string> Extensions { get; set; } = ["xml"];
 
     public WiiUXmlParser()
     {
     }
 
-    public async Task<HashSet<Rom>> ProcessFile(string switchRomPath)
+    public async Task<List<Rom>> ProcessFile(string path)
     {
-        HashSet<Rom> list = [];
-        string extension = Path.GetExtension(switchRomPath).TrimStart('.').ToLower();
+        List<Rom> list = [];
+        string extension = Path.GetExtension(path).TrimStart('.').ToLower();
         if (!Extensions.Contains(extension))
         {
             return [];
         }
-        if (Path.GetFileName(switchRomPath)!="app.xml")
+        if (Path.GetFileName(path)!="app.xml")
         {
             return [];
         }
-        string DirectoryName = Path.GetDirectoryName(switchRomPath);
+        string DirectoryName = Path.GetDirectoryName(path);
 
         Rom rom = new();
         string appXmlPath = Path.Combine(DirectoryName, "app.xml");
-        string codedir = Path.GetDirectoryName(switchRomPath);
+        string codedir = Path.GetDirectoryName(path);
         string gamedir = Path.GetDirectoryName(codedir);
 
         if (File.Exists(appXmlPath))
@@ -65,6 +66,8 @@ public class WiiUXmlParser : IRomParser
             RomUtils.CopyNonNullProperties(rom, (Rom)metadataInstance);
             rom = (Rom)metadataInstance;
         }
+        rom.Path = path;
+
         rom.IsFolderFormat = true;
         list.Add(rom);
         return list;

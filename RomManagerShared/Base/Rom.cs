@@ -8,30 +8,28 @@ public class Rom
     public int Id { get; set; }
     public string? TitleID { get; set; }
     public string? Version { get; set; }
-    public HashSet<Region>? Regions { get; set; }
+    public  List<Region>? Regions { get; set; }
     public string? Icon { get; set; }
-    public HashSet<Rating>? Ratings { get; set; }
+    public virtual List<Rating>? Ratings { get; set; }
     public string? Publisher { get; set; }
     public string? Thumbnail { get; set; }
-    public HashSet<RomTitle>? Titles { get; set; }
-    public HashSet<Language>? Languages { get; set; }
-    public HashSet<GenreEnum>? Genres { get; set; }
+    public virtual List<RomTitle>? Titles { get; set; }
+    public List<Language>? Languages { get; set; }
+    public List<GenreEnum>? Genres { get; set; }
     public string? Path { get; set; }
-    public HashSet<RomDescription>? Descriptions { get; set; }
+    public virtual List<RomDescription>? Descriptions { get; set; }
     public string? Developer { get; set; }
     public long? Size { get; set; }
-    public List<RomHash>? Hashes { get; set; }
+    public virtual List<RomHash>? Hashes { get; set; }
     public DateOnly? ReleaseDate { get; set; }
     public string? Banner { get; set; }
-    public HashSet<string>? Images { get; set; }
+    public List<string>? Images { get; set; }
     public string? ProductCode { get; set; }
     public string? MinimumFirmware { get; set; }
     public int NumberOfPlayers { get; set; }
     public bool IsDemo { get; set; }
     public bool IsFolderFormat { get; set; }
-    public HashSet<Game>? RomHacks { get; set; }
-    public HashSet<Update>? Updates { get; set; }
-    public HashSet<DLC>? DLCs { get; set; }
+
     public Rom()
     {
     }
@@ -44,6 +42,7 @@ public class Rom
     public void AddTitleName(string title, Language Language = Language.Unknown)
     {
         Titles ??= [];
+        if (string.IsNullOrWhiteSpace(title)) return;
         title=title.ReplaceLineEndings(" ");
         if (Titles.FirstOrDefault(x => x.Value == title) is not null)
             return;
@@ -87,7 +86,7 @@ public class Rom
     public void AddImages(IEnumerable<string> images)
     {
         Images ??= [];
-        Images.UnionWith(images);
+        Images.AddRange(images);
     }
 }
 public class RomDescription
@@ -116,6 +115,7 @@ public class RomDescription
 public class RomHash
 {
     public int Id { get; set; }
+    //public Rom Rom { get; set; }
     public RomHash()
     {
         Value = string.Empty;
@@ -139,8 +139,9 @@ public class RomHash
     public DateTime CreationDate { get; set; }
     public string? Description { get; set; }
     public string? Extension { get; set; }
+    public string? Filename { get; set; }
     public bool IsVerified { get; set; }
-    public HashSet<RomHashProperty>? Properties { get; set; }
+    public virtual List<RomHashProperty>? Properties { get; set; }
     public override string ToString()
     {
         return $"{Type} ({Value}) {Description} {CreationDate} {IsVerified}";
@@ -152,17 +153,17 @@ public class RomHashProperty
     public  string Key { get; set; }= string.Empty;
     public  string Value { get; set; }= string.Empty;
 }
-//public enum HashTrustLevel
-//{
-//    UnknownOrCorrupted,
-//    Verified
-//}
+
 public enum HashTypeEnum
 {
     CRC32,
     MD5,
     SHA1, SHA256
-}
+}//public enum HashTrustLevel
+//{
+//    UnknownOrCorrupted,
+//    Verified
+//}
 public enum Region
 {
     Unknown,    USA,
@@ -245,7 +246,7 @@ public class Rating
     public int Id { get; set; }
     public RatingSystem Name { get; set; }
     public int Age { get; set; }
-    public HashSet<RatingContent> RatingContents { get; set; } = [];
+    public List<RatingContent> RatingContents { get; set; } = [];
 
     public void AddContent(List<string> ratingContent)
     {
@@ -279,10 +280,13 @@ public class DLC : Rom
     {
     }
     public string MinimumGameUpdate { get; set; } = "";
-    public Game? RelatedGame { get; set; }
+    public virtual Game? RelatedGame { get; set; }
 }
 public class Game : Rom
 {
+    public virtual List<Game>? RomHacks { get; set; }
+    public virtual List<Update>? Updates { get; set; }
+    public virtual List<DLC>? DLCs { get; set; }
     //maybe add supported controllers if possible
     public Game() : base()
     {
@@ -290,7 +294,7 @@ public class Game : Rom
 }
 public class Update : Rom
 {
-    public Game? RelatedGame { get; set; }
+    public virtual Game? RelatedGame { get; set; }
 
     public Update() : base()
     {

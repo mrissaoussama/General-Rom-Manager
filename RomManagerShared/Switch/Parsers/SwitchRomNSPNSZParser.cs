@@ -1,20 +1,21 @@
 ﻿using RomManagerShared.Base;
+using RomManagerShared.Interfaces;
 using System.Text;
 using System.Xml;namespace RomManagerShared.Switch.Parsers;
 
-public class SwitchRomNSPNSZParser : IRomParser
+public class SwitchRomNSPNSZParser : IRomParser<SwitchConsole>
 {
-    public HashSet<string> Extensions { get; set; }
-    HashSet<Rom> RomList;
+    public List<string> Extensions { get; set; }
+    List<Rom> RomList;
    private const int HeaderLength = 0xA00;    public SwitchRomNSPNSZParser()
     {
         Extensions = ["nsz", "nsp"];
         RomList = [];
     }
-    public async Task<HashSet<Rom>> ProcessFile(string switchRomPath)
+    public async Task<List<Rom>> ProcessFile(string switchRomPath)
     {
-        HashSet<Rom> list = [];
-        HashSet<string> extensionsData = [];
+        List<Rom> list = [];
+        List<string> ExtensionsData = [];
         using (FileStream fileStream = new(switchRomPath, FileMode.Open, FileAccess.Read))
         {
             byte[] headerBytes = new byte[HeaderLength];
@@ -28,7 +29,7 @@ public class SwitchRomNSPNSZParser : IRomParser
                 {
                     string extensionData = headerAsString.Substring(Math.Max(0, extensionIndex - 32), 32);
                     extensionData = extensionData[..^16];
-                    extensionsData.Add(extensionData.ToUpper());
+                    ExtensionsData.Add(extensionData.ToUpper());
                     extensionIndex = headerAsString.IndexOf(extension, extensionIndex + 1, StringComparison.OrdinalIgnoreCase);
                 }
             }
@@ -61,7 +62,7 @@ public class SwitchRomNSPNSZParser : IRomParser
                 }
             }
         }
-        foreach (var id in extensionsData)        {
+        foreach (var id in ExtensionsData)        {
             Rom? rom = list.FirstOrDefault(x => x.TitleID == id);
             if (rom is null)
             {
@@ -74,5 +75,5 @@ public class SwitchRomNSPNSZParser : IRomParser
 
                 list.Add(rom);
         }
-        RomList.UnionWith(list);
+        RomList.AddRange(list);
         return list;    }}

@@ -5,19 +5,17 @@ using RomManagerShared.Utils;
 using RomManagerShared.WiiU.Configuration;
 namespace RomManagerShared.WiiU;
 
-public class NintendoWiiUManager :ConsoleManager<NintendoWiiUConsole>
+public class NintendoWiiUManager :ConsoleManager<WiiUConsole>
 {
-    public HashSet<HashSet<Rom>> GroupedRomList { get; set; }
-    public NintendoWiiUManager()
+    public List<List<Rom>> GroupedRomList { get; set; }
+    public NintendoWiiUManager(TitleInfoProviderManager<WiiUConsole> titleInfoProviderManager,
+RomParserExecutor<WiiUConsole> romParserExecutor)
+: base(romParserExecutor)
+
     {
+        TitleInfoProviderManager = titleInfoProviderManager;
         RomList = [];
         GroupedRomList = [];
-        RomParserExecutor = new RomParserExecutor();
-        RomParserExecutor
-         .AddParser(new WiiUTMDTIKParser())
-         .AddParser(new WiiUWudWuxParser())
-         .AddParser(new WiiUXmlParser())
-             ;
         var titlesPath = WiiUConfiguration.GetTitleDBPath();
         if (titlesPath == null)
             FileUtils.Log("WiiU titles path not found");
@@ -31,54 +29,28 @@ public class NintendoWiiUManager :ConsoleManager<NintendoWiiUConsole>
         ];
         await Task.WhenAll(tasks);
     }
-    public override async Task ProcessFile(string file)
-    {        var processedhash = await RomParserExecutor.ExecuteParsers(file);        var processedlist = processedhash.ToList();        for (int i = 0; i < processedlist.Count; i++)
-        {
-            var rom = processedlist[i];
-            WiiUWikiBrewTitleDTO title = WiiUWikiBrewScraper. titles.FirstOrDefault(x =>
-                (rom.TitleID != null && x.TitleID == rom.TitleID) ||
-                (x.ProductCode != null && rom.ProductCode != null && rom.ProductCode.Contains(x.ProductCode)));
-            if (title is not null)
-                { 
-                    if (title.Region == "JPN")
-                        rom.AddRegion(Region.Japan);
-                    if (title.Region == "EUR")
-                        rom.AddRegion(Region.Europe);
-                    if (title.Region == "USA")
-                        rom.AddRegion(Region.USA);
-                    rom.AddTitleName(title.Description);
-                    if (!string.IsNullOrEmpty(rom.ProductCode))
-                        rom.ProductCode = title.ProductCode;
-                if (title.TitleID is not null && rom.TitleID is null)
-                    rom.TitleID= title.TitleID;
-
-                }
-               
-            }
-              RomList.UnionWith(processedlist);
-    }
-      public void LoadGroupRomList()
+    public void LoadGroupRomList()
     {
         //GroupedRomList = WiiUUtils.GroupRomList(RomList);
-    }    public HashSet<string> GetSupportedExtensions()
+    }    public List<string> GetSupportedExtensions()
     {
         if (RomParserExecutor.Parsers.Count == 0)
         {
             return [];
         }
-        HashSet<string> extensionhashset = [];
+        List<string> extensionList = [];
         foreach (var parser in RomParserExecutor.Parsers)
         {
-            extensionhashset.UnionWith(parser.Extensions);
+            extensionList.AddRange(parser.Extensions);
         }
-        return extensionhashset;
+        return extensionList;
     }
   
-    public HashSet<Rom> GetRomGroup(Rom rom)
+    public List<Rom> GetRomGroup(Rom rom)
     {
         var group = GroupedRomList.Where(group => group.Contains(rom))
             .SelectMany(group => group)
-            .ToHashSet();
+            .ToList();
         return group;
     }
 }

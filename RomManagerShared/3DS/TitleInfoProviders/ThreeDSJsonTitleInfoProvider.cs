@@ -1,21 +1,31 @@
-﻿using RomManagerShared.Base;
+﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using RomManagerShared.Base;
+using RomManagerShared.Base.Database;
+using RomManagerShared.Base.Interfaces;
+using RomManagerShared.Interfaces;
 using RomManagerShared.ThreeDS.Configuration;
 using RomManagerShared.Utils;
+using RomManagerShared.WiiU;
 using System.Text.Json;
 namespace RomManagerShared.ThreeDS.TitleInfoProviders;
 
-public class ThreeDSJsonTitleInfoProvider : ITitleInfoProvider
+public class ThreeDSJsonTitleInfoProvider :TitleInfoProvider<ThreeDSConsole>,ICanSaveToDB
 {
-    public string Source { get; set; }
-    public Dictionary<string, JsonElement> TitlesDatabase { get; set; }
-    private readonly ThreeDSTitleDBDownloader titledbDownloader;    public ThreeDSJsonTitleInfoProvider(string jsonFilesDirectory)
+    public Dictionary<string, JsonElement>? TitlesJson { get; set; }
+    public GenericRepository<ThreeDSJsonDTO> TitlesDatabaseRepository { get; set; }
+
+    public ThreeDSJsonTitleInfoProvider(GenericRepository<ThreeDSJsonDTO> repo)
     {
-        titledbDownloader = new ThreeDSTitleDBDownloader();
-        Source = jsonFilesDirectory;
-    }    public async Task LoadTitleDatabaseAsync()
+        TitlesDatabaseRepository = repo;
+        var regionspath = ThreeDSConfiguration.GetTitleDBPath();
+        Source = regionspath;
+    }    public override async Task LoadTitleDatabaseAsync()
     {
-        if (TitlesDatabase is not null)
+        if (TitlesJson is not null)
+        {
             return;
+        }
+
         if (Source == null)
         {
             return;
@@ -27,8 +37,8 @@ public class ThreeDSJsonTitleInfoProvider : ITitleInfoProvider
             return;
         }
         if (!File.Exists(Source))
-            await titledbDownloader.DownloadRegionFiles();
-        TitlesDatabase = [];        foreach (var regionFile in regionfiles)
+            await FileDownloader.DownloadThreeDSRegionFiles();
+        TitlesJson = [];        foreach (var regionFile in regionfiles)
         {
             string regionFilePath = Path.Combine(Source, regionFile);            try
             {
@@ -37,7 +47,7 @@ public class ThreeDSJsonTitleInfoProvider : ITitleInfoProvider
                 {
                     // Assuming "TitleID" is unique, you can use it as the key
                     var titleId = title.GetProperty("TitleID").GetString();
-                    TitlesDatabase[titleId] = title;
+                    TitlesJson[titleId] = title;
                 }
             }
             catch (JsonException ex)
@@ -46,20 +56,24 @@ public class ThreeDSJsonTitleInfoProvider : ITitleInfoProvider
                 Console.WriteLine($"Error deserializing JSON from file '{regionFilePath}': {ex.Message}");
             }
         }
-    }    public async Task<Rom> GetTitleInfo(Rom rom)
+    }    public async Task SaveToDatabase()
     {
-        if (TitlesDatabase.TryGetValue(rom.TitleID, out var titleInfoElement))
+        if (TitlesJson is null||TitlesJson.Count == 0)
+             return;
+        List<ThreeDSJsonDTO> list = new();
+        foreach (var title in TitlesJson)
         {
-            var titleInfoDto = new ThreeDSJsonDTO
-            {
-                Name = titleInfoElement.GetProperty("Name").GetString(),
-                UID = titleInfoElement.GetProperty("UID").GetString(),
-                TitleID = titleInfoElement.GetProperty("TitleID").GetString(),
-                Version = NormalizeVersion(titleInfoElement.GetProperty("Version").GetString()),
-                ProductCode = titleInfoElement.GetProperty("Product Code").GetString(),
-                Publisher = titleInfoElement.GetProperty("Publisher").GetString(),
-                Size = ParseSize(titleInfoElement.GetProperty("Size").GetString())
-            };            rom.AddTitleName(titleInfoDto.Name);
+            list.Add(JsonElementToDto(title.Value));
+
+        }
+        await TitlesDatabaseRepository.AddOrUpdateByPropertyRangeAsync(list, typeof(ThreeDSJsonDTO), nameof(ThreeDSJsonDTO.TitleID));
+
+
+    }    public override async Task<Rom> GetTitleInfo(Rom rom)
+    {
+        if (TitlesJson.TryGetValue(rom.TitleID, out var titleInfoElement))
+        {
+            ThreeDSJsonDTO titleInfoDto = JsonElementToDto(titleInfoElement);            rom.AddTitleName(titleInfoDto.Name);
             if (rom.Version == null || rom.Version == "0" || int.Parse(rom.Version) < 0)
                 rom.Version = titleInfoDto.Version;
             rom.Publisher = titleInfoDto.Publisher;
@@ -67,34 +81,55 @@ public class ThreeDSJsonTitleInfoProvider : ITitleInfoProvider
             rom.Size = titleInfoDto.Size;
         }
 
-        return rom;    }    private static string NormalizeVersion(string version)
+        return rom;    }
+
+    private static ThreeDSJsonDTO JsonElementToDto(JsonElement titleInfoElement)
     {
-        return string.Equals(version, "N/A", StringComparison.OrdinalIgnoreCase) ? "0" : version;
-    }    private static long ParseSize(string size)
-    {
-        if (string.Equals(size, "0B [N/A]", StringComparison.OrdinalIgnoreCase))
+        return new ThreeDSJsonDTO
         {
-            return 0;
-        }        string sizeInBytes = size.Split(' ')[0];
-        return long.TryParse(sizeInBytes, out var sizeValue) ? sizeValue : 0;
-    }    private string GetRelatedGameRomName(string titleID)
+            Name = titleInfoElement.GetProperty("Name").GetString(),
+            UID = titleInfoElement.GetProperty("UID").GetString(),
+            TitleID = titleInfoElement.GetProperty("TitleID").GetString(),
+            Version = ThreeDSJsonDTO.NormalizeVersion(titleInfoElement.GetProperty("Version").GetString()),
+            ProductCode = titleInfoElement.GetProperty("Product Code").GetString(),
+            Publisher = titleInfoElement.GetProperty("Publisher").GetString(),
+            Size = ThreeDSJsonDTO.ParseSize(titleInfoElement.GetProperty("Size").GetString())
+        };
+    }
+
+    public string GetRelatedGameRomName(string titleID)
     {
         titleID = titleID.Replace("0004008C", "00040000");
-        if (TitlesDatabase.TryGetValue(titleID, out var titleInfoElement))
+        if (TitlesJson.TryGetValue(titleID, out var titleInfoElement))
         {
             var name = titleInfoElement.GetProperty("Name").GetString();
             return name ?? "";
         }
         return "";
-    }    public class ThreeDSJsonDTO
+    }   
+}
+public class ThreeDSJsonDTO:IExternalRomFormat<ThreeDSConsole>
+{
+    public int Id { get; set; }
+    public string? Name { get; set; }
+    public string? UID { get; set; }
+    public string? TitleID { get; set; }
+    public string? Version { get; set; }
+    public long Size { get; set; }
+    public string? ProductCode { get; set; }
+    public string? Publisher { get; set; }
+    public static string NormalizeVersion(string version)
     {
-        public int Id { get; set; }
-        public string Name { get; set; }
-        public string UID { get; set; }
-        public string TitleID { get; set; }
-        public string Version { get; set; }
-        public long Size { get; set; }
-        public string ProductCode { get; set; }
-        public string Publisher { get; set; }
+        return string.Equals(version, "N/A", StringComparison.OrdinalIgnoreCase) ? "0" : version;
     }
+    public static long ParseSize(string size)
+    {
+        if (string.Equals(size, "0B [N/A]", StringComparison.OrdinalIgnoreCase))
+        {
+            return 0;
+        }
+        string sizeInBytes = size.Split(' ')[0];
+        return long.TryParse(sizeInBytes, out var sizeValue) ? sizeValue : 0;
+    }
+
 }

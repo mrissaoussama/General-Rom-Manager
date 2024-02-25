@@ -1,7 +1,8 @@
-<Project Sdk="Microsoft.NET.Sdk">  <PropertyGroup>
+﻿<Project Sdk="Microsoft.NET.Sdk">  <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>   <LangVersion>preview</LangVersion>
+	  <GenerateRuntimeConfigurationFiles>True</GenerateRuntimeConfigurationFiles>
   </PropertyGroup>  <ItemGroup>
     <ProjectReference Include="..\LibHac\LibHac.csproj" />
     <ProjectReference Include="..\SkyEditor.IO\SkyEditor.IO.csproj" />
@@ -25,16 +26,22 @@
 	</ItemGroup>
 	<ItemGroup>
 	  <PackageReference Include="DiscUtils" Version="0.16.13" />
-	  <PackageReference Include="HtmlAgilityPack" Version="1.11.57" />
-	  <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.1" />
-	  <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
-	  <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
-	  <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+	  <PackageReference Include="HtmlAgilityPack" Version="1.11.59" />
+	  <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0-preview.1.24081.2">
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+	  </PackageReference>
+	  <PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="9.0.0-preview.1.24081.2" />
+	  <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.0-preview.1.24081.2" />
+	  <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.0-preview.1.24080.9" />
+	  <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0-preview.1.24080.9" />
+	  <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0-preview.1.24080.9" />
+	  <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 	  <PackageReference Include="SkyEditor.Utilities.AsyncFor" Version="5.0.0" />
-	  <PackageReference Include="Syroot.BinaryData" Version="5.2.2" />
-	  <PackageReference Include="System.Drawing.Common" Version="8.0.1" />
+	  <PackageReference Include="Syroot.BinaryData" Version="6.0.0-alpha.13" />
+	  <PackageReference Include="System.Drawing.Common" Version="9.0.0-preview.1.24081.2" />
 	  <PackageReference Include="System.IO.Compression.ZipFile" Version="4.3.0" />
-	  <PackageReference Include="System.IO.Hashing" Version="8.0.0" />
+	  <PackageReference Include="System.IO.Hashing" Version="9.0.0-preview.1.24080.9" />
+	  <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
 	</ItemGroup>
 	<ItemGroup>
 	  <Reference Include="PARAM.SFO">

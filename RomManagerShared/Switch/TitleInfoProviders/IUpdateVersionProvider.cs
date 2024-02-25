@@ -1,7 +1,10 @@
-﻿namespace RomManagerShared.Switch.TitleInfoProviders;
+﻿using RomManagerShared.Base;
+using RomManagerShared.Interfaces;
 
-public interface IUpdateVersionProvider
+namespace RomManagerShared.Switch.TitleInfoProviders;
+
+public interface IUpdateVersionProvider<T> where T : GamingConsole
 {
-    public string Source { get; set; }    Task<string> GetLatestVersion(string titleId);
+    public string Source { get; set; }    Task<Update> GetLatestVersion(string titleId);
     Task LoadVersionDatabaseAsync();
 }

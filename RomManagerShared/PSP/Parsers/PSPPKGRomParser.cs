@@ -1,20 +1,21 @@
 ﻿using RomManagerShared.Base;
+using RomManagerShared.Interfaces;
 using RomManagerShared.Utils;
 using RomManagerShared.Utils.PKGUtils;
 
 namespace RomManagerShared.PSP.Parsers;
 
-public class PSPPKGRomParser : IRomParser
+public class PSPPKGRomParser : IRomParser<PSPConsole>
 {
     public PSPPKGRomParser()
     {
         Extensions = ["pkg"];
     }
-    public HashSet<string> Extensions { get; set; }
+    public List<string> Extensions { get; set; }
     //string[] gameCategories = { "AC", "GC", "GDC" };
-    public Task<HashSet<Rom>> ProcessFile(string path)
+    public Task<List<Rom>> ProcessFile(string path)
     {
-        HashSet<Rom> list = [];
+        List<Rom> list = [];
         if (Path.GetExtension(path).ToLower().Contains("pkg"))
         {
             try

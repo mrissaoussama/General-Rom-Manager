@@ -1,9 +1,7 @@
 ﻿using RomManagerShared.Configuration;
 
 namespace RomManagerShared.ThreeDS.Configuration;
-#region Switch Configuration
 
-#endregion
 
 #region 3DS Configuration
 

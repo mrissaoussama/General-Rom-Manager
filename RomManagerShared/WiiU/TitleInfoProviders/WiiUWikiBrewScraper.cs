@@ -1,6 +1,10 @@
 ﻿using HtmlAgilityPack;
+using RomManagerShared.Base;
+using RomManagerShared.Base.Interfaces;
+using RomManagerShared.Interfaces;
+using RomManagerShared.Utils;
 namespace RomManagerShared.WiiU;
-public class WiiUWikiBrewTitleDTO
+public class WiiUWikiBrewTitleDTO : IExternalRomFormat<WiiUConsole>
 {
     public int Id { get; set; }
     public string? TitleID { get; set; }
@@ -11,6 +15,21 @@ public class WiiUWikiBrewTitleDTO
     public string? CompanyCode { get; set; }
     public string? ProductCode { get; set; }
     public string? TitleType { get; set; }
+    public static Rom ToRom(Rom rom, WiiUWikiBrewTitleDTO title)
+    {
+        if (title.Region == "JPN")
+            rom.AddRegion(RomManagerShared.Base.Region.Japan);
+        if (title.Region == "EUR")
+            rom.AddRegion(Base.Region.Europe);
+        if (title.Region == "USA")
+            rom.AddRegion(Base.Region.USA);
+        rom.AddTitleName(title.Description!);
+        if (!string.IsNullOrEmpty(rom.ProductCode))
+            rom.ProductCode = title.ProductCode;
+        if (title.TitleID is not null && rom.TitleID is null)
+            rom.TitleID = title.TitleID;
+        return rom;
+    }
 }
 public class TableData
 {
@@ -25,7 +44,7 @@ public class WiiUWikiBrewScraper
         titles = [];
 
         // Download the HTML content of the page
-        string htmlContent =await DownloadHtmlContent("http://wiiubrew.org/wiki/Title_database");
+        string htmlContent =await FileDownloader.DownloadHtmlContent("http://wiiubrew.org/wiki/Title_database");
 
         if (!string.IsNullOrEmpty(htmlContent))
         {
@@ -53,18 +72,7 @@ public class WiiUWikiBrewScraper
         return titles;
     }
 
-    private async static Task<string> DownloadHtmlContent(string url)
-    {
-        try
-        {
-            using HttpClient client = new();
-            string html = await client.GetStringAsync(url);            return html;        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error downloading HTML content: {ex.Message}");
-        }
-        return await Task.FromResult(string.Empty);
-    }
+    
 
 
     private static List<TableData> ExtractTableData(HtmlNode table)

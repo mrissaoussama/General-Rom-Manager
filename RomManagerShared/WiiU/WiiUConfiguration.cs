@@ -11,7 +11,7 @@ public static class WiiUConfiguration
 
     public static string GetTitleDBUrl()
     {
-        return RomManagerConfiguration.BaseFolder + RomManagerConfiguration.Configuration.GetSection("WiiU:TitleDB:TitleDBUrl").Value!;
+        return  RomManagerConfiguration.Configuration.GetSection("WiiU:TitleDB:TitleDBUrl").Value!;
     }
 }
 

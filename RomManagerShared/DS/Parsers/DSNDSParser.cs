@@ -1,15 +1,16 @@
 ﻿using RomManagerShared.Base;
+using RomManagerShared.Interfaces;
 using RomManagerShared.Utils;
 namespace RomManagerShared.DS.Parsers;
 
-public class DSRomParser : IRomParser
+public class DSNDSParser : IRomParser<DSConsole>
 {
-    public DSRomParser()
+    public DSNDSParser()
     {
         Extensions = ["nds"];
     }
-    public HashSet<string> Extensions { get; set; }
-    public Task<HashSet<Rom>> ProcessFile(string path)
+    public List<string> Extensions { get; set; }
+    public Task<List<Rom>> ProcessFile(string path)
     {
         DSGame DSrom = new();
         var metadatareader = new DSMetadataReader();
@@ -21,7 +22,7 @@ public class DSRomParser : IRomParser
         DSrom.Path = path;
 
         Console.WriteLine(DSrom.ToString());
-        HashSet<Rom> list = [DSrom];
+        List<Rom> list = [DSrom];
         return Task.FromResult(list);
     }
 }

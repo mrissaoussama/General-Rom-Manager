@@ -7,14 +7,16 @@ using LibHac.Tools.Fs;
 using LibHac.Tools.FsSystem;
 using LibHac.Tools.FsSystem.NcaUtils;
 using RomManagerShared.Base;
+using RomManagerShared.Interfaces;
+using RomManagerShared.Utils;
 namespace RomManagerShared.Switch.Parsers;
 
-public class SwitchRomNSPXCIParser : IRomParser
+public class SwitchRomNSPXCIParser : IRomParser<SwitchConsole>
 {
-    public HashSet<string> Extensions { get; set; }
+    public List<string> Extensions { get; set; }
     public string prodKeys;
     public string titleKeys; readonly KeySet keyset;
-    HashSet<Rom> RomList;
+    List<Rom> RomList;
     PartitionFileSystem NSPPartitionFileSystem;
     XciPartition XCIPartitionFileSystem;
     LocalStorage localStorage;
@@ -26,9 +28,9 @@ public class SwitchRomNSPXCIParser : IRomParser
         titleKeys = Environment.ExpandEnvironmentVariables(@"%USERPROFILE%\.switch\title.keys");
         keyset = new KeySet();
         ExternalKeyReader.ReadKeyFile(keyset, titleKeysFilename: titleKeys, prodKeysFilename: prodKeys); ;        RomList = [];    }
-    public async Task<HashSet<Rom>> ProcessFile(string path)
+    public async Task<List<Rom>> ProcessFile(string path)
     {
-        HashSet<Rom> roms = [];
+        List<Rom> roms = [];
         try
         {
             localStorage = new LocalStorage(path, FileAccess.Read);
@@ -39,16 +41,16 @@ public class SwitchRomNSPXCIParser : IRomParser
             localStorage.Dispose();
             NSPPartitionFileSystem?.Dispose();
             XCIPartitionFileSystem?.Dispose();
-            Console.WriteLine($"exception error {path} {ex.Message}");
+            FileUtils.Log($"exception error {path} {ex.Message}");
         }
         if (RomList is null)
         {
-            Console.WriteLine($"null error {path}");
+            FileUtils.Log($"null error {path}");
             RomList = [];
         }
         RemoveFileLock();
-        RomList.UnionWith(roms);
-        return roms;    }    private Task FillRomList(string path, HashSet<Rom> roms)
+        RomList.AddRange(roms);
+        return roms;    }    private Task FillRomList(string path, List<Rom> roms)
     {
         IEnumerable<DirectoryEntryEx> entries = [];
         SwitchFs switchFs;
@@ -99,10 +101,7 @@ public class SwitchRomNSPXCIParser : IRomParser
                         {
                             dlcMetaData.AddTitleName(addOnContent.Name);
                         }
-                        else
-                        {
-                            dlcMetaData.AddTitleName($"[{dlcMetaData.TitleID}] DLC {dlcIndex}");
-                        }
+
                         roms.Add(dlcMetaData);
                     }
                 }
@@ -157,7 +156,7 @@ public class SwitchRomNSPXCIParser : IRomParser
                     var secv = nca.VerifySection(dataIndex);
                     var vsm = nca.ValidateSectionMasterHash(dataIndex);
                     var id = nca.Header.TitleId.ToString("X16");
-                    Console.WriteLine($"{id} |headersig |ncaverify {ncv} section {secv} ||vsmh{vsm} ");
+                   // Console.WriteLine($"{id} |headersig |ncaverify {ncv} section {secv} ||vsmh{vsm} ");
                     var romtype = SwitchUtils.GetRomMetadataClass(id);
                     var rom = (Rom)Activator.CreateInstance(romtype);
                     rom.Path = path;

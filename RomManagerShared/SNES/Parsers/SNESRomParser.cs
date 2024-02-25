@@ -1,14 +1,15 @@
 ﻿using RomManagerShared.Base;
+using RomManagerShared.Interfaces;
 using RomManagerShared.Utils;
 namespace RomManagerShared.SNES.Parsers;
 
-public class SNESRomParser : IRomParser
+public class SNESRomParser : IRomParser<SNESConsole>
 {
     public SNESRomParser()
     {
         Extensions = ["sfc"];
     }
-    public HashSet<string> Extensions { get; set; }
+    public List<string> Extensions { get; set; }
     public static IEnumerable<string> GetRegionAndLanguage(Rom DSrom)
     {
         char lastCharacter = DSrom.TitleID[2];        switch (lastCharacter)
@@ -19,7 +20,7 @@ public class SNESRomParser : IRomParser
                 break;
         }
     }
-    public Task<HashSet<Rom>> ProcessFile(string path)
+    public Task<List<Rom>> ProcessFile(string path)
     {
         SNESGame SNESrom = new();
         var metadatareader = new SNESMetadataReader();
@@ -35,6 +36,6 @@ public class SNESRomParser : IRomParser
             SNESrom.AddRegion(Region.Europe);        }
         SNESrom.Size = FileUtils.GetFileSize(path);
         Console.WriteLine(SNESrom.ToString());
-        HashSet<Rom> list = [SNESrom];
+        List<Rom> list = [SNESrom];
         return Task.FromResult(list);
     }}

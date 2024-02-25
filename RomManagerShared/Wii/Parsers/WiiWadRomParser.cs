@@ -1,13 +1,14 @@
 ﻿using RomManagerShared.Base;
+using RomManagerShared.Interfaces;
 namespace RomManagerShared.Wii.Parsers;
 
-public class WiiWadRomParser : IRomParser
+public class WiiWadRomParser : IRomParser<WiiConsole>
 {
-    public HashSet<string> Extensions { get; set; }
+    public List<string> Extensions { get; set; }
     public WiiWadRomParser()
     {
         Extensions = ["wad"];
-    }    public Task<HashSet<Rom>> ProcessFile(string path)
+    }    public Task<List<Rom>> ProcessFile(string path)
     {
         WadInfo wadInfo = new();
         byte[] wadfile = WadInfo.LoadFileToByteArray(path);
@@ -20,7 +21,7 @@ public class WiiWadRomParser : IRomParser
         };
         //wiiWadGame.Languages=[..wadInfo.GetChannelTitles(wadfile)];
         wiiWadGame.AddTitleName(wadInfo.GetChannelTitles(wadfile)[1]);
-        HashSet<Rom> list = [wiiWadGame];
+        List<Rom> list = [wiiWadGame];
         return Task.FromResult(list);
     }
 }

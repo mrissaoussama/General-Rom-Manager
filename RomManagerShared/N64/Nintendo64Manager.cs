@@ -3,23 +3,11 @@ using RomManagerShared.Interfaces;
 using RomManagerShared.Nintendo64.Parsers;
 namespace RomManagerShared.Nintendo64;
 
-public class Nintendo64Manager : IConsoleManager
+public class Nintendo64Manager : ConsoleManager<N64Console>
 {
-    public RomParserExecutor RomParserExecutor { get; set; }
-    public HashSet<Rom> RomList { get; set; }
-    public Nintendo64Manager()
+    public Nintendo64Manager(
+RomParserExecutor<N64Console> romParserExecutor)
+: base(romParserExecutor)
     {
-        RomList = [];
-        RomParserExecutor = new RomParserExecutor();
-    }
-    public async Task ProcessFile(string file)
-    {
-        var processedlist = await RomParserExecutor.ExecuteParsers(file);
-        RomList.UnionWith(processedlist);
-    }
-    public Task Setup()
-    {
-        RomParserExecutor.AddParser(new Nintendo64RomParser());
-        return Task.CompletedTask;
     }
 }

@@ -1,12 +1,16 @@
 ﻿using RomManagerShared.Base;
+using RomManagerShared.Base.Database;
+using RomManagerShared.Base.Interfaces;
+using RomManagerShared.Interfaces;
 using RomManagerShared.Switch.Configuration;
 using RomManagerShared.Utils;
+using RomManagerShared.WiiU;
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 namespace RomManagerShared.Switch.TitleInfoProviders;
 
-public class VersionConverter : JsonConverter<long?>
+public class LongToStringConverter : JsonConverter<long?>
 {
     public override long? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
@@ -34,13 +38,13 @@ public class VersionConverter : JsonConverter<long?>
         throw new NotImplementedException();
     }
 }
-public class SwitchJsonRomDTO
+public class SwitchJsonRomDTO : IExternalRomFormat<SwitchConsole>
 {
     public int Id { get; set; }
     [JsonPropertyName("name")]
     public string? TitleName { get; set; }    [JsonPropertyName("id")]
     public string? TitleID { get; set; }    [JsonPropertyName("version")]
-    [JsonConverter(typeof(VersionConverter))]
+    [JsonConverter(typeof(LongToStringConverter))]
     public long? Version { get; set; }    [JsonPropertyName("region")]
     public string? Region { get; set; }    [JsonPropertyName("iconUrl")]
     public string? Icon { get; set; }    [JsonPropertyName("rating")]
@@ -55,21 +59,26 @@ public class SwitchJsonRomDTO
     public bool? IsDemo { get; set; }    [JsonPropertyName("numberOfPlayers")]
     public int? NumberOfPlayers { get; set; }    [JsonPropertyName("releaseDate")]
     public int? ReleaseDate { get; set; }    [JsonPropertyName("bannerUrl")]
-    public string? Banner { get; set; }    [JsonPropertyName("screenshots")]
-    public HashSet<string>? Images { get; set; }
-}public class SwitchJsonTitleInfoProvider : ITitleInfoProvider
+    public string? Banner { get; set; }
+    [JsonPropertyName("nsuId")]
+
+    public long? NsuID { get; set; }
+    [JsonPropertyName("screenshots")]
+    public List<string>? Images { get; set; }
+}public class SwitchJsonTitleInfoProvider : TitleInfoProvider<SwitchConsole>, ICanSaveToDB
 {
-    public string Source { get; set; }
+    public GenericRepository<SwitchJsonRomDTO> TitlesDatabaseRepository { get; set; }
+
     public Dictionary<string, JsonElement> TitlesDatabase { get; set; }
-    private readonly GithubDownloader titledbDownloader;    bool UseGlobalJson;#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-    public SwitchJsonTitleInfoProvider(string jsonFilePath, bool useGlobalJson = true)
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+    public SwitchJsonTitleInfoProvider(GenericRepository<SwitchJsonRomDTO> repo)
     {
-        titledbDownloader = new GithubDownloader();
-        Source = jsonFilePath;
-        UseGlobalJson = useGlobalJson;
-    }    public async Task LoadTitleDatabaseAsync()
+        TitlesDatabaseRepository = repo;
+    }    public override async Task LoadTitleDatabaseAsync()
     {
+        await FileDownloader.DownloadSwitchGlobalTitleDBFile();
+        await FileDownloader.DownloadSwitchTitleDBFiles();
+
+        Source = SwitchConfiguration.GetTitleDBPath();
         if (TitlesDatabase is not null)
             return;
         TitlesDatabase = [];
@@ -83,13 +92,11 @@ public class SwitchJsonRomDTO
         }
 
 
-        await GithubDownloader.DownloadSwitchGlobalTitleDBFile();
         var globaljsonContent = await File.ReadAllTextAsync(Path.Combine(Source, SwitchConfiguration.GetGlobalTitleDBPath()));
         var globaldb = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(globaljsonContent);
         TitlesDatabase = TitlesDatabase.Union(globaldb)
  .GroupBy(pair => pair.Key)
  .ToDictionary(group => group.Key, group => group.First().Value);
-        await GithubDownloader.DownloadSwitchTitleDBFiles();
         foreach (var regionFile in SwitchConfiguration.GetTitleDBRegionFiles())
         {
             var jsonContent = await File.ReadAllTextAsync(Path.Combine(Source, regionFile));
@@ -99,12 +106,48 @@ public class SwitchJsonRomDTO
  .GroupBy(pair => pair.Key)
  .ToDictionary(group => group.Key, group => group.First().Value);
         }
-        //}
-        //else
 
 
     }
-    public async Task<Rom> GetTitleInfo(Rom rom)
+    public async Task SaveToDatabase()
+    {
+        if (TitlesDatabase is null || TitlesDatabase.Count == 0)
+            return;
+
+        var duplicates = new List<SwitchJsonRomDTO>(); // List to store items with duplicate TitleID
+        var frequencies = new Dictionary<string, int>(); // Dictionary to keep track of TitleID frequencies
+
+        foreach (var title in TitlesDatabase)
+        {
+            var jsonString = title.Value.GetRawText();
+            var romDto = JsonSerializer.Deserialize<SwitchJsonRomDTO>(jsonString);
+            if (romDto is not null)
+            {
+                if (romDto.TitleID is not null)
+                {
+                    if (frequencies.ContainsKey(romDto.TitleID))
+                    frequencies[romDto.TitleID]++;
+                else
+                    frequencies[romDto.TitleID] = 1;
+              
+
+                // Add to duplicates list if TitleID occurs more than once
+                if (frequencies[romDto.TitleID] > 1)
+                    duplicates.Add(romDto);  }
+            }
+        }
+
+        // Filter list to include only items with duplicate TitleID values
+        var list = TitlesDatabase.Values
+            .Select(title => JsonSerializer.Deserialize<SwitchJsonRomDTO>(title.GetRawText()))
+            .Where(romDto => romDto != null && romDto.TitleID!=null && frequencies.ContainsKey(romDto.TitleID) && frequencies[romDto.TitleID] > 1)
+            .ToList();
+
+        // Call AddOrUpdateByPropertyRangeAsync with the filtered list
+        await TitlesDatabaseRepository.AddOrUpdateByPropertyRangeAsync(list, typeof(SwitchJsonRomDTO), nameof(SwitchJsonRomDTO.TitleID));
+    }
+
+    public async override Task<Rom> GetTitleInfo(Rom rom)
     {
 
         bool existsInDatabase = false;
@@ -116,7 +159,7 @@ public class SwitchJsonRomDTO
                 var metadataClass = SwitchUtils.GetRomMetadataClass(rom.TitleID);
                 UpdateRomIfDifferentType(ref rom, metadataClass);
 
-                rom = MapToIRom(rom, titleInfo, metadataClass);
+                rom = MapToRom(rom, titleInfo, metadataClass);
                 if (rom.Titles is not null)
                 {
                     var valueswithid = rom.Titles.Where(x => x.Value.Contains(rom.TitleID)).ToList();
@@ -192,7 +235,7 @@ public class SwitchJsonRomDTO
         }
         if (rom.Titles != null)
         {
-            rom.Titles.RemoveWhere(x => x.Value.Contains(rom.TitleID));
+            rom.Titles.RemoveAll(x => x.Value.Contains(rom.TitleID));
             if (rom.Titles.Count == 0)
                 rom.AddTitleName(relatedtitlename);
             else
@@ -216,7 +259,7 @@ public class SwitchJsonRomDTO
 
             if (TitlesDatabase.TryGetValue(gameId, out var titleInfo))
             {
-                var gamerom = MapToIRom(rom, titleInfo, typeof(SwitchGame));
+                var gamerom = MapToRom(rom, titleInfo, typeof(SwitchGame));
                 _ = (rom is SwitchUpdate switchUpdate)
                   ? switchUpdate.RelatedGameTitleID = gamerom.TitleID
                     : (rom is SwitchDLC dlc) ? dlc.RelatedGameTitleID = gamerom.TitleID : null;
@@ -224,7 +267,7 @@ public class SwitchJsonRomDTO
                 if (gamerom.Titles is null || gamerom.Titles.Count == 0)
                     return string.Empty;
                 if (gamerom.Titles.Count > 1)
-                    gamerom.Titles.RemoveWhere(x => x.Value.Contains(sharedID) || x.Value.Contains(sharedID));
+                    gamerom.Titles.RemoveAll(x => x.Value.Contains(sharedID) || x.Value.Contains(sharedID));
                 var gameName = $"{gamerom.Titles.First().Value}";
                 return gameName;
             }
@@ -232,7 +275,7 @@ public class SwitchJsonRomDTO
 
         return string.Empty;
     }
-    private static Rom MapToIRom(Rom rom, JsonElement titleInfo, Type metadataClass)
+    private static Rom MapToRom(Rom rom, JsonElement titleInfo, Type metadataClass)
     {
         if (metadataClass != null)
         {
@@ -251,7 +294,7 @@ public class SwitchJsonRomDTO
         if (romDto.TitleName is not null && (rom.Titles is null || !rom.Titles.Any(x => x.Value.Contains(romDto.TitleName))))
         {
             rom.AddTitleName(romDto.TitleName);
-            rom.Titles.RemoveWhere(x => x.Value.Contains(rom.TitleID) || x.Value.Contains(romDto.TitleID));
+            rom.Titles.RemoveAll(x => x.Value.Contains(rom.TitleID) || x.Value.Contains(romDto.TitleID));
 
         }
 

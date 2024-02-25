@@ -1,12 +1,12 @@
-﻿using DiscUtils.Iso9660;using RomManagerShared.Base;using RomManagerShared.PSP.Configuration;
+﻿using DiscUtils.Iso9660;using RomManagerShared.Base;using RomManagerShared.Interfaces;using RomManagerShared.PSP.Configuration;
 namespace RomManagerShared.PSP.Parsers;
 
-public class PSPISOSFOParser : IRomParser
+public class PSPISOSFOParser : IRomParser<PSPConsole>
 {
     public PSPISOSFOParser()
     {
         Extensions = ["iso"];
-    }    public HashSet<string> Extensions { get; set; }    public Task<HashSet<Rom>> ProcessFile(string path)
+    }    public List<string> Extensions { get; set; }    public Task<List<Rom>> ProcessFile(string path)
     {
         PSPGame pspRom = new();        try
         {
@@ -25,7 +25,7 @@ public class PSPISOSFOParser : IRomParser
         catch (Exception ex)
         {
             Console.WriteLine($"An error occurred: {ex.Message}");
-        }        HashSet<Rom> romList = [pspRom];
+        }        List<Rom> romList = [pspRom];
         return Task.FromResult(romList);
     }
     public static Rom? ParseSFO(MemoryStream stream)

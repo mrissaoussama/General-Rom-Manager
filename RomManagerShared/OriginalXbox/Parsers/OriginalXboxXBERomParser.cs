@@ -1,20 +1,21 @@
 ﻿using RomManagerShared.Base;
+using RomManagerShared.Interfaces;
 using RomManagerShared.OriginalXbox.Configuration;
 using RomManagerShared.Utils;
 using RomManagerShared.Utils.ISO2GOD;
 using System.Drawing;
 namespace RomManagerShared.OriginalXbox.Parsers;
 
-public class OriginalXboxXBERomParser : IRomParser
+public class OriginalXboxXBERomParser : IRomParser<OriginalXboxConsole>
 {
     public OriginalXboxXBERomParser()
     {
         Extensions = ["xbe"];
     }
-    public HashSet<string> Extensions { get; set; }
-    public Task<HashSet<Rom>> ProcessFile(string path)
+    public List<string> Extensions { get; set; }
+    public Task<List<Rom>> ProcessFile(string path)
     {
-        HashSet<Rom> list = [];
+        List<Rom> list = [];
         IsoDetailsResults? results = null;
         try
         {
@@ -26,6 +27,8 @@ public class OriginalXboxXBERomParser : IRomParser
             OriginalXboxGame OriginalXboxrom = new();
             OriginalXboxrom.AddTitleName(results.Name.RemoveTrailingNullTerminators());
             OriginalXboxrom.TitleID = results.TitleID;
+            OriginalXboxrom.IsFolderFormat = true;
+
             if (results.Thumbnail != null)
             {
                 OriginalXboxrom.AddImage(SaveImageToPath(results.Thumbnail, results.TitleID));

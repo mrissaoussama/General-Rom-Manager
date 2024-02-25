@@ -1,21 +1,22 @@
 ﻿using RomManagerShared.Base;
+using RomManagerShared.Interfaces;
 using RomManagerShared.PSVITA;
 using RomManagerShared.Utils;
 
 namespace RomManagerShared.PS3.Parsers;
 
-public class PS3FolderRomParser : IRomParser
+public class PS3FolderRomParser : IRomParser<PS3Console>
 {
     public PS3FolderRomParser()
     {
         Extensions = ["sfo"];
 
     }
-    public HashSet<string> Extensions { get; set; }
+    public List<string> Extensions { get; set; }
     //string[] gameCategories = { "AC", "GC", "GDC" };
-    public Task<HashSet<Rom>> ProcessFile(string path)
+    public Task<List<Rom>> ProcessFile(string path)
     {
-        HashSet<Rom> list = [];
+        List<Rom> list = [];
         if (Path.GetExtension(path).ToLower().Contains("sfo"))
         {
             try

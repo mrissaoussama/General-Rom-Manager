@@ -3,24 +3,11 @@ using RomManagerShared.Interfaces;
 using RomManagerShared.Xbox360.Parsers;
 namespace RomManagerShared.Xbox360;
 
-public class Xbox360Manager : IConsoleManager
+public class Xbox360Manager :ConsoleManager<Xbox360Console>
 {
-    public RomParserExecutor RomParserExecutor { get; set; }
-    public HashSet<Rom> RomList { get; set; }
-    public Xbox360Manager()
+    public Xbox360Manager(
+   RomParserExecutor<Xbox360Console> romParserExecutor)
+   : base(romParserExecutor)
     {
-        RomList = [];
-        RomParserExecutor = new RomParserExecutor();
-    }
-    public async Task ProcessFile(string file)
-    {
-        var processedlist = await RomParserExecutor.ExecuteParsers(file);
-        RomList.UnionWith(processedlist);
-    }
-    public Task Setup()
-    {
-        RomParserExecutor.AddParser(new Xbox360ISORomParser());
-        RomParserExecutor.AddParser(new Xbox360XEXRomParser());
-        return Task.CompletedTask;
     }
 }
