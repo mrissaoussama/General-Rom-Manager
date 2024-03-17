@@ -37,171 +37,198 @@ using System.Reflection;
 using RomManagerShared.Switch.TitleInfoProviders;
 using RomManagerShared.Switch.Parsers;
 using RomManagerShared.Base.Interfaces;
+var assembly = Assembly.Load("RomManagerShared");
+
 var builder = Host.CreateDefaultBuilder(args)
     .ConfigureServices((hostContext, services) =>
     {
-    services.AddDbContext<AppDbContext>();
-    services.AddScoped<RomHashRepository>();
+        services.AddDbContext<AppDbContext>();
+        services.AddScoped<RomHashRepository>();
+        services.AddScoped(typeof(GenericRepository<>));
         services.AddScoped(typeof(RomParserExecutor<>));
         services.AddScoped(typeof(TitleInfoProviderManager<>));
+        RegisterConsoleServices<ThreeDSConsole>(services);
+        services.AddScoped(typeof(ConsoleManager<>));
+        services.AddScoped<NoIntroRomHashIdentifier>();
 
-        RegisterConsoleServices<SwitchConsole>(services, "Switch");
-    RegisterConsoleServices<ThreeDSConsole>(services, "ThreeDS");
-    RegisterConsoleServices<WiiUConsole>(services, "WiiU");
-  });
-void RegisterConsoleServices<TConsole>(IServiceCollection services, string consoleName)
+        //    RegisterConsoleServices<SwitchConsole>(services, "Switch");
+        //    RegisterConsoleServices<WiiUConsole>(services, "WiiU");
+        //    RegisterConsoleServices<SNESConsole>(services, "SNES");
+    });
+
+
+static void RegisterConsoleServices<T>(IServiceCollection services) where T : GamingConsole
 {
     var assembly = Assembly.Load("RomManagerShared");
 
-    var types = assembly.GetTypes()
-        .Where(t => !t.IsAbstract && !t.IsInterface && t.Name.Contains(consoleName));
-
-    foreach (var type in types) 
+    // Register DTOs implementing IExternalRomFormat<T>
+    var dtoTypes = assembly.GetTypes()
+                           .Where(type => type.IsClass && !type.IsAbstract &&
+                                          type.GetInterfaces().Any(inter => inter.IsGenericType &&
+                                                                           inter.GetGenericTypeDefinition() == typeof(IExternalRomFormat<>).MakeGenericType(typeof(T))));
+    foreach (var dtoType in dtoTypes)
     {
-        var DTOtype = type.GetInterfaces().FirstOrDefault(i =>
-            i.IsGenericType &&
-            i.GetGenericTypeDefinition() == typeof(IExternalRomFormat<>) &&
-            i.GetGenericArguments().FirstOrDefault() == typeof(TConsole));
-
-        if (DTOtype != null)
-        {
-            var genericRepositoryType = typeof(GenericRepository<>).MakeGenericType(DTOtype.GenericTypeArguments[0]);
-            services.AddScoped(genericRepositoryType, type);
-        }
-
-
-        if (type.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(ITitleInfoProvider<>)))
-        {
-            services.AddScoped(type);
-        }
-        if (type.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRomParser<>)))
-        {
-            services.AddScoped(type);
-        }
-        var romParserInterface = type.GetInterfaces()
-    .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRomParser<>));
-        if (romParserInterface != null)
-        {
-            var genericArguments = romParserInterface.GetGenericArguments();
-            if (genericArguments.Length == 1 && genericArguments[0] == typeof(TConsole))
-            {
-                services.AddScoped(romParserInterface, type);
-            }
-        }
-        var ty = type.GetInterfaces();
-        if (type.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IConsoleManager<>)))
-        {
-            var consoleManagerInterface = typeof(ConsoleManager<>).MakeGenericType(typeof(TConsole));
-            services.AddScoped(consoleManagerInterface, type); // Register ConsoleManager<SwitchConsole> service
-        }
-
-        if (type.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(TitleInfoProviderManager<>)))
-        {
-            var titleInfoProviderManagerInterface = typeof(TitleInfoProviderManager<>).MakeGenericType(typeof(TConsole));
-            services.AddScoped(titleInfoProviderManagerInterface, type);
-        }
-
+        var serviceType = typeof(GenericRepository<>).MakeGenericType(dtoType);
+        services.AddScoped(serviceType);
     }
-    
+
+    // Register TitleInfoProviders
+    var titleInfoProviderTypes = assembly.GetTypes()
+                                         .Where(type => type.IsClass && !type.IsAbstract &&
+                                                        type.IsSubclassOf(typeof(TitleInfoProvider<>).MakeGenericType(typeof(T))));
+    foreach (var providerType in titleInfoProviderTypes)
+    {
+        services.AddScoped(providerType);
+        services.AddScoped(typeof(ITitleInfoProvider<>).MakeGenericType(typeof(T)), providerType);
+    }
+
+    // Register RomParsers
+    var romParserTypes = assembly.GetTypes()
+     .Where(type => type.IsClass && !type.IsAbstract &&
+                    type.GetInterfaces().Any(inter =>
+                        inter.IsGenericType &&
+                        inter.GetGenericTypeDefinition() == typeof(IRomParser<>)) &&
+                    type.GetInterfaces().Any(inter =>
+                        inter.GetGenericArguments().FirstOrDefault() == typeof(T)));
+    foreach (var parserType in romParserTypes)
+    {
+        services.AddScoped(parserType);
+    }
+    // Register RomParserExecutor<T>
+    var executorType = typeof(RomParserExecutor<>).MakeGenericType(typeof(T));
+    services.AddScoped(executorType, serviceProvider =>
+    {
+        var parsers = serviceProvider.GetServices(typeof(IRomParser<>).MakeGenericType(typeof(T)));
+        var executorInstance = Activator.CreateInstance(executorType, new[] { parsers });
+        return executorInstance;
+    });
+
+    // Register IUpdateVersionProvider<T>
+    var updateProviderTypes = assembly.GetTypes()
+                                      .Where(type => type.IsClass && !type.IsAbstract &&
+                                                     type.GetInterfaces().Any(inter => inter.IsGenericType &&
+                                                                                      inter.GetGenericTypeDefinition() == typeof(IUpdateVersionProvider<>).MakeGenericType(typeof(T))));
+    foreach (var providerType in updateProviderTypes)
+    {
+        services.AddScoped(providerType);
+    }
+
+    // Register ConsoleManager<T>
+    //var managerType = typeof(ConsoleManager<>).MakeGenericType(typeof(T));
+
+    //    services.AddScoped(managerType);
+
+
+    // Register ThreeDSManager if exists
+    var specificManagerType = assembly.GetTypes()
+        .FirstOrDefault(type => !type.IsAbstract && type.IsSubclassOf(typeof(ConsoleManager<>).MakeGenericType(typeof(T))));
+    if (specificManagerType != null)
+    {
+        services.AddScoped(specificManagerType);
+        //   services.AddScoped(typeof(IRomMissingContentChecker), specificManagerType);
+    }
+
 }
 
-
 using var host = builder.Build();
-    RomManagerConfiguration.Load("config.json");
-    var listinfo = FileDownloader.GetResourceDownloads();
+RomManagerConfiguration.Load("config.json");
 
-    var manager = host.Services.GetRequiredService<ConsoleManager<SwitchConsole>>();
+var noi = host.Services.GetRequiredService<NoIntroRomHashIdentifier>();
+var manager = host.Services.GetRequiredService<ConsoleManager<ThreeDSConsole>>();
 
-    var rompath = "D:\\nsp\\";
-    var rompath4 = "D:\\nsp\\errorfiles";
-    var wiirompath = "C:\\Users\\oussama\\Downloads\\roms\\";
-    var pkgpath = "C:\\Users\\oussama\\Downloads\\roms\\ps3\\1.pkg";
+var rompath = "D:\\nsp\\";
+var rompath4 = "D:\\nsp\\errorfiles";
+var wiirompath = "C:\\Users\\oussama\\Downloads\\roms\\";
+var rompat2h = "C:\\Users\\oussama\\Downloads\\3DS";
+var pkgpath = "C:\\Users\\oussama\\Downloads\\roms\\ps3\\1.pkg";
 
 
-    Console.WriteLine($"Setup: {manager.GetType()}");
-    await manager.Setup();
-    var implementations = host.Services.GetServices<TitleInfoProvider<SwitchConsole>>();
+Console.WriteLine($"Setup: {manager.GetType()}");
+await manager.Setup();
+var implementations = host.Services.GetServices<TitleInfoProvider<ThreeDSConsole>>();
 
-    foreach (var implementation in implementations)
+foreach (var implementation in implementations)
+{
+    if (implementation is ICanSaveToDB)
+        await (implementation as ICanSaveToDB).SaveToDatabase();
+}
+var ext = manager.RomParserExecutor.GetSupportedExtensions();
+Console.WriteLine($"Supported Extensions: {string.Join(", ", ext)}");
+List<string> filelist = [];
+int i = 0; IEnumerable<IEnumerable<string>> splits = null;
+
+await ScanFiles();
+Console.WriteLine($"Files found: {filelist.Count}");
+List<Task> tasks = [];
+//await noi.Setup();
+//var roms = await noi.IdentifyRomByHash(filelist.First());
+async Task ScanFiles()
+{
+    filelist = FileUtils.GetFilesInDirectoryWithExtensions(rompat2h, ext);
+    manager.RomList.Clear();
+    if (manager is IRomMissingContentChecker)
     {
-        if (implementation is ICanSaveToDB)
-            await (implementation as ICanSaveToDB).SaveToDatabase();
+        (manager as IRomMissingContentChecker).GroupedRomList.Clear();
     }
-    var ext = manager.RomParserExecutor.GetSupportedExtensions();
-    Console.WriteLine($"Supported Extensions: {string.Join(", ", ext)}");
-    List<string> filelist = [];
-    int i = 0; IEnumerable<IEnumerable<string>> splits = null;
+    splits = from item in filelist
+             group item by i++ % 5 into part
+             select part.AsEnumerable();
+}
 
-    await ScanFiles();
-    Console.WriteLine($"Files found: {filelist.Count}");
-    List<Task> tasks = [];
+await ProcessFiles();
 
-    async Task ScanFiles()
+async Task ProcessFiles()
+{
+    foreach (var filegroup in splits)
     {
-        filelist = FileUtils.GetFilesInDirectoryWithExtensions(wiirompath, ext);
-        manager.RomList.Clear();
-        if (manager is IRomMissingContentChecker)
+        foreach (var file in filegroup)
         {
-            (manager as IRomMissingContentChecker).GroupedRomList.Clear();
+            tasks.Add(manager.ProcessFile(file));
         }
-        splits = from item in filelist
-                 group item by i++ % 5 into part
-                 select part.AsEnumerable();
+        await Task.WhenAll(tasks);
+        tasks.Clear();
     }
+}
 
-    await ProcessFiles();
-
-    async Task ProcessFiles()
+if (manager.TitleInfoProviderManager != null)
+{
+    for (int j = 0; j < manager.RomList.Count; j++)
     {
-        foreach (var filegroup in splits)
-        {
-            foreach (var file in filegroup)
-            {
-                tasks.Add(manager.ProcessFile(file));
-            }
-            await Task.WhenAll(tasks);
-            tasks.Clear();
-        }
+        manager.RomList[j] = await manager.TitleInfoProviderManager.GetTitleInfo(manager.RomList[j]);
+
     }
+}
+PrintRoms(manager.RomList);
 
-    if (manager.TitleInfoProviderManager != null)
-    {
-        for (int j = 0; j < manager.RomList.Count; j++)
-        {
-            manager.RomList[j] = await manager.TitleInfoProviderManager.GetTitleInfo(manager.RomList[j]);
+async void PrintRoms(IEnumerable<Rom> romList)
+{
+    romList.ToList().ForEach(x => Console.WriteLine($"{x.TitleID} {x.Titles?.FirstOrDefault()?.ToString()} {x.GetType().Name}"));
+}
+//await HashRoms(manager.RomList);
+//async Task HashRoms(IEnumerable<Rom> romList)
+//{
+//    var repo = host.Services.GetRequiredService<RomHashRepository>();
+//    List<Task> tasks = new List<Task>();
 
-        }
-    }
-    PrintRoms(manager.RomList);
+//    foreach (var rom in romList)
+//    {
+//        tasks.Add(HashUtils.CalculateRomHashes(rom, Enum.GetValues<HashTypeEnum>()));
+//    }
 
-    async void PrintRoms(IEnumerable<Rom> romList)
-    {
-        romList.ToList().ForEach(x => Console.WriteLine($"{x.TitleID} {x.Titles?.FirstOrDefault()?.ToString()} {x.GetType().Name}"));
-    }
-    //await HashRoms(manager.RomList);
-    //async Task HashRoms(IEnumerable<Rom> romList)
-    //{
-    //    var repo = host.Services.GetRequiredService<RomHashRepository>();
-    //    List<Task> tasks = new List<Task>();
+//    Console.WriteLine("calculating hashes");
+//    await Task.WhenAll(tasks);
 
-    //    foreach (var rom in romList)
-    //    {
-    //        tasks.Add(HashUtils.CalculateRomHashes(rom, Enum.GetValues<HashTypeEnum>()));
-    //    }
+//    Console.WriteLine("saving new hashes");
+//    foreach (var rom in romList)
+//    {
+//        tasks.Add(repo.AddIfNewRange(rom.Hashes));
+//    }
+//    await Task.WhenAll(tasks);
 
-    //    Console.WriteLine("calculating hashes");
-    //    await Task.WhenAll(tasks);
-
-    //    Console.WriteLine("saving new hashes");
-    //    foreach (var rom in romList)
-    //    {
-    //        tasks.Add(repo.AddIfNewRange(rom.Hashes));
-    //    }
-    //    await Task.WhenAll(tasks);
-
-    //    tasks.Clear();
-    //}
-
+//    tasks.Clear();
+//}
+while (true)
+{
     Console.WriteLine("//////////////////////////////////////////");
     Console.WriteLine($"roms found: {manager.RomList.Count}");
 
@@ -220,8 +247,8 @@ using var host = builder.Build();
     Console.WriteLine("Press 5 to parse scanned files again");
 
     {
-        //string x = Console.ReadLine();
-        string x = "6";
+        string x = Console.ReadLine();
+        // string x = "6";
         switch (x)
         {
             case "0":
@@ -230,7 +257,7 @@ using var host = builder.Build();
                 missingupdates.ToList().ForEach(x => Console.WriteLine(x.ToString()));
                 break;
             case "3":
-                FileRenamer.RenameFiles(manager.RomList, "{TitleName} [{TitleID}] [{Region}] [v{Version}] [{DLCCount}]");
+                FileRenamer.RenameFiles(manager.RomList, "{TitleID} {TitleName} [{Region}] [v{Version}] [{DLCCount}]");
                 break;
             case "1":
                 ((IRomMissingContentChecker)manager).LoadGroupRomList();
@@ -260,3 +287,4 @@ using var host = builder.Build();
     }
 
     Console.ReadLine();
+}

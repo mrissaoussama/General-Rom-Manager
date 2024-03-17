@@ -29,7 +29,8 @@ public class ThreeDSCIAParser : IRomParser<ThreeDSConsole>
         game.AddDescription(rom.GetShortDescription());
         game.AddTitleName(rom.GetLongDescription().Replace("\n", " "));
         game.Publisher = rom.GetPublisher();
-        game.AddRegion(rom.GetRegion());
+        Region r = rom.GetRegion();
+        game.AddRegion(r);
         game.Path = path;
         game.TitleID = titleid;
         game.Version = rom.GetTitleVersion().ToString();

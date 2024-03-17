@@ -4,7 +4,7 @@ namespace RomManagerShared.Base;
 
 public class TitleInfoProviderManager<T> where T : GamingConsole
 {
-    public TitleInfoProviderManager(IEnumerable<TitleInfoProvider<T>> titleInfoProviders)
+    public TitleInfoProviderManager(IEnumerable<ITitleInfoProvider<T>> titleInfoProviders)
     {
         TitleInfoProviders = titleInfoProviders;
 
@@ -17,7 +17,7 @@ public class TitleInfoProviderManager<T> where T : GamingConsole
         }
         await Task.CompletedTask;
     }
-    public IEnumerable<TitleInfoProvider<T>> TitleInfoProviders { get; set; }
+    public IEnumerable<ITitleInfoProvider<T>> TitleInfoProviders { get; set; }
     public async Task<Rom> GetTitleInfo(Rom rom)
     {
         foreach (var titleInfo in TitleInfoProviders)

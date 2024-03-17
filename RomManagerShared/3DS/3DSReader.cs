@@ -4,9 +4,11 @@ namespace RomManagerShared;
 public class _3DSReader
 {
     public int ProductCodeOffset { get; set; }
+    public int ProductCodeOffset2 { get; set; }
     public _3DSReader()
     {
         ProductCodeOffset = 0x3a90;
+        ProductCodeOffset2 = 0x3a50;
     }
     public string GetProductCode(string filepath)
     {

@@ -24,6 +24,7 @@ using RomManagerShared.Wii.TitleInfoProviders;
 using RomManagerShared.WiiU;
 using RomManagerShared.Xbox360;
 using static RomManagerShared.ThreeDS.TitleInfoProviders.ThreeDSJsonTitleInfoProvider;
+using RomManagerShared.Utils;
 
 namespace RomManagerShared.Base.Database;
 
@@ -74,6 +75,10 @@ public class AppDbContext : DbContext
     public DbSet<Rating> Ratings { get; set; }
     public DbSet<RomHash> RomHashes { get; set; }
     public DbSet<RomHashProperty> RomHashProperties { get; set; }
+    public DbSet<NoIntroDataFile> NoIntroDataFiles { get; set; }
+    public DbSet<NoIntroGame> NoIntroGames { get; set; }
+    public DbSet<NoIntroHeader> NoIntroHeaders { get; set; }
+    public DbSet<NoIntroRom> NoIntroRoms { get; set; }
 
     public string DbPath { get; set; }
 

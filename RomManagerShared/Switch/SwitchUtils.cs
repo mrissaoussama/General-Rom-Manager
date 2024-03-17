@@ -26,7 +26,7 @@ public class SwitchUtils
     {
         Dictionary<string, List<Rom>> romGroups = [];        foreach (var rom in romList)
         {
-            if (rom.TitleID is null)
+            if (string.IsNullOrEmpty(rom.TitleID))
                 continue;            string modifiedTitleId = GetIdentifyingTitleID(rom.TitleID);            if (!romGroups.ContainsKey(modifiedTitleId))
             {
                 romGroups[modifiedTitleId] = [];

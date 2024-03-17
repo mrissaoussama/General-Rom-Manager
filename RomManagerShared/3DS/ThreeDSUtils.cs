@@ -15,20 +15,40 @@ public class ThreeDSUtils
         System = 0x10,
         NotMount = 0x80,
         Dlc = 0x8C,
-        Twl = 0x8000
+        Twl = 0x8000,
+        DSIware = 0x8004
     }
     public static TidCategory DetectContentCategory(string titleId)
     {
-        int consolePlatform = int.Parse(titleId[..1]);
         int contentCategory = GetContentCategory(titleId);
-        int uniqueId = int.Parse(titleId.Substring(2, 6), System.Globalization.NumberStyles.HexNumber);
-        int titleIdVariation = int.Parse(titleId.Substring(8, 2), System.Globalization.NumberStyles.HexNumber);        TidCategory category = (TidCategory)contentCategory;
+        TidCategory category = (TidCategory)contentCategory;
         return category;
     }    static int GetContentCategory(string titleId)
     {
         int abcd = int.Parse(titleId.Substring(4, 4), System.Globalization.NumberStyles.HexNumber);
         return abcd;
-    }
+    }
+    public static string GetIdentifyingTitleID(string titleId)
+    {
+        return titleId[8..];
+    }
+    public static List<List<Rom>> GroupRomList(IEnumerable<Rom> romList)
+    {
+        Dictionary<string, List<Rom>> romGroups = [];        foreach (var rom in romList)
+        {
+            if (string.IsNullOrEmpty(rom.TitleID))
+                continue;            string modifiedTitleId = GetIdentifyingTitleID(rom.TitleID);            if (!romGroups.ContainsKey(modifiedTitleId))
+            {
+                romGroups[modifiedTitleId] = [];
+            }            romGroups[modifiedTitleId].Add(rom);
+        }
+        List<List<Rom>> groupedRomList = new(
+  romGroups.Values.Select(group => new List<Rom>(
+      group.OrderBy(rom => rom is Game)
+  ))
+);
+        return groupedRomList;
+    }
     public static Rom GetRomType(string titleId)
     {
         var romType = DetectContentCategory(titleId);
@@ -44,6 +64,11 @@ public class ThreeDSUtils
             case TidCategory.AddOnContents:
                 ThreeDSDLC dlc = new();
                 return dlc;
+            case TidCategory.Twl:
+            case TidCategory.DSIware:
+                ThreeDSDSIWare dsi = new();
+                return dsi;
+        
             default:
                 return new ThreeDSGame();
         }

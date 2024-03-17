@@ -1,5 +1,6 @@
 { //maybe think of a better structure, ex: not having to repeat paths
   "PluginsPath": "Plugins",
+  "NoIntroPath": "NoIntro",
   "SqliteDBPath": "RomDB.sqlite",
   "ErrorLogPath": "ErrorLog.txt",
   "Xbox360": {

@@ -9,7 +9,7 @@ public interface IConsoleManager<T>  where T : GamingConsole
     Task ProcessFile(string file);
     Task Setup();
 }
-public abstract class ConsoleManager<T> :IConsoleManager<T> where T : GamingConsole
+public  class ConsoleManager<T> :IConsoleManager<T> where T : GamingConsole
 {
     public TitleInfoProviderManager<T>? TitleInfoProviderManager { get; set; }
     public RomParserExecutor<T> RomParserExecutor { get; set; }
@@ -55,7 +55,8 @@ public abstract class ConsoleManager<T> :IConsoleManager<T> where T : GamingCons
 public class GamingConsole
     {
     public string Name { get; set; } = "";
-    }
+    public string Icon { get; set; } = "";
+}
 
 public class SwitchConsole : GamingConsole
 {

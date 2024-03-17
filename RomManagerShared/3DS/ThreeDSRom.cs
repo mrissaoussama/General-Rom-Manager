@@ -19,3 +19,15 @@ public class ThreeDSUpdate : Update, IThreeDSRom
     {
     }
 }
+public class ThreeDSDSIWare : Game, IThreeDSRom
+{
+    public ThreeDSDSIWare() : base()
+    {
+    }
+}
+public class ThreeDSVirtualConsole : Game, IThreeDSRom
+{
+    public ThreeDSVirtualConsole() : base()
+    {
+    }
+}

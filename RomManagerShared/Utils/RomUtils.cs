@@ -85,7 +85,7 @@ public class RomUtils
         }
 
         string? folderName = string.Empty;
-        folderName = !romList.OfType<Game>().Any() ? firstRom.TitleID : firstRom.Titles?.FirstOrDefault()?.Value ?? firstRom.TitleID;
+        folderName = !romList.OfType<NoIntroGame>().Any() ? firstRom.TitleID : firstRom.Titles?.FirstOrDefault()?.Value ?? firstRom.TitleID;
         var invalidChars = Path.GetInvalidFileNameChars();
         string cleanedFolderName = new(folderName
             .Select(c => invalidChars.Contains(c) ? ' ' : c)

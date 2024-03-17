@@ -16,7 +16,7 @@ namespace RomManagerShared.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.1")
+                .HasAnnotation("ProductVersion", "9.0.0-preview.1.24081.2")
                 .HasAnnotation("Proxies:ChangeTracking", false)
                 .HasAnnotation("Proxies:CheckEquality", false)
                 .HasAnnotation("Proxies:LazyLoading", true);
@@ -270,8 +270,8 @@ namespace RomManagerShared.Migrations
                         .HasColumnType("TEXT")
                         .HasAnnotation("Relational:JsonPropertyName", "languages");
 
-                    b.Property<string>("NsuID")
-                        .HasColumnType("TEXT")
+                    b.Property<long?>("NsuID")
+                        .HasColumnType("INTEGER")
                         .HasAnnotation("Relational:JsonPropertyName", "nsuId");
 
                     b.Property<int?>("NumberOfPlayers")
@@ -355,6 +355,114 @@ namespace RomManagerShared.Migrations
                         .IsUnique();
 
                     b.ToTable("ThreeDSJsonDTOs");
+                });
+
+            modelBuilder.Entity("RomManagerShared.Utils.NoIntroDataFile", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("HeaderId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HeaderId");
+
+                    b.ToTable("NoIntroDataFiles");
+                });
+
+            modelBuilder.Entity("RomManagerShared.Utils.NoIntroGame", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Category")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("GameId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("NoIntroDataFileId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NoIntroDataFileId");
+
+                    b.ToTable("NoIntroGames");
+                });
+
+            modelBuilder.Entity("RomManagerShared.Utils.NoIntroHeader", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("HeaderId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Version")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("NoIntroHeaders");
+                });
+
+            modelBuilder.Entity("RomManagerShared.Utils.NoIntroRom", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("CRC")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("MD5")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("NoIntroGameId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("SHA1")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SHA256")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Serial")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Size")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NoIntroGameId");
+
+                    b.ToTable("NoIntroRoms");
                 });
 
             modelBuilder.Entity("RomManagerShared.Wii.TitleInfoProviders.WiiGameTDBXmlRomDTO", b =>
@@ -860,6 +968,29 @@ namespace RomManagerShared.Migrations
                         .HasForeignKey("RomId");
                 });
 
+            modelBuilder.Entity("RomManagerShared.Utils.NoIntroDataFile", b =>
+                {
+                    b.HasOne("RomManagerShared.Utils.NoIntroHeader", "Header")
+                        .WithMany()
+                        .HasForeignKey("HeaderId");
+
+                    b.Navigation("Header");
+                });
+
+            modelBuilder.Entity("RomManagerShared.Utils.NoIntroGame", b =>
+                {
+                    b.HasOne("RomManagerShared.Utils.NoIntroDataFile", null)
+                        .WithMany("Games")
+                        .HasForeignKey("NoIntroDataFileId");
+                });
+
+            modelBuilder.Entity("RomManagerShared.Utils.NoIntroRom", b =>
+                {
+                    b.HasOne("RomManagerShared.Utils.NoIntroGame", null)
+                        .WithMany("Roms")
+                        .HasForeignKey("NoIntroGameId");
+                });
+
             modelBuilder.Entity("RomManagerShared.Base.DLC", b =>
                 {
                     b.HasOne("RomManagerShared.Base.Game", "RelatedGame")
@@ -903,6 +1034,16 @@ namespace RomManagerShared.Migrations
             modelBuilder.Entity("RomManagerShared.Base.RomHash", b =>
                 {
                     b.Navigation("Properties");
+                });
+
+            modelBuilder.Entity("RomManagerShared.Utils.NoIntroDataFile", b =>
+                {
+                    b.Navigation("Games");
+                });
+
+            modelBuilder.Entity("RomManagerShared.Utils.NoIntroGame", b =>
+                {
+                    b.Navigation("Roms");
                 });
 
             modelBuilder.Entity("RomManagerShared.Base.Game", b =>

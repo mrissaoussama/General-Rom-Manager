@@ -74,10 +74,7 @@ public class ExeFs
             if (headers[i].FileSize > 0)
             {
                 int offset = (int)headers[i].Offset + 0x200;
-                if (offset < 0)
-                {
-                    Console.WriteLine("zero");
-                }
+          
                 fileData[i] = await ExeFsData.Slice((ulong)offset, headers[i].FileSize).ReadArrayAsync().ConfigureAwait(false);
             }
         })).ConfigureAwait(false);        for (int i = 0; i < headers.Length; i++)

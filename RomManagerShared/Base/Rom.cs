@@ -66,7 +66,7 @@ public class Rom
     }
     public override string ToString()
     {
-        return $"{TitleID}| {Titles?.First().Value} | {Version}";
+        return $"{TitleID}| {Titles?.First().Value} |{Regions[0]}| {Version}";
     }
     public void AddDescription(string description, Language Language = Language.Unknown)
     {

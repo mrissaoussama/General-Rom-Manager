@@ -42,5 +42,11 @@ public static class RomManagerConfiguration
         var path = BaseFolder + Configuration.GetSection("PluginsPath").Value!;
         return path is null ? "Plugins" : path;
     }
+
+    public static string GetNoIntroPath()
+    {
+        var path = BaseFolder + Configuration.GetSection("NoIntroPath").Value!;
+        return path is null ? "NoIntro" : path;
+    }
 }
 

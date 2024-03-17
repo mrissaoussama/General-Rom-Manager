@@ -51,7 +51,7 @@ public partial class FileRenamer
 
     private static string GenerateFileName(IEnumerable<Rom> romGroup, string formatString)
     {
-        Rom romToRename = romGroup.FirstOrDefault(rom => rom is Game) ?? romGroup.First();
+        Rom romToRename = romGroup.FirstOrDefault(rom => rom is NoIntroGame) ?? romGroup.First();
         string fileName = formatString;
 
         ReplacePlaceholder(ref fileName, "{TitleName}", romToRename.Titles?.FirstOrDefault()?.Value ?? "");
