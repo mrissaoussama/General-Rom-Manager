@@ -79,6 +79,6 @@ public struct NsoHeader
         public uint FileOffset;
         public uint MemoryOffset;
         public uint Size;
-        private readonly int _unused;
+        private int _unused;
     }
 }

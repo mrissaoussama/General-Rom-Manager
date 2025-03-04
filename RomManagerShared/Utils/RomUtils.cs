@@ -61,102 +61,21 @@ public class RomUtils
             }
         }
     }
-    public static void OrganizeRomsInFolders(List<Rom> romList, List<List<Rom>> groupedRomList, bool organizeGamesOnly = false)
+    /// <summary>
+    /// Cleans a folder or file name by removing invalid characters.
+    /// </summary>
+    /// <param name="name">The name to clean.</param>
+    /// <returns>A clean name without invalid characters.</returns>
+    public static string GetCleanName(string? name)
     {
-        if (romList == null || romList.Count == 0)
-        {
-            Console.WriteLine("No ROMs to organize.");
-            return;
-        }
+        if (string.IsNullOrEmpty(name))
+            return string.Empty;
 
-        Rom? firstRom = romList.OfType<Game>().FirstOrDefault();
-
-        if (firstRom == null)
-        {
-            if (organizeGamesOnly == true)
-            {
-                Console.WriteLine("No Game instance found in the list.");
-                return;
-            }
-            else
-            {
-                firstRom = romList.First();
-            }
-        }
-
-        string? folderName = string.Empty;
-        folderName = !romList.OfType<NoIntroGame>().Any() ? firstRom.TitleID : firstRom.Titles?.FirstOrDefault()?.Value ?? firstRom.TitleID;
-        var invalidChars = Path.GetInvalidFileNameChars();
-        string cleanedFolderName = new(folderName
-            .Select(c => invalidChars.Contains(c) ? ' ' : c)
-            .ToArray());
-
-        string folderPath = Path.GetDirectoryName(firstRom.Path);
-        string folderFullPath = Path.Combine(folderPath, cleanedFolderName);
-
-        // Check if the last folder and the one before it have the same name
-        string[] folderFullPathnames = folderFullPath.Split(Path.DirectorySeparatorChar);
-        if (folderFullPathnames.Length >= 2 && folderFullPathnames[folderFullPathnames.Length - 1] == folderFullPathnames[folderFullPathnames.Length - 2])
-        {
-            folderFullPath = folderPath;
-        }
-
-        foreach (var rom in romList)
-        {
-            if (rom == null || string.IsNullOrEmpty(rom.Path))
-            {
-                Console.WriteLine("Invalid ROM found. Skipping.");
-                continue;
-            }
-
-            string originalFileName = Path.GetFileName(rom.Path);
-            string destinationPath = Path.Combine(folderFullPath, originalFileName);
-
-            if (processedPaths.Contains(rom.Path) || destinationPath.Equals(rom.Path, StringComparison.OrdinalIgnoreCase))
-            {
-                FileUtils.Log("skipped " + rom.Path);
-                continue;
-            }
-            Directory.CreateDirectory(folderFullPath);
-
-            // Check if the destination folder is the same as the source folder
-            if (!destinationPath.Equals(rom.Path, StringComparison.OrdinalIgnoreCase))
-            {
-                if (File.Exists(destinationPath))
-                {
-                    int count = 1;
-                    string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(originalFileName);
-                    string fileExtension = Path.GetExtension(originalFileName);
-                    while (File.Exists(destinationPath))
-                    {
-                        originalFileName = $"{fileNameWithoutExtension} ({count}){fileExtension}";
-                        destinationPath = Path.Combine(folderFullPath, originalFileName);
-                        count++;
-                    }
-                    Console.WriteLine($"File '{originalFileName}' already exists in the folder. Renaming to '{originalFileName}'.");
-                }
-
-                try
-                {
-                    File.Move(rom.Path, destinationPath);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error moving file '{originalFileName}': {ex.Message}");
-                    continue;
-                }
-
-                // Mark the path as processed
-                processedPaths.Add(rom.Path);
-
-                // Update paths in groupedRomList
-                UpdateGroupedRomPaths(groupedRomList, rom.Path, destinationPath);
-
-                Console.WriteLine($"Moved '{originalFileName}' to '{folderName}' folder.");
-            }
-        }
+        char[] invalidChars = Path.GetInvalidFileNameChars();
+        return new string(name.Select(c => invalidChars.Contains(c) ? ' ' : c).ToArray());
     }
-    private static void UpdateGroupedRomPaths(List<List<Rom>> groupedRomList, string sourcePath, string destinationPath)
+
+    public static void UpdateGroupedRomPaths(List<List<Rom>> groupedRomList, string sourcePath, string destinationPath)
     {
         var list = groupedRomList.ToList();
 
@@ -179,6 +98,8 @@ public class RomUtils
     public static string GetRomBaseFolder(Rom rom)
     {if (rom.Path is null)
             throw new ArgumentException("rom path invalid");
+    if (rom.IsFolderFormat is false)
+            return rom.Path;
        if(rom is IWiiURom)
         {
             if(rom.Path.ToLower().EndsWith("app.xml"))
@@ -224,6 +145,6 @@ public class RomUtils
                 return directory.FullName;
             }
         }
-        throw new Exception("rom type doesn't support folders");
+        return rom.Path;
     }
 }

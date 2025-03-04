@@ -37,7 +37,7 @@ public static class Host
     /// <param name="option">Options for opening the host file system.</param>
     /// <returns>The <see cref="Result"/> of the operation.</returns>
     private static Result OpenHostFileSystemImpl(FileSystemClient fs, ref UniqueRef<IFileSystem> outFileSystem,
-        in FspPath path, MountHostOption option)
+        ref readonly FspPath path, MountHostOption option)
     {
         using SharedRef<IFileSystemProxy> fileSystemProxy = fs.Impl.GetFileSystemProxyServiceObject();
         using var fileSystem = new SharedRef<IFileSystemSf>();
@@ -54,7 +54,7 @@ public static class Host
         }
 
         using var fileSystemAdapter =
-            new UniqueRef<IFileSystem>(new FileSystemServiceObjectAdapter(ref fileSystem.Ref));
+            new UniqueRef<IFileSystem>(new FileSystemServiceObjectAdapter(in fileSystem));
 
         if (!fileSystemAdapter.HasValue)
             return ResultFs.AllocationMemoryFailedInHostA.Log();
@@ -69,7 +69,7 @@ public static class Host
 
         public HostCommonMountNameGenerator(U8Span path)
         {
-            StringUtils.Strlcpy(_path.Items, path, PathTool.EntryNameLengthMax + 1);
+            StringUtils.Strlcpy(_path, path, PathTool.EntryNameLengthMax + 1);
         }
 
         public void Dispose() { }

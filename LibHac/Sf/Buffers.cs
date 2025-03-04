@@ -11,6 +11,7 @@ public readonly ref struct InBuffer
 
     public int Size => _buffer.Length;
     public ReadOnlySpan<byte> Buffer => _buffer;
+    public bool IsNull => Unsafe.IsNullRef(ref MemoryMarshal.GetReference(_buffer));
 
     public InBuffer(ReadOnlySpan<byte> buffer)
     {
@@ -22,6 +23,11 @@ public readonly ref struct InBuffer
         return ref SpanHelpers.AsReadOnlyStruct<T>(_buffer);
     }
 
+    public ReadOnlySpan<T> AsSpan<T>() where T : unmanaged
+    {
+        return MemoryMarshal.Cast<byte, T>(_buffer);
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static InBuffer FromSpan<T>(ReadOnlySpan<T> buffer) where T : unmanaged
     {
@@ -29,7 +35,7 @@ public readonly ref struct InBuffer
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static InBuffer FromStruct<T>(in T value) where T : unmanaged
+    public static InBuffer FromStruct<T>(ref readonly T value) where T : unmanaged
     {
         return new InBuffer(SpanHelpers.AsReadOnlyByteSpan(in value));
     }
@@ -41,6 +47,7 @@ public readonly ref struct OutBuffer
 
     public int Size => _buffer.Length;
     public Span<byte> Buffer => _buffer;
+    public bool IsNull => Unsafe.IsNullRef(ref MemoryMarshal.GetReference(_buffer));
 
     public OutBuffer(Span<byte> buffer)
     {
@@ -50,6 +57,11 @@ public readonly ref struct OutBuffer
     public ref T As<T>() where T : unmanaged
     {
         return ref SpanHelpers.AsStruct<T>(_buffer);
+    }
+
+    public Span<T> AsSpan<T>() where T : unmanaged
+    {
+        return MemoryMarshal.Cast<byte, T>(_buffer);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -71,6 +83,7 @@ public readonly ref struct InArray<T> where T : unmanaged
 
     public int Size => _array.Length;
     public ReadOnlySpan<T> Array => _array;
+    public bool IsNull => Unsafe.IsNullRef(ref MemoryMarshal.GetReference(_array));
 
     public InArray(ReadOnlySpan<T> array)
     {
@@ -86,6 +99,7 @@ public readonly ref struct OutArray<T> where T : unmanaged
 
     public int Size => _array.Length;
     public Span<T> Array => _array;
+    public bool IsNull => Unsafe.IsNullRef(ref MemoryMarshal.GetReference(_array));
 
     public OutArray(Span<T> array)
     {

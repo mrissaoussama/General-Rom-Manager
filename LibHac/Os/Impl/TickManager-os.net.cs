@@ -6,10 +6,10 @@ namespace LibHac.Os.Impl;
 
 internal struct TickManagerImpl : IDisposable
 {
-    private readonly long _tickFrequency;
-    private readonly ITickGenerator _tickGenerator;
-    private readonly TimeSpan _maxTimeSpan;
-    private readonly long _maxTick;
+    private long _tickFrequency;
+    private ITickGenerator _tickGenerator;
+    private TimeSpan _maxTimeSpan;
+    private long _maxTick;
 
     public TickManagerImpl(ITickGenerator tickGenerator)
     {

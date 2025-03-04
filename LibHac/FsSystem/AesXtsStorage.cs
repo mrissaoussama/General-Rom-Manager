@@ -20,11 +20,11 @@ public class AesXtsStorage : IStorage
     public static readonly int KeySize = Aes.KeySize128;
     public static readonly int IvSize = Aes.KeySize128;
 
-    private readonly IStorage _baseStorage;
+    private IStorage _baseStorage;
     private Array16<byte> _key1;
     private Array16<byte> _key2;
     private Array16<byte> _iv;
-    private readonly int _blockSize;
+    private int _blockSize;
     private SdkMutexType _mutex;
 
     // LibHac addition: This field goes unused if initialized with a plain IStorage.
@@ -37,7 +37,7 @@ public class AesXtsStorage : IStorage
         Assert.SdkRequiresGreaterEqual(offset, 0);
         Assert.SdkRequiresAligned(blockSize, AesBlockSize);
 
-        BinaryPrimitives.WriteInt64BigEndian(outIv[sizeof(long)..], offset / blockSize);
+        BinaryPrimitives.WriteInt64BigEndian(outIv.Slice(sizeof(long)), offset / blockSize);
     }
 
     public AesXtsStorage(IStorage baseStorage, ReadOnlySpan<byte> key1, ReadOnlySpan<byte> key2, ReadOnlySpan<byte> iv,
@@ -52,15 +52,15 @@ public class AesXtsStorage : IStorage
         Assert.SdkRequiresEqual(IvSize, iv.Length);
         Assert.SdkRequiresAligned(blockSize, AesBlockSize);
 
-        key1.CopyTo(_key1.Items);
-        key2.CopyTo(_key2.Items);
-        iv.CopyTo(_iv.Items);
+        key1.CopyTo(_key1);
+        key2.CopyTo(_key2);
+        iv.CopyTo(_iv);
     }
 
-    public AesXtsStorage(ref SharedRef<IStorage> baseStorage, ReadOnlySpan<byte> key1, ReadOnlySpan<byte> key2,
+    public AesXtsStorage(ref readonly SharedRef<IStorage> baseStorage, ReadOnlySpan<byte> key1, ReadOnlySpan<byte> key2,
         ReadOnlySpan<byte> iv, int blockSize)
     {
-        _baseStorageShared = SharedRef<IStorage>.CreateMove(ref baseStorage);
+        _baseStorageShared = SharedRef<IStorage>.CreateCopy(in baseStorage);
         _baseStorage = _baseStorageShared.Get;
         _blockSize = blockSize;
         _mutex = new SdkMutexType();
@@ -70,9 +70,9 @@ public class AesXtsStorage : IStorage
         Assert.SdkRequiresEqual(IvSize, iv.Length);
         Assert.SdkRequiresAligned(blockSize, AesBlockSize);
 
-        key1.CopyTo(_key1.Items);
-        key2.CopyTo(_key2.Items);
-        iv.CopyTo(_iv.Items);
+        key1.CopyTo(_key1);
+        key2.CopyTo(_key2);
+        iv.CopyTo(_iv);
     }
 
     public override void Dispose()

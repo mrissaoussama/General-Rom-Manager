@@ -76,7 +76,7 @@ public class SdCardManager : IStorageDeviceManager, IStorageDeviceOperator, ISdm
     {
         if (_openCount > 0 && _sdmmc.IsSdCardRemoved(_port))
         {
-            SdmmcApi.Deactivate(_port);
+            _sdmmc.Deactivate(_port);
             _handle++;
             _openCount = 0;
         }
@@ -93,6 +93,8 @@ public class SdCardManager : IStorageDeviceManager, IStorageDeviceOperator, ISdm
 
         if (_isInitialized)
             return;
+
+        _sdmmc.Initialize(_port);
 
         // Missing: Work buffer management
 
@@ -183,9 +185,7 @@ public class SdCardManager : IStorageDeviceManager, IStorageDeviceOperator, ISdm
         if (res.IsFailure()) return res.Miss();
 
         using SharedRef<ISdmmcDeviceManager> manager = SharedRef<ISdmmcDeviceManager>.Create(in _selfReference);
-
-        using SharedRef<SdCardStorageDevice>
-            storageDevice = SdCardStorageDevice.CreateShared(ref manager.Ref, handle, _sdmmc);
+        using SharedRef<SdCardStorageDevice> storageDevice = SdCardStorageDevice.CreateShared(in manager, handle, _sdmmc);
 
         if (!storageDevice.HasValue)
             return ResultFs.AllocationMemoryFailedInSdmmcStorageServiceA.Log();
@@ -263,7 +263,7 @@ public class SdCardManager : IStorageDeviceManager, IStorageDeviceOperator, ISdm
 
         if (_isInitialized)
         {
-            SdmmcApi.Deactivate(_port);
+            _sdmmc.Deactivate(_port);
             _handle++;
             _openCount = OpenCountFinalized;
         }
@@ -277,7 +277,7 @@ public class SdCardManager : IStorageDeviceManager, IStorageDeviceOperator, ISdm
 
         if (_openCount > 0)
         {
-            SdmmcApi.Deactivate(_port);
+            _sdmmc.Deactivate(_port);
             _handle++;
             _openCount = 0;
         }
@@ -324,7 +324,7 @@ public class SdCardManager : IStorageDeviceManager, IStorageDeviceOperator, ISdm
 
             if (_openCount == 0)
             {
-                SdmmcApi.Deactivate(_port);
+                _sdmmc.Deactivate(_port);
                 _handle++;
             }
         }

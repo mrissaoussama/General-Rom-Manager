@@ -58,7 +58,7 @@ internal struct KeyValueArchiveSizeCalculator
 
 internal ref struct KeyValueArchiveBufferReader
 {
-    private readonly ReadOnlySpan<byte> _buffer;
+    private ReadOnlySpan<byte> _buffer;
     private int _offset;
 
     public KeyValueArchiveBufferReader(ReadOnlySpan<byte> buffer)
@@ -161,7 +161,7 @@ internal ref struct KeyValueArchiveBufferReader
 
 internal ref struct KeyValueArchiveBufferWriter
 {
-    private readonly Span<byte> _buffer;
+    private Span<byte> _buffer;
     private int _offset;
 
     public KeyValueArchiveBufferWriter(Span<byte> buffer)
@@ -176,7 +176,7 @@ internal ref struct KeyValueArchiveBufferWriter
         Abort.DoAbortUnless(_offset + source.Length <= _buffer.Length &&
                             _offset + source.Length > _offset);
 
-        source.CopyTo(_buffer[_offset..]);
+        source.CopyTo(_buffer.Slice(_offset));
         _offset += source.Length;
     }
 

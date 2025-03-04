@@ -38,14 +38,15 @@ public static class StringUtils
         return i;
     }
 
-    public static int Strlcpy(Span<byte> dest, ReadOnlySpan<byte> source, int maxLen)
+    public static int Strlcpy(Span<byte> dest, ReadOnlySpan<byte> source, int size)
     {
-        int maxLenLocal = Math.Min(Math.Min(dest.Length, source.Length), maxLen);
+        int destSize = Math.Min(dest.Length, size);
 
         int i = 0;
-        if (maxLenLocal > 0)
+        if (destSize > 0)
         {
-            for (; i < maxLenLocal - 1 && source[i] != 0; i++)
+            int maxCopySize = Math.Min(destSize - 1, source.Length);
+            for (; i < maxCopySize && source[i] != 0; i++)
             {
                 dest[i] = source[i];
             }
@@ -91,8 +92,8 @@ public static class StringUtils
 
         while (true)
         {
-            int c1 = (uint)i < (uint)s1.Length ? s1[i] : 0;
-            int c2 = (uint)i < (uint)s2.Length ? s2[i] : 0;
+            int c1 = ((uint)i < (uint)s1.Length ? s1[i] : 0);
+            int c2 = ((uint)i < (uint)s2.Length ? s2[i] : 0);
 
             if (c1 != c2)
                 return c1 - c2;
@@ -108,8 +109,8 @@ public static class StringUtils
     {
         for (int i = 0; i < maxLen; i++)
         {
-            int c1 = (uint)i < (uint)s1.Length ? s1[i] : 0;
-            int c2 = (uint)i < (uint)s2.Length ? s2[i] : 0;
+            int c1 = ((uint)i < (uint)s1.Length ? s1[i] : 0);
+            int c2 = ((uint)i < (uint)s2.Length ? s2[i] : 0);
 
             if (c1 != c2)
                 return c1 - c2;
@@ -127,8 +128,8 @@ public static class StringUtils
 
         while (true)
         {
-            int c1 = (uint)i < (uint)s1.Length ? ToLowerAsciiInvariant(s1[i]) : 0;
-            int c2 = (uint)i < (uint)s2.Length ? ToLowerAsciiInvariant(s2[i]) : 0;
+            int c1 = ((uint)i < (uint)s1.Length ? ToLowerAsciiInvariant(s1[i]) : 0);
+            int c2 = ((uint)i < (uint)s2.Length ? ToLowerAsciiInvariant(s2[i]) : 0);
 
             if (c1 != c2)
                 return c1 - c2;
@@ -144,8 +145,8 @@ public static class StringUtils
     {
         for (int i = 0; i < maxLen; i++)
         {
-            int c1 = (uint)i < (uint)s1.Length ? ToLowerAsciiInvariant(s1[i]) : 0;
-            int c2 = (uint)i < (uint)s2.Length ? ToLowerAsciiInvariant(s2[i]) : 0;
+            int c1 = ((uint)i < (uint)s1.Length ? ToLowerAsciiInvariant(s1[i]) : 0);
+            int c2 = ((uint)i < (uint)s2.Length ? ToLowerAsciiInvariant(s2[i]) : 0);
 
             if (c1 != c2)
                 return c1 - c2;
@@ -231,12 +232,12 @@ public static class StringUtils
     {
         int length = GetLength(value);
 
-        return Encoding.UTF8.GetString(value[..length]);
+        return Encoding.UTF8.GetString(value.Slice(0, length));
     }
 
     public static string Utf8ZToString(ReadOnlySpan<byte> value)
     {
-        return Utf8ToString(value[..GetLength(value)]);
+        return Utf8ToString(value.Slice(0, GetLength(value)));
     }
 
     public static bool IsAlpha(byte c)
@@ -263,7 +264,7 @@ public static class StringUtils
 
         if ((uint)outputBytes.Length >= bytesLength)
         {
-            Span<byte> bytes = outputBytes[..(int)bytesLength];
+            Span<byte> bytes = outputBytes.Slice(0, (int)bytesLength);
             return HexConverter.TryDecodeFromUtf16(chars, bytes);
         }
 
@@ -299,7 +300,7 @@ public static class StringUtils
 
         if ((uint)outputBytes.Length >= bytesLength)
         {
-            Span<byte> bytes = outputBytes[..(int)bytesLength];
+            Span<byte> bytes = outputBytes.Slice(0, (int)bytesLength);
 
             if (!HexConverter.TryDecodeFromUtf16(chars, bytes))
             {

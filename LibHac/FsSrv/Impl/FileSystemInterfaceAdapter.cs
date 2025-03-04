@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using LibHac.Common;
 using LibHac.Fs;
 using LibHac.Fs.Fsa;
@@ -24,12 +23,12 @@ public class FileInterfaceAdapter : IFileSf
 {
     private SharedRef<FileSystemInterfaceAdapter> _parentFs;
     private UniqueRef<IFile> _baseFile;
-    private readonly bool _allowAllOperations;
+    private bool _allowAllOperations;
 
     public FileInterfaceAdapter(ref UniqueRef<IFile> baseFile,
-        ref SharedRef<FileSystemInterfaceAdapter> parentFileSystem, bool allowAllOperations)
+        ref readonly SharedRef<FileSystemInterfaceAdapter> parentFileSystem, bool allowAllOperations)
     {
-        _parentFs = SharedRef<FileSystemInterfaceAdapter>.CreateMove(ref parentFileSystem);
+        _parentFs = SharedRef<FileSystemInterfaceAdapter>.CreateCopy(in parentFileSystem);
         _baseFile = new UniqueRef<IFile>(ref baseFile);
         _allowAllOperations = allowAllOperations;
     }
@@ -59,7 +58,7 @@ public class FileInterfaceAdapter : IFileSf
 
         for (int tryNum = 0; tryNum < maxTryCount; tryNum++)
         {
-            res = _baseFile.Get.Read(out readSize, offset, destination.Buffer[..(int)size], option);
+            res = _baseFile.Get.Read(out readSize, offset, destination.Buffer.Slice(0, (int)size), option);
 
             // Retry on ResultDataCorrupted
             if (!ResultFs.DataCorrupted.Includes(res))
@@ -86,7 +85,7 @@ public class FileInterfaceAdapter : IFileSf
         using var scopedPriorityChanger =
             new ScopedThreadPriorityChangerByAccessPriority(ScopedThreadPriorityChangerByAccessPriority.AccessMode.Write);
 
-        return _baseFile.Get.Write(offset, source.Buffer[..(int)size], option);
+        return _baseFile.Get.Write(offset, source.Buffer.Slice(0, (int)size), option);
     }
 
     public Result Flush()
@@ -187,9 +186,9 @@ public class DirectoryInterfaceAdapter : IDirectorySf
     private UniqueRef<IDirectory> _baseDirectory;
 
     public DirectoryInterfaceAdapter(ref UniqueRef<IDirectory> baseDirectory,
-        ref SharedRef<FileSystemInterfaceAdapter> parentFileSystem)
+        ref readonly SharedRef<FileSystemInterfaceAdapter> parentFileSystem)
     {
-        _parentFs = SharedRef<FileSystemInterfaceAdapter>.CreateMove(ref parentFileSystem);
+        _parentFs = SharedRef<FileSystemInterfaceAdapter>.CreateCopy(in parentFileSystem);
         _baseDirectory = new UniqueRef<IDirectory>(ref baseDirectory);
     }
 
@@ -204,7 +203,7 @@ public class DirectoryInterfaceAdapter : IDirectorySf
         const int maxTryCount = 2;
         UnsafeHelpers.SkipParamInit(out entriesRead);
 
-        Span<DirectoryEntry> entries = MemoryMarshal.Cast<byte, DirectoryEntry>(entryBuffer.Buffer);
+        Span<DirectoryEntry> entries = entryBuffer.AsSpan<DirectoryEntry>();
 
         Result res = Result.Success;
         long numRead = 0;
@@ -245,30 +244,29 @@ public class FileSystemInterfaceAdapter : IFileSystemSf
 {
     private SharedRef<IFileSystem> _baseFileSystem;
     private PathFlags _pathFlags;
-    private readonly bool _allowAllOperations;
+    private bool _allowAllOperations;
 
     // In FS, FileSystemInterfaceAdapter is derived from ISharedObject, so that's used for ref-counting when
     // creating files and directories. We don't have an ISharedObject, so a self-reference is used instead.
     private WeakRef<FileSystemInterfaceAdapter> _selfReference;
 
-    private FileSystemInterfaceAdapter(ref SharedRef<IFileSystem> fileSystem,
-        bool allowAllOperations)
+    private FileSystemInterfaceAdapter(ref readonly SharedRef<IFileSystem> fileSystem, bool allowAllOperations)
     {
-        _baseFileSystem = SharedRef<IFileSystem>.CreateMove(ref fileSystem);
+        _baseFileSystem = SharedRef<IFileSystem>.CreateCopy(in fileSystem);
         _allowAllOperations = allowAllOperations;
     }
 
-    private FileSystemInterfaceAdapter(ref SharedRef<IFileSystem> fileSystem, PathFlags flags,
+    private FileSystemInterfaceAdapter(ref readonly SharedRef<IFileSystem> fileSystem, PathFlags flags,
         bool allowAllOperations)
     {
-        _baseFileSystem = SharedRef<IFileSystem>.CreateMove(ref fileSystem);
+        _baseFileSystem = SharedRef<IFileSystem>.CreateCopy(in fileSystem);
         _pathFlags = flags;
         _allowAllOperations = allowAllOperations;
     }
 
-    public static SharedRef<IFileSystemSf> CreateShared(ref SharedRef<IFileSystem> baseFileSystem, bool allowAllOperations)
+    public static SharedRef<IFileSystemSf> CreateShared(ref readonly SharedRef<IFileSystem> baseFileSystem, bool allowAllOperations)
     {
-        var adapter = new FileSystemInterfaceAdapter(ref baseFileSystem, allowAllOperations);
+        var adapter = new FileSystemInterfaceAdapter(in baseFileSystem, allowAllOperations);
         using var sharedAdapter = new SharedRef<FileSystemInterfaceAdapter>(adapter);
 
         adapter._selfReference.Set(in sharedAdapter);
@@ -277,9 +275,9 @@ public class FileSystemInterfaceAdapter : IFileSystemSf
     }
 
     public static SharedRef<IFileSystemSf> CreateShared(
-        ref SharedRef<IFileSystem> baseFileSystem, PathFlags flags, bool allowAllOperations)
+        ref readonly SharedRef<IFileSystem> baseFileSystem, PathFlags flags, bool allowAllOperations)
     {
-        var adapter = new FileSystemInterfaceAdapter(ref baseFileSystem, flags, allowAllOperations);
+        var adapter = new FileSystemInterfaceAdapter(in baseFileSystem, flags, allowAllOperations);
         using var sharedAdapter = new SharedRef<FileSystemInterfaceAdapter>(adapter);
 
         adapter._selfReference.Set(in sharedAdapter);
@@ -293,9 +291,11 @@ public class FileSystemInterfaceAdapter : IFileSystemSf
         _selfReference.Destroy();
     }
 
+    public static PathFlags GetDefaultPathFlags() => new PathFlags();
+
     private static ReadOnlySpan<byte> RootDir => "/"u8;
 
-    private Result SetUpPath(ref Path fsPath, in PathSf sfPath)
+    private Result SetUpPath(ref Path fsPath, ref readonly PathSf sfPath)
     {
         Result res;
 
@@ -316,7 +316,7 @@ public class FileSystemInterfaceAdapter : IFileSystemSf
         return Result.Success;
     }
 
-    public Result CreateFile(in PathSf path, long size, int option)
+    public Result CreateFile(ref readonly PathSf path, long size, int option)
     {
         if (size < 0)
             return ResultFs.InvalidSize.Log();
@@ -331,7 +331,7 @@ public class FileSystemInterfaceAdapter : IFileSystemSf
         return Result.Success;
     }
 
-    public Result DeleteFile(in PathSf path)
+    public Result DeleteFile(ref readonly PathSf path)
     {
         using var pathNormalized = new Path();
         Result res = SetUpPath(ref pathNormalized.Ref(), in path);
@@ -343,7 +343,7 @@ public class FileSystemInterfaceAdapter : IFileSystemSf
         return Result.Success;
     }
 
-    public Result CreateDirectory(in PathSf path)
+    public Result CreateDirectory(ref readonly PathSf path)
     {
         using var pathNormalized = new Path();
         Result res = SetUpPath(ref pathNormalized.Ref(), in path);
@@ -358,7 +358,7 @@ public class FileSystemInterfaceAdapter : IFileSystemSf
         return Result.Success;
     }
 
-    public Result DeleteDirectory(in PathSf path)
+    public Result DeleteDirectory(ref readonly PathSf path)
     {
         using var pathNormalized = new Path();
         Result res = SetUpPath(ref pathNormalized.Ref(), in path);
@@ -373,7 +373,7 @@ public class FileSystemInterfaceAdapter : IFileSystemSf
         return Result.Success;
     }
 
-    public Result DeleteDirectoryRecursively(in PathSf path)
+    public Result DeleteDirectoryRecursively(ref readonly PathSf path)
     {
         using var pathNormalized = new Path();
         Result res = SetUpPath(ref pathNormalized.Ref(), in path);
@@ -388,7 +388,7 @@ public class FileSystemInterfaceAdapter : IFileSystemSf
         return Result.Success;
     }
 
-    public Result CleanDirectoryRecursively(in PathSf path)
+    public Result CleanDirectoryRecursively(ref readonly PathSf path)
     {
         using var pathNormalized = new Path();
         Result res = SetUpPath(ref pathNormalized.Ref(), in path);
@@ -400,7 +400,7 @@ public class FileSystemInterfaceAdapter : IFileSystemSf
         return Result.Success;
     }
 
-    public Result RenameFile(in PathSf currentPath, in PathSf newPath)
+    public Result RenameFile(ref readonly PathSf currentPath, ref readonly PathSf newPath)
     {
         using var currentPathNormalized = new Path();
         Result res = SetUpPath(ref currentPathNormalized.Ref(), in currentPath);
@@ -416,7 +416,7 @@ public class FileSystemInterfaceAdapter : IFileSystemSf
         return Result.Success;
     }
 
-    public Result RenameDirectory(in PathSf currentPath, in PathSf newPath)
+    public Result RenameDirectory(ref readonly PathSf currentPath, ref readonly PathSf newPath)
     {
         using var currentPathNormalized = new Path();
         Result res = SetUpPath(ref currentPathNormalized.Ref(), in currentPath);
@@ -435,7 +435,7 @@ public class FileSystemInterfaceAdapter : IFileSystemSf
         return Result.Success;
     }
 
-    public Result GetEntryType(out uint entryType, in PathSf path)
+    public Result GetEntryType(out uint entryType, ref readonly PathSf path)
     {
         UnsafeHelpers.SkipParamInit(out entryType);
 
@@ -450,7 +450,7 @@ public class FileSystemInterfaceAdapter : IFileSystemSf
         return Result.Success;
     }
 
-    public Result GetFreeSpaceSize(out long freeSpace, in PathSf path)
+    public Result GetFreeSpaceSize(out long freeSpace, ref readonly PathSf path)
     {
         UnsafeHelpers.SkipParamInit(out freeSpace);
 
@@ -465,7 +465,7 @@ public class FileSystemInterfaceAdapter : IFileSystemSf
         return Result.Success;
     }
 
-    public Result GetTotalSpaceSize(out long totalSpace, in PathSf path)
+    public Result GetTotalSpaceSize(out long totalSpace, ref readonly PathSf path)
     {
         UnsafeHelpers.SkipParamInit(out totalSpace);
 
@@ -480,7 +480,7 @@ public class FileSystemInterfaceAdapter : IFileSystemSf
         return Result.Success;
     }
 
-    public Result OpenFile(ref SharedRef<IFileSf> outFile, in PathSf path, uint mode)
+    public Result OpenFile(ref SharedRef<IFileSf> outFile, ref readonly PathSf path, uint mode)
     {
         const int maxTryCount = 2;
 
@@ -504,13 +504,13 @@ public class FileSystemInterfaceAdapter : IFileSystemSf
         using SharedRef<FileSystemInterfaceAdapter> selfReference =
             SharedRef<FileSystemInterfaceAdapter>.Create(in _selfReference);
 
-        var adapter = new FileInterfaceAdapter(ref file.Ref, ref selfReference.Ref, _allowAllOperations);
+        var adapter = new FileInterfaceAdapter(ref file.Ref, in selfReference, _allowAllOperations);
         outFile.Reset(adapter);
 
         return Result.Success;
     }
 
-    public Result OpenDirectory(ref SharedRef<IDirectorySf> outDirectory, in PathSf path, uint mode)
+    public Result OpenDirectory(ref SharedRef<IDirectorySf> outDirectory, ref readonly PathSf path, uint mode)
     {
         const int maxTryCount = 2;
 
@@ -535,7 +535,7 @@ public class FileSystemInterfaceAdapter : IFileSystemSf
         using SharedRef<FileSystemInterfaceAdapter> selfReference =
             SharedRef<FileSystemInterfaceAdapter>.Create(in _selfReference);
 
-        var adapter = new DirectoryInterfaceAdapter(ref directory.Ref, ref selfReference.Ref);
+        var adapter = new DirectoryInterfaceAdapter(ref directory.Ref, in selfReference);
         outDirectory.Reset(adapter);
 
         return Result.Success;
@@ -546,7 +546,7 @@ public class FileSystemInterfaceAdapter : IFileSystemSf
         return _baseFileSystem.Get.Commit();
     }
 
-    public Result GetFileTimeStampRaw(out FileTimeStampRaw timeStamp, in PathSf path)
+    public Result GetFileTimeStampRaw(out FileTimeStampRaw timeStamp, ref readonly PathSf path)
     {
         UnsafeHelpers.SkipParamInit(out timeStamp);
 
@@ -561,7 +561,7 @@ public class FileSystemInterfaceAdapter : IFileSystemSf
         return Result.Success;
     }
 
-    public Result QueryEntry(OutBuffer outBuffer, InBuffer inBuffer, int queryId, in PathSf path)
+    public Result QueryEntry(OutBuffer outBuffer, InBuffer inBuffer, int queryId, ref readonly PathSf path)
     {
         static Result PermissionCheck(QueryId queryId, FileSystemInterfaceAdapter fsAdapter)
         {
@@ -603,9 +603,9 @@ public class FileSystemInterfaceAdapter : IFileSystemSf
         return Result.Success;
     }
 
-    public Result GetImpl(ref SharedRef<IFileSystem> fileSystem)
+    public Result GetImpl(ref SharedRef<IFileSystem> outFileSystem)
     {
-        fileSystem.SetByCopy(in _baseFileSystem);
+        outFileSystem.SetByCopy(in _baseFileSystem);
         return Result.Success;
     }
 }

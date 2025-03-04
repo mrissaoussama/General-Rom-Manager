@@ -73,7 +73,7 @@ public class NsoReader
         // Load data from file.
         uint loadAddress = isCompressed ? (uint)buffer.Length - fileSize : 0;
 
-        Result res = NsoFile.Read(out long bytesRead, segment.FileOffset, buffer[(int)loadAddress..], ReadOption.None);
+        Result res = NsoFile.Read(out long bytesRead, segment.FileOffset, buffer.Slice((int)loadAddress), ReadOption.None);
         if (res.IsFailure()) return res.Miss();
 
         if (bytesRead != fileSize)
@@ -84,7 +84,7 @@ public class NsoReader
         {
             // todo: Fix in-place decompression
             // Lz4.Decompress(buffer.Slice((int)loadAddress), buffer);
-            byte[] decomp = Lz4.Decompress(buffer[(int)loadAddress..].ToArray(), buffer.Length);
+            byte[] decomp = Lz4.Decompress(buffer.Slice((int)loadAddress).ToArray(), buffer.Length);
             decomp.CopyTo(buffer);
         }
 
@@ -92,9 +92,9 @@ public class NsoReader
         if (checkHash)
         {
             var hash = new Array32<byte>();
-            Crypto.Sha256.GenerateSha256Hash(buffer[..(int)segment.Size], hash.Items);
+            Crypto.Sha256.GenerateSha256Hash(buffer.Slice(0, (int)segment.Size), hash);
 
-            if (hash.ItemsRo.SequenceCompareTo(fileHash) != 0)
+            if (hash[..].SequenceCompareTo(fileHash) != 0)
                 return ResultLoader.InvalidNso.Log();
         }
 

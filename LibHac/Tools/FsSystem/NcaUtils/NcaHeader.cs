@@ -35,7 +35,7 @@ public struct NcaHeader
 
     private ref NcaHeaderStruct Header => ref Unsafe.As<byte, NcaHeaderStruct>(ref _header.Span[0]);
 
-    public Span<byte> Signature1 => _header.Span[..0x100];
+    public Span<byte> Signature1 => _header.Span.Slice(0, 0x100);
     public Span<byte> Signature2 => _header.Span.Slice(0x100, 0x100);
 
     public uint Magic
@@ -102,7 +102,7 @@ public struct NcaHeader
 
     public TitleVersion SdkVersion
     {
-        get => new(Header.SdkVersion);
+        get => new TitleVersion(Header.SdkVersion);
         set => Header.SdkVersion = value.Version;
     }
 
@@ -298,7 +298,7 @@ public struct NcaHeader
         // Key areas using fixed, unencrypted keys always use the same keys.
         // Check for these keys by comparing the key area with the known hash of the fixed body keys.
         Unsafe.SkipInit(out Buffer32 hash);
-        Sha256.GenerateSha256Hash(keyArea[..0x20], hash);
+        Sha256.GenerateSha256Hash(keyArea.Slice(0, 0x20), hash);
 
         if (Nca0FixedBodyKeySha256Hash.SequenceEqual(hash))
         {
@@ -321,11 +321,11 @@ public struct NcaHeader
 
     public bool IsNca0() => FormatVersion >= NcaVersion.Nca0;
 
-    private static ReadOnlySpan<byte> Nca0FixedBodyKeySha256Hash => new byte[]
-    {
+    private static ReadOnlySpan<byte> Nca0FixedBodyKeySha256Hash =>
+    [
         0x9A, 0xBB, 0xD2, 0x11, 0x86, 0x00, 0x21, 0x9D, 0x7A, 0xDC, 0x5B, 0x43, 0x95, 0xF8, 0x4E, 0xFD,
         0xFF, 0x6B, 0x25, 0xEF, 0x9F, 0x96, 0x85, 0x28, 0x18, 0x9E, 0x76, 0xB0, 0x92, 0xF0, 0x6A, 0xCB
-    };
+    ];
 
     [StructLayout(LayoutKind.Explicit, Size = 0xC00)]
     private struct NcaHeaderStruct

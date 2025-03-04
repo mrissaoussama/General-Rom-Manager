@@ -1,65 +1,50 @@
-{ //maybe think of a better structure, ex: not having to repeat paths
-  "PluginsPath": "Plugins",
-  "NoIntroPath": "NoIntro",
-  "SqliteDBPath": "RomDB.sqlite",
-  "ErrorLogPath": "ErrorLog.txt",
-  "Xbox360": {
-    "XexToolPath": "Xbox360\\xextool.exe",
-    "ThumbnailCachePath": "Xbox360\\Cache\\Thumbnail"
+{
+  "GlobalPaths": {
+    "BaseDirectory": "D:\\RomManager",
+    "Plugins": "Plugins",
+    "NoIntroDB": "NoIntro",
+    "Database": "Data\\roms.db",
+    "ErrorLogs": "Logs\\errors.log",
+    "Cache": "Cache"
   },
-  "OriginalXbox": {
-    "ThumbnailCachePath": "Xbox360\\Cache\\Thumbnail"
-  },
-  "PSP": {
-    "CachePath": "Xbox360\\Cache\\Thumbnail"
-  },
-  "Switch": {
-    "TitleDB": {
-      "TitleDBUrl": "https://github.com/blawar/titledb/raw/master/",
-      "VersionsUrl": "https://github.com/blawar/titledb/raw/master/versions.json",
-      "RegionFiles": [
-        "US.en.json",
-        "FR.fr.json",
-        "GB.en.json",
-        "JP.ja.json"
-      ],
-
-      "TitleDBSavePath": "Switch\\TitleDB\\",
-      "VersionsSavePath": "Switch\\TitleDB\\versions.json",
-      "GlobalTitleDBUrl": "https://tinfoil.media/repo/db/titles.json",
-      "GlobalTitleDBPath": "Switch\\TitleDB\\titles.json"
-
-    }
-  },
-  "ThreeDS": {
-    "TitleDB": {
-      "BaseUrl": "https://github.com/hax0kartik/3dsdb/raw/master/jsons/",
-      "RegionFiles": [
-        "list_GB.json",
-        "list_JP.json",
-        "list_KR.json",
-        "list_TW.json",
-        "list_US.json"
-      ],
-      "SavePath": "ThreeDS\\TitleDB\\"
-    }
-  },
-  "Wii": {
-    "GameTDB": {
-      "Url": "https://www.gametdb.com/wiitdb.zip",
-      "Path": "Wii\\GameTDB\\wiitdb.xml"
+  "Consoles": {
+    "PSVita": {
+      "RomPath": "D:\\Roms\\PSVita",
+      "LicensePath": "D:\\Roms\\PSVita\\Licenses",
+      "Tools": {
+        "ParamSfo": "param.sfo.dll"
+      }
     },
-    "Wad": {
-      "CommonKeyPath": "Wii\\Wad\\common-key.bin"
+    "PS3": {
+      "RomPath": "D:\\Roms\\PS3",
+      "Tools": {
+        "PS3Tools": "ps3_tools.dll"
+      }
     },
     "PS4": {
-      "PS4ToolsPath": "PS4\\PS4_Tools.dll"
-    }
-  },
-  "WiiU": {
-    "TitleDB": {
-      "TitleDBUrl": "https://raw.githubusercontent.com/libretro/libretro-database/master/dat/Nintendo%20-%20Wii%20U.dat",
-      "TitleDBPath": "WiiU\\TitleDB\\Nintendo - Wii U.dat"
+      "RomPath": "D:\\Roms\\PS4",
+      "Tools": {
+        "PS4Tools": "ps4_tools.dll"
+      }
+    },
+    "Switch": {
+      "RomPath": "D:\\Roms\\Switch",
+      "TitleDB": {
+        "Path": "Data\\Switch\\titledb",
+        "VersionsFile": "versions.json"
+      }
+    },
+    "Xbox360": {
+      "RomPath": "D:\\Roms\\Xbox360",
+      "Tools": {
+        "Xextool": "xextool.exe"
+      }
+    },
+    "WiiU": {
+      "RomPath": "D:\\Roms\\WiiU",
+      "TitleDB": {
+        "Path": "Data\\WiiU\\titledb.xml"
+      }
     }
   }
 }

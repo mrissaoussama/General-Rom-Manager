@@ -17,7 +17,7 @@ public struct InternalCriticalSection : ILockable, IDisposable
     }
 
     public void Initialize() => _impl.Initialize();
-    public  void FinalizeObject() => InternalCriticalSectionImpl.FinalizeObject();
+    public void FinalizeObject() => _impl.FinalizeObject();
 
     public void Enter() => _impl.Enter();
     public bool TryEnter() => _impl.TryEnter();

@@ -23,8 +23,9 @@ public enum PartitionFileSystemType
 public class PartitionFileSystemBuilder
 {
     private const int HeaderSize = 0x10;
+    private const int DefaultHashTargetSize = 0x200;
 
-    private List<Entry> Entries { get; } = [];
+    private List<Entry> Entries { get; } = new List<Entry>();
     private long CurrentOffset { get; set; }
 
     public PartitionFileSystemBuilder() { }
@@ -58,7 +59,7 @@ public class PartitionFileSystemBuilder
             Offset = CurrentOffset,
             NameLength = Encoding.UTF8.GetByteCount(filename),
             HashOffset = 0,
-            HashLength = 0x200
+            HashLength = (int)Math.Min(DefaultHashTargetSize, fileSize)
         };
 
         CurrentOffset += entry.Length;
@@ -70,10 +71,8 @@ public class PartitionFileSystemBuilder
     {
         byte[] meta = BuildMetaData(type);
 
-        var sources = new List<IStorage>
-        {
-            new MemoryStorage(meta)
-        };
+        var sources = new List<IStorage>();
+        sources.Add(new MemoryStorage(meta));
 
         sources.AddRange(Entries.Select(x => new FileStorage(x.File)));
 
@@ -139,7 +138,7 @@ public class PartitionFileSystemBuilder
         return endOffset - startOffset;
     }
 
-    private static string GetMagicValue(PartitionFileSystemType type)
+    private string GetMagicValue(PartitionFileSystemType type)
     {
         switch (type)
         {
@@ -149,7 +148,7 @@ public class PartitionFileSystemBuilder
         }
     }
 
-    private static uint GetMetaDataAlignment(PartitionFileSystemType type)
+    private uint GetMetaDataAlignment(PartitionFileSystemType type)
     {
         switch (type)
         {
@@ -165,7 +164,10 @@ public class PartitionFileSystemBuilder
 
         foreach (Entry entry in Entries)
         {
-            if (entry.HashLength == 0) entry.HashLength = 0x200;
+            if (entry.HashLength == 0)
+            {
+                entry.HashLength = (int)Math.Min(DefaultHashTargetSize, entry.Length);
+            }
 
             byte[] data = new byte[entry.HashLength];
             entry.File.Read(out long bytesRead, entry.HashOffset, data);
@@ -182,7 +184,7 @@ public class PartitionFileSystemBuilder
             sha.GetHash(entry.Hash);
         }
     }
-    
+
     public static int GetEntrySize(PartitionFileSystemType type)
     {
         switch (type)

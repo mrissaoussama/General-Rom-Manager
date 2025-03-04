@@ -11,7 +11,7 @@ namespace LibHac.Sm;
 // isn't blocked waiting for something better.
 internal class ServiceManager
 {
-    private Dictionary<ServiceName, IServiceObject> Services { get; } = [];
+    private Dictionary<ServiceName, IServiceObject> Services { get; } = new Dictionary<ServiceName, IServiceObject>();
 
     internal Result GetService(ref SharedRef<IDisposable> outServiceObject, ServiceName serviceName)
     {
@@ -58,7 +58,7 @@ internal class ServiceManager
         return Result.Success;
     }
 
-    private static Result ValidateServiceName(ServiceName name)
+    private Result ValidateServiceName(ServiceName name)
     {
         // Service names must be non-empty.
         if (name.Name == 0)

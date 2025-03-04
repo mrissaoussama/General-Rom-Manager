@@ -70,7 +70,7 @@ public static class PathTools
     {
         if (rootLength > 0)
         {
-            sb.Append(path[..rootLength]);
+            sb.Append(path.Slice(0, rootLength));
         }
 
         bool isNormalized = true;
@@ -228,7 +228,7 @@ public static class PathTools
         // Leave the '/' if the parent is the root directory
         if (i == 0 || i > 0 && path[i - 1] == ':') i++;
 
-        return path[..i];
+        return path.Substring(0, i);
     }
 
     public static ReadOnlySpan<byte> GetParentDirectory(ReadOnlySpan<byte> path)
@@ -243,7 +243,7 @@ public static class PathTools
         while (i >= 1 && path[i] != '/') i--;
 
         i = Math.Max(i, 1);
-        return path[..i];
+        return path.Slice(0, i);
     }
 
     /// <summary>
@@ -259,7 +259,7 @@ public static class PathTools
         while (i >= 1 && path[i - 1] != '/') i--;
 
         i = Math.Max(i, 0);
-        return path[i..];
+        return path.Slice(i, path.Length - i);
     }
 
     public static ReadOnlySpan<byte> GetLastSegment(ReadOnlySpan<byte> path)
@@ -277,7 +277,7 @@ public static class PathTools
         while (i >= 1 && path[i - 1] != '/') i--;
 
         i = Math.Max(i, 0);
-        return path[i..endIndex];
+        return path.Slice(i, endIndex - i);
     }
 
     public static bool IsNormalized(ReadOnlySpan<char> path)
@@ -376,18 +376,18 @@ public static class PathTools
         //Ignore any trailing slashes
         if (path1[path1.Length - 1] == DirectorySeparator)
         {
-            path1 = path1[..^1];
+            path1 = path1.Slice(0, path1.Length - 1);
         }
 
         if (path2[path2.Length - 1] == DirectorySeparator)
         {
-            path2 = path2[..^1];
+            path2 = path2.Slice(0, path2.Length - 1);
         }
 
         ReadOnlySpan<char> shortPath = path1.Length < path2.Length ? path1 : path2;
         ReadOnlySpan<char> longPath = path1.Length < path2.Length ? path2 : path1;
 
-        if (!shortPath.SequenceEqual(longPath[..shortPath.Length]))
+        if (!shortPath.SequenceEqual(longPath.Slice(0, shortPath.Length)))
         {
             return false;
         }
@@ -411,18 +411,18 @@ public static class PathTools
         //Ignore any trailing slashes
         if (path1[path1.Length - 1] == DirectorySeparator)
         {
-            path1 = path1[..^1];
+            path1 = path1.Slice(0, path1.Length - 1);
         }
 
         if (path2[path2.Length - 1] == DirectorySeparator)
         {
-            path2 = path2[..^1];
+            path2 = path2.Slice(0, path2.Length - 1);
         }
 
         ReadOnlySpan<byte> shortPath = path1.Length < path2.Length ? path1 : path2;
         ReadOnlySpan<byte> longPath = path1.Length < path2.Length ? path2 : path1;
 
-        if (!shortPath.SequenceEqual(longPath[..shortPath.Length]))
+        if (!shortPath.SequenceEqual(longPath.Slice(0, shortPath.Length)))
         {
             return false;
         }
@@ -469,7 +469,7 @@ public static class PathTools
             return res;
         }
 
-        mountName = path[..length];
+        mountName = path.Substring(0, length);
         return Result.Success;
     }
 

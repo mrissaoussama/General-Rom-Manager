@@ -16,21 +16,21 @@ public static class ResultSm
     public const int ModuleSm = 21;
 
     /// <summary>Error code: 2021-0001; Inner value: 0x215</summary>
-    public static Result.Base OutOfProcesses => new(ModuleSm, 1);
+    public static Result.Base OutOfProcesses => new Result.Base(ModuleSm, 1);
     /// <summary>Error code: 2021-0002; Inner value: 0x415</summary>
-    public static Result.Base InvalidClient => new(ModuleSm, 2);
+    public static Result.Base InvalidClient => new Result.Base(ModuleSm, 2);
     /// <summary>Error code: 2021-0003; Inner value: 0x615</summary>
-    public static Result.Base OutOfSessions => new(ModuleSm, 3);
+    public static Result.Base OutOfSessions => new Result.Base(ModuleSm, 3);
     /// <summary>Error code: 2021-0004; Inner value: 0x815</summary>
-    public static Result.Base AlreadyRegistered => new(ModuleSm, 4);
+    public static Result.Base AlreadyRegistered => new Result.Base(ModuleSm, 4);
     /// <summary>Error code: 2021-0005; Inner value: 0xa15</summary>
-    public static Result.Base OutOfServices => new(ModuleSm, 5);
+    public static Result.Base OutOfServices => new Result.Base(ModuleSm, 5);
     /// <summary>Error code: 2021-0006; Inner value: 0xc15</summary>
-    public static Result.Base InvalidServiceName => new(ModuleSm, 6);
+    public static Result.Base InvalidServiceName => new Result.Base(ModuleSm, 6);
     /// <summary>Error code: 2021-0007; Inner value: 0xe15</summary>
-    public static Result.Base NotRegistered => new(ModuleSm, 7);
+    public static Result.Base NotRegistered => new Result.Base(ModuleSm, 7);
     /// <summary>Error code: 2021-0008; Inner value: 0x1015</summary>
-    public static Result.Base NotAllowed => new(ModuleSm, 8);
+    public static Result.Base NotAllowed => new Result.Base(ModuleSm, 8);
     /// <summary>Error code: 2021-0009; Inner value: 0x1215</summary>
-    public static Result.Base TooLargeAccessControl => new(ModuleSm, 9);
+    public static Result.Base TooLargeAccessControl => new Result.Base(ModuleSm, 9);
 }

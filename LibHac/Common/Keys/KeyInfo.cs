@@ -115,7 +115,7 @@ public readonly struct KeyInfo
         }
 
         // Check if the base name matches
-        if (!keyName[..Name.Length].SequenceEqual(Name))
+        if (!keyName.Slice(0, Name.Length).SequenceEqual(Name))
             return false;
 
         return true;
@@ -141,7 +141,7 @@ public readonly struct KeyInfo
             return false;
 
         // Check if the name before the "_XX" index matches
-        if (!keyName[..Name.Length].SequenceEqual(Name))
+        if (!keyName.Slice(0, Name.Length).SequenceEqual(Name))
             return false;
 
         // The name should have an underscore before the index value

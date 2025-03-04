@@ -28,9 +28,9 @@ public class GameCardRootPartition : IDisposable
 
     private UniqueRef<Sha256PartitionFileSystemMeta> _partitionFsMeta;
     private SharedRef<IStorage> _alignedRootStorage;
-    private readonly GameCardHandle _gcHandle;
-    private readonly long _metaDataSize;
-    private readonly IGameCardStorageCreator _gameCardStorageCreator;
+    private GameCardHandle _gcHandle;
+    private long _metaDataSize;
+    private IGameCardStorageCreator _gameCardStorageCreator;
     private byte[] _logoPartitionData;
     private SharedRef<IStorage> _logoPartitionStorage;
     private SdkMutexType _mutex;
@@ -38,12 +38,12 @@ public class GameCardRootPartition : IDisposable
     // LibHac addition so we can access fssrv::storage functions
     private readonly FileSystemServer _fsServer;
 
-    public GameCardRootPartition(GameCardHandle handle, ref SharedRef<IStorage> rootStorage,
+    public GameCardRootPartition(GameCardHandle handle, ref readonly SharedRef<IStorage> rootStorage,
         IGameCardStorageCreator storageCreator, ref UniqueRef<Sha256PartitionFileSystemMeta> partitionFsMeta,
         FileSystemServer fsServer)
     {
         _partitionFsMeta = new UniqueRef<Sha256PartitionFileSystemMeta>(ref partitionFsMeta);
-        _alignedRootStorage = SharedRef<IStorage>.CreateMove(ref rootStorage);
+        _alignedRootStorage = SharedRef<IStorage>.CreateCopy(in rootStorage);
         _gcHandle = handle;
         _gameCardStorageCreator = storageCreator;
         _logoPartitionStorage = new SharedRef<IStorage>();
@@ -212,8 +212,8 @@ public class GameCardRootPartition : IDisposable
 /// <remarks>Based on nnSdk 16.2.0 (FS 16.0.0)</remarks>
 public class GameCardFileSystemCreator : IGameCardFileSystemCreator
 {
-    private readonly MemoryResource _allocator;
-    private readonly GameCardStorageCreator _gameCardStorageCreator;
+    private MemoryResource _allocator;
+    private GameCardStorageCreator _gameCardStorageCreator;
     private UniqueRef<GameCardRootPartition> _rootPartition;
     private SdkMutexType _mutex;
 
@@ -280,7 +280,7 @@ public class GameCardFileSystemCreator : IGameCardFileSystemCreator
                 res = rootPartitionFsMeta.Get.Initialize(rootFsStorage.Get, _allocator, status.PartitionFsHeaderHash, salt);
                 if (res.IsFailure()) return res.Miss();
 
-                _rootPartition.Reset(new GameCardRootPartition(handle, ref rootFsStorage.Ref, _gameCardStorageCreator,
+                _rootPartition.Reset(new GameCardRootPartition(handle, in rootFsStorage, _gameCardStorageCreator,
                     ref rootPartitionFsMeta.Ref, _fsServer));
 
                 if (!_rootPartition.HasValue)
@@ -324,7 +324,7 @@ public class GameCardFileSystemCreator : IGameCardFileSystemCreator
         return Result.Success;
     }
 
-    private static Result GetSaltFromCompatibilityType(out Optional<byte> outSalt, byte compatibilityType)
+    private Result GetSaltFromCompatibilityType(out Optional<byte> outSalt, byte compatibilityType)
     {
         switch ((GameCardCompatibilityType)compatibilityType)
         {

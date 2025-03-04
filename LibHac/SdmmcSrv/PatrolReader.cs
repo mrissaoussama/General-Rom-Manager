@@ -66,7 +66,7 @@ internal class PatrolReader
     private ulong _allocateFailureCount;
 
     // LibHac addition
-    private readonly SdmmcApi _sdmmc;
+    private SdmmcApi _sdmmc;
 
     private static ReadOnlySpan<byte> PatrolStateKey => "U{W5>1Kq#Gt`f6r86o`9|*||hTy9U2C\0"u8;
 
@@ -169,7 +169,7 @@ internal class PatrolReader
                 return false;
             }
 
-            Span<byte> patrolStateBuffer = pooledBuffer.GetBuffer()[.._patrolStateSize];
+            Span<byte> patrolStateBuffer = pooledBuffer.GetBuffer().Slice(0, _patrolStateSize);
 
             res = _sdmmc.Read(patrolStateBuffer, Port.Mmc0, BytesToSectors(_patrolStateOffset),
                 BytesToSectors(_patrolStateSize));
@@ -184,11 +184,11 @@ internal class PatrolReader
             // Load an empty state if the verification fails.
             _patrolState = default;
 
-            HmacSha256.GenerateHmacSha256(mac, patrolStateBuffer[_macSize..], PatrolStateKey);
+            HmacSha256.GenerateHmacSha256(mac, patrolStateBuffer.Slice(_macSize), PatrolStateKey);
 
             if (CryptoUtil.IsSameBytes(mac, patrolStateBuffer, _macSize))
             {
-                ref State readState = ref SpanHelpers.AsStruct<State>(patrolStateBuffer[_macSize..]);
+                ref State readState = ref SpanHelpers.AsStruct<State>(patrolStateBuffer.Slice(_macSize));
 
                 if (readState.CurrentSector + BytesToSectors(_patrolReadSize) <= _deviceCapacitySectors)
                 {
@@ -213,12 +213,12 @@ internal class PatrolReader
 
         using ScopedLock<SdkMutex> scopedLock = ScopedLock.Lock(ref _mutex);
 
-        Span<byte> patrolStateBuffer = pooledBuffer.GetBuffer()[.._patrolStateSize];
+        Span<byte> patrolStateBuffer = pooledBuffer.GetBuffer().Slice(0, _patrolStateSize);
         patrolStateBuffer.Clear();
 
         SpanHelpers.AsStruct<State>(patrolStateBuffer) = _patrolState;
 
-        HmacSha256.GenerateHmacSha256(patrolStateBuffer[.._macSize], patrolStateBuffer[_macSize..],
+        HmacSha256.GenerateHmacSha256(patrolStateBuffer.Slice(0, _macSize), patrolStateBuffer.Slice(_macSize),
             PatrolStateKey);
 
         Abort.DoAbortUnlessSuccess(_sdmmc.SelectMmcPartition(Port.Mmc0, _statePartition));
@@ -250,7 +250,7 @@ internal class PatrolReader
         if (_allocateSuccessCount != ulong.MaxValue)
             _allocateSuccessCount++;
 
-        _sdmmc.Read(pooledBuffer.GetBuffer()[.._patrolReadSize], Port.Mmc0, _patrolState.CurrentSector,
+        _sdmmc.Read(pooledBuffer.GetBuffer().Slice(0, _patrolReadSize), Port.Mmc0, _patrolState.CurrentSector,
             BytesToSectors(_patrolReadSize)).IgnoreResult();
 
         _patrolState.CurrentSector += BytesToSectors(_patrolReadSize);

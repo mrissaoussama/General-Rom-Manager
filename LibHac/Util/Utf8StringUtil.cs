@@ -12,8 +12,8 @@ namespace LibHac.Util;
 /// <remarks>Based on nnSdk 13.4.0</remarks>
 public static class Utf8StringUtil
 {
-    private static ReadOnlySpan<byte> CodePointByteLengthTable => new byte[]
-    {
+    private static ReadOnlySpan<byte> CodePointByteLengthTable =>
+    [
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -30,7 +30,7 @@ public static class Utf8StringUtil
         2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
         3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
         4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-    };
+    ];
 
     public static bool VerifyUtf8String(U8Span str)
     {
@@ -51,10 +51,10 @@ public static class Utf8StringUtil
             if (codePointByteLength > currentStr.Length)
                 return -1;
 
-            if (!VerifyCode(currentStr[..codePointByteLength]))
+            if (!VerifyCode(currentStr.Slice(0, codePointByteLength)))
                 return -1;
 
-            currentStr = currentStr[codePointByteLength..];
+            currentStr = currentStr.Slice(codePointByteLength);
 
             codePointCount++;
         }
@@ -78,7 +78,7 @@ public static class Utf8StringUtil
             if (codePointLength > currentInput.Length)
                 break;
 
-            if (!VerifyCode(currentInput[..codePointLength]))
+            if (!VerifyCode(currentInput.Slice(0, codePointLength)))
                 break;
 
             // Ensure the output is large enough to hold the additional code point
@@ -90,7 +90,7 @@ public static class Utf8StringUtil
                 break;
 
             // Advance to the next code point
-            currentInput = currentInput[codePointLength..];
+            currentInput = currentInput.Slice(codePointLength);
             remainingCount--;
         }
 
@@ -101,7 +101,7 @@ public static class Utf8StringUtil
         Assert.SdkAssert(byteLength + 1 <= output.Length);
 
         if (byteLength != 0)
-            input[..byteLength].CopyTo(output);
+            input.Slice(0, byteLength).CopyTo(output);
 
         output[byteLength] = 0;
         return byteLength;

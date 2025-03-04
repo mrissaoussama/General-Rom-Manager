@@ -11,7 +11,7 @@ namespace LibHac.FsSrv.Impl;
 /// Manages a list of cached save data file systems. Each file system is registered and retrieved
 /// based on its save data ID and save data space ID.
 /// </summary>
-/// <remarks>Based on nnSdk 14.3.0 (FS 14.1.0)</remarks>
+/// <remarks>Based on nnSdk 17.5.0 (FS 17.0.0)</remarks>
 public class SaveDataFileSystemCacheManager : IDisposable
 {
     [NonCopyable]
@@ -36,9 +36,9 @@ public class SaveDataFileSystemCacheManager : IDisposable
             return SharedRef<ISaveDataFileSystem>.CreateMove(ref _fileSystem);
         }
 
-        public void Register(ref SharedRef<ISaveDataFileSystem> fileSystem, SaveDataSpaceId spaceId, ulong saveDataId)
+        public void Register(ref readonly SharedRef<ISaveDataFileSystem> fileSystem, SaveDataSpaceId spaceId, ulong saveDataId)
         {
-            _fileSystem.SetByMove(ref fileSystem);
+            _fileSystem.SetByCopy(in fileSystem);
             _spaceId = spaceId;
             _saveDataId = saveDataId;
         }
@@ -142,7 +142,7 @@ public class SaveDataFileSystemCacheManager : IDisposable
             {
                 using ScopedLock<SdkRecursiveMutexType> scopedLock = ScopedLock.Lock(ref _mutex);
 
-                _cachedFileSystems[_nextCacheIndex].Register(ref fileSystem, spaceId, saveDataId);
+                _cachedFileSystems[_nextCacheIndex].Register(in fileSystem, spaceId, saveDataId);
                 _nextCacheIndex = (_nextCacheIndex + 1) % _maxCachedFileSystemCount;
             }
         }

@@ -16,9 +16,9 @@ namespace LibHac.FsSystem;
 /// <remarks>Based on nnSdk 14.3.0 (FS 14.1.0)</remarks>
 public class IntegrityRomFsStorage : IStorage
 {
-    private readonly HierarchicalIntegrityVerificationStorage _integrityStorage;
-    private readonly FileSystemBufferManagerSet _bufferManagerSet;
-    private readonly SdkRecursiveMutex _mutex;
+    private HierarchicalIntegrityVerificationStorage _integrityStorage;
+    private FileSystemBufferManagerSet _bufferManagerSet;
+    private SdkRecursiveMutex _mutex;
     private byte[] _masterHash;
     private UniqueRef<MemoryStorage> _masterHashStorage;
 

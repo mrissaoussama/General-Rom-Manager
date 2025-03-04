@@ -8,8 +8,8 @@ public struct ContentInfo
     public ContentId contentId;
     public uint size1;
     public ushort size2;
-    private readonly ContentType contentType;
-    private readonly byte IdOffset;
+    private ContentType contentType;
+    private byte IdOffset;
 }
 
 public class ApplicationContentMetaKey

@@ -1,4 +1,5 @@
-﻿using System;
+﻿#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
+using System;
 using System.Diagnostics.CodeAnalysis;
 using LibHac.Common;
 using LibHac.Common.FixedArrays;
@@ -123,8 +124,8 @@ public struct HashSalt
 {
     private Array32<byte> _value;
 
-    [UnscopedRef] public Span<byte> Hash => _value.Items;
-    [UnscopedRef] public readonly ReadOnlySpan<byte> HashRo => _value.ItemsRo;
+    [UnscopedRef] public Span<byte> Hash => _value;
+    [UnscopedRef] public readonly ReadOnlySpan<byte> HashRo => _value;
 }
 
 public struct SaveDataAttribute : IEquatable<SaveDataAttribute>, IComparable<SaveDataAttribute>
@@ -265,8 +266,8 @@ public struct SaveDataCreationInfo2
     public int MetaSize;
     public Array356<byte> Reserved4;
 
-    public static Result Make(out SaveDataCreationInfo2 creationInfo, in SaveDataAttribute attribute, long size,
-        long journalSize, long blockSize, ulong ownerId, SaveDataFlags flags, SaveDataSpaceId spaceId,
+    public static Result Make(out SaveDataCreationInfo2 creationInfo, in SaveDataAttribute attribute,
+        long size, long journalSize, long blockSize, ulong ownerId, SaveDataFlags flags, SaveDataSpaceId spaceId,
         SaveDataFormatType formatType)
     {
         UnsafeHelpers.SkipParamInit(out creationInfo);
@@ -385,19 +386,19 @@ internal static class SaveDataTypesValidity
 
     public static bool IsValid(in SaveDataCreationInfo2 creationInfo)
     {
-        foreach (byte b in creationInfo.Reserved1.ItemsRo)
+        foreach (byte b in creationInfo.Reserved1)
             if (b != 0) return false;
 
-        foreach (byte b in creationInfo.Reserved2.ItemsRo)
+        foreach (byte b in creationInfo.Reserved2)
             if (b != 0) return false;
 
-        foreach (byte b in creationInfo.Reserved3.ItemsRo)
+        foreach (byte b in creationInfo.Reserved3)
             if (b != 0) return false;
 
-        foreach (byte b in creationInfo.Reserved4.ItemsRo)
+        foreach (byte b in creationInfo.Reserved4)
             if (b != 0) return false;
 
-        foreach (byte b in creationInfo.Attribute.Reserved.ItemsRo)
+        foreach (byte b in creationInfo.Attribute.Reserved)
             if (b != 0) return false;
 
         return IsValid(in creationInfo.Attribute)

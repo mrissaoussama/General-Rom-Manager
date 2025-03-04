@@ -16,8 +16,8 @@ file struct StorageNode
 {
     private static int NodeHeaderSize => Unsafe.SizeOf<BucketTree.NodeHeader>();
 
-    private readonly Offset _start;
-    private readonly int _count;
+    private Offset _start;
+    private int _count;
     private int _index;
 
     public StorageNode(long offset, long size, int count)
@@ -46,7 +46,7 @@ file struct StorageNode
             int half = end / 2;
             Offset mid = pos + half;
 
-            long offset = BinaryPrimitives.ReadInt64LittleEndian(buffer[(int)mid.Get()..]);
+            long offset = BinaryPrimitives.ReadInt64LittleEndian(buffer.Slice((int)mid.Get()));
 
             if (offset <= virtualAddress)
             {
@@ -62,7 +62,7 @@ file struct StorageNode
         _index = (int)(pos - _start) - 1;
     }
 
-    public Result Find(in ValueSubStorage storage, long virtualAddress)
+    public Result Find(ref readonly ValueSubStorage storage, long virtualAddress)
     {
         int end = _count;
         Offset pos = _start;
@@ -107,8 +107,8 @@ file struct StorageNode
         public static Offset operator ++(Offset left) => left + 1;
         public static Offset operator --(Offset left) => left - 1;
 
-        public static Offset operator +(Offset left, long right) => new(left._offset + right * left._stride, left._stride);
-        public static Offset operator -(Offset left, long right) => new(left._offset - right * left._stride, left._stride);
+        public static Offset operator +(Offset left, long right) => new Offset(left._offset + right * left._stride, left._stride);
+        public static Offset operator -(Offset left, long right) => new Offset(left._offset - right * left._stride, left._stride);
 
         public static long operator -(Offset left, Offset right) =>
             (left._offset - right._offset) / left._stride;
@@ -128,7 +128,7 @@ file struct StorageNode
 /// <remarks>Based on nnSdk 16.2.0 (FS 16.0.0)</remarks>
 public partial class BucketTree : IDisposable
 {
-    private const uint Signature = 0x52544B42; // BKTR
+    public const uint Signature = 0x52544B42; // BKTR
     private const int MaxVersion = 1;
 
     private const int NodeSizeMin = 1024;
@@ -383,7 +383,7 @@ public partial class BucketTree : IDisposable
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private Span<TElement> GetWritableArray<TElement>() where TElement : unmanaged
         {
-            return MemoryMarshal.Cast<byte, TElement>(_buffer[Unsafe.SizeOf<NodeHeader>()..]);
+            return MemoryMarshal.Cast<byte, TElement>(_buffer.Slice(Unsafe.SizeOf<NodeHeader>()));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -489,8 +489,8 @@ public partial class BucketTree : IDisposable
         return Result.Success;
     }
 
-    public Result Initialize(MemoryResource allocator, in ValueSubStorage nodeStorage, in ValueSubStorage entryStorage,
-        int nodeSize, int entrySize, int entryCount)
+    public Result Initialize(MemoryResource allocator, ref readonly ValueSubStorage nodeStorage,
+        ref readonly ValueSubStorage entryStorage, int nodeSize, int entrySize, int entryCount)
     {
         Assert.SdkRequiresNotNull(allocator);
         Assert.SdkRequiresLessEqual(sizeof(long), entrySize);
@@ -679,11 +679,11 @@ public partial class BucketTree : IDisposable
 
     private int GetEntrySetIndex(int nodeIndex, int offsetIndex)
     {
-        return _offsetCount - _nodeL1.GetHeader().EntryCount + (_offsetCount * nodeIndex) + offsetIndex;
+        return (_offsetCount - _nodeL1.GetHeader().EntryCount) + (_offsetCount * nodeIndex) + offsetIndex;
     }
 
     private Result ScanContinuousReading<TEntry>(out ContinuousReadingInfo info,
-        in ContinuousReadingParam<TEntry> param) where TEntry : unmanaged, IContinuousReadingEntry
+        ref readonly ContinuousReadingParam<TEntry> param) where TEntry : unmanaged, IContinuousReadingEntry
     {
         Assert.SdkRequires(IsInitialized());
         Assert.Equal(Unsafe.SizeOf<TEntry>(), _entrySize);
@@ -723,7 +723,7 @@ public partial class BucketTree : IDisposable
             if (_nodeSize + ofs > entryStorageSize)
                 return ResultFs.InvalidBucketTreeNodeEntryCount.Log();
 
-            res = _entryStorage.Read(ofs, buffer[..(int)_nodeSize]);
+            res = _entryStorage.Read(ofs, buffer.Slice(0, (int)_nodeSize));
             if (res.IsFailure()) return res.Miss();
         }
 
@@ -953,7 +953,7 @@ public partial class BucketTree : IDisposable
             if (_tree.IsExistOffsetL2OnL1() && virtualAddress < nodeL1.GetBeginOffset())
             {
                 // The portion of the L2 offsets containing our target offset is stored in the L1 node
-                ReadOnlySpan<long> offsets = nodeL1.GetArray<long>()[nodeL1.GetCount()..];
+                ReadOnlySpan<long> offsets = nodeL1.GetArray<long>().Slice(nodeL1.GetCount());
 
                 // Find the index of the entry containing the requested offset.
                 // If the value is not found, BinarySearch will return the bitwise complement of the
@@ -971,7 +971,7 @@ public partial class BucketTree : IDisposable
             }
             else
             {
-                ReadOnlySpan<long> offsets = nodeL1.GetArray<long>()[..nodeL1.GetCount()];
+                ReadOnlySpan<long> offsets = nodeL1.GetArray<long>().Slice(0, nodeL1.GetCount());
                 int index = offsets.BinarySearch(virtualAddress);
                 if (index < 0) index = (~index) - 1;
 
@@ -1033,7 +1033,7 @@ public partial class BucketTree : IDisposable
             ref ValueSubStorage storage = ref _tree._nodeStorage;
 
             // Read the node.
-            Result res = storage.Read(nodeOffset, buffer[..(int)nodeSize]);
+            Result res = storage.Read(nodeOffset, buffer.Slice(0, (int)nodeSize));
             if (res.IsFailure()) return res.Miss();
 
             // Validate the header.
@@ -1109,7 +1109,7 @@ public partial class BucketTree : IDisposable
             ref ValueSubStorage storage = ref _tree._entryStorage;
 
             // Read the entry set.
-            Result res = storage.Read(entrySetOffset, buffer[..(int)entrySetSize]);
+            Result res = storage.Read(entrySetOffset, buffer.Slice(0, (int)entrySetSize));
             if (res.IsFailure()) return res.Miss();
 
             // Validate the entry set.

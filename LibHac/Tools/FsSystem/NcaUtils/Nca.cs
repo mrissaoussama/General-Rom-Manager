@@ -173,7 +173,7 @@ public class Nca
             ref NcaSparseInfo sparseInfo = ref fsHeader.GetSparseInfo();
 
             Unsafe.SkipInit(out BucketTree.Header header);
-            sparseInfo.MetaHeader.ItemsRo.CopyTo(SpanHelpers.AsByteSpan(ref header));
+            sparseInfo.MetaHeader[..].CopyTo(SpanHelpers.AsByteSpan(ref header));
             header.Verify().ThrowIfFailure();
 
             var sparseStorage = new SparseStorage();
@@ -429,7 +429,7 @@ public class Nca
         ref NcaCompressionInfo compressionInfo = ref header.GetCompressionInfo();
 
         Unsafe.SkipInit(out BucketTree.Header bucketTreeHeader);
-        compressionInfo.TableHeader.ItemsRo.CopyTo(SpanHelpers.AsByteSpan(ref bucketTreeHeader));
+        compressionInfo.TableHeader[..].CopyTo(SpanHelpers.AsByteSpan(ref bucketTreeHeader));
         bucketTreeHeader.Verify().ThrowIfFailure();
 
         long nodeStorageSize = CompressedStorage.QueryNodeStorageSize(bucketTreeHeader.EntryCount);
@@ -488,7 +488,7 @@ public class Nca
         return OpenFileSystem(storage, header);
     }
 
-    private static IFileSystem OpenFileSystem(IStorage storage, NcaFsHeader header)
+    private IFileSystem OpenFileSystem(IStorage storage, NcaFsHeader header)
     {
         switch (header.FormatType)
         {
@@ -740,10 +740,8 @@ public class Nca
     {
         const int sectorSize = NcaHeader.HeaderSectorSize;
 
-        var sources = new List<IStorage>
-        {
-            new CachedStorage(new Aes128XtsStorage(BaseStorage.Slice(0, 0x400), KeySet.HeaderKey, sectorSize, true, decrypting), 1, true)
-        };
+        var sources = new List<IStorage>();
+        sources.Add(new CachedStorage(new Aes128XtsStorage(BaseStorage.Slice(0, 0x400), KeySet.HeaderKey, sectorSize, true, decrypting), 1, true));
 
         for (int i = 0x400; i < size; i += sectorSize)
         {

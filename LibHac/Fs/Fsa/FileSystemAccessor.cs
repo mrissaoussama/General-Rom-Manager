@@ -28,8 +28,8 @@ internal class FileSystemAccessor : IDisposable
 
     private MountName _mountName;
     private UniqueRef<IFileSystem> _fileSystem;
-    private readonly LinkedList<FileAccessor> _openFiles;
-    private readonly LinkedList<DirectoryAccessor> _openDirectories;
+    private LinkedList<FileAccessor> _openFiles;
+    private LinkedList<DirectoryAccessor> _openDirectories;
     private SdkMutexType _openListLock;
     private SdkMutexType _getFsAttributeLock;
     private UniqueRef<ICommonMountNameGenerator> _mountNameGenerator;
@@ -38,7 +38,7 @@ internal class FileSystemAccessor : IDisposable
     private bool _isDataCacheAttachable;
     private bool _isPathCacheAttachable;
     private bool _isPathCacheAttached;
-    private readonly IMultiCommitTarget _multiCommitTarget;
+    private IMultiCommitTarget _multiCommitTarget;
     private PathFlags _pathFlags;
     private Optional<FileSystemAttribute> _fsAttribute;
     private IStorage _storageForPurgeFileDataCache;

@@ -202,7 +202,7 @@ public abstract class IFile : IDisposable
         return Result.Success;
     }
 
-    protected static Result DrySetSize(long size, OpenMode openMode)
+    protected Result DrySetSize(long size, OpenMode openMode)
     {
         // Check that we can write.
         if (!openMode.HasFlag(OpenMode.Write))

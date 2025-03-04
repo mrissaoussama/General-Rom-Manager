@@ -12,10 +12,10 @@ using LibHac.Ncm;
 using LibHac.Ns;
 using LibHac.Tools.FsSystem;
 using LibHac.Tools.FsSystem.NcaUtils;
-using LibHac.Tools.FsSystem.Save;
 using LibHac.Tools.Ncm;
 using LibHac.Util;
 using KeyType = LibHac.Common.Keys.KeyType;
+using SaveDataFileSystem = LibHac.Tools.FsSystem.Save.SaveDataFileSystem;
 
 namespace LibHac.Tools.Fs;
 
@@ -27,8 +27,8 @@ public class SwitchFs : IDisposable
 
     public Dictionary<string, SwitchFsNca> Ncas { get; } = new Dictionary<string, SwitchFsNca>(StringComparer.OrdinalIgnoreCase);
     public Dictionary<string, SaveDataFileSystem> Saves { get; } = new Dictionary<string, SaveDataFileSystem>(StringComparer.OrdinalIgnoreCase);
-    public Dictionary<ulong, Title> Titles { get; } = [];
-    public Dictionary<ulong, Application> Applications { get; } = [];
+    public Dictionary<ulong, Title> Titles { get; } = new Dictionary<ulong, Title>();
+    public Dictionary<ulong, Application> Applications { get; } = new Dictionary<ulong, Application>();
 
     public SwitchFs(KeySet keySet, IFileSystem contentFileSystem, IFileSystem saveFileSystem)
     {
@@ -123,18 +123,17 @@ public class SwitchFs : IDisposable
             {
                 if (ex.Name == null)
                 {
+                    throw new MissingKeyException($"{ex.Message} File:\n{fileEntry}", ex);
                 }
                 else
                 {
                     string name = ex.Type == KeyType.Title ? $"Title key for rights ID {ex.Name}" : ex.Name;
-                    Console.WriteLine($"{ex.Message}\nKey: {name}\nFile: {fileEntry}");
+                    throw new MissingKeyException($"{ex.Message}\nKey: {name}\nFile: {fileEntry}");
                 }
-                throw;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                ContentFs.Dispose();
-                throw;
+                throw new Exception($"{ex.Message} File: {fileEntry.FullPath}");
             }
 
             if (nca?.NcaId != null) Ncas.Add(nca.NcaId, nca);
@@ -159,7 +158,7 @@ public class SwitchFs : IDisposable
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"{ex.Message} File: {fileEntry.FullPath}");
+                throw new Exception($"{ex.Message} File: {fileEntry.FullPath}");
             }
 
             if (save != null && saveName != null)
@@ -215,7 +214,7 @@ public class SwitchFs : IDisposable
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"{ex.Message} File: {nca.Filename}");
+                throw new Exception($"{ex.Message} File: {nca.Filename}");
             }
         }
     }
@@ -233,13 +232,20 @@ public class SwitchFs : IDisposable
                 control.Get.Read(out _, 0, title.Control.ByteSpan).ThrowIfFailure();
             }
 
-            foreach (ref readonly ApplicationControlProperty.ApplicationTitle desc in title.Control.Value.Title.ItemsRo)
+            int i = 0;
+            bool nameSet = false;
+            foreach (ref readonly ApplicationControlProperty.ApplicationTitle desc in title.Control.Value.Title)
             {
                 if (!desc.NameString.IsEmpty())
                 {
-                    title.Name = desc.NameString.ToString();
-                    break;
+                    if (!nameSet)
+                    {
+                        title.Name = desc.NameString.ToString();
+                        nameSet = true;
+                    }
+                    title.Languages.Add((ApplicationControlProperty.Language)i);
                 }
+                i++;
             }
         }
     }
@@ -272,14 +278,14 @@ public class SwitchFs : IDisposable
         }
     }
 
-    private static string GetNcaFilename(string name, SwitchFsNca nca)
+    private string GetNcaFilename(string name, SwitchFsNca nca)
     {
         if (nca.Nca.Header.ContentType != NcaContentType.Meta || !name.EndsWith(".cnmt.nca"))
         {
             return System.IO.Path.GetFileNameWithoutExtension(name);
         }
 
-        return name[..^".cnmt.nca".Length];
+        return name.Substring(0, name.Length - ".cnmt.nca".Length);
     }
 
     private void DisposeNcas()
@@ -352,7 +358,7 @@ public class Title
 {
     public ulong Id { get; internal set; }
     public TitleVersion Version { get; internal set; }
-    public List<SwitchFsNca> Ncas { get; } = [];
+    public List<SwitchFsNca> Ncas { get; } = new List<SwitchFsNca>();
     public Cnmt Metadata { get; internal set; }
 
     public string Name { get; internal set; }
@@ -360,6 +366,8 @@ public class Title
     public SwitchFsNca MetaNca { get; internal set; }
     public SwitchFsNca MainNca { get; internal set; }
     public SwitchFsNca ControlNca { get; internal set; }
+
+    public List<ApplicationControlProperty.Language> Languages { get; internal set; } = [];
 
     public long GetSize()
     {
@@ -371,7 +379,7 @@ public class Application
 {
     public Title Main { get; private set; }
     public Title Patch { get; private set; }
-    public List<Title> AddOnContent { get; } = [];
+    public List<Title> AddOnContent { get; } = new List<Title>();
 
     public ulong TitleId { get; private set; }
     public TitleVersion Version { get; private set; }

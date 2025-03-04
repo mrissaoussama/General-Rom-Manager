@@ -17,7 +17,7 @@ public struct Path
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static implicit operator U8Span(in Path value) => new(SpanHelpers.AsReadOnlyByteSpan(in value));
+    public static implicit operator U8Span(in Path value) => new U8Span(SpanHelpers.AsReadOnlyByteSpan(in value));
 
     public readonly override string ToString() => StringUtils.Utf8ZToString(Value);
 }

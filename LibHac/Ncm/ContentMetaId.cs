@@ -13,10 +13,10 @@ public readonly struct ApplicationId : IEquatable<ApplicationId>
 
     public static ApplicationId InvalidId => default;
 
-    public static ApplicationId Start => new(0x0100000000010000);
-    public static ApplicationId End => new(0x01FFFFFFFFFFFFFF);
+    public static ApplicationId Start => new ApplicationId(0x0100000000010000);
+    public static ApplicationId End => new ApplicationId(0x01FFFFFFFFFFFFFF);
 
-    public static implicit operator ProgramId(ApplicationId id) => new(id.Value);
+    public static implicit operator ProgramId(ApplicationId id) => new ProgramId(id.Value);
 
     public static bool IsApplicationId(ProgramId programId)
     {
@@ -40,7 +40,7 @@ public readonly struct PatchId
         Value = value;
     }
 
-    public static implicit operator ProgramId(PatchId id) => new(id.Value);
+    public static implicit operator ProgramId(PatchId id) => new ProgramId(id.Value);
 }
 
 public readonly struct DeltaId
@@ -52,5 +52,5 @@ public readonly struct DeltaId
         Value = value;
     }
 
-    public static implicit operator ProgramId(DeltaId id) => new(id.Value);
+    public static implicit operator ProgramId(DeltaId id) => new ProgramId(id.Value);
 }

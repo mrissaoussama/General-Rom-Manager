@@ -12,8 +12,8 @@ namespace LibHac.Gc;
 
 public sealed class GameCardEmulated : IGcApi
 {
-    private static ReadOnlySpan<byte> CardHeaderKey => new byte[]
-        { 0x01, 0xC5, 0x8F, 0xE7, 0x00, 0x2D, 0x13, 0x5A, 0xB2, 0x9A, 0x3F, 0x69, 0x33, 0x95, 0x74, 0xB1 };
+    private static ReadOnlySpan<byte> CardHeaderKey =>
+        [0x01, 0xC5, 0x8F, 0xE7, 0x00, 0x2D, 0x13, 0x5A, 0xB2, 0x9A, 0x3F, 0x69, 0x33, 0x95, 0x74, 0xB1];
 
     private const string LibNotInitializedMessage = "Error: Gc lib is not initialized\n";
 
@@ -28,7 +28,7 @@ public sealed class GameCardEmulated : IGcApi
     private T1CardCertificate _certificate;
     private Array32<byte> _imageHash;
 
-    public GameCardWriter Writer => new(this);
+    public GameCardWriter Writer => new GameCardWriter(this);
     IGcWriterApi IGcApi.Writer => Writer;
 
     private Result CheckCardReady()
@@ -54,7 +54,7 @@ public sealed class GameCardEmulated : IGcApi
             SpanHelpers.AsByteSpan(ref header.EncryptedData), CardHeaderKey, iv);
     }
 
-    private static long GetCardSize(MemoryCapacity memoryCapacity)
+    private long GetCardSize(MemoryCapacity memoryCapacity)
     {
         return memoryCapacity switch
         {
@@ -68,7 +68,7 @@ public sealed class GameCardEmulated : IGcApi
         };
     }
 
-    public void InsertGameCard(in SharedRef<IStorage> storage)
+    public void InsertGameCard(ref readonly SharedRef<IStorage> storage)
     {
         _attached = false;
         _activated = false;
@@ -81,7 +81,7 @@ public sealed class GameCardEmulated : IGcApi
             Abort.DoAbortUnlessSuccess(ReadBaseStorage(0x100, SpanHelpers.AsByteSpan(ref _cardHeader)));
             Abort.DoAbortUnlessSuccess(ReadBaseStorage(GcCertAreaPageAddress * GcPageSize, SpanHelpers.AsByteSpan(ref _certificate)));
 
-            Sha256.GenerateSha256Hash(SpanHelpers.AsReadOnlyByteSpan(in _cardHeader), _imageHash.Items);
+            Sha256.GenerateSha256Hash(SpanHelpers.AsReadOnlyByteSpan(in _cardHeader), _imageHash);
 
             DecryptCardHeader(ref _cardHeader);
 
@@ -361,7 +361,7 @@ public sealed class GameCardEmulated : IGcApi
         Result res = CheckCardReady();
         if (res.IsFailure()) return res.Miss();
 
-        _certificate.T1CardDeviceId.ItemsRo.CopyTo(destBuffer);
+        _certificate.T1CardDeviceId[..].CopyTo(destBuffer);
         return Result.Success;
     }
 
@@ -375,7 +375,7 @@ public sealed class GameCardEmulated : IGcApi
         Result res = CheckCardReady();
         if (res.IsFailure()) return res.Miss();
 
-        SpanHelpers.AsReadOnlyByteSpan(in _certificate)[..GcDeviceCertificateSize].CopyTo(destBuffer);
+        SpanHelpers.AsReadOnlyByteSpan(in _certificate).Slice(0, GcDeviceCertificateSize).CopyTo(destBuffer);
         return Result.Success;
     }
 
@@ -393,7 +393,7 @@ public sealed class GameCardEmulated : IGcApi
         Result res = CheckCardReady();
         if (res.IsFailure()) return res.Miss();
 
-        _imageHash.ItemsRo.CopyTo(destBuffer);
+        _imageHash[..].CopyTo(destBuffer);
         return Result.Success;
     }
 
@@ -426,6 +426,14 @@ public sealed class GameCardEmulated : IGcApi
         Abort.DoAbortUnless(_initialized, LibNotInitializedMessage);
 
         outErrorReportInfo = default;
+        return Result.Success;
+    }
+
+    public Result GetAsicCertificate(out GameCardAsicCertificateSet outCertificateSet)
+    {
+        Abort.DoAbortUnless(_initialized, LibNotInitializedMessage);
+
+        outCertificateSet = default;
         return Result.Success;
     }
 }

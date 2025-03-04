@@ -43,7 +43,7 @@ public struct Optional<T>
         _hasValue = true;
     }
 
-    public static implicit operator Optional<T>(in T value) => new(in value);
+    public static implicit operator Optional<T>(in T value) => new Optional<T>(in value);
 
     public void Set()
     {

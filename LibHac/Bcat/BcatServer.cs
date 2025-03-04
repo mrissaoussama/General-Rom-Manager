@@ -12,10 +12,10 @@ public class BcatServer
     private const int ServiceTypeCount = 4;
 
     internal HorizonClient Hos { get; }
-    private readonly SharedRef<ServiceCreator>[] _serviceCreators;
+    private SharedRef<ServiceCreator>[] _serviceCreators;
 
-    private readonly object _bcatServiceInitLocker = new();
-    private readonly object _storageManagerInitLocker = new();
+    private readonly object _bcatServiceInitLocker = new object();
+    private readonly object _storageManagerInitLocker = new object();
 
     private DeliveryCacheStorageManager StorageManager { get; set; }
 
@@ -36,7 +36,7 @@ public class BcatServer
 
         using SharedRef<IServiceCreator> service = GetServiceCreator(type);
 
-        Result res = Hos.Sm.RegisterService(new BcatServiceObject(ref service.Ref), name);
+        Result res = Hos.Sm.RegisterService(new BcatServiceObject(in service), name);
         if (res.IsFailure())
         {
             throw new HorizonResultException(res, "Abort");

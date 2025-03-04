@@ -78,12 +78,12 @@ public partial class SdmmcApi
         throw new NotImplementedException();
     }
 
-    public static void RegisterSdCardDetectionEventCallback(Port port, DeviceDetectionEventCallback callback, object args)
+    public void RegisterSdCardDetectionEventCallback(Port port, DeviceDetectionEventCallback callback, object args)
     {
 
     }
 
-    public static void UnregisterSdCardDetectionEventCallback(Port port)
+    public void UnregisterSdCardDetectionEventCallback(Port port)
     {
 
     }

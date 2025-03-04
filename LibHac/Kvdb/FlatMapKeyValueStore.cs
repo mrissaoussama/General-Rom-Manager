@@ -167,7 +167,7 @@ public class FlatMapKeyValueStore<TKey> : IDisposable where TKey : unmanaged, IE
         ReadOnlySpan<byte> value = iterator.GetValue();
         int size = Math.Min(valueBuffer.Length, value.Length);
 
-        value[..size].CopyTo(valueBuffer);
+        value.Slice(0, size).CopyTo(valueBuffer);
         valueSize = size;
         return Result.Success;
     }
@@ -631,7 +631,7 @@ public class FlatMapKeyValueStore<TKey> : IDisposable where TKey : unmanaged, IE
     /// </summary>
     public struct Iterator
     {
-        private readonly KeyValue[] _entries;
+        private KeyValue[] _entries;
         private int _index;
         private int _length;
 
@@ -704,9 +704,9 @@ public class FlatMapKeyValueStore<TKey> : IDisposable where TKey : unmanaged, IE
     /// </summary>
     public struct ConstIterator
     {
-        private readonly KeyValue[] _entries;
+        private KeyValue[] _entries;
         private int _index;
-        private readonly int _length;
+        private int _length;
 
         public ConstIterator(KeyValue[] entries, int startIndex, int length)
         {

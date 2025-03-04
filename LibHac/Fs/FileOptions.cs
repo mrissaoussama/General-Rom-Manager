@@ -30,8 +30,8 @@ public readonly struct WriteOption
 
     public bool HasFlushFlag() => Flags.HasFlag(WriteOptionFlag.Flush);
 
-    public static WriteOption None => new(WriteOptionFlag.None);
-    public static WriteOption Flush => new(WriteOptionFlag.Flush);
+    public static WriteOption None => new WriteOption(WriteOptionFlag.None);
+    public static WriteOption Flush => new WriteOption(WriteOptionFlag.Flush);
 }
 
 [Flags]

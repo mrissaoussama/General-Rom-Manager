@@ -15,9 +15,9 @@ public class SwitchStorage : IStorage
 {
     private SharedRef<IStorage> _trueStorage;
     private SharedRef<IStorage> _falseStorage;
-    private readonly Func<bool> _storageSelectionFunction;
+    private Func<bool> _storageSelectionFunction;
 
-    public SwitchStorage(in SharedRef<IStorage> trueStorage, in SharedRef<IStorage> falseStorage,
+    public SwitchStorage(ref readonly SharedRef<IStorage> trueStorage, ref readonly SharedRef<IStorage> falseStorage,
         Func<bool> storageSelectionFunction)
     {
         _trueStorage = SharedRef<IStorage>.CreateCopy(in trueStorage);
@@ -112,7 +112,7 @@ public class SwitchStorage : IStorage
 /// the provided <see cref="Region"/> will be forwarded to one <see cref="IStorage"/>, and requests outside
 /// will be forwarded to the other.
 /// </summary>
-/// <remarks>Based on nnSdk 14.3.0 (FS 14.1.0)</remarks>
+/// <remarks>Based on nnSdk 17.5.0 (FS 17.0.0)</remarks>
 public class RegionSwitchStorage : IStorage
 {
     public struct Region
@@ -125,8 +125,8 @@ public class RegionSwitchStorage : IStorage
     private SharedRef<IStorage> _outsideRegionStorage;
     private Region _region;
 
-    public RegionSwitchStorage(in SharedRef<IStorage> insideRegionStorage,
-        in SharedRef<IStorage> outsideRegionStorage, Region region)
+    public RegionSwitchStorage(ref readonly SharedRef<IStorage> insideRegionStorage,
+        ref readonly SharedRef<IStorage> outsideRegionStorage, Region region)
     {
         _insideRegionStorage = SharedRef<IStorage>.CreateCopy(in insideRegionStorage);
         _outsideRegionStorage = SharedRef<IStorage>.CreateCopy(in outsideRegionStorage);

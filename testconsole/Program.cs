@@ -1,290 +1,433 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿// File: testconsole/Program.cs
+
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using RomManagerShared.Base;
-using RomManagerShared.Interfaces;
-using RomManagerShared.ThreeDS;
-using RomManagerShared.Utils;
-using RomManagerShared.Wii.Parsers;
-using RomManagerShared.Wii;
-using RomManagerShared.DS;
-using RomManagerShared.GameBoy;
-using RomManagerShared.GameBoyAdvance;
-using RomManagerShared.Nintendo64;
-using RomManagerShared.OriginalXbox;
-using RomManagerShared.PS2;
-using RomManagerShared.PS3;
-using RomManagerShared.PS4;
-using RomManagerShared.PSP;
-using RomManagerShared.PSVita;
-using RomManagerShared.SegaSaturn;
-using RomManagerShared.SNES;
-using RomManagerShared.Switch;
-using RomManagerShared.WiiU;
-using RomManagerShared.Xbox360;
 using RomManagerShared;
-using RomManagerShared.Configuration;
+using RomManagerShared.Base;
 using RomManagerShared.Base.Database;
-using System.Runtime.Intrinsics.Arm;
-using AltoMultiThreadDownloadManager;
-using RomManagerShared.WiiU.TitleInfoProviders;
-using RomManagerShared.WiiU.Parsers;
+using RomManagerShared.Configuration;
+using RomManagerShared.Interfaces;
+using RomManagerShared.Organizers;
+using RomManagerShared.Utils;
 using System.Reflection;
-using RomManagerShared.Switch.TitleInfoProviders;
-using RomManagerShared.Switch.Parsers;
-using RomManagerShared.Base.Interfaces;
-var assembly = Assembly.Load("RomManagerShared");
 
-var builder = Host.CreateDefaultBuilder(args)
-    .ConfigureServices((hostContext, services) =>
-    {
-        services.AddDbContext<AppDbContext>();
-        services.AddScoped<RomHashRepository>();
-        services.AddScoped(typeof(GenericRepository<>));
-        services.AddScoped(typeof(RomParserExecutor<>));
-        services.AddScoped(typeof(TitleInfoProviderManager<>));
-        RegisterConsoleServices<ThreeDSConsole>(services);
-        services.AddScoped(typeof(ConsoleManager<>));
-        services.AddScoped<NoIntroRomHashIdentifier>();
-
-        //    RegisterConsoleServices<SwitchConsole>(services, "Switch");
-        //    RegisterConsoleServices<WiiUConsole>(services, "WiiU");
-        //    RegisterConsoleServices<SNESConsole>(services, "SNES");
-    });
-
-
-static void RegisterConsoleServices<T>(IServiceCollection services) where T : GamingConsole
+namespace RomManagerApp
 {
-    var assembly = Assembly.Load("RomManagerShared");
-
-    // Register DTOs implementing IExternalRomFormat<T>
-    var dtoTypes = assembly.GetTypes()
-                           .Where(type => type.IsClass && !type.IsAbstract &&
-                                          type.GetInterfaces().Any(inter => inter.IsGenericType &&
-                                                                           inter.GetGenericTypeDefinition() == typeof(IExternalRomFormat<>).MakeGenericType(typeof(T))));
-    foreach (var dtoType in dtoTypes)
+    public class Program
     {
-        var serviceType = typeof(GenericRepository<>).MakeGenericType(dtoType);
-        services.AddScoped(serviceType);
-    }
-
-    // Register TitleInfoProviders
-    var titleInfoProviderTypes = assembly.GetTypes()
-                                         .Where(type => type.IsClass && !type.IsAbstract &&
-                                                        type.IsSubclassOf(typeof(TitleInfoProvider<>).MakeGenericType(typeof(T))));
-    foreach (var providerType in titleInfoProviderTypes)
-    {
-        services.AddScoped(providerType);
-        services.AddScoped(typeof(ITitleInfoProvider<>).MakeGenericType(typeof(T)), providerType);
-    }
-
-    // Register RomParsers
-    var romParserTypes = assembly.GetTypes()
-     .Where(type => type.IsClass && !type.IsAbstract &&
-                    type.GetInterfaces().Any(inter =>
-                        inter.IsGenericType &&
-                        inter.GetGenericTypeDefinition() == typeof(IRomParser<>)) &&
-                    type.GetInterfaces().Any(inter =>
-                        inter.GetGenericArguments().FirstOrDefault() == typeof(T)));
-    foreach (var parserType in romParserTypes)
-    {
-        services.AddScoped(parserType);
-    }
-    // Register RomParserExecutor<T>
-    var executorType = typeof(RomParserExecutor<>).MakeGenericType(typeof(T));
-    services.AddScoped(executorType, serviceProvider =>
-    {
-        var parsers = serviceProvider.GetServices(typeof(IRomParser<>).MakeGenericType(typeof(T)));
-        var executorInstance = Activator.CreateInstance(executorType, new[] { parsers });
-        return executorInstance;
-    });
-
-    // Register IUpdateVersionProvider<T>
-    var updateProviderTypes = assembly.GetTypes()
-                                      .Where(type => type.IsClass && !type.IsAbstract &&
-                                                     type.GetInterfaces().Any(inter => inter.IsGenericType &&
-                                                                                      inter.GetGenericTypeDefinition() == typeof(IUpdateVersionProvider<>).MakeGenericType(typeof(T))));
-    foreach (var providerType in updateProviderTypes)
-    {
-        services.AddScoped(providerType);
-    }
-
-    // Register ConsoleManager<T>
-    //var managerType = typeof(ConsoleManager<>).MakeGenericType(typeof(T));
-
-    //    services.AddScoped(managerType);
-
-
-    // Register ThreeDSManager if exists
-    var specificManagerType = assembly.GetTypes()
-        .FirstOrDefault(type => !type.IsAbstract && type.IsSubclassOf(typeof(ConsoleManager<>).MakeGenericType(typeof(T))));
-    if (specificManagerType != null)
-    {
-        services.AddScoped(specificManagerType);
-        //   services.AddScoped(typeof(IRomMissingContentChecker), specificManagerType);
-    }
-
-}
-
-using var host = builder.Build();
-RomManagerConfiguration.Load("config.json");
-
-var noi = host.Services.GetRequiredService<NoIntroRomHashIdentifier>();
-var manager = host.Services.GetRequiredService<ConsoleManager<ThreeDSConsole>>();
-
-var rompath = "D:\\nsp\\";
-var rompath4 = "D:\\nsp\\errorfiles";
-var wiirompath = "C:\\Users\\oussama\\Downloads\\roms\\";
-var rompat2h = "C:\\Users\\oussama\\Downloads\\3DS";
-var pkgpath = "C:\\Users\\oussama\\Downloads\\roms\\ps3\\1.pkg";
-
-
-Console.WriteLine($"Setup: {manager.GetType()}");
-await manager.Setup();
-var implementations = host.Services.GetServices<TitleInfoProvider<ThreeDSConsole>>();
-
-foreach (var implementation in implementations)
-{
-    if (implementation is ICanSaveToDB)
-        await (implementation as ICanSaveToDB).SaveToDatabase();
-}
-var ext = manager.RomParserExecutor.GetSupportedExtensions();
-Console.WriteLine($"Supported Extensions: {string.Join(", ", ext)}");
-List<string> filelist = [];
-int i = 0; IEnumerable<IEnumerable<string>> splits = null;
-
-await ScanFiles();
-Console.WriteLine($"Files found: {filelist.Count}");
-List<Task> tasks = [];
-//await noi.Setup();
-//var roms = await noi.IdentifyRomByHash(filelist.First());
-async Task ScanFiles()
-{
-    filelist = FileUtils.GetFilesInDirectoryWithExtensions(rompat2h, ext);
-    manager.RomList.Clear();
-    if (manager is IRomMissingContentChecker)
-    {
-        (manager as IRomMissingContentChecker).GroupedRomList.Clear();
-    }
-    splits = from item in filelist
-             group item by i++ % 5 into part
-             select part.AsEnumerable();
-}
-
-await ProcessFiles();
-
-async Task ProcessFiles()
-{
-    foreach (var filegroup in splits)
-    {
-        foreach (var file in filegroup)
+        private static Dictionary<Type, string> LoadConsolePaths()
         {
-            tasks.Add(manager.ProcessFile(file));
-        }
-        await Task.WhenAll(tasks);
-        tasks.Clear();
-    }
-}
+            var consolePaths = new Dictionary<Type, string>();
+            var assembly = Assembly.Load("RomManagerShared");
 
-if (manager.TitleInfoProviderManager != null)
-{
-    for (int j = 0; j < manager.RomList.Count; j++)
-    {
-        manager.RomList[j] = await manager.TitleInfoProviderManager.GetTitleInfo(manager.RomList[j]);
+            foreach (var consoleSection in RomManagerConfiguration.Configuration.GetSection("Consoles").GetChildren())
+            {
+                var consoleName = consoleSection.Key + "Console"; // Match class name convention
+                var consoleType = assembly.GetTypes().FirstOrDefault(t =>
+                    t.Name.Equals(consoleName, StringComparison.OrdinalIgnoreCase));
 
-    }
-}
-PrintRoms(manager.RomList);
-
-async void PrintRoms(IEnumerable<Rom> romList)
-{
-    romList.ToList().ForEach(x => Console.WriteLine($"{x.TitleID} {x.Titles?.FirstOrDefault()?.ToString()} {x.GetType().Name}"));
-}
-//await HashRoms(manager.RomList);
-//async Task HashRoms(IEnumerable<Rom> romList)
-//{
-//    var repo = host.Services.GetRequiredService<RomHashRepository>();
-//    List<Task> tasks = new List<Task>();
-
-//    foreach (var rom in romList)
-//    {
-//        tasks.Add(HashUtils.CalculateRomHashes(rom, Enum.GetValues<HashTypeEnum>()));
-//    }
-
-//    Console.WriteLine("calculating hashes");
-//    await Task.WhenAll(tasks);
-
-//    Console.WriteLine("saving new hashes");
-//    foreach (var rom in romList)
-//    {
-//        tasks.Add(repo.AddIfNewRange(rom.Hashes));
-//    }
-//    await Task.WhenAll(tasks);
-
-//    tasks.Clear();
-//}
-while (true)
-{
-    Console.WriteLine("//////////////////////////////////////////");
-    Console.WriteLine($"roms found: {manager.RomList.Count}");
-
-    Console.WriteLine("Options:");
-    bool canUpdate = false;
-
-    if (manager is IRomMissingContentChecker)
-    {
-        canUpdate = true;
-        Console.WriteLine("Press 0 to check for missing updates");
-        Console.WriteLine("Press 1 to organize roms by group");
-        Console.WriteLine("Press 2 to organize roms to folders (will move updates and dlcs to game folder");
-    }
-    Console.WriteLine("Press 3 to rename roms with format {TitleName} [{TitleID}] [{Region}] [v{Version}] [{DLCCount}]");
-    Console.WriteLine("Press 4 to Rescan files");
-    Console.WriteLine("Press 5 to parse scanned files again");
-
-    {
-        string x = Console.ReadLine();
-        // string x = "6";
-        switch (x)
-        {
-            case "0":
-                if (canUpdate is false) break;
-                var missingupdates = await ((IRomMissingContentChecker)manager).GetMissingUpdates();
-                missingupdates.ToList().ForEach(x => Console.WriteLine(x.ToString()));
-                break;
-            case "3":
-                FileRenamer.RenameFiles(manager.RomList, "{TitleID} {TitleName} [{Region}] [v{Version}] [{DLCCount}]");
-                break;
-            case "1":
-                ((IRomMissingContentChecker)manager).LoadGroupRomList();
-                break;
-            case "2":
-                foreach (var romGroup in ((IRomMissingContentChecker)manager).GroupedRomList)
+                if (consoleType != null)
                 {
-                    RomUtils.OrganizeRomsInFolders(romGroup, ((IRomMissingContentChecker)manager).GroupedRomList);
-
+                    var romPath = consoleSection["RomPath"];
+                    if (!string.IsNullOrEmpty(romPath))
+                    {
+                        consolePaths.Add(consoleType, romPath);
+                    }
                 }
-                break;
-            case "4":
-                Console.WriteLine($"Scanning files...");
-                await ScanFiles();
-                Console.WriteLine($"Files found: {filelist.Count}");
+            }
 
-                break;
-            case "5":
-                Console.WriteLine($"Scanning roms...");
-                await ProcessFiles();
-                Console.WriteLine($"roms found: {manager.RomList.Count}");
-                PrintRoms(manager.RomList);
+            return consolePaths;
+        }
+        // Hardcoded ROM paths per console type.
+        private static Dictionary<Type, string> RomPaths = LoadConsolePaths();
 
-                break;
-            default: Console.WriteLine("option not valid"); break;
+        public static async Task Main(string[] args)
+        {
+            // Load the shared assembly.
+            var assembly = Assembly.Load("RomManagerShared");
+
+            var builder = Host.CreateDefaultBuilder(args)
+                .ConfigureServices((hostContext, services) =>
+                {
+                    // Register all console-related services.
+                    RegisterConsoleServices(services, assembly);
+
+                    // Register common services.
+                    services.AddDbContext<AppDbContext>();
+                    services.AddScoped<RomHashRepository>();
+                    services.AddScoped<NoIntroRomHashIdentifier>();
+                });
+
+            using var host = builder.Build();
+
+            // Load configuration.
+            RomManagerConfiguration.Load("config.json");
+
+            // Download required databases.
+            await InitializeTitleDatabases();
+
+            // Main loop: select a console and process operations.
+            while (true)
+            {
+                Type selectedConsoleType = SelectConsoleType();
+                // Use reflection to invoke the generic processing method:
+                var method = typeof(Program)
+                    .GetMethod(nameof(ProcessConsoleOperationsGeneric), BindingFlags.NonPublic | BindingFlags.Static);
+                var genericMethod = method.MakeGenericMethod(selectedConsoleType);
+                await (Task)genericMethod.Invoke(null, new object[] { host.Services });
+            }
+        }
+
+        private static async Task InitializeTitleDatabases()
+        {
+            await Task.WhenAll(
+                FileDownloader.DownloadSwitchTitleDBFiles(),
+                FileDownloader.DownloadSwitchGlobalTitleDBFile(),
+                FileDownloader.DownloadSwitchVersionsFile()
+            );
+        }
+
+        private static Type SelectConsoleType()
+        {
+            List<Type> consoleTypes = GetAvailableConsoleTypes();
+            Console.WriteLine("Available Consoles:");
+            for (int i = 0; i < consoleTypes.Count; i++)
+            {
+                // Remove the word "Console" from the type name.
+                Console.WriteLine($"{i + 1}. {consoleTypes[i].Name.Replace("Console", "")}");
+            }
+            Console.Write("Select a console: ");
+            if (int.TryParse(Console.ReadLine(), out int selection) && selection > 0 && selection <= consoleTypes.Count)
+            {
+                return consoleTypes[selection - 1];
+            }
+            Console.WriteLine("Invalid selection, try again.");
+            return SelectConsoleType();
+        }
+
+        private static List<Type> GetAvailableConsoleTypes()
+        {
+            var assembly = Assembly.Load("RomManagerShared");
+            return assembly.GetTypes()
+                .Where(t => typeof(GamingConsole).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract)
+                .ToList();
+        }
+
+        // Generic method that is closed at runtime based on the selected console type.
+        private static async Task ProcessConsoleOperationsGeneric<T>(IServiceProvider services) where T : GamingConsole
+        {
+            // Resolve the concrete ConsoleManager<T> from DI.
+            var manager = services.GetRequiredService<ConsoleManager<T>>();
+
+            // Load any console-specific DLLs (using the type name).
+            LoadConsoleSpecificDlls(typeof(T).Name);
+
+            Console.WriteLine($"Setup: {manager.GetType()}");
+            await manager.Setup();
+
+            // Get the ROM path for T.
+            var romPath = RomPaths.TryGetValue(typeof(T), out var path)
+                ? path
+                : Path.Combine(RomManagerConfiguration.BaseFolder, typeof(T).Name.Replace("Console", ""));
+            Console.WriteLine($"Using ROM path: {romPath}");
+            Directory.CreateDirectory(romPath);
+
+            await ProcessRomFiles(manager, romPath);
+            // Loop for additional operations.
+            while (true)
+            {
+                ShowOperationsMenu();
+                string input = Console.ReadLine();
+                if (await HandleMenuInput(manager, services, input))
+                {
+                    break;
+                }
+            }
+        }
+
+        private static async Task ProcessRomFiles<T>(ConsoleManager<T> manager, string romDirectory) where T : GamingConsole
+        {
+            var supportedExtensions = manager.RomParserExecutor.GetSupportedExtensions();
+            var romFiles = FileUtils.GetFilesInDirectoryWithExtensions(romDirectory, supportedExtensions);
+
+            Console.WriteLine($"Found {romFiles.Count} ROM files");
+            foreach (var file in romFiles)
+            {
+                await manager.ProcessFile(file);
+            }
+
+            // If the TitleInfoProviderManager exists, enhance ROM title info.
+            if (manager.TitleInfoProviderManager != null)
+            {
+                // (Assuming that GetTitleInfo returns an enhanced Rom.)
+                for (int i = 0; i < manager.RomList.Count; i++)
+                {
+                    manager.RomList[i] = await manager.TitleInfoProviderManager.GetTitleInfo(manager.RomList[i]);
+                }
+            }
+            DisplayProcessedRoms(manager.RomList);
+        }
+
+        private static void DisplayProcessedRoms(IEnumerable<Rom> roms)
+        {
+            Console.WriteLine("Processed ROMs:");
+            // Show ROMs grouped by Game, Update, and DLC
+            var groupedRoms = roms.GroupBy(rom => rom.GetType().Name);
+
+            foreach (var group in groupedRoms)
+            {
+                Console.WriteLine($"\n{group.Key}:");
+                foreach (var rom in group)
+                {
+                    Console.WriteLine($"{rom.TitleID} {rom.Titles?.FirstOrDefault()?.Value} {rom.Version}");
+                }
+            }
+        }
+
+        private static void ShowOperationsMenu()
+        {
+            Console.WriteLine("\nOperations Menu:");
+            Console.WriteLine("1. Rescan ROM files");
+            Console.WriteLine("2. Rename ROM files");
+            Console.WriteLine("3. Check for missing updates");
+            Console.WriteLine("4. Organize ROM files");
+            Console.WriteLine("5. Return to console selection");
+            Console.Write("Select an operation: ");
+        }
+
+        private static async Task<bool> HandleMenuInput<T>(ConsoleManager<T> manager, IServiceProvider services, string input) where T : GamingConsole
+        {
+            switch (input)
+            {
+                case "1":
+                    {
+                        string romPath = RomPaths.ContainsKey(typeof(T)) ? RomPaths[typeof(T)] : "C:\\Roms\\Default";
+                        await ProcessRomFiles(manager, romPath);
+                        break;
+                    }
+                case "2":
+                    {
+                        // Implement your file renaming logic here.
+                        FileRenamer.RenameFiles(manager.RomList, "{TitleID} {TitleName} [{Region}]");
+                        break;
+                    }
+                case "3":
+                    {
+                        if (manager is IRomMissingContentChecker checker)
+                        {
+                            var missingUpdates = await checker.GetMissingUpdates();
+                            Console.WriteLine(missingUpdates.Any()
+                                ? $"Missing updates: {string.Join("\n", missingUpdates)}"
+                                : "All updates available");
+                        }
+                        break;
+                    }
+                case "4":
+                    {
+                        await OrganizeRomFiles(manager, services);
+                        break;
+                    }
+                case "5":
+                    return true;
+                default:
+                    Console.WriteLine("Invalid selection");
+                    break;
+            }
+            return false;
+        }
+
+        private static async Task OrganizeRomFiles<T>(ConsoleManager<T> manager, IServiceProvider services) where T : GamingConsole
+        {
+            // Get available organizers
+            var organizers = GetAvailableOrganizers<T>(services);
+
+            if (!organizers.Any())
+            {
+                Console.WriteLine("No organizers available for this console.");
+                return;
+            }
+
+            // Display organizers menu
+            Console.WriteLine("\nAvailable Organizers:");
+            for (int i = 0; i < organizers.Count; i++)
+            {
+                var organizer = organizers[i];
+                string description = organizer is IRomOrganizer nonGenericOrganizer
+                    ? nonGenericOrganizer.Description
+                    : organizer is IRomOrganizer<T> genericOrganizer
+                        ? genericOrganizer.Description
+                        : "Unknown Organizer";
+
+                Console.WriteLine($"{i + 1}. {organizer.GetType().Name} - {description}");
+            }
+            Console.Write("Select an organizer: ");
+            if (int.TryParse(Console.ReadLine(), out int selection) && selection > 0 && selection <= organizers.Count)
+            {
+                var selectedOrganizer = organizers[selection - 1];
+
+                if (selectedOrganizer is IRomOrganizer<T> typedOrganizer)
+                {
+                    // Use the generic organizer
+                    typedOrganizer.Organize(manager.RomList, new List<List<Rom>> { manager.RomList });
+                }
+                else if (selectedOrganizer is IRomOrganizer nonGenericOrganizer)
+                {
+                    // Use the non-generic organizer
+                    nonGenericOrganizer.Organize(manager.RomList, new List<List<Rom>> { manager.RomList });
+                }
+                else
+                {
+                    Console.WriteLine("Selected organizer is not compatible with this console type.");
+                    return;
+                }
+
+                Console.WriteLine("ROMs organized successfully.");
+            }
+            else
+            {
+                Console.WriteLine("Invalid selection.");
+            }
+        }
+
+        private static List<IBaseRomOrganizer> GetAvailableOrganizers<T>(IServiceProvider services) where T : GamingConsole
+        {
+            var organizers = new List<IBaseRomOrganizer>();
+
+            // Get console-specific organizers (generic)
+            var specificOrganizers = services.GetServices<IRomOrganizer<T>>();
+            organizers.AddRange(specificOrganizers);
+
+            // Get non-generic organizers
+            var genericOrganizers = services.GetServices<IRomOrganizer>();
+            organizers.AddRange(genericOrganizers);
+
+            return organizers;
+        }
+
+
+        private static void LoadConsoleSpecificDlls(string consoleType)
+        {
+            var consoleName = consoleType.Replace("Console", "");
+            var tools = RomManagerConfiguration.Configuration
+                .GetSection($"Consoles:{consoleName}:Tools")
+                .GetChildren()
+                .Select(t => t.Value)
+                .ToList();
+
+            foreach (var dll in tools)
+            {
+                var fullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, dll);
+                if (File.Exists(fullPath))
+                {
+                    Assembly.LoadFrom(fullPath);
+                    Console.WriteLine($"Loaded {Path.GetFileName(fullPath)}");
+                }
+                else
+                {
+                    Console.WriteLine($"Tool not found: {fullPath}");
+                }
+            }
+        }
+
+        // ************************************************************
+        // The DI registration method for all console services.
+        // ************************************************************
+
+        private static void RegisterConsoleServices(IServiceCollection services, Assembly assembly)
+        {
+            var gamingConsoleType = typeof(GamingConsole);
+
+            // Find all gaming console types.
+            var consoleTypes = assembly.GetTypes()
+                .Where(t => gamingConsoleType.IsAssignableFrom(t)
+                            && !t.IsInterface && !t.IsAbstract)
+                .ToList();
+
+            // Register non-generic IRomOrganizer implementations.
+            var nonGenericOrganizerTypes = assembly.GetTypes()
+                .Where(t => typeof(IRomOrganizer).IsAssignableFrom(t)
+                            && !t.IsInterface && !t.IsAbstract)
+                .ToList();
+
+            foreach (var organizerType in nonGenericOrganizerTypes)
+            {
+                services.AddScoped(typeof(IRomOrganizer), organizerType);
+            }
+
+            foreach (var consoleType in consoleTypes)
+            {
+                // Register repositories and executors.
+                var genericRepositoryType = typeof(GenericRepository<>).MakeGenericType(consoleType);
+                var romParserExecutorType = typeof(RomParserExecutor<>).MakeGenericType(consoleType);
+
+                services.AddScoped(genericRepositoryType);
+                services.AddScoped(romParserExecutorType);
+
+                // Register all ITitleInfoProvider implementations for the console.
+                var titleInfoProviderInterface = typeof(ITitleInfoProvider<>).MakeGenericType(consoleType);
+                var titleInfoProviderTypes = assembly.GetTypes()
+                    .Where(t => titleInfoProviderInterface.IsAssignableFrom(t)
+                                && !t.IsInterface && !t.IsAbstract)
+                    .ToList();
+
+                foreach (var titleInfoProviderType in titleInfoProviderTypes)
+                {
+                    services.AddScoped(titleInfoProviderInterface, titleInfoProviderType);
+                }
+
+                // Register all IRomParser implementations for the console.
+                var romParserInterface = typeof(IRomParser<>).MakeGenericType(consoleType);
+                var romParserTypes = assembly.GetTypes()
+                    .Where(t => romParserInterface.IsAssignableFrom(t)
+                                && !t.IsInterface && !t.IsAbstract)
+                    .ToList();
+
+                foreach (var parserType in romParserTypes)
+                {
+                    services.AddScoped(romParserInterface, parserType);
+                }
+
+                // Register specific services like IUpdateVersionProvider.
+                var updateVersionProviderInterface = typeof(IUpdateVersionProvider<>).MakeGenericType(consoleType);
+                var updateVersionProviderTypes = assembly.GetTypes()
+                    .Where(t => updateVersionProviderInterface.IsAssignableFrom(t)
+                                && !t.IsInterface && !t.IsAbstract)
+                    .ToList();
+
+                foreach (var versionProviderType in updateVersionProviderTypes)
+                {
+                    services.AddScoped(updateVersionProviderInterface, versionProviderType);
+                }
+
+                // Register ConsoleManager<T>.
+                var consoleManagerGenericType = typeof(ConsoleManager<>).MakeGenericType(consoleType);
+                services.AddScoped(consoleManagerGenericType);
+
+                // Register console-specific IRomOrganizer<T> implementations.
+                var romOrganizerInterface = typeof(IRomOrganizer<>).MakeGenericType(consoleType);
+                var romOrganizerTypes = assembly.GetTypes()
+                    .Where(t => romOrganizerInterface.IsAssignableFrom(t)
+                                && !t.IsInterface && !t.IsAbstract)
+                    .ToList();
+
+                foreach (var organizerType in romOrganizerTypes)
+                {
+                    services.AddScoped(romOrganizerInterface, organizerType);
+                }
+
+                // Register ILicenseOrganizer<T> implementations if required.
+                var licenseOrganizerInterface = typeof(ILicenseOrganizer<>).MakeGenericType(consoleType);
+                var licenseOrganizerTypes = assembly.GetTypes()
+                    .Where(t => licenseOrganizerInterface.IsAssignableFrom(t)
+                                && !t.IsInterface && !t.IsAbstract)
+                    .ToList();
+
+                foreach (var licenseOrganizerType in licenseOrganizerTypes)
+                {
+                    services.AddScoped(licenseOrganizerInterface, licenseOrganizerType);
+                }
+            }
+
         }
     }
-
-    Console.ReadLine();
 }

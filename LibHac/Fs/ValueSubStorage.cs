@@ -23,7 +23,7 @@ public struct ValueSubStorage : IDisposable
         _sharedBaseStorage = new SharedRef<IStorage>();
     }
 
-    public ValueSubStorage(in ValueSubStorage other)
+    public ValueSubStorage(ref readonly ValueSubStorage other)
     {
         _baseStorage = other._baseStorage;
         _offset = other._offset;
@@ -45,7 +45,7 @@ public struct ValueSubStorage : IDisposable
         Assert.SdkRequiresLessEqual(0, size);
     }
 
-    public ValueSubStorage(in ValueSubStorage subStorage, long offset, long size)
+    public ValueSubStorage(ref readonly ValueSubStorage subStorage, long offset, long size)
     {
         _baseStorage = subStorage._baseStorage;
         _offset = subStorage._offset + offset;
@@ -59,7 +59,7 @@ public struct ValueSubStorage : IDisposable
         Assert.SdkRequiresGreaterEqual(subStorage._size, offset + size);
     }
 
-    public ValueSubStorage(in SharedRef<IStorage> baseStorage, long offset, long size)
+    public ValueSubStorage(ref readonly SharedRef<IStorage> baseStorage, long offset, long size)
     {
         _baseStorage = baseStorage.Get;
         _offset = offset;
@@ -88,7 +88,7 @@ public struct ValueSubStorage : IDisposable
         return new SubStorage(_baseStorage, _offset, _size);
     }
 
-    public void Set(in ValueSubStorage other)
+    public void Set(ref readonly ValueSubStorage other)
     {
         if (!Unsafe.AreSame(ref Unsafe.AsRef(in this), ref Unsafe.AsRef(in other)))
         {
@@ -97,6 +97,23 @@ public struct ValueSubStorage : IDisposable
             _size = other._size;
             _isResizable = other._isResizable;
             _sharedBaseStorage.SetByCopy(in other._sharedBaseStorage);
+        }
+    }
+
+    public void Set(in ValueSubStorage other, long offset, long size)
+    {
+        if (!Unsafe.AreSame(ref Unsafe.AsRef(in this), ref Unsafe.AsRef(in other)))
+        {
+            _baseStorage = other._baseStorage;
+            _offset = other._offset + offset;
+            _size = size;
+            _isResizable = false;
+            _sharedBaseStorage.SetByCopy(in other._sharedBaseStorage);
+
+            Assert.SdkRequiresLessEqual(0, offset);
+            Assert.SdkRequiresLessEqual(0, size);
+            Assert.SdkRequires(other.IsValid());
+            Assert.SdkRequiresGreaterEqual(other._size, offset + size);
         }
     }
 

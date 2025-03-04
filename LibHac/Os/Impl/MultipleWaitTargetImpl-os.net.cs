@@ -8,10 +8,10 @@ namespace LibHac.Os.Impl;
 
 public class MultiWaitTargetImpl : IDisposable
 {
-    private readonly EventWaitHandle _cancelEvent;
+    private EventWaitHandle _cancelEvent;
 
     // LibHac addition
-    private readonly OsState _os;
+    private OsState _os;
 
     public MultiWaitTargetImpl(OsState os)
     {
@@ -57,23 +57,23 @@ public class MultiWaitTargetImpl : IDisposable
         return Result.Success;
     }
 
-    public static Result ReplyAndReceive(out int index, Span<WaitHandle> handles, int num, WaitHandle replyTarget)
+    public Result ReplyAndReceive(out int index, Span<WaitHandle> handles, int num, WaitHandle replyTarget)
     {
         return ReplyAndReceiveImpl(out index, handles, num, replyTarget, TimeSpan.FromNanoSeconds(long.MaxValue));
     }
 
-    public static Result TimedReplyAndReceive(out int index, Span<WaitHandle> handles, int num, WaitHandle replyTarget,
+    public Result TimedReplyAndReceive(out int index, Span<WaitHandle> handles, int num, WaitHandle replyTarget,
         TimeSpan timeout)
     {
         return ReplyAndReceiveImpl(out index, handles, num, replyTarget, timeout);
     }
 
-    public static void SetCurrentThreadHandleForCancelWait()
+    public void SetCurrentThreadHandleForCancelWait()
     {
         /* ... */
     }
 
-    public static void ClearCurrentThreadHandleForCancelWait()
+    public void ClearCurrentThreadHandleForCancelWait()
     {
         /* ... */
     }
@@ -84,7 +84,7 @@ public class MultiWaitTargetImpl : IDisposable
         Abort.DoAbortUnless(num + 1 < handles.Length);
 
         handles[num] = _cancelEvent;
-        int index = WaitHandle.WaitAny(handles[..(num + 1)].ToArray(), timeoutMs);
+        int index = WaitHandle.WaitAny(handles.Slice(0, num + 1).ToArray(), timeoutMs);
 
         if (index == WaitHandle.WaitTimeout)
         {
@@ -104,7 +104,7 @@ public class MultiWaitTargetImpl : IDisposable
         return Result.Success;
     }
 
-    private static Result ReplyAndReceiveImpl(out int outIndex, Span<WaitHandle> handles, int num, WaitHandle replyTarget,
+    private Result ReplyAndReceiveImpl(out int outIndex, Span<WaitHandle> handles, int num, WaitHandle replyTarget,
         TimeSpan timeout)
     {
         UnsafeHelpers.SkipParamInit(out outIndex);

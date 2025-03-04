@@ -2,7 +2,7 @@
 
 public class MultiWaitHolderOfSemaphore : MultiWaitHolderOfUserWaitObject
 {
-    private readonly Semaphore _semaphore;
+    private Semaphore _semaphore;
 
     public MultiWaitHolderOfSemaphore(Semaphore semaphore)
     {

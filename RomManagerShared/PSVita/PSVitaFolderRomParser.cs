@@ -14,25 +14,28 @@ public class PSVitaFolderRomParser : IRomParser<PSVitaConsole>
     }
     public List<string> Extensions { get; set; }
     //string[] gameCategories = { "AC", "GC", "GDC" };
+
     public Task<List<Rom>> ProcessFile(string path)
     {
         List<Rom> list = [];
-        if (Path.GetExtension(path).Contains("sfo"))
+        if (Path.GetFileName(path).Equals("param.sfo", StringComparison.OrdinalIgnoreCase))
         {
             try
             {
+                // Set ROM path to the directory containing sce_sys folder
+                string romRootPath = Directory.GetParent(Path.GetDirectoryName(path)).FullName;
+
                 using FileStream fileStream = new(path, FileMode.Open, FileAccess.Read);
                 using MemoryStream memoryStream = new();
-                fileStream.Seek(0, SeekOrigin.Begin);
                 fileStream.CopyTo(memoryStream);
-                var sfodata = memoryStream.ToArray();
+
                 if (PSVitaUtils.IsPSVitaSFO(memoryStream))
                 {
-                    Rom? vitarom = PSVitaSFOReader.ParseSFO(sfodata);
+                    Rom? vitarom = PSVitaSFOReader.ParseSFO(memoryStream.ToArray());
                     if (vitarom is not null)
                     {
                         vitarom.IsFolderFormat = true;
-                        vitarom.Path = path;
+                        vitarom.Path = romRootPath; // Set to ROM root directory
                         list.Add(vitarom);
                     }
                 }
@@ -40,7 +43,6 @@ public class PSVitaFolderRomParser : IRomParser<PSVitaConsole>
             catch (Exception ex)
             {
                 FileUtils.Log(ex.Message);
-
             }
         }
         return Task.FromResult(list);

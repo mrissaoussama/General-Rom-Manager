@@ -38,7 +38,7 @@ internal partial class ResultNameResolver : Result.IResultNameResolver
         private readonly ReadOnlySpan<byte> _data;
 
         private ref HeaderStruct Header => ref Unsafe.As<byte, HeaderStruct>(ref MemoryMarshal.GetReference(_data));
-        private ReadOnlySpan<byte> NameTable => _data[Header.NameTableOffset..];
+        private ReadOnlySpan<byte> NameTable => _data.Slice(Header.NameTableOffset);
         private ReadOnlySpan<Element> Elements => MemoryMarshal.Cast<byte, Element>(
             _data.Slice(Unsafe.SizeOf<HeaderStruct>(), Header.ElementCount * Unsafe.SizeOf<Element>()));
 
@@ -72,10 +72,10 @@ internal partial class ResultNameResolver : Result.IResultNameResolver
 
         private U8Span GetName(int offset)
         {
-            ReadOnlySpan<byte> untrimmed = NameTable[offset..];
+            ReadOnlySpan<byte> untrimmed = NameTable.Slice(offset);
             int len = StringUtils.GetLength(untrimmed);
 
-            return new U8Span(untrimmed[..len]);
+            return new U8Span(untrimmed.Slice(0, len));
         }
 
 #pragma warning disable 649

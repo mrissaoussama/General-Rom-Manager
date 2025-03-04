@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using LibHac.Common;
 using LibHac.Common.FixedArrays;
 using LibHac.Diag;
@@ -55,7 +54,7 @@ public class SaveDataIndexer : ISaveDataIndexer
         private bool _isMounted;
 
         // LibHac addition
-        private readonly FileSystemClient _fsClient;
+        private FileSystemClient _fsClient;
 
         public ScopedMount(FileSystemClient fsClient)
         {
@@ -77,8 +76,8 @@ public class SaveDataIndexer : ISaveDataIndexer
         {
             Assert.SdkRequires(!_isMounted);
 
-            int mountNameLength = StringUtils.Strlcpy(_mountName.Items, mountName, Array16<byte>.Length);
-            Assert.SdkLess(mountNameLength, Array16<byte>.Length);
+            int mountNameLength = StringUtils.Strlcpy(_mountName, mountName, _mountName.Length);
+            Assert.SdkLess(mountNameLength, _mountName.Length);
 
             _fsClient.DisableAutoSaveDataCreation();
 
@@ -156,7 +155,7 @@ public class SaveDataIndexer : ISaveDataIndexer
             if (_handle != _indexer.GetHandle())
                 return ResultFs.InvalidHandle.Log();
 
-            Span<SaveDataInfo> outInfos = MemoryMarshal.Cast<byte, SaveDataInfo>(saveDataInfoBuffer.Buffer);
+            Span<SaveDataInfo> outInfos = saveDataInfoBuffer.AsSpan<SaveDataInfo>();
 
             int count;
             for (count = 0; !_iterator.IsEnd() && count < outInfos.Length; count++)
@@ -184,7 +183,7 @@ public class SaveDataIndexer : ISaveDataIndexer
     {
         private WeakRef<Reader> _reader;
 
-        public ReaderAccessor(in SharedRef<Reader> reader)
+        public ReaderAccessor(ref readonly SharedRef<Reader> reader)
         {
             _reader = new WeakRef<Reader>(in reader);
         }
@@ -195,21 +194,21 @@ public class SaveDataIndexer : ISaveDataIndexer
     }
 
     private Array48<byte> _mountName;
-    private readonly ulong _indexerSaveDataId;
-    private readonly SaveDataSpaceId _spaceId;
-    private readonly MemoryResource _memoryResource;
-    private readonly MemoryResource _bufferMemoryResource;
-    private readonly FlatMapKeyValueStore<SaveDataAttribute> _kvDatabase;
+    private ulong _indexerSaveDataId;
+    private SaveDataSpaceId _spaceId;
+    private MemoryResource _memoryResource;
+    private MemoryResource _bufferMemoryResource;
+    private FlatMapKeyValueStore<SaveDataAttribute> _kvDatabase;
     private SdkMutexType _mutex;
     private bool _isInitialized;
     private bool _isLoaded;
     private ulong _lastPublishedId;
     private int _handle;
-    private readonly LinkedList<ReaderAccessor> _openReaders;
+    private LinkedList<ReaderAccessor> _openReaders;
     private bool _isDelayedReaderUnregistrationRequired;
 
     // LibHac addition
-    private readonly FileSystemClient _fsClient;
+    private FileSystemClient _fsClient;
 
     public SaveDataIndexer(FileSystemClient fsClient, U8Span mountName, SaveDataSpaceId spaceId, ulong saveDataId,
         MemoryResource memoryResource)
@@ -227,7 +226,7 @@ public class SaveDataIndexer : ISaveDataIndexer
         _handle = 1;
         _openReaders = new LinkedList<ReaderAccessor>();
         _isDelayedReaderUnregistrationRequired = false;
-        StringUtils.Copy(_mountName.Items, mountName);
+        StringUtils.Copy(_mountName, mountName);
 
         _fsClient = fsClient;
     }
@@ -748,7 +747,7 @@ public class SaveDataIndexer : ISaveDataIndexer
     /// </summary>
     /// <param name="reader">The reader to add.</param>
     /// <returns>The <see cref="Result"/> of the operation.</returns>
-    private Result RegisterReader(in SharedRef<Reader> reader)
+    private Result RegisterReader(ref readonly SharedRef<Reader> reader)
     {
         Assert.SdkRequires(_mutex.IsLockedByCurrentThread());
 

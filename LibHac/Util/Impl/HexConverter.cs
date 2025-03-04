@@ -67,7 +67,7 @@ internal static class HexConverter
         unchecked
         {
             uint difference = ((value & 0xF0U) << 4) + (value & 0x0FU) - 0x8989U;
-            uint packedResult = ((((uint)-(int)difference & 0x7070U) >> 4) + difference + 0xB9B9U) | (uint)casing;
+            uint packedResult = ((((uint)(-(int)difference) & 0x7070U) >> 4) + difference + 0xB9B9U) | (uint)casing;
 
             buffer[startingIndex + 1] = (byte)packedResult;
             buffer[startingIndex] = (byte)(packedResult >> 8);
@@ -80,7 +80,7 @@ internal static class HexConverter
         unchecked
         {
             uint difference = ((value & 0xF0U) << 4) + (value & 0x0FU) - 0x8989U;
-            uint packedResult = ((((uint)-(int)difference & 0x7070U) >> 4) + difference + 0xB9B9U) | (uint)casing;
+            uint packedResult = ((((uint)(-(int)difference) & 0x7070U) >> 4) + difference + 0xB9B9U) | (uint)casing;
 
             buffer[startingIndex + 1] = (char)(packedResult & 0xFF);
             buffer[startingIndex] = (char)(packedResult >> 8);
@@ -118,7 +118,7 @@ internal static class HexConverter
 
         if (value > '9')
         {
-            value += 'A' - ('9' + 1);
+            value += ('A' - ('9' + 1));
         }
 
         return (char)value;
@@ -132,7 +132,7 @@ internal static class HexConverter
 
         if (value > '9')
         {
-            value += 'a' - ('9' + 1);
+            value += ('a' - ('9' + 1));
         }
 
         return (char)value;
@@ -219,8 +219,8 @@ internal static class HexConverter
     }
 
     /// <summary>Map from an ASCII char to its hex value, e.g. arr['b'] == 11. 0xFF means it's not a hex digit.</summary>
-    public static ReadOnlySpan<byte> CharToHexLookup => new byte[]
-    {
+    public static ReadOnlySpan<byte> CharToHexLookup =>
+    [
         0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, // 15
         0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, // 31
         0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, // 47
@@ -237,5 +237,5 @@ internal static class HexConverter
         0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, // 223
         0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, // 239
         0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF  // 255
-    };
+    ];
 }

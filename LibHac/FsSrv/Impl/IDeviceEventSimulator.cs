@@ -50,9 +50,9 @@ public abstract class IDeviceEventSimulator
     private SimulatingDeviceTargetOperation _simulatedOperation;
     private Result _failureResult;
     private bool _isRecurringEvent;
-    private readonly int _timeoutLengthMs;
+    private int _timeoutLengthMs;
 
-    private readonly OsState _os;
+    private OsState _os;
 
     public IDeviceEventSimulator(OsState os, int timeoutMs)
     {

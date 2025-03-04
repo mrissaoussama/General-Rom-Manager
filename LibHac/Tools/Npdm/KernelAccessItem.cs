@@ -32,8 +32,8 @@ public class KernelAccessControlItem
 
     public KernelAccessControlItem()
     {
-        NormalMmio = [];
-        PageMmio = [];
-        Irq = [];
+        NormalMmio = new List<KernelAccessControlMmio>();
+        PageMmio = new List<KernelAccessControlMmio>();
+        Irq = new List<KernelAccessControlIrq>();
     }
 }

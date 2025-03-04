@@ -28,7 +28,7 @@ public class RomFsFile : IFile
 
         long storageOffset = Offset + offset;
 
-        res = ConvertToApplicationResult(BaseStorage.Read(storageOffset, destination[..(int)toRead]));
+        res = ConvertToApplicationResult(BaseStorage.Read(storageOffset, destination.Slice(0, (int)toRead)));
         if (res.IsFailure()) return res.Miss();
 
         bytesRead = toRead;
@@ -63,7 +63,7 @@ public class RomFsFile : IFile
         return ResultFs.NotImplemented.Log();
     }
 
-    public static Result ConvertToApplicationResult(Result result)
+    public Result ConvertToApplicationResult(Result result)
     {
         return RomFsFileSystem.ConvertRomFsDriverPrivateResult(result);
     }

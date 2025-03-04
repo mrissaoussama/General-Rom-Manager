@@ -8,7 +8,7 @@
     <ProjectReference Include="..\SkyEditor.IO\SkyEditor.IO.csproj" />
   </ItemGroup>
 	<ItemGroup>
-		<None Update="PS4\PARAM.SFO.dll">
+		<None Update="Utils\PKGUtils\PARAM.SFO.dll">
 		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 		<None Update="PS4\PS4_Tools.dll">

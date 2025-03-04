@@ -112,7 +112,7 @@ public struct FsContext
 
 public struct ScopedAutoAbortDisabler
 {
-    private readonly FileSystemClient _fsClient;
+    private FileSystemClient _fsClient;
     private FsContext _prevContext;
 
     public ScopedAutoAbortDisabler(FileSystemClient fs)

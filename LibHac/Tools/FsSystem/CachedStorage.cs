@@ -12,7 +12,7 @@ public class CachedStorage : IStorage
     private bool LeaveOpen { get; }
 
     private LinkedList<CacheBlock> Blocks { get; } = new LinkedList<CacheBlock>();
-    private Dictionary<long, LinkedListNode<CacheBlock>> BlockDict { get; } = [];
+    private Dictionary<long, LinkedListNode<CacheBlock>> BlockDict { get; } = new Dictionary<long, LinkedListNode<CacheBlock>>();
 
     public CachedStorage(IStorage baseStorage, int blockSize, int cacheSize, bool leaveOpen)
     {
@@ -52,7 +52,7 @@ public class CachedStorage : IStorage
 
                 int bytesToRead = (int)Math.Min(remaining, BlockSize - blockPos);
 
-                block.Buffer.AsSpan(blockPos, bytesToRead).CopyTo(destination[outOffset..]);
+                block.Buffer.AsSpan(blockPos, bytesToRead).CopyTo(destination.Slice(outOffset));
 
                 outOffset += bytesToRead;
                 inOffset += bytesToRead;

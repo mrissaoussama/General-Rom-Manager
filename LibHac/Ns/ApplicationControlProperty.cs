@@ -71,18 +71,18 @@ public struct ApplicationControlProperty
     public AccessibleLaunchRequiredVersionValue AccessibleLaunchRequiredVersion;
     public Array3000<byte> Reserved3448;
 
-    [UnscopedRef] public readonly U8Span IsbnString => new(Isbn.ItemsRo);
-    [UnscopedRef] public readonly U8Span DisplayVersionString => new(DisplayVersion.ItemsRo);
-    [UnscopedRef] public readonly U8Span ApplicationErrorCodeCategoryString => new(ApplicationErrorCodeCategory.ItemsRo);
-    [UnscopedRef] public readonly U8Span BcatPassphraseString => new(BcatPassphrase.ItemsRo);
+    [UnscopedRef] public readonly U8Span IsbnString => new U8Span(Isbn);
+    [UnscopedRef] public readonly U8Span DisplayVersionString => new U8Span(DisplayVersion);
+    [UnscopedRef] public readonly U8Span ApplicationErrorCodeCategoryString => new U8Span(ApplicationErrorCodeCategory);
+    [UnscopedRef] public readonly U8Span BcatPassphraseString => new U8Span(BcatPassphrase);
 
     public struct ApplicationTitle
     {
         public Array512<byte> Name;
         public Array256<byte> Publisher;
 
-        [UnscopedRef] public readonly U8Span NameString => new(Name.ItemsRo);
-        [UnscopedRef] public readonly U8Span PublisherString => new(Publisher.ItemsRo);
+        [UnscopedRef] public readonly U8Span NameString => new U8Span(Name);
+        [UnscopedRef] public readonly U8Span PublisherString => new U8Span(Publisher);
     }
 
     public struct ApplicationNeighborDetectionClientConfiguration
@@ -132,6 +132,26 @@ public struct ApplicationControlProperty
         SimplifiedChinese = 14,
         BrazilianPortuguese = 15
     }
+
+    public static readonly string[] LanguageCodes =
+    [
+        "en-US",
+        "en-GB",
+        "ja",
+        "fr",
+        "de",
+        "es-419",
+        "es",
+        "it",
+        "nl",
+        "fr-CA",
+        "pt",
+        "ru",
+        "ko",
+        "zh-Hans",
+        "zh-Hant",
+        "pt-BR"
+    ];
 
     [SuppressMessage("ReSharper", "InconsistentNaming")]
     public enum Organization

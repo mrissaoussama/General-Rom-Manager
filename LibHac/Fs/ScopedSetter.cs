@@ -4,7 +4,7 @@ namespace LibHac.Fs;
 
 public ref struct ScopedSetter<T>
 {
-    private readonly Ref<T> _ref;
+    private Ref<T> _ref;
     private T _value;
 
     public ScopedSetter(ref T reference, T value)

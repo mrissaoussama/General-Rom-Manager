@@ -2,7 +2,7 @@
 
 public readonly struct ProcessId
 {
-    public static ProcessId InvalidId => new(ulong.MaxValue);
+    public static ProcessId InvalidId => new ProcessId(ulong.MaxValue);
 
     public readonly ulong Value;
 

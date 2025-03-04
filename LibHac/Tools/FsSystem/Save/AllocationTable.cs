@@ -356,7 +356,7 @@ public class AllocationTable
         int entriesToRead = isLastBlock ? 1 : 2;
         int offset = entryIndex * EntrySize;
 
-        Span<byte> buffer = MemoryMarshal.Cast<AllocationTableEntry, byte>(entries[..entriesToRead]);
+        Span<byte> buffer = MemoryMarshal.Cast<AllocationTableEntry, byte>(entries.Slice(0, entriesToRead));
 
         BaseStorage.Read(offset, buffer).ThrowIfFailure();
     }

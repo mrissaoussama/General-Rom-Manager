@@ -13,8 +13,8 @@ namespace LibHac.FsSrv;
 
 public class FileSystemProxyCoreImpl
 {
-    private readonly FileSystemCreatorInterfaces _fsCreators;
-    private readonly BaseFileSystemServiceImpl _baseFileSystemService;
+    private FileSystemCreatorInterfaces _fsCreators;
+    private BaseFileSystemServiceImpl _baseFileSystemService;
     private EncryptionSeed _sdEncryptionSeed;
 
     public FileSystemProxyCoreImpl(FileSystemCreatorInterfaces fsCreators, BaseFileSystemServiceImpl baseFsService)
@@ -41,12 +41,12 @@ public class FileSystemProxyCoreImpl
             if (res.IsFailure()) return res.Miss();
 
             using scoped var path = new Path();
-            res = PathFunctions.SetUpFixedPathSingleEntry(ref path.Ref(), pathBuffer.Items,
+            res = PathFunctions.SetUpFixedPathSingleEntry(ref path.Ref(), pathBuffer,
                 CustomStorage.GetCustomStorageDirectoryName(CustomStorageId.System));
             if (res.IsFailure()) return res.Miss();
 
             using SharedRef<IFileSystem> tempFs = SharedRef<IFileSystem>.CreateMove(ref fileSystem.Ref);
-            res = Utility.WrapSubDirectory(ref fileSystem.Ref, ref tempFs.Ref, in path, createIfMissing: true);
+            res = Utility.WrapSubDirectory(ref fileSystem.Ref, in tempFs, in path, createIfMissing: true);
             if (res.IsFailure()) return res.Miss();
         }
         else if (storageId == CustomStorageId.SdCard)
@@ -55,17 +55,17 @@ public class FileSystemProxyCoreImpl
             if (res.IsFailure()) return res.Miss();
 
             using scoped var path = new Path();
-            res = PathFunctions.SetUpFixedPathDoubleEntry(ref path.Ref(), pathBuffer.Items,
+            res = PathFunctions.SetUpFixedPathDoubleEntry(ref path.Ref(), pathBuffer,
                 CommonDirNames.SdCardNintendoRootDirectoryName,
                 CustomStorage.GetCustomStorageDirectoryName(CustomStorageId.System));
             if (res.IsFailure()) return res.Miss();
 
             using SharedRef<IFileSystem> tempFs = SharedRef<IFileSystem>.CreateMove(ref fileSystem.Ref);
-            res = Utility.WrapSubDirectory(ref fileSystem.Ref, ref tempFs.Ref, in path, createIfMissing: true);
+            res = Utility.WrapSubDirectory(ref fileSystem.Ref, in tempFs, in path, createIfMissing: true);
             if (res.IsFailure()) return res.Miss();
 
             tempFs.SetByMove(ref fileSystem.Ref);
-            res = _fsCreators.EncryptedFileSystemCreator.Create(ref fileSystem.Ref, ref tempFs.Ref,
+            res = _fsCreators.EncryptedFileSystemCreator.Create(ref fileSystem.Ref, in tempFs,
                 IEncryptedFileSystemCreator.KeyId.CustomStorage, in _sdEncryptionSeed);
             if (res.IsFailure()) return res.Miss();
         }
@@ -78,7 +78,7 @@ public class FileSystemProxyCoreImpl
         return Result.Success;
     }
 
-    private Result OpenHostFileSystem(ref SharedRef<IFileSystem> outFileSystem, in Path path)
+    private Result OpenHostFileSystem(ref SharedRef<IFileSystem> outFileSystem, ref readonly Path path)
     {
         using var pathHost = new Path();
         Result res = pathHost.Initialize(in path);
@@ -88,13 +88,13 @@ public class FileSystemProxyCoreImpl
         if (res.IsFailure()) return res.Miss();
 
         res = _fsCreators.TargetManagerFileSystemCreator.Create(ref outFileSystem, in pathHost, isSupported,
-            ensureRootPathExists: false, Result.Success);
+            ensureRootPathExists: false, pathNotFoundResult: Result.Success);
         if (res.IsFailure()) return res.Miss();
 
         return Result.Success;
     }
 
-    public Result OpenHostFileSystem(ref SharedRef<IFileSystem> outFileSystem, in Path path,
+    public Result OpenHostFileSystem(ref SharedRef<IFileSystem> outFileSystem, ref readonly Path path,
         bool openCaseSensitive)
     {
         if (!path.IsEmpty() && openCaseSensitive)
@@ -105,7 +105,7 @@ public class FileSystemProxyCoreImpl
         else
         {
             Result res = _fsCreators.TargetManagerFileSystemCreator.Create(ref outFileSystem, in path,
-                openCaseSensitive, ensureRootPathExists: false, Result.Success);
+                openCaseSensitive, ensureRootPathExists: false, pathNotFoundResult: Result.Success);
             if (res.IsFailure()) return res.Miss();
         }
 

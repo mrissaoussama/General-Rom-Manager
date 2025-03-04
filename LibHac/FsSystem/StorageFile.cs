@@ -12,8 +12,8 @@ namespace LibHac.FsSystem;
 /// <remarks>Based on nnSdk 13.4.0 (FS 13.1.0)</remarks>
 public class StorageFile : IFile
 {
-    private readonly IStorage _baseStorage;
-    private readonly OpenMode _mode;
+    private IStorage _baseStorage;
+    private OpenMode _mode;
 
     public StorageFile(IStorage baseStorage, OpenMode mode)
     {
@@ -36,7 +36,7 @@ public class StorageFile : IFile
             return Result.Success;
         }
 
-        res = _baseStorage.Read(offset, destination[..(int)readSize]);
+        res = _baseStorage.Read(offset, destination.Slice(0, (int)readSize));
         if (res.IsFailure()) return res.Miss();
 
         bytesRead = readSize;

@@ -44,14 +44,14 @@ public ref struct DirectoryPathParser
         Span<byte> pathBuffer = path.GetWriteBufferLength() != 0 ? path.GetWriteBuffer() : Span<byte>.Empty;
 
         int windowsSkipLength = WindowsPath.GetWindowsSkipLength(pathBuffer);
-        _buffer = pathBuffer[windowsSkipLength..];
+        _buffer = pathBuffer.Slice(windowsSkipLength);
 
         if (windowsSkipLength != 0)
         {
             Result res = _currentPath.InitializeWithNormalization(pathBuffer, windowsSkipLength + 1);
             if (res.IsFailure()) return res.Miss();
 
-            _buffer = _buffer[1..];
+            _buffer = _buffer.Slice(1);
         }
         else
         {
@@ -113,7 +113,7 @@ public ref struct DirectoryPathParser
         }
 
         // Find the end of the next entry, replacing the directory separator with a null terminator.
-        Span<byte> entry = _buffer[_position..];
+        Span<byte> entry = _buffer.Slice(_position);
 
         int i;
         for (i = _position; _buffer.At(i) != DirectorySeparator; i++)

@@ -661,7 +661,7 @@ public static class UserFileSystem
             if (!fileSystem.HasValue)
                 return ResultFs.UnsupportedCommitTarget.Log();
 
-            res = commitManager.Get.Add(ref fileSystem.Ref);
+            res = commitManager.Get.Add(in fileSystem);
             if (res.IsFailure()) return res.Miss();
         }
 
@@ -730,17 +730,15 @@ public static class UserFileSystem
             if (attribute.ProgramId == SaveData.InvalidProgramId)
                 attribute.ProgramId = SaveData.AutoResolveCallerProgramId;
 
-            var extraDataMask = new SaveDataExtraData
-            {
-                Flags = SaveDataFlags.Restore
-            };
+            var extraDataMask = new SaveDataExtraData();
+            extraDataMask.Flags = SaveDataFlags.Restore;
 
             var extraData = new SaveDataExtraData();
             extraDataMask.Flags = option.Flags == CommitOptionFlag.SetRestoreFlag
                 ? SaveDataFlags.Restore
                 : SaveDataFlags.None;
 
-            return fs.Impl.WriteSaveDataFileSystemExtraData(SaveDataSpaceId.User, in attribute, in extraData,
+            return fs.Impl.WriteSaveDataFileSystemExtraData(SaveDataSpaceId.User, attribute, in extraData,
                 in extraDataMask);
         }
     }

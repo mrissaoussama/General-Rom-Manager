@@ -96,7 +96,7 @@ public class PartitionFileSystemCore<TMetaData, TFormat, THeader, TEntry> : IFil
     /// <remarks>Based on nnSdk 16.2.0 (FS 16.0.0)</remarks>
     private class PartitionFile : IFile
     {
-        private readonly TEntry _partitionEntry;
+        private TEntry _partitionEntry;
         private readonly PartitionFileSystemCore<TMetaData, TFormat, THeader, TEntry> _parent;
         private readonly OpenMode _mode;
 
@@ -241,7 +241,7 @@ public class PartitionFileSystemCore<TMetaData, TFormat, THeader, TEntry> : IFil
                     // Easy case: the portion we're reading contains the entire hashed region.
                     sha.Initialize();
 
-                    res = fs._parent._baseStorage.Read(readOffset, destination[..(int)readSize]);
+                    res = fs._parent._baseStorage.Read(readOffset, destination.Slice(0, (int)readSize));
                     if (res.IsFailure()) return res.Miss();
 
                     sha.Update(destination.Slice((int)(hashTargetStart - offset), fs._partitionEntry.HashTargetSize));
@@ -267,7 +267,7 @@ public class PartitionFileSystemCore<TMetaData, TFormat, THeader, TEntry> : IFil
                     {
                         // Read the next chunk of the hash target and update the hash.
                         int currentReadSize = Math.Min(bufferForHashTargetSize, remainingHashTargetSize);
-                        Span<byte> currentHashTargetBuffer = bufferForHashTarget[..currentReadSize];
+                        Span<byte> currentHashTargetBuffer = bufferForHashTarget.Slice(0, currentReadSize);
 
                         res = fs._parent._baseStorage.Read(currentHashTargetOffset, currentHashTargetBuffer);
                         if (res.IsFailure()) return res.Miss();
@@ -281,7 +281,7 @@ public class PartitionFileSystemCore<TMetaData, TFormat, THeader, TEntry> : IFil
                             int hashTargetBufferOffset = (int)Math.Max(readOffset - currentHashTargetOffset, 0);
                             int copySize = (int)Math.Min(currentReadSize - hashTargetBufferOffset, remainingSize);
 
-                            bufferForHashTarget.Slice(hashTargetBufferOffset, copySize).CopyTo(destination[destBufferOffset..]);
+                            bufferForHashTarget.Slice(hashTargetBufferOffset, copySize).CopyTo(destination.Slice(destBufferOffset));
 
                             remainingSize -= copySize;
                             destBufferOffset += copySize;
@@ -300,14 +300,14 @@ public class PartitionFileSystemCore<TMetaData, TFormat, THeader, TEntry> : IFil
 
                 if (!CryptoUtil.IsSameBytes(fs._partitionEntry.Hash, hash, hash.Length))
                 {
-                    destination[..(int)readSize].Clear();
+                    destination.Slice(0, (int)readSize).Clear();
                     return ResultFs.Sha256PartitionHashVerificationFailed.Log();
                 }
             }
             else
             {
                 // We aren't reading hashed data, so we can just read from the base storage.
-                res = fs._parent._baseStorage.Read(entryStart + offset, destination[..(int)readSize]);
+                res = fs._parent._baseStorage.Read(entryStart + offset, destination.Slice(0, (int)readSize));
                 if (res.IsFailure()) return res.Miss();
             }
 
@@ -324,7 +324,7 @@ public class PartitionFileSystemCore<TMetaData, TFormat, THeader, TEntry> : IFil
             if (res.IsFailure()) return res.Miss();
 
             res = fs._parent._baseStorage.Read(fs._parent._metaDataSize + fs._partitionEntry.Offset + offset,
-                destination[..(int)readSize]);
+                destination.Slice(0, (int)readSize));
             if (res.IsFailure()) return res.Miss();
 
             bytesRead = readSize;
@@ -370,7 +370,7 @@ public class PartitionFileSystemCore<TMetaData, TFormat, THeader, TEntry> : IFil
                 dirEntry.Type = DirectoryEntryType.File;
                 dirEntry.Size = entry.Size;
                 U8Span entryName = _parent._metaData.GetEntryName(_currentIndex);
-                StringUtils.Strlcpy(dirEntry.Name.Items, entryName, dirEntry.Name.ItemsRo.Length - 1);
+                StringUtils.Strlcpy(dirEntry.Name, entryName, dirEntry.Name[..].Length - 1);
 
                 _currentIndex++;
             }
@@ -406,14 +406,14 @@ public class PartitionFileSystemCore<TMetaData, TFormat, THeader, TEntry> : IFil
         base.Dispose();
     }
 
-    public Result Initialize(in SharedRef<IStorage> baseStorage)
+    public Result Initialize(ref readonly SharedRef<IStorage> baseStorage)
     {
         _sharedStorage.SetByCopy(in baseStorage);
 
         return Initialize(_sharedStorage.Get).Ret();
     }
 
-    public Result Initialize(in SharedRef<IStorage> baseStorage, MemoryResource allocator)
+    public Result Initialize(ref readonly SharedRef<IStorage> baseStorage, MemoryResource allocator)
     {
         _sharedStorage.SetByCopy(in baseStorage);
 
@@ -445,14 +445,14 @@ public class PartitionFileSystemCore<TMetaData, TFormat, THeader, TEntry> : IFil
         return Result.Success;
     }
 
-    public Result Initialize(ref UniqueRef<TMetaData> metaData, in SharedRef<IStorage> baseStorage)
+    public Result Initialize(ref UniqueRef<TMetaData> metaData, ref readonly SharedRef<IStorage> baseStorage)
     {
         _uniqueMetaData.Set(ref metaData);
 
         return Initialize(_uniqueMetaData.Get, in baseStorage).Ret();
     }
 
-    public Result Initialize(TMetaData metaData, in SharedRef<IStorage> baseStorage)
+    public Result Initialize(TMetaData metaData, ref readonly SharedRef<IStorage> baseStorage)
     {
         if (_isInitialized)
             return ResultFs.PreconditionViolation.Log();
@@ -476,7 +476,7 @@ public class PartitionFileSystemCore<TMetaData, TFormat, THeader, TEntry> : IFil
         if (path.Length == 0)
             return ResultFs.PathNotFound.Log();
 
-        int entryIndex = _metaData.GetEntryIndex(path[1..]);
+        int entryIndex = _metaData.GetEntryIndex(path.Slice(1));
         if (entryIndex < 0)
             return ResultFs.PathNotFound.Log();
 
@@ -484,7 +484,7 @@ public class PartitionFileSystemCore<TMetaData, TFormat, THeader, TEntry> : IFil
         return Result.Success;
     }
 
-    protected override Result DoGetEntryType(out DirectoryEntryType entryType, in Path path)
+    protected override Result DoGetEntryType(out DirectoryEntryType entryType, ref readonly Path path)
     {
         Unsafe.SkipInit(out entryType);
 
@@ -501,7 +501,7 @@ public class PartitionFileSystemCore<TMetaData, TFormat, THeader, TEntry> : IFil
             return Result.Success;
         }
 
-        if (_metaData.GetEntryIndex(pathString[1..]) >= 0)
+        if (_metaData.GetEntryIndex(pathString.Slice(1)) >= 0)
         {
             entryType = DirectoryEntryType.File;
             return Result.Success;
@@ -510,7 +510,7 @@ public class PartitionFileSystemCore<TMetaData, TFormat, THeader, TEntry> : IFil
         return ResultFs.PathNotFound.Log();
     }
 
-    protected override Result DoOpenFile(ref UniqueRef<IFile> outFile, in Path path, OpenMode mode)
+    protected override Result DoOpenFile(ref UniqueRef<IFile> outFile, ref readonly Path path, OpenMode mode)
     {
         if (!_isInitialized)
             return ResultFs.PreconditionViolation.Log();
@@ -519,7 +519,7 @@ public class PartitionFileSystemCore<TMetaData, TFormat, THeader, TEntry> : IFil
         if (path.GetString().Length == 0)
             return ResultFs.PathNotFound.Log();
 
-        int entryIndex = _metaData.GetEntryIndex(path.GetString()[1..]);
+        int entryIndex = _metaData.GetEntryIndex(path.GetString().Slice(1));
         if (entryIndex < 0)
             return ResultFs.PathNotFound.Log();
 
@@ -531,7 +531,7 @@ public class PartitionFileSystemCore<TMetaData, TFormat, THeader, TEntry> : IFil
         return Result.Success;
     }
 
-    protected override Result DoOpenDirectory(ref UniqueRef<IDirectory> outDirectory, in Path path, OpenDirectoryMode mode)
+    protected override Result DoOpenDirectory(ref UniqueRef<IDirectory> outDirectory, ref readonly Path path, OpenDirectoryMode mode)
     {
         if (!_isInitialized)
             return ResultFs.PreconditionViolation.Log();
@@ -547,14 +547,14 @@ public class PartitionFileSystemCore<TMetaData, TFormat, THeader, TEntry> : IFil
         return Result.Success;
     }
 
-    protected override Result DoCreateFile(in Path path, long size, CreateFileOptions option) => ResultFs.UnsupportedWriteForPartitionFileSystem.Log();
-    protected override Result DoDeleteFile(in Path path) => ResultFs.UnsupportedWriteForPartitionFileSystem.Log();
-    protected override Result DoCreateDirectory(in Path path) => ResultFs.UnsupportedWriteForPartitionFileSystem.Log();
-    protected override Result DoDeleteDirectory(in Path path) => ResultFs.UnsupportedWriteForPartitionFileSystem.Log();
-    protected override Result DoDeleteDirectoryRecursively(in Path path) => ResultFs.UnsupportedWriteForPartitionFileSystem.Log();
-    protected override Result DoCleanDirectoryRecursively(in Path path) => ResultFs.UnsupportedWriteForPartitionFileSystem.Log();
-    protected override Result DoRenameFile(in Path currentPath, in Path newPath) => ResultFs.UnsupportedWriteForPartitionFileSystem.Log();
-    protected override Result DoRenameDirectory(in Path currentPath, in Path newPath) => ResultFs.UnsupportedWriteForPartitionFileSystem.Log();
+    protected override Result DoCreateFile(ref readonly Path path, long size, CreateFileOptions option) => ResultFs.UnsupportedWriteForPartitionFileSystem.Log();
+    protected override Result DoDeleteFile(ref readonly Path path) => ResultFs.UnsupportedWriteForPartitionFileSystem.Log();
+    protected override Result DoCreateDirectory(ref readonly Path path) => ResultFs.UnsupportedWriteForPartitionFileSystem.Log();
+    protected override Result DoDeleteDirectory(ref readonly Path path) => ResultFs.UnsupportedWriteForPartitionFileSystem.Log();
+    protected override Result DoDeleteDirectoryRecursively(ref readonly Path path) => ResultFs.UnsupportedWriteForPartitionFileSystem.Log();
+    protected override Result DoCleanDirectoryRecursively(ref readonly Path path) => ResultFs.UnsupportedWriteForPartitionFileSystem.Log();
+    protected override Result DoRenameFile(ref readonly Path currentPath, ref readonly Path newPath) => ResultFs.UnsupportedWriteForPartitionFileSystem.Log();
+    protected override Result DoRenameDirectory(ref readonly Path currentPath, ref readonly Path newPath) => ResultFs.UnsupportedWriteForPartitionFileSystem.Log();
 
     protected override Result DoCommit()
     {

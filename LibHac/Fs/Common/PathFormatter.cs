@@ -112,11 +112,11 @@ public static class PathFormatter
             if (mountLength >= outMountNameBuffer.Length)
                 return ResultFs.TooLongPath.Log();
 
-            path[..mountLength].CopyTo(outMountNameBuffer);
+            path.Slice(0, mountLength).CopyTo(outMountNameBuffer);
             outMountNameBuffer[mountLength] = NullTerminator;
         }
 
-        newPath = path[mountLength..];
+        newPath = path.Slice(mountLength);
         mountNameLength = mountLength;
         return Result.Success;
     }
@@ -147,14 +147,14 @@ public static class PathFormatter
                 if (normalizeBuffer.Length == 0)
                     return ResultFs.NotNormalized.Log();
 
-                currentPath = path[1..];
+                currentPath = path.Slice(1);
             }
-            else if (WindowsPath.IsWindowsDrive(path[1..]))
+            else if (WindowsPath.IsWindowsDrive(path.Slice(1)))
             {
                 if (normalizeBuffer.Length == 0)
                     return ResultFs.NotNormalized.Log();
 
-                currentPath = path[1..];
+                currentPath = path.Slice(1);
             }
         }
 
@@ -190,13 +190,13 @@ public static class PathFormatter
                 if (winPathLength >= normalizeBuffer.Length)
                     return ResultFs.TooLongPath.Log();
 
-                currentPath[..winPathLength].CopyTo(normalizeBuffer);
+                currentPath.Slice(0, winPathLength).CopyTo(normalizeBuffer);
                 normalizeBuffer[winPathLength] = NullTerminator;
-                PathUtility.Replace(normalizeBuffer[..winPathLength], AltDirectorySeparator,
+                PathUtility.Replace(normalizeBuffer.Slice(0, winPathLength), AltDirectorySeparator,
                     DirectorySeparator);
             }
 
-            newPath = currentPath[winPathLength..];
+            newPath = currentPath.Slice(winPathLength);
             windowsPathLength = winPathLength;
             return Result.Success;
         }
@@ -205,7 +205,7 @@ public static class PathFormatter
         {
             int dosPathLength = WindowsPath.GetDosDevicePathPrefixLength();
 
-            if (WindowsPath.IsWindowsDrive(currentPath[dosPathLength..]))
+            if (WindowsPath.IsWindowsDrive(currentPath.Slice(dosPathLength)))
             {
                 dosPathLength += 2;
             }
@@ -219,13 +219,13 @@ public static class PathFormatter
                 if (dosPathLength >= normalizeBuffer.Length)
                     return ResultFs.TooLongPath.Log();
 
-                currentPath[..dosPathLength].CopyTo(normalizeBuffer);
+                currentPath.Slice(0, dosPathLength).CopyTo(normalizeBuffer);
                 normalizeBuffer[dosPathLength] = NullTerminator;
-                PathUtility.Replace(normalizeBuffer[..dosPathLength], DirectorySeparator,
+                PathUtility.Replace(normalizeBuffer.Slice(0, dosPathLength), DirectorySeparator,
                     AltDirectorySeparator);
             }
 
-            newPath = currentPath[dosPathLength..];
+            newPath = currentPath.Slice(dosPathLength);
             windowsPathLength = dosPathLength;
             return Result.Success;
         }
@@ -248,17 +248,17 @@ public static class PathFormatter
                     if (currentComponentOffset != 0)
                     {
                         res = CheckSharedName(
-                            currentPath[currentComponentOffset..pos]);
+                            currentPath.Slice(currentComponentOffset, pos - currentComponentOffset));
                         if (res.IsFailure()) return res.Miss();
 
-                        finalPath = currentPath[pos..];
+                        finalPath = currentPath.Slice(pos);
                         break;
                     }
 
                     if (currentPath.At(pos + 1) == DirectorySeparator || currentPath.At(pos + 1) == AltDirectorySeparator)
                         return ResultFs.InvalidPathFormat.Log();
 
-                    res = CheckHostName(currentPath[2..pos]);
+                    res = CheckHostName(currentPath.Slice(2, pos - 2));
                     if (res.IsFailure()) return res.Miss();
 
                     currentComponentOffset = pos + 1;
@@ -270,10 +270,10 @@ public static class PathFormatter
 
             if (currentComponentOffset != 0 && finalPath == currentPath)
             {
-                res = CheckSharedName(currentPath[currentComponentOffset..pos]);
+                res = CheckSharedName(currentPath.Slice(currentComponentOffset, pos - currentComponentOffset));
                 if (res.IsFailure()) return res.Miss();
 
-                finalPath = currentPath[pos..];
+                finalPath = currentPath.Slice(pos);
             }
 
             ref byte currentPathStart = ref MemoryMarshal.GetReference(currentPath);
@@ -294,9 +294,9 @@ public static class PathFormatter
                 if (uncPrefixLength >= normalizeBuffer.Length)
                     return ResultFs.TooLongPath.Log();
 
-                currentPath[..uncPrefixLength].CopyTo(normalizeBuffer);
+                currentPath.Slice(0, uncPrefixLength).CopyTo(normalizeBuffer);
                 normalizeBuffer[uncPrefixLength] = NullTerminator;
-                PathUtility.Replace(normalizeBuffer[..uncPrefixLength], DirectorySeparator, AltDirectorySeparator);
+                PathUtility.Replace(normalizeBuffer.Slice(0, uncPrefixLength), DirectorySeparator, AltDirectorySeparator);
             }
 
             newPath = finalPath;
@@ -360,7 +360,7 @@ public static class PathFormatter
                 relativePathBuffer[1] = NullTerminator;
             }
 
-            newPath = path[1..];
+            newPath = path.Slice(1);
             length = 1;
             return Result.Success;
         }
@@ -517,7 +517,7 @@ public static class PathFormatter
             return Result.Success;
         }
 
-        res = PathNormalizer.IsNormalized(out isNormalized, out int length, buffer, flags.AreAllCharactersAllowed());
+        res = PathNormalizer.IsNormalized(out isNormalized, out int length, buffer, flags.IsInvalidCharacterAllowed());
         if (res.IsFailure()) return res.Miss();
 
         totalLength += length;
@@ -548,7 +548,7 @@ public static class PathFormatter
 
         if (flags.IsMountNameAllowed())
         {
-            res = ParseMountName(out src, out int mountNameLength, outputBuffer[currentPos..], src);
+            res = ParseMountName(out src, out int mountNameLength, outputBuffer.Slice(currentPos), src);
             if (res.IsFailure()) return res.Miss();
 
             currentPos += mountNameLength;
@@ -572,7 +572,7 @@ public static class PathFormatter
             if (currentPos >= outputBuffer.Length)
                 return ResultFs.TooLongPath.Log();
 
-            res = ParseRelativeDotPath(out src, out int relativePathLength, outputBuffer[currentPos..], src);
+            res = ParseRelativeDotPath(out src, out int relativePathLength, outputBuffer.Slice(currentPos), src);
             if (res.IsFailure()) return res.Miss();
 
             currentPos += relativePathLength;
@@ -594,7 +594,7 @@ public static class PathFormatter
             if (currentPos >= outputBuffer.Length)
                 return ResultFs.TooLongPath.Log();
 
-            res = ParseWindowsPath(out src, out int windowsPathLength, outputBuffer[currentPos..], src,
+            res = ParseWindowsPath(out src, out int windowsPathLength, outputBuffer.Slice(currentPos), src,
                 hasMountName);
             if (res.IsFailure()) return res.Miss();
 
@@ -638,8 +638,8 @@ public static class PathFormatter
                 src = srcBufferSlashReplaced.AsSpan(srcOffset);
             }
 
-            res = PathNormalizer.Normalize(outputBuffer[currentPos..], out _, src, isWindowsPath, isDriveRelative,
-                flags.AreAllCharactersAllowed());
+            res = PathNormalizer.Normalize(outputBuffer.Slice(currentPos), out _, src, isWindowsPath, isDriveRelative,
+                flags.IsInvalidCharacterAllowed());
             if (res.IsFailure()) return res.Miss();
 
             return Result.Success;

@@ -44,7 +44,7 @@ public struct AesXtsMode
         tweak = FillTweakBuffer(tweak, MemoryMarshal.Cast<byte, Buffer16>(tweakBuffer.Span));
 
         Utilities.XorArrays(output, input, tweakBuffer.Span);
-        _dataAesCore.Encrypt(output[..(blockCount * Aes.BlockSize)], output);
+        _dataAesCore.Encrypt(output.Slice(0, blockCount * Aes.BlockSize), output);
         Utilities.XorArrays(output, output, tweakBuffer.Array);
 
         if (leftover != 0)
@@ -100,7 +100,7 @@ public struct AesXtsMode
             tweak = FillTweakBuffer(tweak, MemoryMarshal.Cast<byte, Buffer16>(tweakBuffer.Span));
 
             Utilities.XorArrays(output, input, tweakBuffer.Span);
-            _dataAesCore.Decrypt(output[..(blockCount * Aes.BlockSize)], output);
+            _dataAesCore.Decrypt(output.Slice(0, blockCount * Aes.BlockSize), output);
             Utilities.XorArrays(output, output, tweakBuffer.Span);
         }
 

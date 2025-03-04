@@ -66,7 +66,7 @@ public class AesXtsFile : IFile
         Result res = DryRead(out long toRead, offset, destination.Length, in option, Mode);
         if (res.IsFailure()) return res.Miss();
 
-        res = BaseStorage.Read(offset, destination[..(int)toRead]);
+        res = BaseStorage.Read(offset, destination.Slice(0, (int)toRead));
         if (res.IsFailure()) return res.Miss();
 
         bytesRead = toRead;

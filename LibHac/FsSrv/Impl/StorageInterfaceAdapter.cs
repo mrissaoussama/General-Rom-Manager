@@ -16,9 +16,9 @@ public class StorageInterfaceAdapter : IStorageSf
 {
     private SharedRef<IStorage> _baseStorage;
 
-    public StorageInterfaceAdapter(ref SharedRef<IStorage> baseStorage)
+    public StorageInterfaceAdapter(ref readonly SharedRef<IStorage> baseStorage)
     {
-        _baseStorage = SharedRef<IStorage>.CreateMove(ref baseStorage);
+        _baseStorage = SharedRef<IStorage>.CreateCopy(in baseStorage);
     }
 
     public void Dispose()
@@ -43,7 +43,7 @@ public class StorageInterfaceAdapter : IStorageSf
 
         for (int tryNum = 0; tryNum < maxTryCount; tryNum++)
         {
-            res = _baseStorage.Get.Read(offset, destination.Buffer[..(int)size]);
+            res = _baseStorage.Get.Read(offset, destination.Buffer.Slice(0, (int)size));
 
             // Retry on ResultDataCorrupted
             if (!ResultFs.DataCorrupted.Includes(res))
@@ -67,7 +67,7 @@ public class StorageInterfaceAdapter : IStorageSf
         using var scopedPriorityChanger = new ScopedThreadPriorityChangerByAccessPriority(
             ScopedThreadPriorityChangerByAccessPriority.AccessMode.Write);
 
-        return _baseStorage.Get.Write(offset, source.Buffer[..(int)size]);
+        return _baseStorage.Get.Write(offset, source.Buffer.Slice(0, (int)size));
     }
 
     public Result Flush()

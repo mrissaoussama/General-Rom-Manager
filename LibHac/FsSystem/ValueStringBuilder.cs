@@ -82,7 +82,7 @@ internal ref struct ValueStringBuilder
 
     public override string ToString()
     {
-        string s = _chars[.._pos].ToString();
+        string s = _chars.Slice(0, _pos).ToString();
         Dispose();
         return s;
     }
@@ -102,16 +102,16 @@ internal ref struct ValueStringBuilder
             _chars[Length] = '\0';
         }
 
-        return _chars[.._pos];
+        return _chars.Slice(0, _pos);
     }
 
-    public ReadOnlySpan<char> AsSpan() => _chars[.._pos];
-    public ReadOnlySpan<char> AsSpan(int start) => _chars[start.._pos];
+    public ReadOnlySpan<char> AsSpan() => _chars.Slice(0, _pos);
+    public ReadOnlySpan<char> AsSpan(int start) => _chars.Slice(start, _pos - start);
     public ReadOnlySpan<char> AsSpan(int start, int length) => _chars.Slice(start, length);
 
     public bool TryCopyTo(Span<char> destination, out int charsWritten)
     {
-        if (_chars[.._pos].TryCopyTo(destination))
+        if (_chars.Slice(0, _pos).TryCopyTo(destination))
         {
             charsWritten = _pos;
             Dispose();
@@ -133,7 +133,7 @@ internal ref struct ValueStringBuilder
         }
 
         int remaining = _pos - index;
-        _chars.Slice(index, remaining).CopyTo(_chars[(index + count)..]);
+        _chars.Slice(index, remaining).CopyTo(_chars.Slice(index + count));
         _chars.Slice(index, count).Fill(value);
         _pos += count;
     }
@@ -148,8 +148,8 @@ internal ref struct ValueStringBuilder
         }
 
         int remaining = _pos - index;
-        _chars.Slice(index, remaining).CopyTo(_chars[(index + count)..]);
-        s.AsSpan().CopyTo(_chars[index..]);
+        _chars.Slice(index, remaining).CopyTo(_chars.Slice(index + count));
+        s.AsSpan().CopyTo(_chars.Slice(index));
         _pos += count;
     }
 
@@ -191,7 +191,7 @@ internal ref struct ValueStringBuilder
             Grow(s.Length);
         }
 
-        s.AsSpan().CopyTo(_chars[pos..]);
+        s.AsSpan().CopyTo(_chars.Slice(pos));
         _pos += s.Length;
     }
 
@@ -219,7 +219,7 @@ internal ref struct ValueStringBuilder
             Grow(value.Length);
         }
 
-        value.CopyTo(_chars[_pos..]);
+        value.CopyTo(_chars.Slice(_pos));
         _pos += value.Length;
     }
 

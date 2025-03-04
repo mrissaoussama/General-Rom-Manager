@@ -12,7 +12,7 @@ public class Aes128CtrExStorage : Aes128CtrStorage
 
     private BucketTree Table { get; } = new BucketTree();
 
-    private readonly object _locker = new();
+    private readonly object _locker = new object();
 
     [StructLayout(LayoutKind.Sequential, Size = 0x10)]
     public struct Entry

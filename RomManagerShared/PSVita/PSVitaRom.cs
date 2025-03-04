@@ -18,3 +18,10 @@ public class PSVitaUpdate : Update, IPSVitaRom
     {
     }
 }
+
+public class PSVitaLicense : License
+{
+    public PSVitaLicense(string path) : base(path)
+    {
+    }
+}

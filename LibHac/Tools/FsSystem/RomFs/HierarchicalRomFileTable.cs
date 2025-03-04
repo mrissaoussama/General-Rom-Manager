@@ -243,10 +243,8 @@ public class HierarchicalRomFileTable<T> where T : unmanaged
     private void CreateRootDirectory()
     {
         var key = new RomEntryKey(ReadOnlySpan<byte>.Empty, 0);
-        var entry = new DirectoryRomEntry
-        {
-            NextSibling = -1
-        };
+        var entry = new DirectoryRomEntry();
+        entry.NextSibling = -1;
         entry.Pos.NextDirectory = -1;
         entry.Pos.NextFile = -1;
 

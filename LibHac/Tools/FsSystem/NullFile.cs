@@ -25,7 +25,7 @@ public class NullFile : IFile
         Result res = DryRead(out long toRead, offset, destination.Length, in option, Mode);
         if (res.IsFailure()) return res.Miss();
 
-        destination[..(int)toRead].Clear();
+        destination.Slice(0, (int)toRead).Clear();
 
         bytesRead = toRead;
         return Result.Success;

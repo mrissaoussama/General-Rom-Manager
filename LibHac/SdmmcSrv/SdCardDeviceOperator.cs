@@ -21,9 +21,9 @@ internal class SdCardDeviceOperator : IStorageDeviceOperator
     // LibHac additions
     private readonly SdmmcApi _sdmmc;
 
-    public SdCardDeviceOperator(ref SharedRef<SdCardStorageDevice> storageDevice, SdmmcApi sdmmc)
+    public SdCardDeviceOperator(ref readonly SharedRef<SdCardStorageDevice> storageDevice, SdmmcApi sdmmc)
     {
-        _storageDevice = SharedRef<SdCardStorageDevice>.CreateMove(ref storageDevice);
+        _storageDevice = SharedRef<SdCardStorageDevice>.CreateCopy(in storageDevice);
         _sdmmc = sdmmc;
     }
 
@@ -71,7 +71,7 @@ internal class SdCardDeviceOperator : IStorageDeviceOperator
                 if (buffer.Size < DeviceCidSize)
                     return ResultFs.InvalidSize.Log();
 
-                res = GetFsResult(port, _sdmmc.GetDeviceCid(buffer.Buffer[..DeviceCidSize], port));
+                res = GetFsResult(port, _sdmmc.GetDeviceCid(buffer.Buffer.Slice(0, DeviceCidSize), port));
                 if (res.IsFailure()) return res.Miss();
 
                 bytesWritten = DeviceCidSize;

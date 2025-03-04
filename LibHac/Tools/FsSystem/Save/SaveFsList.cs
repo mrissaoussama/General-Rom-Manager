@@ -295,7 +295,7 @@ internal class SaveFsList<T> where T : struct
     private void SetListCapacity(int capacity)
     {
         Span<byte> buf = stackalloc byte[sizeof(int)];
-        MemoryMarshal.Write(buf, ref capacity);
+        MemoryMarshal.Write(buf, in capacity);
 
         Storage.Write(4, buf).ThrowIfFailure();
     }
@@ -303,7 +303,7 @@ internal class SaveFsList<T> where T : struct
     private void SetListLength(int length)
     {
         Span<byte> buf = stackalloc byte[sizeof(int)];
-        MemoryMarshal.Write(buf, ref length);
+        MemoryMarshal.Write(buf, in length);
 
         Storage.Write(0, buf).ThrowIfFailure();
     }
@@ -328,7 +328,7 @@ internal class SaveFsList<T> where T : struct
         newEntry.Parent = key.Parent;
         key.Name.CopyTo(nameSpan);
 
-        nameSpan[key.Name.Length..].Fill(0);
+        nameSpan.Slice(key.Name.Length).Fill(0);
 
         WriteEntry(index, bytes);
     }
@@ -360,7 +360,7 @@ internal class SaveFsList<T> where T : struct
         Storage.Write(offset, entry);
     }
 
-    private static ref SaveFsEntry GetEntryFromBytes(Span<byte> entry)
+    private ref SaveFsEntry GetEntryFromBytes(Span<byte> entry)
     {
         return ref MemoryMarshal.Cast<byte, SaveFsEntry>(entry)[0];
     }
@@ -369,7 +369,7 @@ internal class SaveFsList<T> where T : struct
     private struct SaveFsEntry
     {
         public int Parent;
-        private readonly NameDummy Name;
+        private NameDummy Name;
         public T Value;
         public int Next;
     }

@@ -15,7 +15,7 @@ namespace LibHac.FsSystem;
 /// <remarks>Based on nnSdk 16.2.0 (FS 16.0.0)</remarks>
 internal class CardDeviceDetectionEventManager : IDisposable
 {
-    private readonly LinkedList<CardDeviceDetectionEvent> _events;
+    private LinkedList<CardDeviceDetectionEvent> _events;
     private SdkMutex _mutex;
     protected CallbackArguments CallbackArgs;
 
@@ -23,7 +23,6 @@ internal class CardDeviceDetectionEventManager : IDisposable
     {
         public CardDeviceDetectionEventManager EventManager;
         public SdkMutex Mutex;
-        public Sdmmc.Port Port;
     }
 
     public CardDeviceDetectionEventManager()

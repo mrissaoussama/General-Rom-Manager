@@ -18,7 +18,7 @@ public readonly struct Result : IEquatable<Result>
     /// <summary>
     /// The <see cref="Result"/> signifying success.
     /// </summary>
-    public static Result Success => new(SuccessValue);
+    public static Result Success => new Result(SuccessValue);
 
     private static IResultLogger Logger { get; set; }
     private static IResultNameResolver NameResolver { get; set; } = new ResultNameResolver();
@@ -74,7 +74,7 @@ public readonly struct Result : IEquatable<Result>
     /// <summary>
     /// Specifies that the <see cref="Result"/> from a returned function is explicitly ignored.
     /// </summary>
-    public  void IgnoreResult() { }
+    public void IgnoreResult() { }
 
     public void ThrowIfFailure()
     {
@@ -205,7 +205,7 @@ public readonly struct Result : IEquatable<Result>
     }
 
     [Conditional("DEBUG")]
-    private static void MissImpl()
+    private void MissImpl()
     {
 
     }
@@ -313,7 +313,7 @@ public readonly struct Result : IEquatable<Result>
         /// </summary>
         // The conversion to int won't remove the part of the value containing the description end, but that doesn't
         // matter because the constructor for Result will take care of that.
-        public Result Value => new(unchecked((BaseType)_value));
+        public Result Value => new Result(unchecked((BaseType)_value));
 
         /// <summary>
         /// Checks if the range of this <see cref="Result.Base"/> includes the provided <see cref="Result"/>.
@@ -415,7 +415,7 @@ public readonly struct Result : IEquatable<Result>
             public BaseType DescriptionRangeStart => GetBitsValueLong(_value, DescriptionBitsOffset, DescriptionBitsCount);
             public BaseType DescriptionRangeEnd => GetBitsValueLong(_value, DescriptionEndBitsOffset, DescriptionBitsCount);
 
-            private Result Value => new(unchecked((BaseType)_value));
+            private Result Value => new Result(unchecked((BaseType)_value));
 
             /// <summary>
             /// Checks if the range of this <see cref="Result.Base"/> includes the provided <see cref="Result"/>.

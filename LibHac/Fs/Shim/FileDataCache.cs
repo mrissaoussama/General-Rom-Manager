@@ -62,7 +62,7 @@ namespace LibHac.Fs.Shim
         internal class GlobalFileDataCacheAccessorHolder
         {
             private FileDataCacheAccessor _accessor;
-            private readonly ReaderWriterLock _accessorLock;
+            private ReaderWriterLock _accessorLock;
             private long _cacheSize;
             private bool _isDefault;
 
@@ -122,6 +122,35 @@ namespace LibHac.Fs.Shim
 
                 return _isDefault;
             }
+        }
+
+        private static GlobalFileDataCacheAccessorHolder GetGlobalFileDataCacheAccessorHolder(FileSystemClient fs)
+        {
+            ref Globals g = ref fs.Globals.FileDataCache;
+            using var guard = new InitializationGuard(ref g.FileSystemProxyServiceObjectInitGuard,
+                fs.Globals.InitMutex);
+
+            if (!guard.IsInitialized)
+            {
+                g.GlobalFileDataCacheAccessorHolder = new GlobalFileDataCacheAccessorHolder(fs.Hos);
+            }
+
+            return g.GlobalFileDataCacheAccessorHolder;
+        }
+
+        private static Result EnableGlobalFileDataCacheImpl(FileSystemClient fs, Memory<byte> buffer, bool isDefault)
+        {
+            throw new NotImplementedException();
+        }
+
+        private static Result DisableGlobalFileDataCacheImpl(FileSystemClient fs)
+        {
+            throw new NotImplementedException();
+        }
+
+        private static int PrintDefaultGlobalFileDataCacheAccessLog(Span<byte> textBuffer)
+        {
+            throw new NotImplementedException();
         }
 
         internal static bool IsGlobalFileDataCacheEnabled(this FileSystemClientImpl fs)

@@ -18,11 +18,11 @@ public class SaveDataChunkIterator : ISaveDataChunkIterator
     private SharedRef<FsSrv.Sf.ISaveDataChunkIterator> _baseInterface;
 
     // LibHac addition
-    private readonly FileSystemClient _fsClient;
+    private FileSystemClient _fsClient;
 
-    public SaveDataChunkIterator(FileSystemClient fs, ref SharedRef<FsSrv.Sf.ISaveDataChunkIterator> baseInterface)
+    public SaveDataChunkIterator(FileSystemClient fs, ref readonly SharedRef<FsSrv.Sf.ISaveDataChunkIterator> baseInterface)
     {
-        _baseInterface = SharedRef<FsSrv.Sf.ISaveDataChunkIterator>.CreateMove(ref baseInterface);
+        _baseInterface = SharedRef<FsSrv.Sf.ISaveDataChunkIterator>.CreateCopy(in baseInterface);
         _fsClient = fs;
     }
 
@@ -67,11 +67,11 @@ public class SaveDataChunkExporter : ISaveDataChunkExporter
     private SharedRef<FsSrv.Sf.ISaveDataChunkExporter> _baseInterface;
 
     // LibHac addition
-    private readonly FileSystemClient _fsClient;
+    private FileSystemClient _fsClient;
 
-    public SaveDataChunkExporter(FileSystemClient fs, ref SharedRef<FsSrv.Sf.ISaveDataChunkExporter> baseInterface)
+    public SaveDataChunkExporter(FileSystemClient fs, ref readonly SharedRef<FsSrv.Sf.ISaveDataChunkExporter> baseInterface)
     {
-        _baseInterface = SharedRef<FsSrv.Sf.ISaveDataChunkExporter>.CreateMove(ref baseInterface);
+        _baseInterface = SharedRef<FsSrv.Sf.ISaveDataChunkExporter>.CreateCopy(in baseInterface);
         _fsClient = fs;
     }
 
@@ -114,11 +114,11 @@ public class SaveDataChunkImporter : ISaveDataChunkImporter
     private SharedRef<FsSrv.Sf.ISaveDataChunkImporter> _baseInterface;
 
     // LibHac addition
-    private readonly FileSystemClient _fsClient;
+    private FileSystemClient _fsClient;
 
-    public SaveDataChunkImporter(FileSystemClient fs, ref SharedRef<FsSrv.Sf.ISaveDataChunkImporter> baseInterface)
+    public SaveDataChunkImporter(FileSystemClient fs, ref readonly SharedRef<FsSrv.Sf.ISaveDataChunkImporter> baseInterface)
     {
-        _baseInterface = SharedRef<FsSrv.Sf.ISaveDataChunkImporter>.CreateMove(ref baseInterface);
+        _baseInterface = SharedRef<FsSrv.Sf.ISaveDataChunkImporter>.CreateCopy(in baseInterface);
         _fsClient = fs;
     }
 
@@ -147,12 +147,12 @@ public class SaveDataExporterVersion2 : ISaveDataDivisionExporter
     private SharedRef<FsSrv.Sf.ISaveDataDivisionExporter> _baseInterface;
 
     // LibHac addition
-    private readonly FileSystemClient _fsClient;
+    private FileSystemClient _fsClient;
 
     public SaveDataExporterVersion2(FileSystemClient fs,
-        ref SharedRef<FsSrv.Sf.ISaveDataDivisionExporter> baseInterface)
+        ref readonly SharedRef<FsSrv.Sf.ISaveDataDivisionExporter> baseInterface)
     {
-        _baseInterface = SharedRef<FsSrv.Sf.ISaveDataDivisionExporter>.CreateMove(ref baseInterface);
+        _baseInterface = SharedRef<FsSrv.Sf.ISaveDataDivisionExporter>.CreateCopy(in baseInterface);
         _fsClient = fs;
     }
 
@@ -178,7 +178,7 @@ public class SaveDataExporterVersion2 : ISaveDataDivisionExporter
         _fsClient.Impl.AbortIfNeeded(res);
         if (res.IsFailure()) return res.Miss();
 
-        outIterator.Reset(new SaveDataChunkIterator(_fsClient, ref iteratorObject.Ref));
+        outIterator.Reset(new SaveDataChunkIterator(_fsClient, in iteratorObject));
         return Result.Success;
     }
 
@@ -190,7 +190,7 @@ public class SaveDataExporterVersion2 : ISaveDataDivisionExporter
         _fsClient.Impl.AbortIfNeeded(res);
         if (res.IsFailure()) return res.Miss();
 
-        outExporter.Reset(new SaveDataChunkExporter(_fsClient, ref exporterObject.Ref));
+        outExporter.Reset(new SaveDataChunkExporter(_fsClient, in exporterObject));
         return Result.Success;
     }
 
@@ -326,12 +326,12 @@ public class SaveDataImporterVersion2 : ISaveDataDivisionImporter
     private SharedRef<FsSrv.Sf.ISaveDataDivisionImporter> _baseInterface;
 
     // LibHac addition
-    private readonly FileSystemClient _fsClient;
+    private FileSystemClient _fsClient;
 
     public SaveDataImporterVersion2(FileSystemClient fs,
-        ref SharedRef<FsSrv.Sf.ISaveDataDivisionImporter> baseInterface)
+        ref readonly SharedRef<FsSrv.Sf.ISaveDataDivisionImporter> baseInterface)
     {
-        _baseInterface = SharedRef<FsSrv.Sf.ISaveDataDivisionImporter>.CreateMove(ref baseInterface);
+        _baseInterface = SharedRef<FsSrv.Sf.ISaveDataDivisionImporter>.CreateCopy(in baseInterface);
         _fsClient = fs;
     }
 
@@ -404,7 +404,7 @@ public class SaveDataImporterVersion2 : ISaveDataDivisionImporter
         _fsClient.Impl.AbortIfNeeded(res);
         if (res.IsFailure()) return res.Miss();
 
-        outIterator.Reset(new SaveDataChunkIterator(_fsClient, ref iteratorObject.Ref));
+        outIterator.Reset(new SaveDataChunkIterator(_fsClient, in iteratorObject));
         return Result.Success;
     }
 
@@ -416,7 +416,7 @@ public class SaveDataImporterVersion2 : ISaveDataDivisionImporter
         _fsClient.Impl.AbortIfNeeded(res);
         if (res.IsFailure()) return res.Miss();
 
-        outImporter.Reset(new SaveDataChunkImporter(_fsClient, ref importerObject.Ref));
+        outImporter.Reset(new SaveDataChunkImporter(_fsClient, in importerObject));
         return Result.Success;
     }
 

@@ -22,7 +22,7 @@ public struct KipHeader
 
     public byte Priority;
     public byte IdealCoreId;
-    private readonly byte _reserved1E;
+    private byte _reserved1E;
     public Flag Flags;
 
     public int TextMemoryOffset;
@@ -40,12 +40,12 @@ public struct KipHeader
     public int DataMemoryOffset;
     public int DataSize;
     public int DataFileSize;
-    private readonly byte _reserved4C;
+    private byte _reserved4C;
 
     public int BssMemoryOffset;
     public int BssSize;
     public int BssFileSize;
-    private readonly byte _reserved5C;
+    private byte _reserved5C;
 
     private Array2<SegmentHeader> _unusedSegmentHeaders;
 
@@ -74,6 +74,6 @@ public struct KipHeader
         public int MemoryOffset;
         public int Size;
         public int FileSize;
-        private readonly int _unused;
+        private int _unused;
     }
 }

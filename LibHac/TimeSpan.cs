@@ -52,11 +52,11 @@ public readonly struct TimeSpanType : IEquatable<TimeSpanType>, IComparable<Time
 
     public static TimeSpanType FromNanoSeconds(long nanoSeconds) => new(nanoSeconds);
     public static TimeSpanType FromMicroSeconds(long microSeconds) => new(microSeconds * 1000L);
-    public static TimeSpanType FromMilliSeconds(long milliSeconds) => new(milliSeconds * 1000L * 1000);
-    public static TimeSpanType FromSeconds(long seconds) => new(seconds * 1000L * 1000 * 1000);
-    public static TimeSpanType FromMinutes(long minutes) => new(minutes * 1000L * 1000 * 1000 * 60);
-    public static TimeSpanType FromHours(long hours) => new(hours * 1000L * 1000 * 1000 * 60 * 60);
-    public static TimeSpanType FromDays(long days) => new(days * 1000L * 1000 * 1000 * 60 * 60 * 24);
+    public static TimeSpanType FromMilliSeconds(long milliSeconds) => new(milliSeconds * (1000L * 1000));
+    public static TimeSpanType FromSeconds(long seconds) => new(seconds * (1000L * 1000 * 1000));
+    public static TimeSpanType FromMinutes(long minutes) => new(minutes * (1000L * 1000 * 1000 * 60));
+    public static TimeSpanType FromHours(long hours) => new(hours * (1000L * 1000 * 1000 * 60 * 60));
+    public static TimeSpanType FromDays(long days) => new(days * (1000L * 1000 * 1000 * 60 * 60 * 24));
 
     public long GetNanoSeconds() => _nanoSeconds;
     public long GetMicroSeconds() => _nanoSeconds / 1000;

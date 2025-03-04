@@ -21,10 +21,10 @@ namespace LibHac.SdmmcSrv;
 /// <remarks>Based on nnSdk 16.2.0 (FS 16.0.0)</remarks>
 internal class SdmmcStorage : IStorage
 {
-    private readonly Port _port;
+    private Port _port;
 
     // LibHac additions
-    private readonly SdmmcApi _sdmmc;
+    private SdmmcApi _sdmmc;
 
     public SdmmcStorage(Port port, SdmmcApi sdmmc)
     {
@@ -77,18 +77,18 @@ internal class SdmmcStorage : IStorage
 
             // Get the number of bytes from source to be written to the aligned buffer, and copy that data to the buffer.
             int unalignedSize = writeSize - paddingSize;
-            source[..unalignedSize].CopyTo(pooledBuffer.GetBuffer()[paddingSize..]);
+            source.Slice(0, unalignedSize).CopyTo(pooledBuffer.GetBuffer().Slice(paddingSize));
 
             // Read the current data into the aligned buffer.
             res = GetFsResult(_port,
-                _sdmmc.Read(pooledBuffer.GetBuffer()[..paddingSize], _port,
+                _sdmmc.Read(pooledBuffer.GetBuffer().Slice(0, paddingSize), _port,
                     BytesToSectors(alignedUpOffset - alignment), BytesToSectors(paddingSize)));
             if (res.IsFailure()) return res.Miss();
 
             // Write the aligned buffer.
             res = GetFsResult(_port,
                 _sdmmc.Write(_port, BytesToSectors(alignedUpOffset - alignment), BytesToSectors(writeSize),
-                    pooledBuffer.GetBuffer()[..writeSize]));
+                    pooledBuffer.GetBuffer().Slice(0, writeSize)));
             if (res.IsFailure()) return res.Miss();
 
             remainingSize -= unalignedSize;
@@ -154,7 +154,7 @@ internal class SdmmcStorage : IStorage
 /// <remarks>Based on nnSdk 16.2.0 (FS 16.0.0)</remarks>
 internal class SdmmcStorageInterfaceAdapter : IStorageSf
 {
-    private readonly IStorage _baseStorage;
+    private IStorage _baseStorage;
 
     public SdmmcStorageInterfaceAdapter(IStorage baseStorage)
     {
@@ -165,12 +165,12 @@ internal class SdmmcStorageInterfaceAdapter : IStorageSf
 
     public virtual Result Read(long offset, OutBuffer destination, long size)
     {
-        return _baseStorage.Read(offset, destination.Buffer[..(int)size]).Ret();
+        return _baseStorage.Read(offset, destination.Buffer.Slice(0, (int)size)).Ret();
     }
 
     public virtual Result Write(long offset, InBuffer source, long size)
     {
-        return _baseStorage.Write(offset, source.Buffer[..(int)size]).Ret();
+        return _baseStorage.Write(offset, source.Buffer.Slice(0, (int)size)).Ret();
     }
 
     public virtual Result Flush()

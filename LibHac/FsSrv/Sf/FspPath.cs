@@ -40,7 +40,7 @@ public readonly struct FspPath
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static implicit operator U8Span(in FspPath value) => new(SpanHelpers.AsReadOnlyByteSpan(in value));
+    public static implicit operator U8Span(in FspPath value) => new U8Span(SpanHelpers.AsReadOnlyByteSpan(in value));
 
     public override string ToString() => StringUtils.Utf8ZToString(Str);
 }

@@ -10,13 +10,13 @@ namespace LibHac.FsSrv.Impl;
 /// <summary>
 /// Holds the <see cref="ISaveDataExtraDataAccessor"/>s for opened save data file systems.
 /// </summary>
-/// <remarks>Based on nnSdk 14.3.0 (FS 14.1.0)</remarks>
+/// <remarks>Based on nnSdk 17.5.0 (FS 17.0.0)</remarks>
 public class SaveDataExtraDataAccessorCacheManager : ISaveDataExtraDataAccessorObserver
 {
     /// <summary>
     /// Holds a single cached extra data accessor identified by its save data ID and save data space ID.
     /// </summary>
-    /// <remarks>Based on nnSdk 14.3.0 (FS 14.1.0)</remarks>
+    /// <remarks>Based on nnSdk 17.5.0 (FS 17.0.0)</remarks>
     [NonCopyable]
     private struct Cache : IDisposable
     {
@@ -24,7 +24,7 @@ public class SaveDataExtraDataAccessorCacheManager : ISaveDataExtraDataAccessorO
         private readonly SaveDataSpaceId _spaceId;
         private readonly ulong _saveDataId;
 
-        public Cache(in SharedRef<ISaveDataExtraDataAccessor> accessor, SaveDataSpaceId spaceId, ulong saveDataId)
+        public Cache(ref readonly SharedRef<ISaveDataExtraDataAccessor> accessor, SaveDataSpaceId spaceId, ulong saveDataId)
         {
             _accessor = new WeakRef<ISaveDataExtraDataAccessor>(in accessor);
             _spaceId = spaceId;
@@ -47,7 +47,7 @@ public class SaveDataExtraDataAccessorCacheManager : ISaveDataExtraDataAccessorO
         }
     }
 
-    private readonly LinkedList<Cache> _accessorList;
+    private LinkedList<Cache> _accessorList;
     private SdkRecursiveMutexType _mutex;
 
     public SaveDataExtraDataAccessorCacheManager()
@@ -74,7 +74,7 @@ public class SaveDataExtraDataAccessorCacheManager : ISaveDataExtraDataAccessorO
         _accessorList.Clear();
     }
 
-    public Result Register(in SharedRef<ISaveDataExtraDataAccessor> accessor, SaveDataSpaceId spaceId,
+    public Result Register(ref readonly SharedRef<ISaveDataExtraDataAccessor> accessor, SaveDataSpaceId spaceId,
         ulong saveDataId)
     {
         accessor.Get.RegisterExtraDataAccessorObserver(this, spaceId, saveDataId);

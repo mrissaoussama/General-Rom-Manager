@@ -9,6 +9,8 @@ using LibHac.Util;
 
 namespace LibHac.FsSystem;
 
+public delegate Result CryptAesXtsFunction(Span<byte> dest, ReadOnlySpan<byte> key1, ReadOnlySpan<byte> key2, ReadOnlySpan<byte> iv, ReadOnlySpan<byte> source);
+
 /// <summary>
 /// Reads and writes to an <see cref="IStorage"/> that's encrypted with AES-XTS-128.
 /// All encryption or decryption will be done externally via a provided function.
@@ -21,12 +23,12 @@ public class AesXtsStorageExternal : IStorage
     public const int KeySize = Aes.KeySize128;
     public const int IvSize = Aes.KeySize128;
 
-    private readonly IStorage _baseStorage;
+    private IStorage _baseStorage;
     private Array2<Array16<byte>> _key;
     private Array16<byte> _iv;
-    private readonly uint _blockSize;
-    private readonly CryptAesXtsFunction _encryptFunction;
-    private readonly CryptAesXtsFunction _decryptFunction;
+    private uint _blockSize;
+    private CryptAesXtsFunction _encryptFunction;
+    private CryptAesXtsFunction _decryptFunction;
 
     // The original class uses a template for both the shared and non-shared IStorage which avoids needing this field.
     private SharedRef<IStorage> _baseStorageShared;
@@ -45,15 +47,15 @@ public class AesXtsStorageExternal : IStorage
         Assert.SdkRequiresAligned(blockSize, AesBlockSize);
 
         if (key1.Length != 0)
-            key1.CopyTo(_key[0].Items);
+            key1.CopyTo(_key[0]);
 
         if (key2.Length != 0)
-            key2.CopyTo(_key[1].Items);
+            key2.CopyTo(_key[1]);
 
-        iv.CopyTo(_iv.Items);
+        iv.CopyTo(_iv);
     }
 
-    public AesXtsStorageExternal(in SharedRef<IStorage> baseStorage, ReadOnlySpan<byte> key1, ReadOnlySpan<byte> key2,
+    public AesXtsStorageExternal(ref readonly SharedRef<IStorage> baseStorage, ReadOnlySpan<byte> key1, ReadOnlySpan<byte> key2,
         ReadOnlySpan<byte> iv, uint blockSize, CryptAesXtsFunction encryptFunction, CryptAesXtsFunction decryptFunction)
         : this(baseStorage.Get, key1, key2, iv, blockSize, encryptFunction, decryptFunction)
     {
@@ -93,7 +95,7 @@ public class AesXtsStorageExternal : IStorage
 
         // Setup the counter.
         Span<byte> counter = stackalloc byte[IvSize];
-        _iv.ItemsRo.CopyTo(counter);
+        _iv[..].CopyTo(counter);
         Utility.AddCounter(counter, (ulong)offset / _blockSize);
 
         // Handle any unaligned data before the start.
@@ -110,9 +112,9 @@ public class AesXtsStorageExternal : IStorage
             {
                 Assert.SdkAssert(tmpBuffer.GetSize() >= _blockSize);
 
-                tmpBuffer.GetBuffer()[..skipSize].Clear();
-                destination[..dataSize].CopyTo(tmpBuffer.GetBuffer().Slice(skipSize, dataSize));
-                Span<byte> decryptionBuffer = tmpBuffer.GetBuffer()[..(int)_blockSize];
+                tmpBuffer.GetBuffer().Slice(0, skipSize).Clear();
+                destination.Slice(0, dataSize).CopyTo(tmpBuffer.GetBuffer().Slice(skipSize, dataSize));
+                Span<byte> decryptionBuffer = tmpBuffer.GetBuffer().Slice(0, (int)_blockSize);
 
                 // Decrypt and copy the partial block to the output buffer.
                 res = _decryptFunction(decryptionBuffer, _key[0], _key[1], counter, decryptionBuffer);
@@ -127,18 +129,18 @@ public class AesXtsStorageExternal : IStorage
         }
 
         // Decrypt aligned chunks.
-        Span<byte> currentOutput = destination[processedSize..];
+        Span<byte> currentOutput = destination.Slice(processedSize);
         int remainingSize = destination.Length - processedSize;
 
         while (remainingSize > 0)
         {
-            Span<byte> currentBlock = currentOutput[..Math.Min((int)_blockSize, remainingSize)];
+            Span<byte> currentBlock = currentOutput.Slice(0, Math.Min((int)_blockSize, remainingSize));
 
             res = _decryptFunction(currentBlock, _key[0], _key[1], counter, currentBlock);
             if (res.IsFailure()) return res.Miss();
 
             remainingSize -= currentBlock.Length;
-            currentOutput = currentBlock[currentBlock.Length..];
+            currentOutput = currentBlock.Slice(currentBlock.Length);
 
             Utility.AddCounter(counter, 1);
         }
@@ -175,7 +177,7 @@ public class AesXtsStorageExternal : IStorage
 
         // Setup the counter.
         Span<byte> counter = stackalloc byte[IvSize];
-        _iv.ItemsRo.CopyTo(counter);
+        _iv[..].CopyTo(counter);
         Utility.AddCounter(counter, (ulong)offset / _blockSize);
 
         // Handle any unaligned data before the start.
@@ -195,9 +197,9 @@ public class AesXtsStorageExternal : IStorage
             {
                 Assert.SdkAssert(tmpBuffer.GetSize() >= _blockSize);
 
-                tmpBuffer.GetBuffer()[..skipSize].Clear();
-                source[..dataSize].CopyTo(tmpBuffer.GetBuffer().Slice(skipSize, dataSize));
-                Span<byte> encryptionBuffer = tmpBuffer.GetBuffer()[..(int)_blockSize];
+                tmpBuffer.GetBuffer().Slice(0, skipSize).Clear();
+                source.Slice(0, dataSize).CopyTo(tmpBuffer.GetBuffer().Slice(skipSize, dataSize));
+                Span<byte> encryptionBuffer = tmpBuffer.GetBuffer().Slice(0, (int)_blockSize);
 
                 res = _encryptFunction(encryptionBuffer, _key[0], _key[1], counter, encryptionBuffer);
                 if (res.IsFailure()) return res.Miss();
@@ -249,7 +251,7 @@ public class AesXtsStorageExternal : IStorage
 
             // Write the encrypted data.
             ReadOnlySpan<byte> writeBuffer = useWorkBuffer
-                ? pooledBuffer.GetBuffer()[..writeSize]
+                ? pooledBuffer.GetBuffer().Slice(0, writeSize)
                 : source.Slice(processedSize, writeSize);
 
             res = _baseStorage.Write(currentOffset, writeBuffer);

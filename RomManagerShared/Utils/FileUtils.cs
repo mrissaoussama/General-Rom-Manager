@@ -53,7 +53,8 @@ public class FileUtils
             Console.WriteLine($"Error moving file: {ex.Message}");
         }
     }    public static void Log(string logText)
-    {
+    {// create dir and file if they don't exist
+        Directory.CreateDirectory(Path.GetDirectoryName(logFilePath));
         File.AppendAllText(logFilePath, logText + Environment.NewLine);
     }
     public static string CheckForPython()
@@ -95,6 +96,47 @@ public class FileUtils
         }
         return false;
     }
+
+  
+    /// <summary>
+    /// Checks if the application has write permission to the specified path.
+    /// </summary>
+    /// <param name="path">The path to check.</param>
+    /// <returns>True if write permission is granted; otherwise, false.</returns>
+    public static bool HasWritePermission(string path)
+    {
+        try
+        {
+            // Try to create and delete a temporary file in the directory
+            string testFilePath = Path.Combine(path, Path.GetRandomFileName());
+            using (FileStream fs = File.Create(testFilePath, 1, FileOptions.DeleteOnClose))
+            {
+            }
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Checks if the nested folder has the same name as its parent folder.
+    /// </summary>
+    /// <param name="nestedFolderPath">The nested folder path.</param>
+    /// <returns>True if the nested folder name is the same as the parent; otherwise, false.</returns>
+
+    public static bool IsNestedFolder(string nestedFolderPath)
+    {
+        string parentFolderName = Path.GetFileName(Path.GetDirectoryName(nestedFolderPath));
+        if (string.IsNullOrEmpty(parentFolderName))
+        {
+            return false;
+        }
+        string nestedFolderName = Path.GetFileName(nestedFolderPath);
+        return string.Equals(parentFolderName, nestedFolderName, StringComparison.OrdinalIgnoreCase);
+    }
+
     public static void InstallPythonPackages(string requirementsFilePath)
     {
         try
@@ -143,4 +185,135 @@ public class FileUtils
         return drive.AvailableFreeSpace > fileSize;
     }
 
-}
+    public static void MoveDirectoryContents(string sourceDir, string destDir)
+    {
+        // Create all subdirectories first with conflict resolution
+        foreach (string dir in Directory.GetDirectories(sourceDir, "*", SearchOption.AllDirectories))
+        {
+            string targetDir = dir.Replace(sourceDir, destDir);
+            Directory.CreateDirectory(targetDir);
+        }
+
+        // Move all files with conflict resolution
+        foreach (string file in Directory.GetFiles(sourceDir, "*.*", SearchOption.AllDirectories))
+        {
+            string destFile = file.Replace(sourceDir, destDir);
+
+            // Handle file conflicts
+            if (File.Exists(destFile))
+            {
+                string fileName = Path.GetFileNameWithoutExtension(destFile);
+                string extension = Path.GetExtension(destFile);
+                int counter = 1;
+
+                do
+                {
+                    string newFileName = $"{fileName} ({counter++}){extension}";
+                    destFile = Path.Combine(Path.GetDirectoryName(destFile), newFileName);
+                } while (File.Exists(destFile));
+            }
+
+            File.Move(file, destFile);
+        }
+
+        // Delete source directory after verification
+        if (Directory.GetFiles(sourceDir).Length == 0 &&
+            Directory.GetDirectories(sourceDir).Length == 0)
+        {
+            Directory.Delete(sourceDir, true);
+        }
+        else
+        {
+            
+            Log($"directory {sourceDir} not empty");
+        }
+    }
+
+    public static void MoveDirectoryCrossPlatform(string sourceDir, string destDir)
+    {
+        if (!Directory.Exists(sourceDir))
+            throw new DirectoryNotFoundException($"Source directory not found: {sourceDir}");
+
+        // Check if source and destination directories are equal
+        if (AreDirectoriesEqual(sourceDir, destDir))
+        {
+            Console.WriteLine("Source and destination directories are the same. Skipping move operation.");
+            return;
+        }
+
+        // If the destination directory exists, rename it
+        if (Directory.Exists(destDir))
+        {
+            destDir = GetUniqueDirectoryName(destDir);
+        }
+
+        // Check if we're moving across drives
+        var sourceDrive = Path.GetPathRoot(Path.GetFullPath(sourceDir));
+        var destDrive = Path.GetPathRoot(Path.GetFullPath(destDir));
+
+        if (string.Equals(sourceDrive, destDrive, StringComparison.OrdinalIgnoreCase))
+        {
+            // Same drive - use native move
+            Directory.Move(sourceDir, destDir);
+        }
+        else
+        {
+            // Cross-drive - copy and delete
+            CopyDirectory(sourceDir, destDir);
+            Directory.Delete(sourceDir, true);
+        }
+    }
+
+    /// <summary>
+    /// Checks if two directories are equal by comparing their full paths.
+    /// </summary>
+    private static bool AreDirectoriesEqual(string dir1, string dir2)
+    {
+        return string.Equals(
+            Path.GetFullPath(dir1).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+            Path.GetFullPath(dir2).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+            StringComparison.OrdinalIgnoreCase
+        );
+    }
+
+    /// <summary>
+    /// Generates a unique directory name by appending (2), (3), etc., until a unique name is found.
+    /// </summary>
+    private static string GetUniqueDirectoryName(string destDir)
+    {
+        string newDestDir = destDir;
+        int counter = 2;
+
+        while (Directory.Exists(newDestDir))
+        {
+            newDestDir = $"{destDir} ({counter})";
+            counter++;
+        }
+
+        return newDestDir;
+    }
+
+    /// <summary>
+    /// Recursively copies a directory from source to destination.
+    /// </summary>
+    private static void CopyDirectory(string sourceDir, string destDir)
+    {
+        if (!Directory.Exists(destDir))
+        {
+            Directory.CreateDirectory(destDir);
+        }
+
+        foreach (var file in Directory.GetFiles(sourceDir))
+        {
+            string fileName = Path.GetFileName(file);
+            string destFile = Path.Combine(destDir, fileName);
+            File.Copy(file, destFile, true); // Overwrite if file already exists
+        }
+
+        foreach (var dir in Directory.GetDirectories(sourceDir))
+        {
+            string dirName = Path.GetFileName(dir);
+            string destSubDir = Path.Combine(destDir, dirName);
+            CopyDirectory(dir, destSubDir);
+        }
+    }}

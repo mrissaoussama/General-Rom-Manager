@@ -59,7 +59,7 @@ public class BlockCacheBufferedStorage : IStorage
     private int _shiftBytesVerificationBlock;
     private int _flags;
     private int _bufferLevel;
-    private readonly BlockCacheManager<CacheEntry, AccessRange> _cacheManager;
+    private BlockCacheManager<CacheEntry, AccessRange> _cacheManager;
     private bool _isWritable;
 
     public BlockCacheBufferedStorage()
@@ -164,6 +164,85 @@ public class BlockCacheBufferedStorage : IStorage
     }
 
     public Result OnRollback()
+    {
+        throw new NotImplementedException();
+    }
+
+    private Result FillZeroImpl(long offset, long size)
+    {
+        throw new NotImplementedException();
+    }
+
+    private Result DestroySignatureImpl(long offset, long size)
+    {
+        throw new NotImplementedException();
+    }
+
+    private Result InvalidateImpl()
+    {
+        throw new NotImplementedException();
+    }
+
+    private Result QueryRangeImpl(Span<byte> outBuffer, long offset, long size)
+    {
+        throw new NotImplementedException();
+    }
+
+    private Result GetAssociateBuffer(out Buffer outRange, out CacheEntry outEntry, long offset, int idealSize,
+        bool isAllocateForWrite)
+    {
+        throw new NotImplementedException();
+    }
+
+    private Result StoreOrDestroyBuffer(in Buffer memoryRange, ref CacheEntry entry)
+    {
+        throw new NotImplementedException();
+    }
+
+    private Result StoreOrDestroyBuffer(out int outCacheIndex, in Buffer memoryRange, ref CacheEntry entry)
+    {
+        throw new NotImplementedException();
+    }
+
+    private Result FlushCacheEntry(int index, bool isWithInvalidate)
+    {
+        throw new NotImplementedException();
+    }
+
+    private Result FlushRangeCacheEntries(long offset, long size, bool isWithInvalidate)
+    {
+        throw new NotImplementedException();
+    }
+
+    private Result FlushAllCacheEntries()
+    {
+        throw new NotImplementedException();
+    }
+
+    private Result ControlDirtiness()
+    {
+        throw new NotImplementedException();
+    }
+
+    private Result UpdateLastResult(Result result)
+    {
+        throw new NotImplementedException();
+    }
+
+    private Result ReadHeadCache(out Buffer outMemoryRange, out CacheEntry outEntry, out bool outIsCacheNeeded,
+        ref long offset, ref long offsetAligned, long offsetAlignedEnd, ref Span<byte> buffer)
+    {
+        throw new NotImplementedException();
+    }
+
+    private Result ReadTailCache(out Buffer outMemoryRange, out CacheEntry outEntry, out bool outIsCacheNeeded,
+        long offset, long offsetAligned, long offsetAlignedEnd, Span<byte> buffer, ref long size)
+    {
+        throw new NotImplementedException();
+    }
+
+    private Result BulkRead(long offset, Span<byte> buffer, ref Buffer memoryRangeHead, ref Buffer memoryRangeTail,
+        ref CacheEntry entryHead, ref CacheEntry entryTail, bool isHeadCacheNeeded, bool isTailCacheNeeded)
     {
         throw new NotImplementedException();
     }

@@ -13,13 +13,13 @@ namespace LibHac.FsSystem;
 public class MemoryResourceBufferHoldStorage : IStorage
 {
     private SharedRef<IStorage> _storage;
-    private readonly MemoryResource _memoryResource;
+    private MemoryResource _memoryResource;
     private Mem.Buffer _buffer;
 
-    public MemoryResourceBufferHoldStorage(ref SharedRef<IStorage> baseStorage, MemoryResource memoryResource,
+    public MemoryResourceBufferHoldStorage(ref readonly SharedRef<IStorage> baseStorage, MemoryResource memoryResource,
         int bufferSize)
     {
-        _storage = SharedRef<IStorage>.CreateMove(ref baseStorage);
+        _storage = SharedRef<IStorage>.CreateCopy(in baseStorage);
         _memoryResource = memoryResource;
         _buffer = memoryResource.Allocate(bufferSize);
     }

@@ -44,12 +44,12 @@ public class AesCtrCounterExtendedStorage : IStorage
 
         public void SetOffset(long value)
         {
-            BinaryPrimitives.WriteInt64LittleEndian(Offset.Items, value);
+            BinaryPrimitives.WriteInt64LittleEndian(Offset, value);
         }
 
         public readonly long GetOffset()
         {
-            return BinaryPrimitives.ReadInt64LittleEndian(Offset.ItemsRo);
+            return BinaryPrimitives.ReadInt64LittleEndian(Offset);
         }
     }
 
@@ -58,7 +58,7 @@ public class AesCtrCounterExtendedStorage : IStorage
     public static readonly int IvSize = Aes.BlockSize;
     public static readonly int NodeSize = 1024 * 16;
 
-    private readonly BucketTree _table;
+    private BucketTree _table;
     private ValueSubStorage _dataStorage;
     private Array16<byte> _key;
     private uint _secureValue;
@@ -124,9 +124,43 @@ public class AesCtrCounterExtendedStorage : IStorage
         return _table.IsInitialized();
     }
 
+    // ReSharper disable once UnusedMember.Local
+    private Result Initialize(MemoryResource allocator, ReadOnlySpan<byte> key, uint secureValue,
+        ref readonly ValueSubStorage dataStorage, ref readonly ValueSubStorage tableStorage)
+    {
+        Unsafe.SkipInit(out BucketTree.Header header);
+
+        Result res = tableStorage.Read(0, SpanHelpers.AsByteSpan(ref header));
+        if (res.IsFailure()) return res.Miss();
+
+        res = header.Verify();
+        if (res.IsFailure()) return res.Miss();
+
+        long nodeStorageSize = QueryNodeStorageSize(header.EntryCount);
+        long entryStorageSize = QueryEntryStorageSize(header.EntryCount);
+        long nodeStorageOffset = QueryHeaderStorageSize();
+        long entryStorageOffset = nodeStorageOffset + nodeStorageSize;
+
+        using var decryptor = new UniqueRef<IDecryptor>();
+        res = CreateSoftwareDecryptor(ref decryptor.Ref);
+        if (res.IsFailure()) return res.Miss();
+
+        res = tableStorage.GetSize(out long storageSize);
+        if (res.IsFailure()) return res.Miss();
+
+        if (nodeStorageOffset + nodeStorageSize + entryStorageSize > storageSize)
+            return ResultFs.InvalidAesCtrCounterExtendedMetaStorageSize.Log();
+
+        using var entryStorage = new ValueSubStorage(in tableStorage, entryStorageOffset, entryStorageSize);
+        using var nodeStorage = new ValueSubStorage(in tableStorage, nodeStorageOffset, nodeStorageSize);
+
+        return Initialize(allocator, key, secureValue, counterOffset: 0, in dataStorage, in nodeStorage,
+            in entryStorage, header.EntryCount, ref decryptor.Ref);
+    }
+
     public Result Initialize(MemoryResource allocator, ReadOnlySpan<byte> key, uint secureValue, long counterOffset,
-        in ValueSubStorage dataStorage, in ValueSubStorage nodeStorage, in ValueSubStorage entryStorage, int entryCount,
-        ref UniqueRef<IDecryptor> decryptor)
+        ref readonly ValueSubStorage dataStorage, ref readonly ValueSubStorage nodeStorage,
+        ref readonly ValueSubStorage entryStorage, int entryCount, ref UniqueRef<IDecryptor> decryptor)
     {
         Assert.SdkRequiresEqual(key.Length, KeySize);
         Assert.SdkRequiresGreaterEqual(counterOffset, 0);
@@ -155,7 +189,7 @@ public class AesCtrCounterExtendedStorage : IStorage
             return ResultFs.InvalidAesCtrCounterExtendedDataStorageSize.Log();
 
         _dataStorage.Set(in dataStorage);
-        key.CopyTo(_key.Items);
+        key.CopyTo(_key);
         _secureValue = secureValue;
         _counterOffset = counterOffset;
         _decryptor.Set(ref decryptor);
@@ -272,15 +306,15 @@ public class AesCtrCounterExtendedStorage : IStorage
                 };
 
                 Unsafe.SkipInit(out Array16<byte> counter);
-                AesCtrStorage.MakeIv(counter.Items, upperIv.Value, counterOffset);
+                AesCtrStorage.MakeIv(counter, upperIv.Value, counterOffset);
 
                 // Decrypt the data from the current entry.
-                res = _decryptor.Get.Decrypt(currentData[..(int)dataSize], _key, counter);
+                res = _decryptor.Get.Decrypt(currentData.Slice(0, (int)dataSize), _key, counter);
                 if (res.IsFailure()) return res.Miss();
             }
 
             // Advance the current offsets.
-            currentData = currentData[(int)dataSize..];
+            currentData = currentData.Slice((int)dataSize);
             currentOffset -= dataSize;
         }
 
@@ -370,8 +404,8 @@ public class AesCtrCounterExtendedStorage : IStorage
                 Unsafe.SkipInit(out QueryRangeInfo info);
                 info.Clear();
                 info.AesCtrKeyType = (int)(_decryptor.Get.HasExternalDecryptionKey()
-                    ? QueryRangeInfo.AesCtrKeyTypeFlag.ExternalKeyForHardwareAes
-                    : QueryRangeInfo.AesCtrKeyTypeFlag.InternalKeyForHardwareAes);
+                    ? AesCtrKeyTypeFlag.ExternalKeyForHardwareAes
+                    : AesCtrKeyTypeFlag.InternalKeyForHardwareAes);
 
                 outInfo.Merge(in info);
 
@@ -385,9 +419,9 @@ public class AesCtrCounterExtendedStorage : IStorage
 
     private class ExternalDecryptor : IDecryptor
     {
-        private readonly DecryptFunction _decryptFunction;
-        private readonly int _keyIndex;
-        private readonly int _keyGeneration;
+        private DecryptFunction _decryptFunction;
+        private int _keyIndex;
+        private int _keyGeneration;
 
         public ExternalDecryptor(DecryptFunction decryptFunction, int keyIndex, int keyGeneration)
         {
@@ -406,7 +440,7 @@ public class AesCtrCounterExtendedStorage : IStorage
             Assert.SdkRequiresEqual(iv.Length, IvSize);
 
             Unsafe.SkipInit(out Array16<byte> counter);
-            iv.CopyTo(counter.Items);
+            iv.CopyTo(counter);
 
             int remainingSize = destination.Length;
             int currentOffset = 0;
@@ -420,7 +454,7 @@ public class AesCtrCounterExtendedStorage : IStorage
             {
                 int currentSize = Math.Min(pooledBuffer.GetSize(), remainingSize);
                 Span<byte> dstBuffer = destination.Slice(currentOffset, currentSize);
-                Span<byte> workBuffer = pooledBuffer.GetBuffer()[..currentSize];
+                Span<byte> workBuffer = pooledBuffer.GetBuffer().Slice(0, currentSize);
 
                 Result res = _decryptFunction(workBuffer, _keyIndex, _keyGeneration, encryptedKey, counter, dstBuffer);
                 if (res.IsFailure()) return res.Miss();
@@ -432,7 +466,7 @@ public class AesCtrCounterExtendedStorage : IStorage
 
                 if (remainingSize > 0)
                 {
-                    Utility.AddCounter(counter.Items, (uint)currentSize / (uint)BlockSize);
+                    Utility.AddCounter(counter, (uint)currentSize / (uint)BlockSize);
                 }
             }
 

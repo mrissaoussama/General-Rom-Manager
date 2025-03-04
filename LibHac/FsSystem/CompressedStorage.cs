@@ -64,9 +64,10 @@ public class CompressedStorage : IStorage, IAsynchronousAccessSplitter
             throw new NotImplementedException();
         }
 
-        public Result Initialize(MemoryResource allocatorForBucketTree, in ValueSubStorage dataStorage,
-            in ValueSubStorage nodeStorage, in ValueSubStorage entryStorage, int bucketTreeEntryCount,
-            long blockSizeMax, long continuousReadingSizeMax, GetDecompressorFunction getDecompressorFunc)
+        public Result Initialize(MemoryResource allocatorForBucketTree, ref readonly ValueSubStorage dataStorage,
+            ref readonly ValueSubStorage nodeStorage, ref readonly ValueSubStorage entryStorage,
+            int bucketTreeEntryCount, long blockSizeMax, long continuousReadingSizeMax,
+            GetDecompressorFunction getDecompressorFunc)
         {
             Assert.SdkRequiresNotNull(allocatorForBucketTree);
             Assert.SdkRequiresLess(0, blockSizeMax);
@@ -119,6 +120,14 @@ public class CompressedStorage : IStorage, IAsynchronousAccessSplitter
         {
             throw new NotImplementedException();
         }
+
+        private DecompressorFunction GetDecompressor(CompressionType type)
+        {
+            if (CompressionTypeUtility.IsUnknownType(type))
+                return null;
+
+            return _getDecompressorFunction(type);
+        }
     }
 
     public class CacheManager : IDisposable
@@ -170,7 +179,7 @@ public class CompressedStorage : IStorage, IAsynchronousAccessSplitter
         private long _cacheSize0;
         private long _cacheSize1;
         private SdkMutexType _mutex;
-        private readonly BlockCacheManager<CacheEntry, Range> _cacheManager;
+        private BlockCacheManager<CacheEntry, Range> _cacheManager;
         private long _storageSize;
 
         public CacheManager()
@@ -212,6 +221,38 @@ public class CompressedStorage : IStorage, IAsynchronousAccessSplitter
         {
             throw new NotImplementedException();
         }
+
+        private Result FindBufferImpl(out Buffer buffer, out CacheEntry entry, long offset)
+        {
+            throw new NotImplementedException();
+        }
+
+        private Result FindBuffer(out Buffer buffer, out CacheEntry entry, long offset)
+        {
+            throw new NotImplementedException();
+        }
+
+        private Result FindOrAllocateBuffer(out Buffer buffer, out CacheEntry entry, long offset, ulong size)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void StoreAssociateBuffer(Buffer buffer, in CacheEntry entry)
+        {
+            throw new NotImplementedException();
+        }
+
+        private Result ReadHeadCache(CompressedStorageCore core, ref long offset, ref Span<byte> buffer,
+            ref AccessRange headRange, in AccessRange endRange)
+        {
+            throw new NotImplementedException();
+        }
+
+        private Result ReadTailCache(CompressedStorageCore core, long offset, Span<byte> buffer,
+            in AccessRange headRange, ref AccessRange endRange)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public struct Entry
@@ -227,8 +268,8 @@ public class CompressedStorage : IStorage, IAsynchronousAccessSplitter
 
     public static readonly int NodeSize = 0x4000;
 
-    private readonly CompressedStorageCore _core;
-    private readonly CacheManager _cacheManager;
+    private CompressedStorageCore _core;
+    private CacheManager _cacheManager;
 
     public static long QueryEntryStorageSize(int entryCount)
     {
@@ -256,9 +297,10 @@ public class CompressedStorage : IStorage, IAsynchronousAccessSplitter
     }
 
     public Result Initialize(MemoryResource allocatorForBucketTree, IBufferManager allocatorForCacheManager,
-        in ValueSubStorage dataStorage, in ValueSubStorage nodeStorage, in ValueSubStorage entryStorage,
-        int bucketTreeEntryCount, long blockSizeMax, long continuousReadingSizeMax,
-        GetDecompressorFunction getDecompressorFunc, long cacheSize0, long cacheSize1, int maxCacheEntries)
+        ref readonly ValueSubStorage dataStorage, ref readonly ValueSubStorage nodeStorage,
+        ref readonly ValueSubStorage entryStorage, int bucketTreeEntryCount, long blockSizeMax,
+        long continuousReadingSizeMax, GetDecompressorFunction getDecompressorFunc, long cacheSize0, long cacheSize1,
+        int maxCacheEntries)
     {
         Result res = _core.Initialize(allocatorForBucketTree, in dataStorage, in nodeStorage, in entryStorage,
             bucketTreeEntryCount, blockSizeMax, continuousReadingSizeMax, getDecompressorFunc);

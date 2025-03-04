@@ -7,7 +7,7 @@ namespace LibHac.Tools.Npdm;
 
 public class ServiceAccessControl
 {
-    public List<Tuple<string, bool>> Services { get; } = [];
+    public List<Tuple<string, bool>> Services { get; } = new List<Tuple<string, bool>>();
 
     public ServiceAccessControl(Stream stream, int offset, int size)
     {
@@ -26,8 +26,8 @@ public class ServiceAccessControl
                 break;
             }
 
-            int length = (controlByte & 0x07) + 1;
-            bool registerAllowed = (controlByte & 0x80) != 0;
+            int length = ((controlByte & 0x07)) + 1;
+            bool registerAllowed = ((controlByte & 0x80) != 0);
 
             Services.Add(new Tuple<string, bool>(reader.ReadAscii(length), registerAllowed));
 

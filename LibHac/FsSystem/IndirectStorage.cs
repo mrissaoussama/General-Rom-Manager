@@ -19,7 +19,7 @@ public class IndirectStorage : IStorage
     public static readonly int StorageCount = 2;
     public static readonly int NodeSize = 1024 * 16;
 
-    private readonly BucketTree _table;
+    private BucketTree _table;
     private Array2<ValueSubStorage> _dataStorage;
 
     [StructLayout(LayoutKind.Sequential, Pack = 4)]
@@ -73,7 +73,7 @@ public class IndirectStorage : IStorage
     {
         FinalizeObject();
 
-        Span<ValueSubStorage> items = _dataStorage.Items;
+        Span<ValueSubStorage> items = _dataStorage;
         for (int i = 0; i < items.Length; i++)
             items[i].Dispose();
 
@@ -90,7 +90,7 @@ public class IndirectStorage : IStorage
     public static long QueryEntryStorageSize(int entryCount) =>
         BucketTree.QueryEntryStorageSize(NodeSize, Unsafe.SizeOf<Entry>(), entryCount);
 
-    public void SetStorage(int index, in ValueSubStorage storage)
+    public void SetStorage(int index, ref readonly ValueSubStorage storage)
     {
         Assert.SdkRequiresInRange(index, 0, StorageCount);
         _dataStorage[index].Set(in storage);
@@ -120,7 +120,7 @@ public class IndirectStorage : IStorage
         return _table.IsInitialized();
     }
 
-    public Result Initialize(MemoryResource allocator, in ValueSubStorage tableStorage)
+    public Result Initialize(MemoryResource allocator, ref readonly ValueSubStorage tableStorage)
     {
         Unsafe.SkipInit(out BucketTree.Header header);
 
@@ -141,14 +141,14 @@ public class IndirectStorage : IStorage
         if (storageSize < entryStorageOffset + entryStorageSize)
             return ResultFs.InvalidIndirectStorageBucketTreeSize.Log();
 
-        using var nodeStorage = new ValueSubStorage(tableStorage, nodeStorageOffset, nodeStorageSize);
-        using var entryStorage = new ValueSubStorage(tableStorage, entryStorageOffset, entryStorageSize);
+        using var nodeStorage = new ValueSubStorage(in tableStorage, nodeStorageOffset, nodeStorageSize);
+        using var entryStorage = new ValueSubStorage(in tableStorage, entryStorageOffset, entryStorageSize);
 
         return Initialize(allocator, in nodeStorage, in entryStorage, header.EntryCount);
     }
 
-    public Result Initialize(MemoryResource allocator, in ValueSubStorage nodeStorage, in ValueSubStorage entryStorage,
-        int entryCount)
+    public Result Initialize(MemoryResource allocator, ref readonly ValueSubStorage nodeStorage,
+        ref readonly ValueSubStorage entryStorage, int entryCount)
     {
         return _table.Initialize(allocator, in nodeStorage, in entryStorage, NodeSize, Unsafe.SizeOf<Entry>(),
             entryCount);
@@ -160,7 +160,7 @@ public class IndirectStorage : IStorage
         {
             _table.FinalizeObject();
 
-            Span<ValueSubStorage> storages = _dataStorage.Items;
+            Span<ValueSubStorage> storages = _dataStorage;
             for (int i = 0; i < storages.Length; i++)
             {
                 using var emptySubStorage = new ValueSubStorage();
@@ -303,9 +303,9 @@ public class IndirectStorage : IStorage
                     Result res = _table.InvalidateCache();
                     if (res.IsFailure()) return res.Miss();
 
-                    for (int i = 0; i < _dataStorage.Items.Length; i++)
+                    for (int i = 0; i < _dataStorage.Length; i++)
                     {
-                        res = _dataStorage.Items[i].OperateRange(OperationId.InvalidateCache, 0, long.MaxValue);
+                        res = _dataStorage[i].OperateRange(OperationId.InvalidateCache, 0, long.MaxValue);
                         if (res.IsFailure()) return res.Miss();
                     }
                 }

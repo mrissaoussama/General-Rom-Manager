@@ -157,7 +157,7 @@ namespace LibHac.Fs.Impl
         public readonly object Handle;
 
         private IdentifyAccessLogHandle(object handle) => Handle = handle;
-        public static IdentifyAccessLogHandle MakeHandle(object handle) => new(handle);
+        public static IdentifyAccessLogHandle MakeHandle(object handle) => new IdentifyAccessLogHandle(handle);
     }
 
     public struct IdString
@@ -401,7 +401,7 @@ namespace LibHac.Fs.Impl
 
     public static class AccessLogImpl
     {
-        internal static T DereferenceOutValue<T>(in T value, Result result) where T : unmanaged
+        internal static T DereferenceOutValue<T>(ref readonly T value, Result result) where T : unmanaged
         {
             return result.IsSuccess() ? value : default;
         }
@@ -464,7 +464,7 @@ namespace LibHac.Fs.Impl
                 if (status == OperationStatus.DestinationTooSmall)
                     nameBuffer = Span<byte>.Empty;
                 else
-                    nameBuffer = nameBuffer[..bytesWritten];
+                    nameBuffer = nameBuffer.Slice(0, bytesWritten);
             }
 
             if (nameBuffer.Length == 0 && functionName.Length != 0)
@@ -545,7 +545,7 @@ namespace LibHac.Fs.Impl
                     .Append(LogLineEnd);
             }
 
-            OutputAccessLogImpl(fs, new U8Span(sb.Buffer[..sb.Length]));
+            OutputAccessLogImpl(fs, new U8Span(sb.Buffer.Slice(0, sb.Length)));
         }
 
         private static void OutputAccessLogStartForSystem(FileSystemClientImpl fs)
@@ -556,7 +556,7 @@ namespace LibHac.Fs.Impl
             sb.Append(LogLineStart).Append(LogSdkVersion).Append(LogLibHacVersion).Append(LogSpec).Append(LogNx)
                 .Append(LogForSystem).Append(LogLineEnd);
 
-            OutputAccessLogImpl(fs, new U8Span(sb.Buffer[..sb.Length]));
+            OutputAccessLogImpl(fs, new U8Span(sb.Buffer.Slice(0, sb.Length)));
         }
 
         private static void OutputAccessLogStartGeneratedByCallback(FileSystemClientImpl fs)
@@ -570,7 +570,7 @@ namespace LibHac.Fs.Impl
 
                 if (length <= logBuffer.Length)
                 {
-                    OutputAccessLogImpl(fs, new U8Span(logBuffer[..length]));
+                    OutputAccessLogImpl(fs, new U8Span(logBuffer.Slice(0, length)));
                 }
             }
         }
@@ -590,7 +590,7 @@ namespace LibHac.Fs.Impl
 
             if (fs.Globals.AccessLog.GlobalAccessLogMode.HasFlag(GlobalAccessLogMode.SdCard))
             {
-                OutputAccessLogToSdCardImpl(fs, message[..^1]);
+                OutputAccessLogToSdCardImpl(fs, message.Slice(0, message.Length - 1));
             }
         }
 
@@ -831,8 +831,8 @@ namespace LibHac.Fs.Impl
         /// <summary>"<c>$fs</c>"</summary>
         public static ReadOnlySpan<byte> FsModuleName => "$fs"u8;
 
-        /// <summary>"<c>0.19.0</c>"</summary>
-        public static ReadOnlySpan<byte> LogLibHacVersion => "0.19.0"u8;
+        /// <summary>"<c>0.20.0</c>"</summary>
+        public static ReadOnlySpan<byte> LogLibHacVersion => "0.20.0"u8;
 
         /// <summary>"<c>"</c>"</summary>
         public static byte LogQuote => (byte)'"';

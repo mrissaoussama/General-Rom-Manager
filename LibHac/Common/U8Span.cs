@@ -55,7 +55,7 @@ public readonly ref struct U8Span
 
     public U8Span Slice(int start)
     {
-        return new U8Span(_buffer[start..]);
+        return new U8Span(_buffer.Slice(start));
     }
 
     public U8Span Slice(int start, int length)
@@ -63,11 +63,11 @@ public readonly ref struct U8Span
         return new U8Span(_buffer.Slice(start, length));
     }
 
-    public static implicit operator ReadOnlySpan<byte>(in U8Span value) => value.Value;
-    public static implicit operator U8Span(ReadOnlySpan<byte> value) => new(value);
+    public static implicit operator ReadOnlySpan<byte>(scoped in U8Span value) => value.Value;
+    public static implicit operator U8Span(ReadOnlySpan<byte> value) => new U8Span(value);
 
     public static explicit operator string(in U8Span value) => value.ToString();
-    public static explicit operator U8Span(string value) => new(value);
+    public static explicit operator U8Span(string value) => new U8Span(value);
 
     public override string ToString()
     {
@@ -80,7 +80,7 @@ public readonly ref struct U8Span
 
         // Allocate an extra byte for the null terminator
         byte[] buffer = new byte[length + 1];
-        _buffer[..length].CopyTo(buffer);
+        _buffer.Slice(0, length).CopyTo(buffer);
 
         return new U8String(buffer);
     }

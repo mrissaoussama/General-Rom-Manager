@@ -39,14 +39,14 @@ public static unsafe class InteropWin32
     public struct Win32FindData
     {
         public uint FileAttributes;
-        private readonly uint _creationTimeLow;
-        private readonly uint _creationTimeHigh;
-        private readonly uint _lastAccessLow;
-        private readonly uint _lastAccessHigh;
-        private readonly uint _lastWriteLow;
-        private readonly uint _lastWriteHigh;
-        private readonly uint _fileSizeHigh;
-        private readonly uint _fileSizeLow;
+        private uint _creationTimeLow;
+        private uint _creationTimeHigh;
+        private uint _lastAccessLow;
+        private uint _lastAccessHigh;
+        private uint _lastWriteLow;
+        private uint _lastWriteHigh;
+        private uint _fileSizeHigh;
+        private uint _fileSizeLow;
         public uint Reserved0;
         public uint Reserved1;
         private fixed char _fileName[260];

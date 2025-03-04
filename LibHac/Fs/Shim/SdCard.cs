@@ -26,7 +26,7 @@ public static class SdCard
 
         return OpenFileSystem(fs, in fileSystemProxy, ref outFileSystem);
 
-        static Result OpenFileSystem(FileSystemClient fs, in SharedRef<IFileSystemProxy> fileSystemProxy,
+        static Result OpenFileSystem(FileSystemClient fs, ref readonly SharedRef<IFileSystemProxy> fileSystemProxy,
             ref SharedRef<IFileSystemSf> outFileSystem)
         {
             // Retry a few times if the storage device isn't ready yet
@@ -54,10 +54,9 @@ public static class SdCard
     }
 
     private static Result RegisterFileSystem(FileSystemClient fs, U8Span mountName,
-        ref SharedRef<IFileSystemSf> fileSystem)
+        ref readonly SharedRef<IFileSystemSf> fileSystem)
     {
-        using var fileSystemAdapter =
-            new UniqueRef<IFileSystem>(new FileSystemServiceObjectAdapter(ref fileSystem));
+        using var fileSystemAdapter = new UniqueRef<IFileSystem>(new FileSystemServiceObjectAdapter(in fileSystem));
 
         if (!fileSystemAdapter.HasValue)
             return ResultFs.AllocationMemoryFailedInSdCardA.Log();
@@ -113,14 +112,14 @@ public static class SdCard
         if (fs.Impl.IsEnabledAccessLog(AccessLogTarget.System))
         {
             Tick start = fs.Hos.Os.GetSystemTick();
-            res = RegisterFileSystem(fs, mountName, ref fileSystem.Ref);
+            res = RegisterFileSystem(fs, mountName, in fileSystem);
             Tick end = fs.Hos.Os.GetSystemTick();
 
             fs.Impl.OutputAccessLog(res, start, end, null, new U8Span(logBuffer));
         }
         else
         {
-            res = RegisterFileSystem(fs, mountName, ref fileSystem.Ref);
+            res = RegisterFileSystem(fs, mountName, in fileSystem);
         }
 
         fs.Impl.AbortIfNeeded(res);
@@ -180,14 +179,14 @@ public static class SdCard
         if (fs.Impl.IsEnabledAccessLog(AccessLogTarget.Application))
         {
             Tick start = fs.Hos.Os.GetSystemTick();
-            res = RegisterFileSystem(fs, mountName, ref fileSystem.Ref);
+            res = RegisterFileSystem(fs, mountName, in fileSystem);
             Tick end = fs.Hos.Os.GetSystemTick();
 
             fs.Impl.OutputAccessLog(res, start, end, null, new U8Span(logBuffer));
         }
         else
         {
-            res = RegisterFileSystem(fs, mountName, ref fileSystem.Ref);
+            res = RegisterFileSystem(fs, mountName, in fileSystem);
         }
 
         fs.Impl.AbortIfNeeded(res);
@@ -208,13 +207,13 @@ public static class SdCard
         fs.Impl.LogResultErrorMessage(res);
         Abort.DoAbortUnless(res.IsSuccess());
 
-        res = CheckIfInserted(fs, ref deviceOperator.Ref, out bool isInserted);
+        res = CheckIfInserted(fs, in deviceOperator, out bool isInserted);
         fs.Impl.LogResultErrorMessage(res);
         Abort.DoAbortUnless(res.IsSuccess());
 
         return isInserted;
 
-        static Result CheckIfInserted(FileSystemClient fs, ref SharedRef<IDeviceOperator> deviceOperator,
+        static Result CheckIfInserted(FileSystemClient fs, ref readonly SharedRef<IDeviceOperator> deviceOperator,
             out bool isInserted)
         {
             UnsafeHelpers.SkipParamInit(out isInserted);
@@ -261,7 +260,7 @@ public static class SdCard
         outMode = (SdCardSpeedMode)speedMode;
         return Result.Success;
 
-        static Result GetSpeedMode(FileSystemClient fs, in SharedRef<IDeviceOperator> deviceOperator,
+        static Result GetSpeedMode(FileSystemClient fs, ref readonly SharedRef<IDeviceOperator> deviceOperator,
             out long outSpeedMode)
         {
             outSpeedMode = 0;
@@ -305,7 +304,7 @@ public static class SdCard
 
         return Result.Success;
 
-        static Result GetCid(FileSystemClient fs, in SharedRef<IDeviceOperator> deviceOperator, Span<byte> outCidBuffer)
+        static Result GetCid(FileSystemClient fs, ref readonly SharedRef<IDeviceOperator> deviceOperator, Span<byte> outCidBuffer)
         {
             // Retry a few times if the storage device isn't ready yet
             const int maxRetries = 10;
@@ -348,7 +347,7 @@ public static class SdCard
 
         return Result.Success;
 
-        static Result GetUserAreaSize(FileSystemClient fs, in SharedRef<IDeviceOperator> deviceOperator,
+        static Result GetUserAreaSize(FileSystemClient fs, ref readonly SharedRef<IDeviceOperator> deviceOperator,
             out long outSize)
         {
             outSize = 0;
@@ -394,7 +393,7 @@ public static class SdCard
 
         return Result.Success;
 
-        static Result GetProtectedAreaSize(FileSystemClient fs, in SharedRef<IDeviceOperator> deviceOperator,
+        static Result GetProtectedAreaSize(FileSystemClient fs, ref readonly SharedRef<IDeviceOperator> deviceOperator,
             out long outSize)
         {
             outSize = 0;
@@ -442,7 +441,7 @@ public static class SdCard
         outLogSize = logSize;
         return Result.Success;
 
-        static Result GetErrorInfo(FileSystemClient fs, in SharedRef<IDeviceOperator> deviceOperator,
+        static Result GetErrorInfo(FileSystemClient fs, ref readonly SharedRef<IDeviceOperator> deviceOperator,
             out StorageErrorInfo outErrorInfo, out long outLogSize, Span<byte> logBuffer)
         {
             UnsafeHelpers.SkipParamInit(out outErrorInfo, out outLogSize);
@@ -482,7 +481,7 @@ public static class SdCard
 
         return Result.Success;
 
-        static Result Format(FileSystemClient fs, in SharedRef<IFileSystemProxy> fileSystemProxy)
+        static Result Format(FileSystemClient fs, ref readonly SharedRef<IFileSystemProxy> fileSystemProxy)
         {
             // Retry a few times if the storage device isn't ready yet
             const int maxRetries = 10;

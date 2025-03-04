@@ -106,7 +106,7 @@ public class BaseFileSystemServiceImpl
         throw new NotImplementedException();
     }
 
-    public static bool IsExFatSupported()
+    public bool IsExFatSupported()
     {
         // Returning false should probably be fine
         return false;

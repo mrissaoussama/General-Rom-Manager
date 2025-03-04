@@ -12,7 +12,7 @@ public class Delta
     private IStorage OriginalStorage { get; set; }
     private IStorage DeltaStorage { get; }
     public DeltaHeader Header { get; }
-    private List<DeltaSegment> Segments { get; } = [];
+    private List<DeltaSegment> Segments { get; } = new List<DeltaSegment>();
 
     public Delta(IStorage deltaStorage, IStorage originalData) : this(deltaStorage)
     {
@@ -71,10 +71,9 @@ public class Delta
 
     private void ParseDeltaStructure()
     {
-        var reader = new FileReader(DeltaStorage.AsFile(OpenMode.Read))
-        {
-            Position = Header.HeaderSize
-        };
+        var reader = new FileReader(DeltaStorage.AsFile(OpenMode.Read));
+
+        reader.Position = Header.HeaderSize;
 
         long offset = 0;
 

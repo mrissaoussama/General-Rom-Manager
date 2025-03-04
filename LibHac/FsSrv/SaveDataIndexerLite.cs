@@ -1,5 +1,4 @@
 ﻿using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using LibHac.Common;
 using LibHac.Fs;
 using LibHac.Os;
@@ -53,7 +52,7 @@ internal class SaveDataIndexerLiteInfoReader : SaveDataInfoReaderImpl
         if (saveDataInfoBuffer.Size < Unsafe.SizeOf<SaveDataInfo>())
             return ResultFs.InvalidSize.Log();
 
-        Unsafe.As<byte, SaveDataInfo>(ref MemoryMarshal.GetReference(saveDataInfoBuffer.Buffer)) = _info;
+        saveDataInfoBuffer.As<SaveDataInfo>() = _info;
         readCount = 1;
         _finishedIterating = true;
 

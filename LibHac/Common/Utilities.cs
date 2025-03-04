@@ -121,8 +121,10 @@ public static class Utilities
     {
         input.Position = 0;
 
-        using var outFile = new FileStream(filename, FileMode.Create, FileAccess.Write);
-        input.CopyStream(outFile, input.Length, progress);
+        using (var outFile = new FileStream(filename, FileMode.Create, FileAccess.Write))
+        {
+            input.CopyStream(outFile, input.Length, progress);
+        }
     }
 
     public static string ReadAsciiZ(this BinaryReader reader, int maxLength = Int32.MaxValue)
@@ -230,7 +232,7 @@ public static class Utilities
         }
 
         // Divide by 1024 to get fractional value
-        readable /= 1024;
+        readable = readable / 1024;
         // Return formatted number with suffix
         return readable.ToString("0.### ") + suffix;
     }
@@ -293,7 +295,9 @@ public static class Utilities
         0xD => "14.0.0-14.1.2",
         0xE => "15.0.0-15.0.1",
         0xF => "16.0.0-16.1.0",
-        0x10 => "17.0.0-",
+        0x10 => "17.0.0-17.0.1",
+        0x11 => "18.0.0-18.1.0",
+        0x12 => "19.0.0-",
         _ => "Unknown"
     };
 

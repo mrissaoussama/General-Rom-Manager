@@ -54,18 +54,18 @@ public class AlignmentMatchingStorage<TDataAlignment, TBufferAlignment> : IStora
         Abort.DoAbortUnless(BitUtil.IsPowerOfTwo(BufferAlign));
     }
 
-    private readonly IStorage _baseStorage;
+    private IStorage _baseStorage;
     private long _baseStorageSize;
     private bool _isBaseStorageSizeDirty;
     private SharedRef<IStorage> _sharedBaseStorage;
 
-    public AlignmentMatchingStorage(ref SharedRef<IStorage> baseStorage)
+    public AlignmentMatchingStorage(ref readonly SharedRef<IStorage> baseStorage)
     {
         VerifyTypeParameters();
 
         _baseStorage = baseStorage.Get;
         _isBaseStorageSizeDirty = true;
-        _sharedBaseStorage = SharedRef<IStorage>.CreateMove(ref baseStorage);
+        _sharedBaseStorage = SharedRef<IStorage>.CreateCopy(in baseStorage);
     }
 
     public AlignmentMatchingStorage(IStorage baseStorage)
@@ -185,9 +185,9 @@ public class AlignmentMatchingStoragePooledBuffer<TBufferAlignment> : IStorage
 {
     public static uint BufferAlign => TBufferAlignment.Alignment;
 
-    private readonly IStorage _baseStorage;
+    private IStorage _baseStorage;
     private long _baseStorageSize;
-    private readonly uint _dataAlignment;
+    private uint _dataAlignment;
     private bool _isBaseStorageSizeDirty;
 
     // LibHac addition: This field goes unused if initialized with a plain IStorage.
@@ -205,7 +205,7 @@ public class AlignmentMatchingStoragePooledBuffer<TBufferAlignment> : IStorage
         Assert.SdkRequires(BitUtil.IsPowerOfTwo(dataAlign), "DataAlign must be a power of 2.");
     }
 
-    public AlignmentMatchingStoragePooledBuffer(in SharedRef<IStorage> baseStorage, int dataAlign)
+    public AlignmentMatchingStoragePooledBuffer(ref readonly SharedRef<IStorage> baseStorage, int dataAlign)
     {
         Abort.DoAbortUnless(BitUtil.IsPowerOfTwo(BufferAlign));
 
@@ -329,10 +329,10 @@ public class AlignmentMatchingStorageInBulkRead<TBufferAlignment> : IStorage
 {
     public static uint BufferAlign => TBufferAlignment.Alignment;
 
-    private readonly IStorage _baseStorage;
+    private IStorage _baseStorage;
     private SharedRef<IStorage> _sharedBaseStorage;
     private long _baseStorageSize;
-    private readonly uint _dataAlignment;
+    private uint _dataAlignment;
 
     public AlignmentMatchingStorageInBulkRead(IStorage baseStorage, int dataAlignment)
     {
@@ -345,7 +345,7 @@ public class AlignmentMatchingStorageInBulkRead<TBufferAlignment> : IStorage
         Assert.SdkRequires(BitUtil.IsPowerOfTwo(dataAlignment));
     }
 
-    public AlignmentMatchingStorageInBulkRead(in SharedRef<IStorage> baseStorage, int dataAlignment)
+    public AlignmentMatchingStorageInBulkRead(ref readonly SharedRef<IStorage> baseStorage, int dataAlignment)
     {
         Abort.DoAbortUnless(BitUtil.IsPowerOfTwo(BufferAlign));
 
@@ -398,7 +398,7 @@ public class AlignmentMatchingStorageInBulkRead<TBufferAlignment> : IStorage
                 // into the buffer and copy the unaligned portion to the destination buffer.
                 if (alignedSize <= pooledBuffer.GetSize())
                 {
-                    res = _baseStorage.Read(alignedOffset, pooledBuffer.GetBuffer()[..(int)alignedSize]);
+                    res = _baseStorage.Read(alignedOffset, pooledBuffer.GetBuffer().Slice(0, (int)alignedSize));
                     if (res.IsFailure()) return res.Miss();
 
                     pooledBuffer.GetBuffer().Slice((int)(offset - alignedOffset), destination.Length)
@@ -428,7 +428,7 @@ public class AlignmentMatchingStorageInBulkRead<TBufferAlignment> : IStorage
             int headSize = (int)(coreOffset - offset);
             Assert.SdkLess(headSize, destination.Length);
 
-            res = _baseStorage.Read(alignedOffset, pooledBuffer.GetBuffer()[..(int)_dataAlignment]);
+            res = _baseStorage.Read(alignedOffset, pooledBuffer.GetBuffer().Slice(0, (int)_dataAlignment));
             if (res.IsFailure()) return res.Miss();
 
             pooledBuffer.GetBuffer().Slice((int)(offset - alignedOffset), headSize).CopyTo(destination);
@@ -449,10 +449,10 @@ public class AlignmentMatchingStorageInBulkRead<TBufferAlignment> : IStorage
         {
             int tailSize = (int)(offsetEnd - coreOffsetEnd);
 
-            res = _baseStorage.Read(coreOffsetEnd, pooledBuffer.GetBuffer()[..(int)_dataAlignment]);
+            res = _baseStorage.Read(coreOffsetEnd, pooledBuffer.GetBuffer().Slice(0, (int)_dataAlignment));
             if (res.IsFailure()) return res.Miss();
 
-            pooledBuffer.GetBuffer()[..tailSize].CopyTo(destination[(int)(coreOffsetEnd - offset)..]);
+            pooledBuffer.GetBuffer().Slice(0, tailSize).CopyTo(destination.Slice((int)(coreOffsetEnd - offset)));
         }
 
         return Result.Success;

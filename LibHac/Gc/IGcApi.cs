@@ -8,7 +8,7 @@ namespace LibHac.Gc;
 public interface IGcApi
 {
     IGcWriterApi Writer { get; }
-    void InsertGameCard(in SharedRef<IStorage> storage);
+    void InsertGameCard(ref readonly SharedRef<IStorage> storage);
     void RemoveGameCard();
     void PresetInternalKeys(ReadOnlySpan<byte> gameCardKey, ReadOnlySpan<byte> gameCardCertificate);
     void Initialize(Memory<byte> workBuffer, ulong deviceBufferAddress);
@@ -35,4 +35,5 @@ public interface IGcApi
     void UnregisterDetectionEventCallback();
     Result GetCardHeader(Span<byte> destBuffer);
     Result GetErrorInfo(out GameCardErrorReportInfo outErrorReportInfo);
+    Result GetAsicCertificate(out GameCardAsicCertificateSet outCertificateSet);
 }

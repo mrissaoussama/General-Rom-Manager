@@ -42,7 +42,7 @@ public class FileSystemBufferManager : IBufferManager
 
         private struct AttrInfo
         {
-            private readonly int _level;
+            private int _level;
             private int _cacheCount;
             private int _cacheSize;
 
@@ -70,7 +70,7 @@ public class FileSystemBufferManager : IBufferManager
         private Entry[] _entries;
         private int _entryCount;
         private int _entryCountMax;
-        private readonly LinkedList<AttrInfo> _attrList;
+        private LinkedList<AttrInfo> _attrList;
         private int _cacheCountMin;
         private int _cacheSizeMin;
         private int _totalCacheSize;
@@ -334,8 +334,8 @@ public class FileSystemBufferManager : IBufferManager
                         Unsafe.SizeOf<Entry>();
 
             // Copy the entries back by one.
-            Span<Entry> source = entryBuffer[(index + 1).._entryCount];
-            Span<Entry> dest = entryBuffer[index..];
+            Span<Entry> source = entryBuffer.Slice(index + 1, _entryCount - (index + 1));
+            Span<Entry> dest = entryBuffer.Slice(index);
             source.CopyTo(dest);
 
             // Decrement our entry count.
@@ -360,8 +360,8 @@ public class FileSystemBufferManager : IBufferManager
         }
     }
 
-    private readonly FileSystemBuddyHeap _buddyHeap;
-    private readonly CacheHandleTable _cacheTable;
+    private FileSystemBuddyHeap _buddyHeap;
+    private CacheHandleTable _cacheTable;
     private int _totalSize;
     private int _peakFreeSize;
     private int _peakTotalAllocatableSize;

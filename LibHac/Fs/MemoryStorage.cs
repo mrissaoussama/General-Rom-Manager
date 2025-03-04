@@ -11,8 +11,8 @@ namespace LibHac.Fs;
 /// <remarks>Based on nnSdk 16.2.0 (FS 16.0.0)</remarks>
 public class MemoryStorage : IStorage
 {
-    private readonly byte[] _buffer;
-    private readonly int _size;
+    private byte[] _buffer;
+    private int _size;
 
     public MemoryStorage(byte[] buffer)
     {
@@ -25,6 +25,7 @@ public class MemoryStorage : IStorage
         Assert.SdkRequiresNotNull(buffer);
         Assert.SdkRequiresInRange(size, 0, buffer.Length);
 
+        // ReSharper disable once ConditionIsAlwaysTrueOrFalse
         Abort.DoAbortUnless(buffer is null || 0 <= size && size < buffer.Length);
 
         _buffer = buffer;

@@ -37,7 +37,7 @@ public class Package2StorageReader : IDisposable
     /// <param name="keySet">The keyset to use for decrypting the package.</param>
     /// <param name="storage">An <see cref="IStorage"/> of the encrypted package2.</param>
     /// <returns>The <see cref="Result"/> of the operation.</returns>
-    public Result Initialize(KeySet keySet, in SharedRef<IStorage> storage)
+    public Result Initialize(KeySet keySet, ref readonly SharedRef<IStorage> storage)
     {
         Result res = storage.Get.Read(0, SpanHelpers.AsByteSpan(ref _header));
         if (res.IsFailure()) return res.Miss();
@@ -65,7 +65,7 @@ public class Package2StorageReader : IDisposable
         int offset = _header.Meta.GetPayloadFileOffset(index);
         int size = (int)_header.Meta.PayloadSizes[index];
 
-        var payloadSubStorage = new SubStorage(_storage, offset, size);
+        var payloadSubStorage = new SubStorage(in _storage, offset, size);
 
         if (size == 0)
         {
@@ -73,7 +73,7 @@ public class Package2StorageReader : IDisposable
             return Result.Success;
         }
 
-        byte[] iv = _header.Meta.PayloadIvs[index].ItemsRo.ToArray();
+        byte[] iv = _header.Meta.PayloadIvs[index][..].ToArray();
         outPayloadStorage.Reset(new CachedStorage(new Aes128CtrStorage(payloadSubStorage, _key.DataRo.ToArray(), iv, true), 0x4000, 1, true));
         return Result.Success;
     }
@@ -178,7 +178,7 @@ public class Package2StorageReader : IDisposable
                 int offset = _header.Meta.GetPayloadFileOffset(i);
                 int size = (int)_header.Meta.PayloadSizes[i];
 
-                var payloadSubStorage = new SubStorage(_storage, offset, size);
+                var payloadSubStorage = new SubStorage(in _storage, offset, size);
 
                 offset = 0;
                 sha.Initialize();
@@ -224,14 +224,14 @@ public class Package2StorageReader : IDisposable
         int encryptedHeaderSize = Unsafe.SizeOf<Package2Header>() - unencryptedHeaderSize;
 
         // Get signature and IV
-        storages.Add(new SubStorage(_storage, 0, unencryptedHeaderSize));
+        storages.Add(new SubStorage(in _storage, 0, unencryptedHeaderSize));
 
         // Open decrypted meta
-        var encMetaStorage = new SubStorage(_storage, unencryptedHeaderSize, encryptedHeaderSize);
+        var encMetaStorage = new SubStorage(in _storage, unencryptedHeaderSize, encryptedHeaderSize);
 
         // The counter starts counting at the beginning of the meta struct, but the first block in
         // the struct isn't encrypted. Increase the counter by one to skip that block.
-        byte[] iv = _header.Meta.HeaderIv.ItemsRo.ToArray();
+        byte[] iv = _header.Meta.HeaderIv[..].ToArray();
         Utilities.IncrementByteArray(iv);
 
         storages.Add(new CachedStorage(new Aes128CtrStorage(encMetaStorage, _key.DataRo.ToArray(), iv, true), 0x100, 1, true));
@@ -253,7 +253,7 @@ public class Package2StorageReader : IDisposable
         return Result.Success;
     }
 
-    private static void DecryptHeader(ReadOnlySpan<byte> key, ref Package2Meta source, ref Package2Meta dest)
+    private void DecryptHeader(ReadOnlySpan<byte> key, ref Package2Meta source, ref Package2Meta dest)
     {
         Array16<byte> iv = source.HeaderIv;
 

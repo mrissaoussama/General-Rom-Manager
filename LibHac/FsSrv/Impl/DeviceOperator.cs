@@ -21,12 +21,12 @@ namespace LibHac.FsSrv.Impl;
 /// <remarks>Based on nnSdk 14.3.0</remarks>
 public class DeviceOperator : IDeviceOperator
 {
-    private readonly AccessControl _accessControl;
+    private AccessControl _accessControl;
     // ReSharper disable once NotAccessedField.Local
-    private readonly ulong _processId;
+    private ulong _processId;
 
     // LibHac addition
-    private readonly FileSystemServer _fsServer;
+    private FileSystemServer _fsServer;
 
     public DeviceOperator(FileSystemServer fsServer, AccessControl accessControl, ulong processId)
     {
@@ -42,14 +42,14 @@ public class DeviceOperator : IDeviceOperator
     {
         Assert.True(IntUtil.IsIntValueRepresentable<int, long>(size));
 
-        return buffer.Buffer[..(int)size];
+        return buffer.Buffer.Slice(0, (int)size);
     }
 
     private static ReadOnlySpan<byte> GetSpan(InBuffer buffer, long size)
     {
         Assert.True(IntUtil.IsIntValueRepresentable<int, long>(size));
 
-        return buffer.Buffer[..(int)size];
+        return buffer.Buffer.Slice(0, (int)size);
     }
 
     public Result IsSdCardInserted(out bool outIsInserted)

@@ -24,7 +24,7 @@ public class LruListCache<TKey, TValue> where TKey : IEquatable<TKey>
         }
     }
 
-    private readonly LinkedList<Node> _list;
+    private LinkedList<Node> _list;
 
     public LruListCache()
     {

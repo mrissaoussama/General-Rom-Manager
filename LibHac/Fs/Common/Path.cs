@@ -11,21 +11,37 @@ namespace LibHac.Fs;
 
 public struct PathFlags
 {
-    private uint _value;
+    private PathFormatFlags _formatFlags;
 
-    public void AllowWindowsPath() => _value |= 1 << 0;
-    public void AllowRelativePath() => _value |= 1 << 1;
-    public void AllowEmptyPath() => _value |= 1 << 2;
-    public void AllowMountName() => _value |= 1 << 3;
-    public void AllowBackslash() => _value |= 1 << 4;
-    public void AllowAllCharacters() => _value |= 1 << 5;
+    [Flags]
+    public enum PathFormatFlags
+    {
+        AllowWindowsPath = 1 << 0,
+        AllowRelativePath = 1 << 1,
+        AllowEmptyPath = 1 << 2,
+        AllowMountName = 1 << 3,
+        AllowBackslash = 1 << 4,
+        AllowInvalidCharacter = 1 << 5
+    }
 
-    public readonly bool IsWindowsPathAllowed() => (_value & (1 << 0)) != 0;
-    public readonly bool IsRelativePathAllowed() => (_value & (1 << 1)) != 0;
-    public readonly bool IsEmptyPathAllowed() => (_value & (1 << 2)) != 0;
-    public readonly bool IsMountNameAllowed() => (_value & (1 << 3)) != 0;
-    public readonly bool IsBackslashAllowed() => (_value & (1 << 4)) != 0;
-    public readonly bool AreAllCharactersAllowed() => (_value & (1 << 5)) != 0;
+    public PathFlags(PathFormatFlags formatFlags)
+    {
+        _formatFlags = formatFlags;
+    }
+
+    public void AllowWindowsPath() => _formatFlags |= PathFormatFlags.AllowWindowsPath;
+    public void AllowRelativePath() => _formatFlags |= PathFormatFlags.AllowRelativePath;
+    public void AllowEmptyPath() => _formatFlags |= PathFormatFlags.AllowEmptyPath;
+    public void AllowMountName() => _formatFlags |= PathFormatFlags.AllowMountName;
+    public void AllowBackslash() => _formatFlags |= PathFormatFlags.AllowBackslash;
+    public void AllowInvalidCharacter() => _formatFlags |= PathFormatFlags.AllowInvalidCharacter;
+
+    public readonly bool IsWindowsPathAllowed() => (_formatFlags & PathFormatFlags.AllowWindowsPath) != 0;
+    public readonly bool IsRelativePathAllowed() => (_formatFlags & PathFormatFlags.AllowRelativePath) != 0;
+    public readonly bool IsEmptyPathAllowed() => (_formatFlags & PathFormatFlags.AllowEmptyPath) != 0;
+    public readonly bool IsMountNameAllowed() => (_formatFlags & PathFormatFlags.AllowMountName) != 0;
+    public readonly bool IsBackslashAllowed() => (_formatFlags & PathFormatFlags.AllowBackslash) != 0;
+    public readonly bool IsInvalidCharacterAllowed() => (_formatFlags & PathFormatFlags.AllowInvalidCharacter) != 0;
 }
 
 /// <summary>
@@ -46,7 +62,7 @@ public static class PathExtensions
     /// <returns>A reference to the given <see cref="Path"/>.</returns>
 #pragma warning disable LH0001 // DoNotCopyValue
 #pragma warning disable CS8500 // This takes the address of, gets the size of, or declares a pointer to a managed type
-    public static unsafe ref Path Ref(this scoped in Path path)
+    public static unsafe ref Path Ref(this scoped ref readonly Path path)
     {
         fixed (Path* p = &path)
         {
@@ -61,17 +77,9 @@ public static class PathExtensions
         return ref *p;
     }
 
-    public static unsafe bool IsNullRef(in Path path)
+    public static unsafe bool IsNullRef(ref readonly Path path)
     {
         fixed (Path* p = &path)
-        {
-            return p == null;
-        }
-    }
-
-    public static unsafe bool IsNullRef(in int path)
-    {
-        fixed (int* p = &path)
         {
             return p == null;
         }
@@ -131,7 +139,7 @@ public ref struct Path
         /// <returns><see cref="Result.Success"/>: The operation was successful.<br/>
         /// <see cref="ResultFs.NotNormalized"/>: The <c>IsNormalized</c> flag of
         /// <paramref name="path"/> is not <see langword="true"/>.</returns>
-        public Result Initialize(scoped in Path path)
+        public Result Initialize(scoped ref readonly Path path)
         {
             if (!path._isNormalized)
                 return ResultFs.NotNormalized.Log();
@@ -145,6 +153,14 @@ public ref struct Path
 
             if (bytesCopied != _length)
                 return ResultFs.UnexpectedInPathA.Log();
+
+            return Result.Success;
+        }
+
+        public Result InitializeAsEmpty()
+        {
+            _buffer = EmptyBuffer;
+            _length = 0;
 
             return Result.Success;
         }
@@ -190,7 +206,7 @@ public ref struct Path
     private const int SeparatorLength = 1;
     private const int NullTerminatorLength = 1;
     private const int WriteBufferAlignmentLength = 8;
-    private static ReadOnlySpan<byte> EmptyPath => new byte[] { 0 };
+    private static ReadOnlySpan<byte> EmptyPath => [0];
 
     private ReadOnlySpan<byte> _string;
     private byte[] _writeBuffer;
@@ -406,7 +422,7 @@ public ref struct Path
     /// <returns><see cref="Result.Success"/>: The operation was successful.<br/>
     /// <see cref="ResultFs.NotNormalized"/>: The <c>IsNormalized</c> flag of
     /// <paramref name="other"/> is not <see langword="true"/>.</returns>
-    public Result Initialize(scoped in Path other)
+    public Result Initialize(scoped ref readonly Path other)
     {
         if (!other._isNormalized)
             return ResultFs.NotNormalized.Log();
@@ -433,7 +449,7 @@ public ref struct Path
     /// because <see cref="Stored"/> paths are always normalized upon initialization.</remarks>
     /// <param name="other">The <see cref="Stored"/> path used to initialize this <see cref="Path"/>.</param>
     /// <returns><see cref="Result.Success"/>: The operation was successful.</returns>
-    public Result Initialize(scoped in Stored other)
+    public Result Initialize(scoped ref readonly Stored other)
     {
         int otherLength = other.GetLength();
 
@@ -624,7 +640,7 @@ public ref struct Path
 
         if (_writeBufferLength > 1)
         {
-            PathUtility.Replace(GetWriteBuffer()[..(_writeBufferLength - 1)], AltDirectorySeparator,
+            PathUtility.Replace(GetWriteBuffer().Slice(0, _writeBufferLength - 1), AltDirectorySeparator,
                 DirectorySeparator);
         }
 
@@ -754,7 +770,7 @@ public ref struct Path
 
         if (childPath.Length != 0 && childPath[0] == DirectorySeparator)
         {
-            childPath = childPath[1..];
+            childPath = childPath.Slice(1);
             childHasLeadingSlash = true;
         }
 
@@ -783,12 +799,12 @@ public ref struct Path
                 // Copy the child part of the path to the destination buffer.
                 if (childBuffer is not null)
                 {
-                    StringUtils.Copy(destBuffer[(parentLength + SeparatorLength)..],
+                    StringUtils.Copy(destBuffer.Slice(parentLength + SeparatorLength),
                         childBuffer.AsSpan(childStartOffset), childLength + NullTerminatorLength);
                 }
                 else
                 {
-                    Span<byte> destBuffer2 = destBuffer[childStartOffset..];
+                    Span<byte> destBuffer2 = destBuffer.Slice(childStartOffset);
 
                     for (int i = childLength; i > 0; i--)
                     {
@@ -840,7 +856,7 @@ public ref struct Path
     /// <param name="parent">The <see cref="Path"/> to insert.</param>
     /// <returns><see cref="Result.Success"/>: The operation was successful.<br/>
     /// <see cref="ResultFs.NotImplemented"/>: The path provided in <paramref name="parent"/> is a Windows path.</returns>
-    public Result InsertParent(scoped in Path parent)
+    public Result InsertParent(scoped ref readonly Path parent)
     {
         return InsertParent(parent.GetString());
     }
@@ -862,7 +878,7 @@ public ref struct Path
         {
             if (trimmedChild.Length != 0 && trimmedChild[0] == DirectorySeparator)
             {
-                trimmedChild = trimmedChild[1..];
+                trimmedChild = trimmedChild.Slice(1);
             }
 
             // Nothing to do if the child path is empty or the root directory.
@@ -907,7 +923,7 @@ public ref struct Path
 
             destBuffer[parentLength] = DirectorySeparator;
 
-            int childBytesCopied = StringUtils.Copy(destBuffer[(parentLength + 1)..], trimmedChild,
+            int childBytesCopied = StringUtils.Copy(destBuffer.Slice(parentLength + 1), trimmedChild,
                 childLength + NullTerminatorLength);
 
             if (childBytesCopied != childLength)
@@ -933,7 +949,7 @@ public ref struct Path
     /// path is not normalized yet the <c>IsNormalized</c> flag is still <see langword="true"/>.</remarks>
     /// <param name="child">The child <see cref="Path"/> to append to the current path.</param>
     /// <returns><see cref="Result.Success"/>: The operation was successful.</returns>
-    public Result AppendChild(scoped in Path child)
+    public Result AppendChild(scoped ref readonly Path child)
     {
         return AppendChild(child.GetString());
     }
@@ -949,7 +965,7 @@ public ref struct Path
     /// <returns><see cref="Result.Success"/>: The operation was successful.<br/>
     /// <see cref="ResultFs.NotNormalized"/>: The <c>IsNormalized</c> flag of either
     /// <paramref name="path1"/> or <paramref name="path2"/> is not <see langword="true"/>.</returns>
-    public Result Combine(scoped in Path path1, scoped in Path path2)
+    public Result Combine(scoped ref readonly Path path1, scoped ref readonly Path path2)
     {
         int path1Length = path1.GetLength();
         int path2Length = path2.GetLength();
@@ -985,7 +1001,7 @@ public ref struct Path
     /// <returns><see cref="Result.Success"/>: The operation was successful.<br/>
     /// <see cref="ResultFs.NotNormalized"/>: The <c>IsNormalized</c> flag of
     /// <paramref name="path1"/> is not <see langword="true"/>.</returns>
-    public Result Combine(scoped in Path path1, scoped ReadOnlySpan<byte> path2)
+    public Result Combine(scoped ref readonly Path path1, scoped ReadOnlySpan<byte> path2)
     {
         int path1Length = path1.GetLength();
         int path2Length = StringUtils.GetLength(path2);
@@ -1010,7 +1026,7 @@ public ref struct Path
     /// <param name="path1">The first path to combine.</param>
     /// <param name="path2">The second path to combine.</param>
     /// <returns><see cref="Result.Success"/>: The operation was successful.</returns>
-    public Result Combine(scoped ReadOnlySpan<byte> path1, scoped in Path path2)
+    public Result Combine(scoped ReadOnlySpan<byte> path1, scoped ref readonly Path path2)
     {
         int path1Length = StringUtils.GetLength(path1);
         int path2Length = path2.GetLength();

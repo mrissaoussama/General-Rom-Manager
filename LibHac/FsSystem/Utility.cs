@@ -24,13 +24,72 @@ public class DummyEventNotifier : IEventNotifier
     }
 }
 
+public class StageLockWithPin<T> : IUniqueLock where T : class, IDisposable
+{
+    private UniqueRef<IUniqueLock> _lock;
+    private MultilockWithPin<T> _multilock;
+
+    public StageLockWithPin(ref UniqueRef<IUniqueLock> inLock, ref readonly SharedRef<T> objectToPin, SemaphoreAdapter semaphore)
+    {
+        _lock = new UniqueRef<IUniqueLock>(ref inLock);
+        _multilock = new MultilockWithPin<T>(in objectToPin, semaphore);
+    }
+
+    public void Dispose()
+    {
+        _multilock.Dispose();
+        _lock.Destroy();
+    }
+
+    public Result Lock(int count)
+    {
+        return _multilock.Lock(count).Ret();
+    }
+}
+
+public class MultilockWithPin<T> : IUniqueLock where T : class, IDisposable
+{
+    private SharedRef<T> _pinnedObject;
+    private SemaphoreAdapter _semaphore;
+    private int _lockCount;
+
+    public MultilockWithPin(ref readonly SharedRef<T> objectToPin, SemaphoreAdapter semaphore)
+    {
+        _pinnedObject = SharedRef<T>.CreateCopy(in objectToPin);
+        _semaphore = semaphore;
+        _lockCount = 0;
+    }
+
+    public void Dispose()
+    {
+        if (_lockCount > 0)
+        {
+            _semaphore.Unlock(_lockCount);
+        }
+
+        _pinnedObject.Destroy();
+    }
+
+    public Result Lock(int count)
+    {
+        Assert.SdkRequiresEqual(_lockCount, 0);
+
+        if (!_semaphore.TryLock(out _lockCount, count))
+        {
+            return ResultFs.OpenCountLimit.Log();
+        }
+
+        return Result.Success;
+    }
+}
+
 /// <summary>
 /// Various utility functions used by the <see cref="LibHac.FsSystem"/> namespace.
 /// </summary>
 /// <remarks>Based on nnSdk 13.4.0 (FS 13.1.0)</remarks>
 internal static class Utility
 {
-    public delegate Result FsIterationTask(in Path path, in DirectoryEntry entry, ref FsIterationTaskClosure closure);
+    public delegate Result FsIterationTask(ref readonly Path path, in DirectoryEntry entry, ref FsIterationTaskClosure closure);
 
     /// <summary>
     /// Used to pass various ref structs to an <see cref="FsIterationTask"/>.
@@ -145,8 +204,8 @@ internal static class Utility
         return Result.Success;
     }
 
-    public static Result IterateDirectoryRecursively(IFileSystem fs, in Path rootPath, ref DirectoryEntry dirEntry,
-        FsIterationTask onEnterDir, FsIterationTask onExitDir, FsIterationTask onFile,
+    public static Result IterateDirectoryRecursively(IFileSystem fs, ref readonly Path rootPath,
+        ref DirectoryEntry dirEntry, FsIterationTask onEnterDir, FsIterationTask onExitDir, FsIterationTask onFile,
         ref FsIterationTaskClosure closure)
     {
         using var pathBuffer = new Path();
@@ -160,8 +219,8 @@ internal static class Utility
         return Result.Success;
     }
 
-    public static Result CleanupDirectoryRecursively(IFileSystem fs, in Path rootPath, ref DirectoryEntry dirEntry,
-        FsIterationTask onEnterDir, FsIterationTask onExitDir, FsIterationTask onFile,
+    public static Result CleanupDirectoryRecursively(IFileSystem fs, ref readonly Path rootPath,
+        ref DirectoryEntry dirEntry, FsIterationTask onEnterDir, FsIterationTask onExitDir, FsIterationTask onFile,
         ref FsIterationTaskClosure closure)
     {
         using var pathBuffer = new Path();
@@ -172,12 +231,12 @@ internal static class Utility
             ref closure);
     }
 
-    public static Result CopyFile(IFileSystem destFileSystem, IFileSystem sourceFileSystem, in Path destPath,
-        in Path sourcePath, Span<byte> workBuffer)
+    public static Result CopyFile(IFileSystem destFileSystem, IFileSystem sourceFileSystem, ref readonly Path destPath,
+        ref readonly Path sourcePath, Span<byte> workBuffer)
     {
         // Open source file.
         using var sourceFile = new UniqueRef<IFile>();
-        Result res = sourceFileSystem.OpenFile(ref sourceFile.Ref, sourcePath, OpenMode.Read);
+        Result res = sourceFileSystem.OpenFile(ref sourceFile.Ref, in sourcePath, OpenMode.Read);
         if (res.IsFailure()) return res.Miss();
 
         res = sourceFile.Get.GetSize(out long fileSize);
@@ -199,7 +258,7 @@ internal static class Utility
             res = sourceFile.Get.Read(out long bytesRead, offset, workBuffer, ReadOption.None);
             if (res.IsFailure()) return res.Miss();
 
-            res = destFile.Get.Write(offset, workBuffer[..(int)bytesRead], WriteOption.None);
+            res = destFile.Get.Write(offset, workBuffer.Slice(0, (int)bytesRead), WriteOption.None);
             if (res.IsFailure()) return res.Miss();
 
             remaining -= bytesRead;
@@ -210,9 +269,10 @@ internal static class Utility
     }
 
     public static Result CopyDirectoryRecursively(IFileSystem destinationFileSystem, IFileSystem sourceFileSystem,
-        in Path destinationPath, in Path sourcePath, ref DirectoryEntry dirEntry, Span<byte> workBuffer)
+        ref readonly Path destinationPath, ref readonly Path sourcePath, ref DirectoryEntry dirEntry,
+        Span<byte> workBuffer)
     {
-        static Result OnEnterDir(in Path path, in DirectoryEntry entry, ref FsIterationTaskClosure closure)
+        static Result OnEnterDir(ref readonly Path path, in DirectoryEntry entry, ref FsIterationTaskClosure closure)
         {
             Result res = closure.DestinationPathBuffer.AppendChild(entry.Name);
             if (res.IsFailure()) return res.Miss();
@@ -220,12 +280,12 @@ internal static class Utility
             return closure.SourceFileSystem.CreateDirectory(in closure.DestinationPathBuffer);
         }
 
-        static Result OnExitDir(in Path path, in DirectoryEntry entry, ref FsIterationTaskClosure closure)
+        static Result OnExitDir(ref readonly Path path, in DirectoryEntry entry, ref FsIterationTaskClosure closure)
         {
             return closure.DestinationPathBuffer.RemoveChild();
         }
 
-        static Result OnFile(in Path path, in DirectoryEntry entry, ref FsIterationTaskClosure closure)
+        static Result OnFile(ref readonly Path path, in DirectoryEntry entry, ref FsIterationTaskClosure closure)
         {
             Result res = closure.DestinationPathBuffer.AppendChild(entry.Name);
             if (res.IsFailure()) return res.Miss();
@@ -237,14 +297,12 @@ internal static class Utility
             return closure.DestinationPathBuffer.RemoveChild();
         }
 
-        var closure = new FsIterationTaskClosure
-        {
-            Buffer = workBuffer,
-            SourceFileSystem = sourceFileSystem,
-            DestFileSystem = destinationFileSystem
-        };
+        var closure = new FsIterationTaskClosure();
+        closure.Buffer = workBuffer;
+        closure.SourceFileSystem = sourceFileSystem;
+        closure.DestFileSystem = destinationFileSystem;
 
-        Result res = closure.DestinationPathBuffer.Initialize(destinationPath);
+        Result res = closure.DestinationPathBuffer.Initialize(in destinationPath);
         if (res.IsFailure()) return res.Miss();
 
         res = IterateDirectoryRecursively(sourceFileSystem, in sourcePath, ref dirEntry, OnEnterDir, OnExitDir,
@@ -254,19 +312,17 @@ internal static class Utility
         return res;
     }
 
-    public static Result CopyDirectoryRecursively(IFileSystem fileSystem, in Path destinationPath,
-        in Path sourcePath, ref DirectoryEntry dirEntry, Span<byte> workBuffer)
+    public static Result CopyDirectoryRecursively(IFileSystem fileSystem, ref readonly Path destinationPath,
+        ref readonly Path sourcePath, ref DirectoryEntry dirEntry, Span<byte> workBuffer)
     {
-        var closure = new FsIterationTaskClosure
-        {
-            Buffer = workBuffer,
-            SourceFileSystem = fileSystem
-        };
+        var closure = new FsIterationTaskClosure();
+        closure.Buffer = workBuffer;
+        closure.SourceFileSystem = fileSystem;
 
-        Result res = closure.DestinationPathBuffer.Initialize(destinationPath);
+        Result res = closure.DestinationPathBuffer.Initialize(in destinationPath);
         if (res.IsFailure()) return res.Miss();
 
-        static Result OnEnterDir(in Path path, in DirectoryEntry entry, ref FsIterationTaskClosure closure)
+        static Result OnEnterDir(ref readonly Path path, in DirectoryEntry entry, ref FsIterationTaskClosure closure)
         {
             Result res = closure.DestinationPathBuffer.AppendChild(entry.Name);
             if (res.IsFailure()) return res.Miss();
@@ -274,12 +330,12 @@ internal static class Utility
             return closure.SourceFileSystem.CreateDirectory(in closure.DestinationPathBuffer);
         }
 
-        static Result OnExitDir(in Path path, in DirectoryEntry entry, ref FsIterationTaskClosure closure)
+        static Result OnExitDir(ref readonly Path path, in DirectoryEntry entry, ref FsIterationTaskClosure closure)
         {
             return closure.DestinationPathBuffer.RemoveChild();
         }
 
-        static Result OnFile(in Path path, in DirectoryEntry entry, ref FsIterationTaskClosure closure)
+        static Result OnFile(ref readonly Path path, in DirectoryEntry entry, ref FsIterationTaskClosure closure)
         {
             Result res = closure.DestinationPathBuffer.AppendChild(entry.Name);
             if (res.IsFailure()) return res.Miss();
@@ -300,10 +356,10 @@ internal static class Utility
 
     public static Result VerifyDirectoryRecursively(IFileSystem fileSystem, Span<byte> workBuffer)
     {
-        static Result OnEnterAndExitDir(in Path path, in DirectoryEntry entry, ref FsIterationTaskClosure closure) =>
+        static Result OnEnterAndExitDir(ref readonly Path path, in DirectoryEntry entry, ref FsIterationTaskClosure closure) =>
             Result.Success;
 
-        static Result OnFile(in Path path, in DirectoryEntry entry, ref FsIterationTaskClosure closure)
+        static Result OnFile(ref readonly Path path, in DirectoryEntry entry, ref FsIterationTaskClosure closure)
         {
             using var file = new UniqueRef<IFile>();
 
@@ -330,11 +386,9 @@ internal static class Utility
         Result res = PathFunctions.SetUpFixedPath(ref rootPath.Ref(), RootPath);
         if (res.IsFailure()) return res.Miss();
 
-        var closure = new FsIterationTaskClosure
-        {
-            Buffer = workBuffer,
-            SourceFileSystem = fileSystem
-        };
+        var closure = new FsIterationTaskClosure();
+        closure.Buffer = workBuffer;
+        closure.SourceFileSystem = fileSystem;
 
         var dirEntryBuffer = new DirectoryEntry();
 
@@ -342,7 +396,7 @@ internal static class Utility
             OnEnterAndExitDir, OnFile, ref closure);
     }
 
-    private static Result EnsureDirectoryImpl(IFileSystem fileSystem, in Path path)
+    private static Result EnsureDirectoryImpl(IFileSystem fileSystem, ref readonly Path path)
     {
         using var pathCopy = new Path();
         bool isFinished;
@@ -384,7 +438,7 @@ internal static class Utility
         return Result.Success;
     }
 
-    public static Result EnsureDirectory(IFileSystem fileSystem, in Path path)
+    public static Result EnsureDirectory(IFileSystem fileSystem, ref readonly Path path)
     {
         Result res = fileSystem.GetEntryType(out _, in path);
 
@@ -434,16 +488,41 @@ internal static class Utility
     }
 
     public static Result MakeUniqueLockWithPin<T>(ref UniqueRef<IUniqueLock> outUniqueLock,
-        SemaphoreAdapter semaphore, ref SharedRef<T> objectToPin) where T : class, IDisposable
+        SemaphoreAdapter semaphore, ref readonly SharedRef<T> objectToPin) where T : class, IDisposable
     {
         using var semaphoreAdapter = new UniqueLock<SemaphoreAdapter>();
         Result res = TryAcquireCountSemaphore(ref semaphoreAdapter.Ref(), semaphore);
         if (res.IsFailure()) return res.Miss();
 
-        var lockWithPin = new UniqueLockWithPin<T>(ref semaphoreAdapter.Ref(), ref objectToPin);
+        var lockWithPin = new UniqueLockWithPin<T>(ref semaphoreAdapter.Ref(), in objectToPin);
         using var uniqueLock = new UniqueRef<IUniqueLock>(lockWithPin);
 
         outUniqueLock.Set(ref uniqueLock.Ref);
+        return Result.Success;
+    }
+
+    public static Result MakeUniqueLockWithPin<T>(ref UniqueRef<IUniqueLock> outUniqueLock,
+        SemaphoreAdapter semaphore, int count, ref readonly SharedRef<T> objectToPin) where T : class, IDisposable
+    {
+        using var multilock = new UniqueRef<MultilockWithPin<T>>(new(in objectToPin, semaphore));
+
+        Result res = multilock.Get.Lock(count);
+        if (res.IsFailure()) return res.Miss();
+
+        outUniqueLock.Set(ref multilock.Ref);
+        return Result.Success;
+    }
+
+    public static Result MakeUniqueLockWithPin<T>(ref UniqueRef<IUniqueLock> outUniqueLock,
+        ref UniqueRef<IUniqueLock> inLock, SemaphoreAdapter semaphore, int count, ref readonly SharedRef<T> objectToPin)
+        where T : class, IDisposable
+    {
+        using var stageLock = new UniqueRef<StageLockWithPin<T>>(new(ref inLock, in objectToPin, semaphore));
+
+        Result res = stageLock.Get.Lock(count);
+        if (res.IsFailure()) return res.Miss();
+
+        outUniqueLock.Set(ref stageLock.Ref);
         return Result.Success;
     }
 

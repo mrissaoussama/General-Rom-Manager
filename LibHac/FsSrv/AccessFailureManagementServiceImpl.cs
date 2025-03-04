@@ -9,7 +9,7 @@ namespace LibHac.FsSrv;
 public class AccessFailureManagementServiceImpl
 {
     private Configuration _config;
-    private readonly AccessFailureDetectionEventManager _eventManager;
+    private AccessFailureDetectionEventManager _eventManager;
 
     internal HorizonClient HorizonClient => _config.FsServer.Hos;
 

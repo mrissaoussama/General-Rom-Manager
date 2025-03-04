@@ -22,9 +22,9 @@ internal class ReadOnlyGameCardStorage : IStorage
     // LibHac additions
     private readonly IGcApi _gc;
 
-    public ReadOnlyGameCardStorage(ref SharedRef<IGameCardManager> deviceManger, IGcApi gc)
+    public ReadOnlyGameCardStorage(ref readonly SharedRef<IGameCardManager> deviceManger, IGcApi gc)
     {
-        _deviceManager = SharedRef<IGameCardManager>.CreateMove(ref deviceManger);
+        _deviceManager = SharedRef<IGameCardManager>.CreateCopy(in deviceManger);
         _gc = gc;
     }
 
@@ -105,9 +105,9 @@ internal class WriteOnlyGameCardStorage : IStorage
     // LibHac additions
     private readonly IGcApi _gc;
 
-    public WriteOnlyGameCardStorage(ref SharedRef<IGameCardManager> deviceManger, IGcApi gc)
+    public WriteOnlyGameCardStorage(ref readonly SharedRef<IGameCardManager> deviceManger, IGcApi gc)
     {
-        _deviceManager = SharedRef<IGameCardManager>.CreateMove(ref deviceManger);
+        _deviceManager = SharedRef<IGameCardManager>.CreateCopy(in deviceManger);
         _gc = gc;
     }
 
@@ -173,7 +173,7 @@ internal abstract class GameCardStorageInterfaceAdapter : IStorageSf
 {
     private SharedRef<IStorage> _baseStorage;
 
-    protected GameCardStorageInterfaceAdapter(in SharedRef<IStorage> baseStorage)
+    protected GameCardStorageInterfaceAdapter(ref readonly SharedRef<IStorage> baseStorage)
     {
         _baseStorage = SharedRef<IStorage>.CreateCopy(in baseStorage);
     }
@@ -185,12 +185,12 @@ internal abstract class GameCardStorageInterfaceAdapter : IStorageSf
 
     public virtual Result Read(long offset, OutBuffer destination, long size)
     {
-        return _baseStorage.Get.Read(offset, destination.Buffer[..(int)size]).Ret();
+        return _baseStorage.Get.Read(offset, destination.Buffer.Slice(0, (int)size)).Ret();
     }
 
     public virtual Result Write(long offset, InBuffer source, long size)
     {
-        return _baseStorage.Get.Write(offset, source.Buffer[..(int)size]).Ret();
+        return _baseStorage.Get.Write(offset, source.Buffer.Slice(0, (int)size)).Ret();
     }
 
     public virtual Result Flush()

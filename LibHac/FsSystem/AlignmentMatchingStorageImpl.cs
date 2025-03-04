@@ -33,13 +33,13 @@ public static class AlignmentMatchingStorageImpl
         return (uint)(Alignment.AlignUp(value, alignment) - value);
     }
 
-    public static Result Read(in SharedRef<IStorage> storage, Span<byte> workBuffer, uint dataAlignment,
+    public static Result Read(ref readonly SharedRef<IStorage> storage, Span<byte> workBuffer, uint dataAlignment,
         uint bufferAlignment, long offset, Span<byte> destination)
     {
         return Read(storage.Get, workBuffer, dataAlignment, bufferAlignment, offset, destination);
     }
 
-    public static Result Write(in SharedRef<IStorage> storage, Span<byte> subBuffer, uint dataAlignment,
+    public static Result Write(ref readonly SharedRef<IStorage> storage, Span<byte> subBuffer, uint dataAlignment,
         uint bufferAlignment, long offset, ReadOnlySpan<byte> source)
     {
         return Write(storage.Get, subBuffer, dataAlignment, bufferAlignment, offset, source);
@@ -82,7 +82,7 @@ public static class AlignmentMatchingStorageImpl
 
             Assert.SdkAssert(GetRoundDownDifference(offset, dataAlignment) + headSize <= workBuffer.Length);
 
-            Result res = storage.Read(headOffset, workBuffer[..(int)dataAlignment]);
+            Result res = storage.Read(headOffset, workBuffer.Slice(0, (int)dataAlignment));
             if (res.IsFailure()) return res.Miss();
 
             workBuffer.Slice((int)GetRoundDownDifference(offset, dataAlignment), headSize).CopyTo(destination);
@@ -97,13 +97,13 @@ public static class AlignmentMatchingStorageImpl
             long alignedTailOffset = Alignment.AlignDown(tailOffset, dataAlignment);
             long copySize = Math.Min(alignedTailOffset + dataAlignment - tailOffset, remainingTailSize);
 
-            Result res = storage.Read(alignedTailOffset, workBuffer[..(int)dataAlignment]);
+            Result res = storage.Read(alignedTailOffset, workBuffer.Slice(0, (int)dataAlignment));
             if (res.IsFailure()) return res.Miss();
 
             Assert.SdkAssert(tailOffset - offset + copySize <= destination.Length);
             Assert.SdkAssert(tailOffset - alignedTailOffset + copySize <= dataAlignment);
             workBuffer.Slice((int)(tailOffset - alignedTailOffset), (int)copySize)
-                .CopyTo(destination[(int)(tailOffset - offset)..]);
+                .CopyTo(destination.Slice((int)(tailOffset - offset)));
 
             remainingTailSize -= copySize;
             tailOffset += copySize;
@@ -147,16 +147,16 @@ public static class AlignmentMatchingStorageImpl
             long headOffset = Alignment.AlignDown(offset, dataAlignment);
             int headSize = (int)(coveredOffset - offset);
 
-            Assert.SdkAssert(offset - headOffset + headSize <= workBuffer.Length);
+            Assert.SdkAssert((offset - headOffset) + headSize <= workBuffer.Length);
 
             // Read the existing block, copy the partial block to the appropriate portion,
             // and write the modified block back to the base storage.
-            Result res = storage.Read(headOffset, workBuffer[..(int)dataAlignment]);
+            Result res = storage.Read(headOffset, workBuffer.Slice(0, (int)dataAlignment));
             if (res.IsFailure()) return res.Miss();
 
-            source[..headSize].CopyTo(workBuffer[(int)(offset - headOffset)..]);
+            source.Slice(0, headSize).CopyTo(workBuffer.Slice((int)(offset - headOffset)));
 
-            res = storage.Write(headOffset, workBuffer[..(int)dataAlignment]);
+            res = storage.Write(headOffset, workBuffer.Slice(0, (int)dataAlignment));
             if (res.IsFailure()) return res.Miss();
         }
 
@@ -173,13 +173,13 @@ public static class AlignmentMatchingStorageImpl
 
             // Read the existing block, copy the partial block to the appropriate portion,
             // and write the modified block back to the base storage.
-            Result res = storage.Read(alignedTailOffset, workBuffer[..(int)dataAlignment]);
+            Result res = storage.Read(alignedTailOffset, workBuffer.Slice(0, (int)dataAlignment));
             if (res.IsFailure()) return res.Miss();
 
             source.Slice((int)(tailOffset - offset), (int)copySize)
-                .CopyTo(workBuffer[(int)GetRoundDownDifference(tailOffset, dataAlignment)..]);
+                .CopyTo(workBuffer.Slice((int)GetRoundDownDifference(tailOffset, dataAlignment)));
 
-            res = storage.Write(alignedTailOffset, workBuffer[..(int)dataAlignment]);
+            res = storage.Write(alignedTailOffset, workBuffer.Slice(0, (int)dataAlignment));
             if (res.IsFailure()) return res.Miss();
 
             remainingTailSize -= copySize;

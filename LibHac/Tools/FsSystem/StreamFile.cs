@@ -38,7 +38,7 @@ public class StreamFile : IFile
                 BaseStream.Position = offset;
             }
 
-            bytesRead = BaseStream.Read(destination[..(int)toRead]);
+            bytesRead = BaseStream.Read(destination.Slice(0, (int)toRead));
             return Result.Success;
         }
     }

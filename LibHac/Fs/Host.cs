@@ -16,10 +16,10 @@ public readonly struct MountHostOption
         Flags = flags;
     }
 
-    public static MountHostOption None => new(MountHostOptionFlag.None);
+    public static MountHostOption None => new MountHostOption(MountHostOptionFlag.None);
 
     public static MountHostOption PseudoCaseSensitive =>
-        new(MountHostOptionFlag.PseudoCaseSensitive);
+        new MountHostOption(MountHostOptionFlag.PseudoCaseSensitive);
 }
 
 [Flags]

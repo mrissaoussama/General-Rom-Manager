@@ -54,7 +54,7 @@ public readonly ref struct U8SpanMutable
 
     public U8SpanMutable Slice(int start)
     {
-        return new U8SpanMutable(_buffer[start..]);
+        return new U8SpanMutable(_buffer.Slice(start));
     }
 
     public U8SpanMutable Slice(int start, int length)
@@ -62,13 +62,13 @@ public readonly ref struct U8SpanMutable
         return new U8SpanMutable(_buffer.Slice(start, length));
     }
 
-    public static implicit operator U8Span(U8SpanMutable value) => new(value._buffer);
+    public static implicit operator U8Span(U8SpanMutable value) => new U8Span(value._buffer);
 
     public static implicit operator ReadOnlySpan<byte>(U8SpanMutable value) => value.Value;
     public static implicit operator Span<byte>(U8SpanMutable value) => value.Value;
 
     public static explicit operator string(U8SpanMutable value) => value.ToString();
-    public static explicit operator U8SpanMutable(string value) => new(value);
+    public static explicit operator U8SpanMutable(string value) => new U8SpanMutable(value);
 
     public override string ToString()
     {

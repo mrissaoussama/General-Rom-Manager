@@ -25,7 +25,7 @@ public class Aes128XtsStorage : SectorStorage
 
         _tempBuffer = new byte[sectorSize];
         _decryptRead = decryptRead;
-        _key1 = key[..BlockSize].ToArray();
+        _key1 = key.Slice(0, BlockSize).ToArray();
         _key2 = key.Slice(BlockSize, BlockSize).ToArray();
     }
 

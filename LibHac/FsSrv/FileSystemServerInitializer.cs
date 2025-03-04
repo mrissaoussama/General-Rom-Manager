@@ -13,8 +13,10 @@ namespace LibHac.FsSrv;
 
 public static class FileSystemServerInitializer
 {
-    private const ulong SpeedEmulationProgramIdMinimum = 0x100000000000000;
-    private const ulong SpeedEmulationProgramIdMaximum = 0x100000000001FFF;
+    private const ulong SpeedEmulationProgramIdWithoutPlatformIdMinimum = 0;
+    private const ulong SpeedEmulationProgramIdWithoutPlatformIdMaximum = 0x1FFF;
+
+    private const uint ContentDivisionSize = ConcatenationFileSystem.DefaultInternalFileSize;
 
     private const int BufferManagerHeapSize = 1024 * 1024 * 14;
     private const int BufferManagerCacheSize = 1024;
@@ -43,17 +45,17 @@ public static class FileSystemServerInitializer
         ulong processId = client.Os.GetCurrentProcessId().Value;
         fileSystemProxy.Get.SetCurrentProcess(processId).IgnoreResult();
 
-        client.Fs.Impl.InitializeDfcFileSystemProxyServiceObject(ref fileSystemProxy.Ref);
+        client.Fs.Impl.InitializeDfcFileSystemProxyServiceObject(in fileSystemProxy);
 
         InitializeFileSystemProxyServer(client, server);
 
-        var saveService = new SaveDataFileSystemService(fspConfig.SaveDataFileSystemService, processId);
+        using SharedRef<SaveDataFileSystemService> saveService = SaveDataFileSystemService.CreateShared(fspConfig.SaveDataFileSystemService, processId);
 
-        saveService.CleanUpTemporaryStorage().IgnoreResult();
-        saveService.CleanUpSaveData().IgnoreResult();
-        saveService.CompleteSaveDataExtension().IgnoreResult();
-        SaveDataFileSystemService.FixSaveData().IgnoreResult();
-        saveService.RecoverMultiCommit().IgnoreResult();
+        saveService.Get.CleanUpTemporaryStorage().IgnoreResult();
+        saveService.Get.CleanUpSaveData().IgnoreResult();
+        saveService.Get.CompleteSaveDataExtension().IgnoreResult();
+        saveService.Get.FixSaveData().IgnoreResult();
+        saveService.Get.RecoverMultiCommit().IgnoreResult();
 
         config.StorageDeviceManagerFactory.SetReady(StorageDevicePortId.SdCard, null);
         config.StorageDeviceManagerFactory.SetReady(StorageDevicePortId.GameCard, null);
@@ -71,115 +73,105 @@ public static class FileSystemServerInitializer
         bufferManager.Initialize(BufferManagerCacheSize, heapBuffer, BufferManagerBlockSize);
 
         // Todo: Assign based on the value of "IsDevelopment"
-        var debugConfigurationServiceConfig = new DebugConfigurationServiceImpl.Configuration
-        {
-            IsDisabled = false
-        };
+        var debugConfigurationServiceConfig = new DebugConfigurationServiceImpl.Configuration();
+        debugConfigurationServiceConfig.IsDisabled = false;
         var debugConfigurationService = new DebugConfigurationServiceImpl(in debugConfigurationServiceConfig);
 
         var saveDataIndexerManager = new SaveDataIndexerManager(server.Hos.Fs, Fs.SaveData.SaveIndexerId,
             new ArrayPoolMemoryResource(), new SdHandleManager(server), false);
 
-        var programRegistryConfig = new ProgramRegistryServiceImpl.Configuration
-        {
-            FsServer = server
-        };
+        var programRegistryConfig = new ProgramRegistryServiceImpl.Configuration();
+        programRegistryConfig.FsServer = server;
 
         var programRegistryService = new ProgramRegistryServiceImpl(in programRegistryConfig);
 
         ProgramRegistryImpl.Initialize(server, programRegistryService);
 
-        var baseStorageConfig = new BaseStorageServiceImpl.Configuration
-        {
-            BisStorageCreator = config.FsCreators.BuiltInStorageCreator,
-            GameCardStorageCreator = config.FsCreators.GameCardStorageCreator,
-            FsServer = server
-        };
+        var baseStorageConfig = new BaseStorageServiceImpl.Configuration();
+        baseStorageConfig.BisStorageCreator = config.FsCreators.BuiltInStorageCreator;
+        baseStorageConfig.GameCardStorageCreator = config.FsCreators.GameCardStorageCreator;
+        baseStorageConfig.FsServer = server;
         var baseStorageService = new BaseStorageServiceImpl(in baseStorageConfig);
 
         var timeService = new TimeServiceImpl(server);
 
-        var baseFsServiceConfig = new BaseFileSystemServiceImpl.Configuration
-        {
-            BisFileSystemCreator = config.FsCreators.BuiltInStorageFileSystemCreator,
-            GameCardFileSystemCreator = config.FsCreators.GameCardFileSystemCreator,
-            SdCardFileSystemCreator = config.FsCreators.SdCardFileSystemCreator,
-            BisWiperCreator = BisWiper.CreateWiper,
-            FsServer = server
-        };
+        var baseFsServiceConfig = new BaseFileSystemServiceImpl.Configuration();
+        baseFsServiceConfig.BisFileSystemCreator = config.FsCreators.BuiltInStorageFileSystemCreator;
+        baseFsServiceConfig.GameCardFileSystemCreator = config.FsCreators.GameCardFileSystemCreator;
+        baseFsServiceConfig.SdCardFileSystemCreator = config.FsCreators.SdCardFileSystemCreator;
+        baseFsServiceConfig.BisWiperCreator = BisWiper.CreateWiper;
+        baseFsServiceConfig.FsServer = server;
         var baseFsService = new BaseFileSystemServiceImpl(in baseFsServiceConfig);
 
-        var accessFailureManagementServiceConfig = new AccessFailureManagementServiceImpl.Configuration
-        {
-            FsServer = server
-        };
+        var accessFailureManagementServiceConfig = new AccessFailureManagementServiceImpl.Configuration();
+        accessFailureManagementServiceConfig.FsServer = server;
 
         var accessFailureManagementService =
             new AccessFailureManagementServiceImpl(in accessFailureManagementServiceConfig);
 
         var speedEmulationRange =
-            new InternalProgramIdRangeForSpeedEmulation(SpeedEmulationProgramIdMinimum,
-                SpeedEmulationProgramIdMaximum);
+            new InternalProgramIdRangeForSpeedEmulation(SpeedEmulationProgramIdWithoutPlatformIdMinimum,
+                SpeedEmulationProgramIdWithoutPlatformIdMaximum);
 
-        var ncaFsServiceConfig = new NcaFileSystemServiceImpl.Configuration
-        {
-            BaseFsService = baseFsService,
-            LocalFsCreator = config.FsCreators.LocalFileSystemCreator,
-            TargetManagerFsCreator = config.FsCreators.TargetManagerFileSystemCreator,
-            PartitionFsCreator = config.FsCreators.PartitionFileSystemCreator,
-            RomFsCreator = config.FsCreators.RomFileSystemCreator,
-            StorageOnNcaCreator = config.FsCreators.StorageOnNcaCreator,
-            SubDirectoryFsCreator = config.FsCreators.SubDirectoryFileSystemCreator,
-            EncryptedFsCreator = config.FsCreators.EncryptedFileSystemCreator,
-            ProgramRegistryService = programRegistryService,
-            AccessFailureManagementService = accessFailureManagementService,
-            SpeedEmulationRange = speedEmulationRange,
-            FsServer = server
-        };
+        var ncaFsServiceConfig = new NcaFileSystemServiceImpl.Configuration();
+        ncaFsServiceConfig.BaseFsService = baseFsService;
+        ncaFsServiceConfig.LocalFsCreator = config.FsCreators.LocalFileSystemCreator;
+        ncaFsServiceConfig.TargetManagerFsCreator = config.FsCreators.TargetManagerFileSystemCreator;
+        ncaFsServiceConfig.PartitionFsCreator = config.FsCreators.PartitionFileSystemCreator;
+        ncaFsServiceConfig.RomFsCreator = config.FsCreators.RomFileSystemCreator;
+        ncaFsServiceConfig.StorageOnNcaCreator = config.FsCreators.StorageOnNcaCreator;
+        ncaFsServiceConfig.SubDirectoryFsCreator = config.FsCreators.SubDirectoryFileSystemCreator;
+        ncaFsServiceConfig.EncryptedFsCreator = config.FsCreators.EncryptedFileSystemCreator;
+        ncaFsServiceConfig.ProgramRegistryService = programRegistryService;
+        ncaFsServiceConfig.AccessFailureManagementService = accessFailureManagementService;
+        ncaFsServiceConfig.SpeedEmulationRange = speedEmulationRange;
+        ncaFsServiceConfig.AddOnContentDivisionSize = ContentDivisionSize;
+        ncaFsServiceConfig.RomDivisionSize = ContentDivisionSize;
+        ncaFsServiceConfig.FsServer = server;
 
-        var ncaFsService = new NcaFileSystemServiceImpl(in ncaFsServiceConfig, config.ExternalKeySet);
+        var ncaFsService = new NcaFileSystemServiceImpl(in ncaFsServiceConfig);
 
-        var saveFsServiceConfig = new SaveDataFileSystemServiceImpl.Configuration
-        {
-            BaseFsService = baseFsService,
-            TimeService = timeService,
-            LocalFsCreator = config.FsCreators.LocalFileSystemCreator,
-            TargetManagerFsCreator = config.FsCreators.TargetManagerFileSystemCreator,
-            SaveFsCreator = config.FsCreators.SaveDataFileSystemCreator,
-            EncryptedFsCreator = config.FsCreators.EncryptedFileSystemCreator,
-            ProgramRegistryService = programRegistryService,
-            BufferManager = bufferManager,
-            GenerateRandomData = config.RandomGenerator,
-            IsPseudoSaveData = () => true,
-            SaveDataFileSystemCacheCount = 1,
-            SaveIndexerManager = saveDataIndexerManager,
-            DebugConfigService = debugConfigurationService,
-            FsServer = server
-        };
+        var saveFsServiceConfig = new SaveDataFileSystemServiceImpl.Configuration();
+        saveFsServiceConfig.BaseFsService = baseFsService;
+        saveFsServiceConfig.TimeService = timeService;
+        saveFsServiceConfig.LocalFsCreator = config.FsCreators.LocalFileSystemCreator;
+        saveFsServiceConfig.TargetManagerFsCreator = config.FsCreators.TargetManagerFileSystemCreator;
+        saveFsServiceConfig.SaveFsCreator = config.FsCreators.SaveDataFileSystemCreator;
+        saveFsServiceConfig.EncryptedFsCreator = config.FsCreators.EncryptedFileSystemCreator;
+        saveFsServiceConfig.ProgramRegistryService = programRegistryService;
+        saveFsServiceConfig.BufferManager = bufferManager;
+        saveFsServiceConfig.GenerateRandomData = config.RandomGenerator;
+        saveFsServiceConfig.IsPseudoSaveData = () => true;
+        saveFsServiceConfig.SaveDataFileSystemCacheCount = 1;
+        saveFsServiceConfig.SaveIndexerManager = saveDataIndexerManager;
+        saveFsServiceConfig.DebugConfigService = debugConfigurationService;
+        saveFsServiceConfig.JournalIntegritySaveDataVersion = 0x50000;
+        saveFsServiceConfig.JournalIntegritySupportedVersionMin = 0x40000;
+        saveFsServiceConfig.JournalIntegritySupportedVersionMax = 0x50000;
+        saveFsServiceConfig.IntegritySaveDataVersion = 0x10000;
+        saveFsServiceConfig.IntegritySupportedVersionMin = 0x10000;
+        saveFsServiceConfig.IntegritySupportedVersionMax = 0x10000;
+        saveFsServiceConfig.FsServer = server;
 
         var saveFsService = new SaveDataFileSystemServiceImpl(in saveFsServiceConfig);
 
-        var statusReportServiceConfig = new StatusReportServiceImpl.Configuration
-        {
-            NcaFileSystemServiceImpl = ncaFsService,
-            SaveDataFileSystemServiceImpl = saveFsService,
-            BufferManagerMemoryReport = null,
-            ExpHeapMemoryReport = null,
-            BufferPoolMemoryReport = null,
-            GetPatrolAllocateCounts = null,
-            MainThreadStackUsageReporter = new DummyStackUsageReporter(),
-            IpcWorkerThreadStackUsageReporter = new DummyStackUsageReporter(),
-            PipeLineWorkerThreadStackUsageReporter = new DummyStackUsageReporter(),
-            FsServer = server
-        };
+        var statusReportServiceConfig = new StatusReportServiceImpl.Configuration();
+        statusReportServiceConfig.NcaFileSystemServiceImpl = ncaFsService;
+        statusReportServiceConfig.SaveDataFileSystemServiceImpl = saveFsService;
+        statusReportServiceConfig.BufferManagerMemoryReport = null;
+        statusReportServiceConfig.ExpHeapMemoryReport = null;
+        statusReportServiceConfig.BufferPoolMemoryReport = null;
+        statusReportServiceConfig.GetPatrolAllocateCounts = null;
+        statusReportServiceConfig.MainThreadStackUsageReporter = new DummyStackUsageReporter();
+        statusReportServiceConfig.IpcWorkerThreadStackUsageReporter = new DummyStackUsageReporter();
+        statusReportServiceConfig.PipeLineWorkerThreadStackUsageReporter = new DummyStackUsageReporter();
+        statusReportServiceConfig.FsServer = server;
 
         var statusReportService = new StatusReportServiceImpl(in statusReportServiceConfig);
 
-        var accessLogServiceConfig = new AccessLogServiceImpl.Configuration
-        {
-            MinimumProgramIdForSdCardLog = 0x0100000000003000,
-            FsServer = server
-        };
+        var accessLogServiceConfig = new AccessLogServiceImpl.Configuration();
+        accessLogServiceConfig.MinimumProgramIdForSdCardLog = 0x0100000000003000;
+        accessLogServiceConfig.FsServer = server;
 
         var accessLogService = new AccessLogServiceImpl(in accessLogServiceConfig);
 
@@ -218,10 +210,10 @@ public static class FileSystemServerInitializer
             _server = server;
         }
 
-        public Result GetServiceObject(ref SharedRef<IDisposable> serviceObject)
+        public Result GetServiceObject(ref SharedRef<IDisposable> outServiceObject)
         {
             using SharedRef<IFileSystemProxy> derivedObject = _server.Impl.GetFileSystemProxyServiceObject();
-            serviceObject.SetByMove(ref derivedObject.Ref);
+            outServiceObject.SetByMove(ref derivedObject.Ref);
             return Result.Success;
         }
 
@@ -237,10 +229,10 @@ public static class FileSystemServerInitializer
             _server = server;
         }
 
-        public Result GetServiceObject(ref SharedRef<IDisposable> serviceObject)
+        public Result GetServiceObject(ref SharedRef<IDisposable> outServiceObject)
         {
             using SharedRef<IFileSystemProxyForLoader> derivedObject = _server.Impl.GetFileSystemProxyForLoaderServiceObject();
-            serviceObject.SetByMove(ref derivedObject.Ref);
+            outServiceObject.SetByMove(ref derivedObject.Ref);
             return Result.Success;
         }
 
@@ -256,10 +248,10 @@ public static class FileSystemServerInitializer
             _server = server;
         }
 
-        public Result GetServiceObject(ref SharedRef<IDisposable> serviceObject)
+        public Result GetServiceObject(ref SharedRef<IDisposable> outServiceObject)
         {
             using SharedRef<IProgramRegistry> derivedObject = _server.Impl.GetProgramRegistryServiceObject();
-            serviceObject.SetByMove(ref derivedObject.Ref);
+            outServiceObject.SetByMove(ref derivedObject.Ref);
             return Result.Success;
         }
 

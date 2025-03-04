@@ -10,7 +10,7 @@ public class FileSystemClient : IDisposable
 {
     internal FileSystemClientGlobals Globals;
 
-    public FileSystemClientImpl Impl => new(this);
+    public FileSystemClientImpl Impl => new FileSystemClientImpl(this);
     internal HorizonClient Hos => Globals.Hos;
 
     public FileSystemClient(HorizonClient horizonClient)

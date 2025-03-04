@@ -15,7 +15,7 @@ public class KipReader : IDisposable
     private KipHeader _header;
 
     public ReadOnlySpan<uint> Capabilities => _header.Capabilities;
-    public U8Span Name => new(_header.Name);
+    public U8Span Name => new U8Span(_header.Name);
 
     public ulong ProgramId => _header.ProgramId;
     public int Version => _header.Version;
@@ -39,7 +39,7 @@ public class KipReader : IDisposable
         _kipStorage.Destroy();
     }
 
-    public Result Initialize(in SharedRef<IStorage> kipData)
+    public Result Initialize(ref readonly SharedRef<IStorage> kipData)
     {
         if (!kipData.HasValue)
             return ResultLibHac.NullArgument.Log();
@@ -145,7 +145,7 @@ public class KipReader : IDisposable
         // The segment is all zeros if it has no data.
         if (segmentHeader.FileSize == 0)
         {
-            buffer[..segmentHeader.Size].Clear();
+            buffer.Slice(0, segmentHeader.Size).Clear();
             return Result.Success;
         }
 
@@ -159,7 +159,7 @@ public class KipReader : IDisposable
             return ResultLibHac.InvalidKipFileSize.Log();
 
         // Read the segment data.
-        res = _kipStorage.Get.Read(offset, buffer[..segmentHeader.FileSize]);
+        res = _kipStorage.Get.Read(offset, buffer.Slice(0, segmentHeader.FileSize));
         if (res.IsFailure()) return res.Miss();
 
         // Decompress if necessary.
@@ -185,7 +185,7 @@ public class KipReader : IDisposable
         if (buffer.Length < GetUncompressedSize())
             return ResultLibHac.BufferTooSmall.Log();
 
-        Span<byte> segmentBuffer = buffer[Unsafe.SizeOf<KipHeader>()..];
+        Span<byte> segmentBuffer = buffer.Slice(Unsafe.SizeOf<KipHeader>());
 
         // Read each of the segments into the buffer.
         for (int i = 0; i < Segments.Length; i++)
@@ -195,7 +195,7 @@ public class KipReader : IDisposable
                 Result res = ReadSegment((SegmentType)i, segmentBuffer);
                 if (res.IsFailure()) return res.Miss();
 
-                segmentBuffer = segmentBuffer[Segments[i].Size..];
+                segmentBuffer = segmentBuffer.Slice(Segments[i].Size);
             }
         }
 
@@ -244,15 +244,15 @@ public class KipReader : IDisposable
             return ResultLibHac.InvalidKipSegmentSize.Log();
 
         // Parse the footer, endian agnostic.
-        Span<byte> footer = buffer[(compressedDataSize - segmentFooterSize)..];
+        Span<byte> footer = buffer.Slice(compressedDataSize - segmentFooterSize);
         int totalCompSize = BinaryPrimitives.ReadInt32LittleEndian(footer);
-        int footerSize = BinaryPrimitives.ReadInt32LittleEndian(footer[4..]);
-        int additionalSize = BinaryPrimitives.ReadInt32LittleEndian(footer[8..]);
+        int footerSize = BinaryPrimitives.ReadInt32LittleEndian(footer.Slice(4));
+        int additionalSize = BinaryPrimitives.ReadInt32LittleEndian(footer.Slice(8));
 
         if (buffer.Length < totalCompSize + additionalSize)
             return ResultLibHac.BufferTooSmall.Log();
 
-        Span<byte> data = buffer[(compressedDataSize - totalCompSize)..];
+        Span<byte> data = buffer.Slice(compressedDataSize - totalCompSize);
 
         int inOffset = totalCompSize - footerSize;
         int outOffset = totalCompSize + additionalSize;
@@ -270,7 +270,7 @@ public class KipReader : IDisposable
                         return ResultLibHac.KipSegmentDecompressionFailed.Log();
 
                     inOffset -= 2;
-                    ushort segmentValue = BinaryPrimitives.ReadUInt16LittleEndian(data[inOffset..]);
+                    ushort segmentValue = BinaryPrimitives.ReadUInt16LittleEndian(data.Slice(inOffset));
                     int segmentOffset = (segmentValue & 0x0FFF) + 3;
                     int segmentSize = Math.Min(((segmentValue >> 12) & 0xF) + 3, outOffset);
 

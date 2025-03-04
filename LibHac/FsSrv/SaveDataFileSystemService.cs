@@ -1,10 +1,12 @@
 ﻿using System;
+using System.IO;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using LibHac.Common;
+using LibHac.Common.FixedArrays;
 using LibHac.Diag;
 using LibHac.Fs;
 using LibHac.Fs.Impl;
+using LibHac.Fs.Save;
 using LibHac.Fs.Shim;
 using LibHac.FsSrv.Impl;
 using LibHac.FsSrv.Sf;
@@ -16,76 +18,110 @@ using LibHac.Sf;
 using LibHac.Util;
 using static LibHac.Fs.SaveData;
 using static LibHac.Fs.StringTraits;
+using static LibHac.FsSrv.Anonymous;
 using IFileSystem = LibHac.Fs.Fsa.IFileSystem;
 using IFileSystemSf = LibHac.FsSrv.Sf.IFileSystem;
 using IFile = LibHac.Fs.Fsa.IFile;
 using IFileSf = LibHac.FsSrv.Sf.IFile;
+using ISaveDataMover = LibHac.FsSrv.Sf.ISaveDataMover;
 using Path = LibHac.Fs.Path;
+using SaveDataMover = LibHac.FsSrv.Impl.SaveDataMover;
+using SaveDataTransferManager = LibHac.FsSrv.Impl.SaveDataTransferManager;
+using SaveDataTransferManagerVersion2 = LibHac.FsSrv.Impl.SaveDataTransferManagerVersion2;
 using Utility = LibHac.FsSystem.Utility;
 
 namespace LibHac.FsSrv;
 
 /// <summary>
-/// Handles save-data-related calls for <see cref="FileSystemProxyImpl"/>.
+/// Creates locks for incrementing and decrementing the save data open-count semaphore
+/// from a <see cref="SaveDataFileSystemService"/> to keep track of how many save data files are currently open.
 /// </summary>
-/// <remarks>FS will have one instance of this class for every connected process.
-/// The FS permissions of the calling process are checked on every function call.
-/// <br/>Based on nnSdk 14.3.0 (FS 14.1.0)</remarks>
-internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISaveDataMultiCommitCoreInterface
+/// <remarks>Used by objects such as <see cref="IFileSystem"/>s that open save data files.
+/// <br/>Based on nnSdk 17.5.0 (FS 17.0.0)</remarks>
+file class SaveDataOpenCountAdapter : IEntryOpenCountSemaphoreManager
 {
-    private const int OpenEntrySemaphoreCount = 256;
-    private const int SaveMountSemaphoreCount = 10;
+    private SharedRef<SaveDataFileSystemService> _saveService;
 
-    private const int SaveDataBlockSize = 0x4000;
-
-    private WeakRef<SaveDataFileSystemService> _selfReference;
-    private readonly SaveDataFileSystemServiceImpl _serviceImpl;
-    private readonly ulong _processId;
-    private Path.Stored _saveDataRootPath;
-    private readonly SemaphoreAdapter _openEntryCountSemaphore;
-    private readonly SemaphoreAdapter _saveDataMountCountSemaphore;
-
-    private HorizonClient Hos => _serviceImpl.Hos;
-
-    private SharedRef<SaveDataFileSystemService> GetSharedFromThis() =>
-        SharedRef<SaveDataFileSystemService>.Create(in _selfReference);
-
-    private SharedRef<ISaveDataMultiCommitCoreInterface> GetSharedMultiCommitInterfaceFromThis() =>
-        SharedRef<ISaveDataMultiCommitCoreInterface>.Create(in _selfReference);
-
-    public static SharedRef<SaveDataFileSystemService> CreateShared(SaveDataFileSystemServiceImpl serviceImpl, ulong processId)
+    public SaveDataOpenCountAdapter(ref readonly SharedRef<SaveDataFileSystemService> saveService)
     {
-        // Create the service
-        var saveService = new SaveDataFileSystemService(serviceImpl, processId);
-
-        // Wrap the service in a ref-counter and give the service a weak self-reference
-        using var sharedService = new SharedRef<SaveDataFileSystemService>(saveService);
-        saveService._selfReference.Set(in sharedService);
-
-        return SharedRef<SaveDataFileSystemService>.CreateMove(ref sharedService.Ref);
+        _saveService = SharedRef<SaveDataFileSystemService>.CreateCopy(in saveService);
     }
 
-    private class SaveDataOpenCountAdapter : IEntryOpenCountSemaphoreManager
+    public void Dispose()
     {
-        private SharedRef<SaveDataFileSystemService> _saveService;
+        _saveService.Destroy();
+    }
 
-        public SaveDataOpenCountAdapter(ref SharedRef<SaveDataFileSystemService> saveService)
-        {
-            _saveService = SharedRef<SaveDataFileSystemService>.CreateMove(ref saveService);
-        }
+    public Result TryAcquireEntryOpenCountSemaphore(ref UniqueRef<IUniqueLock> outSemaphore)
+    {
+        return _saveService.Get.TryAcquireSaveDataEntryOpenCountSemaphore(ref outSemaphore).Ret();
+    }
+}
 
-        public void Dispose()
-        {
-            _saveService.Destroy();
-        }
+file static class Anonymous
+{
+    public static SaveDataSpaceId ConvertToRealSpaceId(SaveDataSpaceId spaceId)
+    {
+        return spaceId == SaveDataSpaceId.ProperSystem || spaceId == SaveDataSpaceId.SafeMode
+            ? SaveDataSpaceId.System
+            : spaceId;
+    }
 
-        public Result TryAcquireEntryOpenCountSemaphore(ref UniqueRef<IUniqueLock> outSemaphore)
+    public static bool IsStaticSaveDataIdValueRange(ulong id)
+    {
+        const ulong staticSaveDataIdMask = 0x8000000000000000;
+        return (id & staticSaveDataIdMask) != 0;
+    }
+
+    public static bool IsDirectorySaveDataExtraData(in SaveDataExtraData extraData)
+    {
+        return extraData.OwnerId == 0 && extraData.DataSize == 0 && extraData.JournalSize == 0;
+    }
+
+    public static void ModifySaveDataExtraData(ref SaveDataExtraData currentExtraData, in SaveDataExtraData extraData,
+        in SaveDataExtraData extraDataMask)
+    {
+        Span<byte> currentExtraDataBytes = SpanHelpers.AsByteSpan(ref currentExtraData);
+        ReadOnlySpan<byte> extraDataBytes = SpanHelpers.AsReadOnlyByteSpan(in extraData);
+        ReadOnlySpan<byte> extraDataMaskBytes = SpanHelpers.AsReadOnlyByteSpan(in extraDataMask);
+
+        for (int i = 0; i < Unsafe.SizeOf<SaveDataExtraData>(); i++)
         {
-            return _saveService.Get.TryAcquireSaveDataEntryOpenCountSemaphore(ref outSemaphore).Ret();
+            currentExtraDataBytes[i] = (byte)(extraDataBytes[i] & extraDataMaskBytes[i] |
+                                              currentExtraDataBytes[i] & ~extraDataMaskBytes[i]);
         }
     }
 
-    private static Result CheckOpenSaveDataInfoReaderAccessControl(ProgramInfo programInfo, SaveDataSpaceId spaceId)
+    public static void MaskExtraData(ref SaveDataExtraData extraData, in SaveDataExtraData extraDataMask)
+    {
+        Span<byte> extraDataBytes = SpanHelpers.AsByteSpan(ref extraData);
+        ReadOnlySpan<byte> extraDataMaskBytes = SpanHelpers.AsReadOnlyByteSpan(in extraDataMask);
+
+        for (int i = 0; i < Unsafe.SizeOf<SaveDataExtraData>(); i++)
+        {
+            extraDataBytes[i] &= extraDataMaskBytes[i];
+        }
+    }
+
+    public static StorageLayoutType DecidePossibleStorageFlag(SaveDataType type, SaveDataSpaceId spaceId)
+    {
+        if (type == SaveDataType.Cache || type == SaveDataType.Bcat)
+            return StorageLayoutType.Bis | StorageLayoutType.SdCard | StorageLayoutType.Usb;
+
+        if (type == SaveDataType.System && (spaceId == SaveDataSpaceId.SdSystem || spaceId == SaveDataSpaceId.SdUser))
+            return StorageLayoutType.SdCard | StorageLayoutType.Usb;
+
+        return StorageLayoutType.Bis;
+    }
+
+    public static SaveDataFormatType GetSaveDataFormatType(in SaveDataAttribute attribute)
+    {
+        return SaveDataProperties.IsJournalingSupported(attribute.Type)
+            ? SaveDataFormatType.Normal
+            : SaveDataFormatType.NoJournal;
+    }
+
+    public static Result CheckOpenSaveDataInfoReaderAccessControl(ProgramInfo programInfo, ulong processId, SaveDataSpaceId spaceId)
     {
         Assert.SdkNotNull(programInfo);
 
@@ -110,504 +146,505 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
 
         return Result.Success;
     }
+}
 
-    private static class SaveDataAccessibilityChecker
+/// <summary>
+/// Determines if a specified program has access to perform various functions on a specified save data.
+/// </summary>
+/// <remarks>Based on nnSdk 17.5.0 (FS 17.0.0)</remarks>
+file static class SaveDataAccessibilityChecker
+{
+    public delegate Result ExtraDataReader(out SaveDataExtraData extraData);
+
+    public static Result CheckCreate(SaveDataSpaceId spaceId, in SaveDataAttribute attribute, ulong ownerId,
+        ProgramInfo programInfo, ulong processId, ProgramId programId)
     {
-        public delegate Result ExtraDataGetter(out SaveDataExtraData extraData);
+        AccessControl accessControl = programInfo.AccessControl;
 
-        public static Result CheckCreate(in SaveDataAttribute attribute, ulong ownerId, ProgramInfo programInfo,
-            ProgramId programId)
+        if (SaveDataProperties.IsSystemSaveData(attribute.Type))
         {
-            AccessControl accessControl = programInfo.AccessControl;
-
-            if (SaveDataProperties.IsSystemSaveData(attribute.Type))
+            if (ownerId != programInfo.ProgramIdValue)
             {
-                if (ownerId != programInfo.ProgramIdValue)
-                {
-                    // If the program doesn't own the created save data it needs either the permission to create
-                    // any system save data or it needs explicit access to the owner's save data.
-                    Accessibility accessibility = accessControl.GetAccessibilitySaveDataOwnedBy(ownerId);
+                // If the program doesn't own the created save data it needs either the permission to create
+                // any system save data or it needs explicit access to the owner's save data.
+                Accessibility accessibility = accessControl.GetAccessibilitySaveDataOwnedBy(ownerId);
 
-                    bool canAccess =
-                        accessControl.CanCall(OperationType.CreateSystemSaveData) &&
-                        accessControl.CanCall(OperationType.CreateOthersSystemSaveData) || accessibility.CanWrite;
-
-                    if (!canAccess)
-                        return ResultFs.PermissionDenied.Log();
-                }
-                else
-                {
-                    bool canAccess = accessControl.CanCall(OperationType.CreateSystemSaveData);
-
-                    if (!canAccess)
-                        return ResultFs.PermissionDenied.Log();
-                }
-            }
-            else if (attribute.Type == SaveDataType.Account && attribute.UserId == InvalidUserId)
-            {
-                // Trying to create a program's debug save.
                 bool canAccess =
-                    accessControl.CanCall(OperationType.CreateSaveData) ||
-                    accessControl.CanCall(OperationType.DebugSaveData);
+                    accessControl.CanCall(OperationType.CreateOthersSystemSaveData) ||
+                    accessibility.CanWrite && accessControl.CanCall(OperationType.CreateSystemSaveData);
 
                 if (!canAccess)
                     return ResultFs.PermissionDenied.Log();
             }
             else
             {
-                Result res = GetAccessibilityForSaveData(out Accessibility accessibility, programInfo, ownerId);
-                if (res.IsFailure()) return res.Miss();
-
-                // If none of the above conditions apply, the program needs write access to the owner's save data.
-                // The program also needs either permission to create any save data, or it must be creating its own
-                // save data and have the permission to do so.
-                bool canAccess = accessControl.CanCall(OperationType.CreateSaveData);
-
-                if (accessibility.CanWrite &&
-                    attribute.ProgramId == programId || attribute.ProgramId.Value == ownerId)
-                {
-                    canAccess |= accessControl.CanCall(OperationType.CreateOwnSaveData);
-                }
+                bool canAccess = accessControl.CanCall(OperationType.CreateSystemSaveData);
 
                 if (!canAccess)
                     return ResultFs.PermissionDenied.Log();
             }
-
-            return Result.Success;
         }
-
-        public static Result CheckOpenPre(in SaveDataAttribute attribute, ProgramInfo programInfo)
+        else if (attribute.Type == SaveDataType.Account && attribute.UserId == InvalidUserId)
         {
-            AccessControl accessControl = programInfo.AccessControl;
+            // Trying to create a program's debug save.
+            bool canAccess =
+                accessControl.CanCall(OperationType.CreateSaveData) ||
+                accessControl.CanCall(OperationType.DebugSaveData);
 
-            if (attribute.Type == SaveDataType.Device)
-            {
-                Accessibility accessibility =
-                    accessControl.GetAccessibilityFor(AccessibilityType.MountDeviceSaveData);
-
-                bool canAccess = accessibility.CanRead && accessibility.CanWrite;
-
-                if (!canAccess)
-                    return ResultFs.PermissionDenied.Log();
-            }
-            else if (attribute.Type == SaveDataType.Account)
-            {
-                // We need debug save data permissions to open a debug save.
-                bool canAccess = attribute.UserId != InvalidUserId ||
-                                 accessControl.CanCall(OperationType.DebugSaveData);
-
-                if (!canAccess)
-                    return ResultFs.PermissionDenied.Log();
-            }
-
-            return Result.Success;
-        }
-
-        public static Result CheckOpen(in SaveDataAttribute attribute, ProgramInfo programInfo,
-            ExtraDataGetter extraDataGetter)
-        {
-            AccessControl accessControl = programInfo.AccessControl;
-
-            Result res = GetAccessibilityForSaveData(out Accessibility accessibility, programInfo, extraDataGetter);
-            if (res.IsFailure()) return res.Miss();
-
-            // Note: This is correct. Even if a program only has read accessibility to a save data,
-            // Nintendo allows opening it with read/write accessibility as of FS 14.0.0
-            if (accessibility.CanRead || accessibility.CanWrite)
-                return Result.Success;
-
-            // The program doesn't have permissions for this specific save data. Check if it has overall
-            // permissions for other programs' save data.
-            if (SaveDataProperties.IsSystemSaveData(attribute.Type))
-            {
-                accessibility = accessControl.GetAccessibilityFor(AccessibilityType.MountOthersSystemSaveData);
-            }
-            else
-            {
-                accessibility = accessControl.GetAccessibilityFor(AccessibilityType.MountOthersSaveData);
-            }
-
-            if (accessibility.CanRead && accessibility.CanWrite)
-                return Result.Success;
-
-            return ResultFs.PermissionDenied.Log();
-        }
-
-        public static Result CheckDelete(in SaveDataAttribute attribute, ProgramInfo programInfo,
-            ExtraDataGetter extraDataGetter)
-        {
-            AccessControl accessControl = programInfo.AccessControl;
-
-            // DeleteSystemSaveData permission is needed to delete system save data
-            if (SaveDataProperties.IsSystemSaveData(attribute.Type) &&
-                !accessControl.CanCall(OperationType.DeleteSystemSaveData))
-            {
+            if (!canAccess)
                 return ResultFs.PermissionDenied.Log();
-            }
-
-            // The DeleteSaveData permission allows deleting any non-system save data
-            if (accessControl.CanCall(OperationType.DeleteSaveData))
-            {
-                return Result.Success;
-            }
-
-            // Otherwise the program needs the DeleteOwnSaveData permission and write access to the save
-            Result res = GetAccessibilityForSaveData(out Accessibility accessibility, programInfo, extraDataGetter);
+        }
+        else
+        {
+            Result res = GetAccessibilityForSaveData(out Accessibility accessibility, programInfo, ownerId);
             if (res.IsFailure()) return res.Miss();
 
-            if (accessControl.CanCall(OperationType.DeleteOwnSaveData) && accessibility.CanWrite)
+            // If none of the above conditions apply, the program needs write access to the owner's save data.
+            // The program also needs either permission to create any save data, or it must be creating its own
+            // save data and have the permission to do so.
+            bool canAccess = accessControl.CanCall(OperationType.CreateSaveData);
+
+            if (accessibility.CanWrite &&
+                attribute.ProgramId == programId || attribute.ProgramId.Value == ownerId)
             {
-                return Result.Success;
-            }
-
-            return ResultFs.PermissionDenied.Log();
-        }
-
-        public static Result CheckExtend(SaveDataSpaceId spaceId, in SaveDataAttribute attribute,
-            ProgramInfo programInfo, ExtraDataGetter extraDataGetter)
-        {
-            AccessControl accessControl = programInfo.AccessControl;
-
-            switch (spaceId)
-            {
-                case SaveDataSpaceId.System:
-                case SaveDataSpaceId.SdSystem:
-                case SaveDataSpaceId.ProperSystem:
-                case SaveDataSpaceId.SafeMode:
-                {
-                    Result res = GetAccessibilityForSaveData(out Accessibility accessibility, programInfo,
-                        extraDataGetter);
-                    if (res.IsFailure()) return res.Miss();
-
-                    // The program needs the ExtendSystemSaveData permission and either one of
-                    // read/write access to the save or the ExtendOthersSystemSaveData permission
-                    bool canAccess = accessControl.CanCall(OperationType.ExtendSystemSaveData) &&
-                                     (accessibility.CanRead && accessibility.CanWrite ||
-                                      accessControl.CanCall(OperationType.ExtendOthersSystemSaveData));
-
-                    if (!canAccess)
-                        return ResultFs.PermissionDenied.Log();
-
-                    break;
-                }
-                case SaveDataSpaceId.User:
-                case SaveDataSpaceId.SdUser:
-                {
-                    bool canAccess = accessControl.CanCall(OperationType.ExtendSaveData);
-
-                    Result res = GetAccessibilityForSaveData(out Accessibility accessibility, programInfo,
-                        extraDataGetter);
-                    if (res.IsFailure()) return res.Miss();
-
-                    if (attribute.ProgramId == programInfo.ProgramId || accessibility.CanRead)
-                    {
-                        canAccess |= accessControl.CanCall(OperationType.ExtendOwnSaveData);
-
-                        bool canAccessDebugSave = accessControl.CanCall(OperationType.DebugSaveData)
-                                                  && attribute.Type == SaveDataType.Account
-                                                  && attribute.UserId == UserId.InvalidId;
-
-                        canAccess |= canAccessDebugSave;
-
-                        if (!canAccess)
-                            return ResultFs.PermissionDenied.Log();
-                    }
-
-                    break;
-                }
-                default:
-                    return ResultFs.InvalidSaveDataSpaceId.Log();
-            }
-
-            return Result.Success;
-        }
-
-        public static Result CheckReadExtraData(in SaveDataAttribute attribute, in SaveDataExtraData mask,
-            ProgramInfo programInfo, ExtraDataGetter extraDataGetter)
-        {
-            AccessControl accessControl = programInfo.AccessControl;
-
-            bool canAccess = accessControl.CanCall(OperationType.ReadSaveDataFileSystemExtraData);
-
-            Result res = GetAccessibilityForSaveData(out Accessibility accessibility, programInfo, extraDataGetter);
-            if (res.IsFailure()) return res.Miss();
-
-            SaveDataExtraData emptyMask = default;
-            SaveDataExtraData maskWithoutRestoreFlag = mask;
-            maskWithoutRestoreFlag.Flags &= ~SaveDataFlags.Restore;
-
-            // Only read access to the save is needed to read the restore flag
-            if (SpanHelpers.AsReadOnlyByteSpan(in emptyMask)
-                .SequenceEqual(SpanHelpers.AsReadOnlyByteSpan(in maskWithoutRestoreFlag)))
-            {
-                canAccess |= accessibility.CanRead;
-            }
-
-            if (SaveDataProperties.IsSystemSaveData(attribute.Type))
-            {
-                canAccess |= accessibility.CanRead;
-            }
-            else if (attribute.ProgramId == programInfo.ProgramId || accessibility.CanRead)
-            {
-                canAccess |= accessControl.CanCall(OperationType.ReadOwnSaveDataFileSystemExtraData);
-
-                bool canAccessDebugSave = accessControl.CanCall(OperationType.DebugSaveData)
-                                          && attribute.Type == SaveDataType.Account
-                                          && attribute.UserId == UserId.InvalidId;
-
-                canAccess |= canAccessDebugSave;
+                canAccess |= accessControl.CanCall(OperationType.CreateOwnSaveData);
             }
 
             if (!canAccess)
                 return ResultFs.PermissionDenied.Log();
-
-            return Result.Success;
         }
 
-        public static Result CheckWriteExtraData(in SaveDataAttribute attribute, in SaveDataExtraData mask,
-            ProgramInfo programInfo, ExtraDataGetter extraDataGetter)
-        {
-            AccessControl accessControl = programInfo.AccessControl;
-
-            if (mask.Flags != SaveDataFlags.None)
-            {
-                bool canAccess = accessControl.CanCall(OperationType.WriteSaveDataFileSystemExtraDataAll) ||
-                                 accessControl.CanCall(OperationType.WriteSaveDataFileSystemExtraDataFlags);
-
-                if (SaveDataProperties.IsSystemSaveData(attribute.Type))
-                {
-                    Result res = GetAccessibilityForSaveData(out Accessibility accessibility, programInfo,
-                        extraDataGetter);
-                    if (res.IsFailure()) return res.Miss();
-
-                    canAccess |= accessibility.CanWrite;
-                }
-
-                if ((mask.Flags & ~SaveDataFlags.Restore) == 0)
-                {
-                    Result res = GetAccessibilityForSaveData(out Accessibility accessibility, programInfo,
-                        extraDataGetter);
-                    if (res.IsFailure()) return res.Miss();
-
-                    canAccess |= accessibility.CanWrite;
-                }
-
-                if (!canAccess)
-                    return ResultFs.PermissionDenied.Log();
-            }
-
-            if (mask.TimeStamp != 0)
-            {
-                bool canAccess = accessControl.CanCall(OperationType.WriteSaveDataFileSystemExtraDataAll) ||
-                                 accessControl.CanCall(OperationType.WriteSaveDataFileSystemExtraDataTimeStamp);
-
-                if (!canAccess)
-                    return ResultFs.PermissionDenied.Log();
-            }
-
-            if (mask.CommitId != 0)
-            {
-                bool canAccess = accessControl.CanCall(OperationType.WriteSaveDataFileSystemExtraDataAll) ||
-                                 accessControl.CanCall(OperationType.WriteSaveDataFileSystemExtraDataCommitId);
-
-                if (!canAccess)
-                    return ResultFs.PermissionDenied.Log();
-            }
-
-            SaveDataExtraData emptyMask = default;
-            SaveDataExtraData maskWithoutFlags = mask;
-            maskWithoutFlags.Flags = SaveDataFlags.None;
-            maskWithoutFlags.TimeStamp = 0;
-            maskWithoutFlags.CommitId = 0;
-
-            // Full write access is needed for writing anything other than flags, timestamp or commit ID
-            if (SpanHelpers.AsReadOnlyByteSpan(in emptyMask)
-                .SequenceEqual(SpanHelpers.AsReadOnlyByteSpan(in maskWithoutFlags)))
-            {
-                bool canAccess = accessControl.CanCall(OperationType.WriteSaveDataFileSystemExtraDataAll);
-
-                if (!canAccess)
-                    return ResultFs.PermissionDenied.Log();
-            }
-
-            return Result.Success;
-        }
-
-        public static Result CheckFind(in SaveDataFilter filter, ProgramInfo programInfo)
-        {
-            bool canAccess;
-
-            if (programInfo.ProgramId == filter.Attribute.ProgramId)
-            {
-                AccessControl accessControl = programInfo.AccessControl;
-                canAccess = accessControl.CanCall(OperationType.FindOwnSaveDataWithFilter);
-
-                bool canAccessDebugSave = accessControl.CanCall(OperationType.DebugSaveData)
-                                          && filter.Attribute.Type == SaveDataType.Account
-                                          && filter.Attribute.UserId == UserId.InvalidId;
-
-                canAccess |= canAccessDebugSave;
-            }
-            else
-            {
-                canAccess = true;
-            }
-
-            if (!canAccess)
-                return ResultFs.PermissionDenied.Log();
-
-            return Result.Success;
-        }
-
-        public static Result CheckOpenProhibiter(ProgramId programId, ProgramInfo programInfo)
-        {
-            Result res = GetAccessibilityForSaveData(out Accessibility accessibility, programInfo, programId.Value);
-            if (res.IsFailure()) return res.Miss();
-
-            bool canAccess = programInfo.AccessControl.CanCall(OperationType.OpenSaveDataTransferProhibiter);
-
-            if (programInfo.ProgramId == programId || accessibility.CanRead)
-            {
-                canAccess |= programInfo.AccessControl.CanCall(OperationType.OpenOwnSaveDataTransferProhibiter);
-            }
-
-            if (!canAccess)
-                return ResultFs.PermissionDenied.Log();
-
-            return Result.Success;
-        }
-
-        private static Result GetAccessibilityForSaveData(out Accessibility accessibility, ProgramInfo programInfo,
-            ulong ownerId)
-        {
-            if (ownerId == programInfo.ProgramIdValue)
-            {
-                // A program always has full access to its own save data
-                accessibility = new Accessibility(true, true);
-            }
-            else
-            {
-                accessibility = programInfo.AccessControl.GetAccessibilitySaveDataOwnedBy(ownerId);
-            }
-
-            return Result.Success;
-        }
-
-        private static Result GetAccessibilityForSaveData(out Accessibility accessibility, ProgramInfo programInfo,
-            ExtraDataGetter extraDataGetter)
-        {
-            UnsafeHelpers.SkipParamInit(out accessibility);
-
-            Result res = extraDataGetter(out SaveDataExtraData extraData);
-            if (res.IsFailure())
-            {
-                if (ResultFs.TargetNotFound.Includes(res))
-                {
-                    accessibility = new Accessibility(false, false);
-                    return Result.Success;
-                }
-
-                return res;
-            }
-
-            // Allow access when opening a directory save FS on a dev console
-            if (IsDirectorySaveDataExtraData(in extraData) &&
-                programInfo.AccessControl.CanCall(OperationType.DebugSaveData))
-            {
-                accessibility = new Accessibility(true, true);
-                return Result.Success;
-            }
-
-            return GetAccessibilityForSaveData(out accessibility, programInfo, extraData.OwnerId).Ret();
-        }
+        return Result.Success;
     }
 
-    public SaveDataFileSystemService(SaveDataFileSystemServiceImpl serviceImpl, ulong processId)
+    public static Result CheckOpenPre(SaveDataSpaceId spaceId, in SaveDataAttribute attribute, ProgramInfo programInfo,
+        ulong processId)
+    {
+        AccessControl accessControl = programInfo.AccessControl;
+
+        if (attribute.Type == SaveDataType.Device)
+        {
+            Accessibility accessibility =
+                accessControl.GetAccessibilityFor(AccessibilityType.MountDeviceSaveData);
+
+            bool canAccess = accessibility.CanRead && accessibility.CanWrite;
+
+            if (!canAccess)
+                return ResultFs.PermissionDenied.Log();
+        }
+        else if (attribute.Type == SaveDataType.Account)
+        {
+            // We need debug save data permissions to open a debug save.
+            bool canAccess = attribute.UserId != InvalidUserId ||
+                             accessControl.CanCall(OperationType.DebugSaveData);
+
+            if (!canAccess)
+                return ResultFs.PermissionDenied.Log();
+        }
+
+        return Result.Success;
+    }
+
+    public static Result CheckOpen(SaveDataSpaceId spaceId, in SaveDataAttribute attribute, ProgramInfo programInfo,
+        ulong processId, ExtraDataReader readExtraData)
+    {
+        AccessControl accessControl = programInfo.AccessControl;
+
+        Result res = GetAccessibilityForSaveData(out Accessibility accessibility, programInfo, readExtraData);
+        if (res.IsFailure()) return res.Miss();
+
+        // Note: This is correct. Even if a program only has read accessibility to a save data,
+        // Nintendo allows opening it with read/write accessibility as of FS 17.0.0
+        if (accessibility.CanRead || accessibility.CanWrite)
+            return Result.Success;
+
+        // The program doesn't have permissions for this specific save data. Check if it has overall
+        // permissions for other programs' save data.
+        if (SaveDataProperties.IsSystemSaveData(attribute.Type))
+        {
+            accessibility = accessControl.GetAccessibilityFor(AccessibilityType.MountOthersSystemSaveData);
+        }
+        else
+        {
+            accessibility = accessControl.GetAccessibilityFor(AccessibilityType.MountOthersSaveData);
+        }
+
+        if (accessibility.CanRead && accessibility.CanWrite)
+            return Result.Success;
+
+        return ResultFs.PermissionDenied.Log();
+    }
+
+    public static Result CheckDelete(SaveDataSpaceId spaceId, in SaveDataAttribute attribute, ProgramInfo programInfo,
+        ulong processId, ExtraDataReader readExtraData)
+    {
+        AccessControl accessControl = programInfo.AccessControl;
+
+        // DeleteSystemSaveData permission is needed to delete system save data
+        if (SaveDataProperties.IsSystemSaveData(attribute.Type) &&
+            !accessControl.CanCall(OperationType.DeleteSystemSaveData))
+        {
+            return ResultFs.PermissionDenied.Log();
+        }
+
+        // The DeleteSaveData permission allows deleting any non-system save data not owned by the caller
+        if (accessControl.CanCall(OperationType.DeleteSaveData))
+        {
+            return Result.Success;
+        }
+
+        // Otherwise the program needs the DeleteOwnSaveData permission and write access to the save
+        Result res = GetAccessibilityForSaveData(out Accessibility accessibility, programInfo, readExtraData);
+        if (res.IsFailure()) return res.Miss();
+
+        if (accessControl.CanCall(OperationType.DeleteOwnSaveData) && accessibility.CanWrite)
+        {
+            return Result.Success;
+        }
+
+        return ResultFs.PermissionDenied.Log();
+    }
+
+    public static Result CheckExtend(SaveDataSpaceId spaceId, in SaveDataAttribute attribute, ProgramInfo programInfo,
+        ulong processId, ExtraDataReader readExtraData)
+    {
+        AccessControl accessControl = programInfo.AccessControl;
+
+        switch (spaceId)
+        {
+            case SaveDataSpaceId.System:
+            case SaveDataSpaceId.SdSystem:
+            case SaveDataSpaceId.ProperSystem:
+            case SaveDataSpaceId.SafeMode:
+            {
+                Result res = GetAccessibilityForSaveData(out Accessibility accessibility, programInfo, readExtraData);
+                if (res.IsFailure()) return res.Miss();
+
+                // The program needs the ExtendSystemSaveData permission and either one of
+                // read/write access to the save or the ExtendOthersSystemSaveData permission
+                bool canAccess = accessControl.CanCall(OperationType.ExtendSystemSaveData) &&
+                                 (accessibility.CanRead && accessibility.CanWrite ||
+                                  accessControl.CanCall(OperationType.ExtendOthersSystemSaveData));
+
+                if (!canAccess)
+                    return ResultFs.PermissionDenied.Log();
+
+                break;
+            }
+            case SaveDataSpaceId.User:
+            case SaveDataSpaceId.SdUser:
+            {
+                bool canAccess = accessControl.CanCall(OperationType.ExtendSaveData);
+
+                Result res = GetAccessibilityForSaveData(out Accessibility accessibility, programInfo, readExtraData);
+                if (res.IsFailure()) return res.Miss();
+
+                if (attribute.ProgramId == programInfo.ProgramId || accessibility.CanRead)
+                {
+                    canAccess |= accessControl.CanCall(OperationType.ExtendOwnSaveData);
+
+                    bool canAccessDebugSave = accessControl.CanCall(OperationType.DebugSaveData)
+                                              && attribute.Type == SaveDataType.Account
+                                              && attribute.UserId == UserId.InvalidId;
+
+                    canAccess |= canAccessDebugSave;
+
+                    if (!canAccess)
+                        return ResultFs.PermissionDenied.Log();
+                }
+
+                break;
+            }
+            default:
+                return ResultFs.InvalidSaveDataSpaceId.Log();
+        }
+
+        return Result.Success;
+    }
+
+    public static Result CheckReadExtraData(SaveDataSpaceId spaceId, in SaveDataAttribute attribute,
+        in SaveDataExtraData mask, ProgramInfo programInfo, ulong processId, ExtraDataReader readExtraData)
+    {
+        AccessControl accessControl = programInfo.AccessControl;
+
+        bool canAccess = accessControl.CanCall(OperationType.ReadSaveDataFileSystemExtraData);
+
+        Result res = GetAccessibilityForSaveData(out Accessibility accessibility, programInfo, readExtraData);
+        if (res.IsFailure()) return res.Miss();
+
+        SaveDataExtraData emptyMask = default;
+        SaveDataExtraData maskWithoutRestoreFlag = mask;
+        maskWithoutRestoreFlag.Flags &= ~SaveDataFlags.Restore;
+
+        // Only read access to the save is needed to read the restore flag
+        if (SpanHelpers.AsReadOnlyByteSpan(in emptyMask)
+            .SequenceEqual(SpanHelpers.AsReadOnlyByteSpan(in maskWithoutRestoreFlag)))
+        {
+            canAccess |= accessibility.CanRead;
+        }
+
+        if (SaveDataProperties.IsSystemSaveData(attribute.Type))
+        {
+            canAccess |= accessibility.CanRead;
+        }
+        else if (attribute.ProgramId == programInfo.ProgramId || accessibility.CanRead)
+        {
+            canAccess |= accessControl.CanCall(OperationType.ReadOwnSaveDataFileSystemExtraData);
+
+            bool canAccessDebugSave = accessControl.CanCall(OperationType.DebugSaveData)
+                                      && attribute.Type == SaveDataType.Account
+                                      && attribute.UserId == UserId.InvalidId;
+
+            canAccess |= canAccessDebugSave;
+        }
+
+        if (!canAccess)
+            return ResultFs.PermissionDenied.Log();
+
+        return Result.Success;
+    }
+
+    public static Result CheckWriteExtraData(SaveDataSpaceId spaceId, in SaveDataAttribute attribute,
+        in SaveDataExtraData mask, ProgramInfo programInfo, ulong processId, ExtraDataReader readExtraData)
+    {
+        // Permissions for writing extra data are separated into multiple parts: Restore flag, all other flags,
+        // timestamp, commit ID, and all other extra data fields.
+        // When checking if the caller has sufficient permissions, we look at each field that's it's trying to write to,
+        // and verify that it has the permissions to write to each of those fields.
+        AccessControl accessControl = programInfo.AccessControl;
+
+        if (mask.Flags != SaveDataFlags.None)
+        {
+            // These two permissions grant full access to changing the flags for any save data
+            bool canAccess = accessControl.CanCall(OperationType.WriteSaveDataFileSystemExtraDataAll) ||
+                             accessControl.CanCall(OperationType.WriteSaveDataFileSystemExtraDataFlags);
+
+            // All flags can be written to a system save if the caller has write access.
+            if (SaveDataProperties.IsSystemSaveData(attribute.Type))
+            {
+                Result res = GetAccessibilityForSaveData(out Accessibility accessibility, programInfo, readExtraData);
+                if (res.IsFailure()) return res.Miss();
+
+                canAccess |= accessibility.CanWrite;
+            }
+
+            // Writing the restore flag only requires write access to the save.
+            if ((mask.Flags & ~SaveDataFlags.Restore) == 0)
+            {
+                Result res = GetAccessibilityForSaveData(out Accessibility accessibility, programInfo, readExtraData);
+                if (res.IsFailure()) return res.Miss();
+
+                canAccess |= accessibility.CanWrite;
+            }
+
+            if (!canAccess)
+                return ResultFs.PermissionDenied.Log();
+        }
+
+        if (mask.TimeStamp != 0)
+        {
+            bool canAccess = accessControl.CanCall(OperationType.WriteSaveDataFileSystemExtraDataAll) ||
+                             accessControl.CanCall(OperationType.WriteSaveDataFileSystemExtraDataTimeStamp);
+
+            if (!canAccess)
+                return ResultFs.PermissionDenied.Log();
+        }
+
+        if (mask.CommitId != 0)
+        {
+            bool canAccess = accessControl.CanCall(OperationType.WriteSaveDataFileSystemExtraDataAll) ||
+                             accessControl.CanCall(OperationType.WriteSaveDataFileSystemExtraDataCommitId);
+
+            if (!canAccess)
+                return ResultFs.PermissionDenied.Log();
+        }
+
+        // Check if the caller is writing any fields other than flags, timestamp, or commit ID
+        SaveDataExtraData emptyMask = default;
+        SaveDataExtraData maskWithoutFlags = mask;
+        maskWithoutFlags.Flags = SaveDataFlags.None;
+        maskWithoutFlags.TimeStamp = 0;
+        maskWithoutFlags.CommitId = 0;
+
+        if (SpanHelpers.AsReadOnlyByteSpan(in emptyMask)
+            .SequenceEqual(SpanHelpers.AsReadOnlyByteSpan(in maskWithoutFlags)))
+        {
+            // Full write access is needed for writing anything other than flags, timestamp or commit ID
+            bool canAccess = accessControl.CanCall(OperationType.WriteSaveDataFileSystemExtraDataAll);
+
+            if (!canAccess)
+                return ResultFs.PermissionDenied.Log();
+        }
+
+        return Result.Success;
+    }
+
+    public static Result CheckFind(SaveDataSpaceId spaceId, in SaveDataFilter filter, ProgramInfo programInfo,
+        ulong processId)
+    {
+        bool canAccess;
+
+        if (programInfo.ProgramId == filter.Attribute.ProgramId)
+        {
+            AccessControl accessControl = programInfo.AccessControl;
+            canAccess = accessControl.CanCall(OperationType.FindOwnSaveDataWithFilter);
+
+            bool canAccessDebugSave = accessControl.CanCall(OperationType.DebugSaveData)
+                                      && filter.Attribute.Type == SaveDataType.Account
+                                      && filter.Attribute.UserId == UserId.InvalidId;
+
+            canAccess |= canAccessDebugSave;
+        }
+        else
+        {
+            canAccess = true;
+        }
+
+        if (!canAccess)
+            return ResultFs.PermissionDenied.Log();
+
+        return Result.Success;
+    }
+
+    public static Result CheckOpenProhibiter(SaveDataSpaceId spaceId, ProgramId programId, ProgramInfo programInfo,
+        ulong processId)
+    {
+        Result res = GetAccessibilityForSaveData(out Accessibility accessibility, programInfo, programId.Value);
+        if (res.IsFailure()) return res.Miss();
+
+        bool canAccess = programInfo.AccessControl.CanCall(OperationType.OpenSaveDataTransferProhibiter);
+
+        if (programInfo.ProgramId == programId || accessibility.CanRead)
+        {
+            canAccess |= programInfo.AccessControl.CanCall(OperationType.OpenOwnSaveDataTransferProhibiter);
+        }
+
+        if (!canAccess)
+            return ResultFs.PermissionDenied.Log();
+
+        return Result.Success;
+    }
+
+    private static Result GetAccessibilityForSaveData(out Accessibility accessibility, ProgramInfo programInfo,
+        ulong ownerId)
+    {
+        if (ownerId == programInfo.ProgramIdValue)
+        {
+            // A program always has full access to its own save data
+            accessibility = new Accessibility(true, true);
+        }
+        else
+        {
+            accessibility = programInfo.AccessControl.GetAccessibilitySaveDataOwnedBy(ownerId);
+        }
+
+        return Result.Success;
+    }
+
+    private static Result GetAccessibilityForSaveData(out Accessibility accessibility, ProgramInfo programInfo,
+        ExtraDataReader readExtraData)
+    {
+        UnsafeHelpers.SkipParamInit(out accessibility);
+
+        Result res = readExtraData(out SaveDataExtraData extraData);
+        if (res.IsFailure())
+        {
+            if (ResultFs.TargetNotFound.Includes(res))
+            {
+                accessibility = new Accessibility(false, false);
+                return Result.Success;
+            }
+
+            return res.Miss();
+        }
+
+        // Allow access when opening a directory save FS on a dev console
+        if (IsDirectorySaveDataExtraData(in extraData) &&
+            programInfo.AccessControl.CanCall(OperationType.DebugSaveData))
+        {
+            accessibility = new Accessibility(true, true);
+            return Result.Success;
+        }
+
+        return GetAccessibilityForSaveData(out accessibility, programInfo, extraData.OwnerId).Ret();
+    }
+}
+
+/// <summary>
+/// Handles save-data-related calls for <see cref="FileSystemProxyImpl"/>.
+/// </summary>
+/// <remarks>FS will have one instance of this class for every connected process.
+/// The FS permissions of the calling process are checked on every function call.
+/// <br/>Based on nnSdk 17.5.0 (FS 17.0.0)</remarks>
+internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISaveDataMultiCommitCoreInterface
+{
+    private const int OpenEntrySemaphoreCount = 256;
+    private const int SaveMountSemaphoreCount = 10;
+
+    private const int SaveDataBlockSize = 0x4000;
+
+    private const ulong UnspecifiedSaveDataId = ulong.MaxValue;
+
+    private WeakRef<SaveDataFileSystemService> _selfReference;
+    private SaveDataFileSystemServiceImpl _serviceImpl;
+    private ulong _processId;
+    private Path.Stored _saveDataRootPath;
+    private SemaphoreAdapter _openEntryCountSemaphore;
+    private SemaphoreAdapter _saveDataMountCountSemaphore;
+
+    private HorizonClient Hos => _serviceImpl.Hos;
+
+    private SharedRef<SaveDataFileSystemService> GetSharedFromThis() =>
+        SharedRef<SaveDataFileSystemService>.Create(in _selfReference);
+
+    private SharedRef<ISaveDataTransferCoreInterface> GetSaveDataTransferCoreInterfaceFromThis() =>
+        SharedRef<ISaveDataTransferCoreInterface>.Create(in _selfReference);
+
+    private SharedRef<ISaveDataMultiCommitCoreInterface> GetSharedMultiCommitInterfaceFromThis() =>
+        SharedRef<ISaveDataMultiCommitCoreInterface>.Create(in _selfReference);
+
+    public static SharedRef<SaveDataFileSystemService> CreateShared(SaveDataFileSystemServiceImpl serviceImpl, ulong processId)
+    {
+        // Create the service
+        var saveService = new SaveDataFileSystemService(serviceImpl, processId);
+
+        // Wrap the service in a ref-counter and give the service a weak self-reference
+        using var sharedService = new SharedRef<SaveDataFileSystemService>(saveService);
+        saveService._selfReference.Set(in sharedService);
+
+        return SharedRef<SaveDataFileSystemService>.CreateMove(ref sharedService.Ref);
+    }
+
+    private SaveDataFileSystemService(SaveDataFileSystemServiceImpl serviceImpl, ulong processId)
     {
         _serviceImpl = serviceImpl;
         _processId = processId;
         using var path = new Path();
         _openEntryCountSemaphore = new SemaphoreAdapter(OpenEntrySemaphoreCount, OpenEntrySemaphoreCount);
         _saveDataMountCountSemaphore = new SemaphoreAdapter(SaveMountSemaphoreCount, SaveMountSemaphoreCount);
+        path.InitializeAsEmpty().IgnoreResult();
+
+        _saveDataRootPath.Initialize(in path).IgnoreResult();
     }
 
     public void Dispose()
     {
-        _openEntryCountSemaphore.Dispose();
         _saveDataMountCountSemaphore.Dispose();
+        _openEntryCountSemaphore.Dispose();
+        _saveDataRootPath.Dispose();
         _selfReference.Destroy();
     }
 
     private Result GetProgramInfo(out ProgramInfo programInfo)
     {
         var registry = new ProgramRegistryImpl(_serviceImpl.FsServer);
-        return registry.GetProgramInfo(out programInfo, _processId);
+        return registry.GetProgramInfo(out programInfo, _processId).Ret();
     }
 
     private Result GetProgramInfoByProgramId(out ProgramInfo programInfo, ulong programId)
     {
         var registry = new ProgramRegistryImpl(_serviceImpl.FsServer);
-        return registry.GetProgramInfoByProgramId(out programInfo, programId);
-    }
-
-    private static SaveDataSpaceId ConvertToRealSpaceId(SaveDataSpaceId spaceId)
-    {
-        return spaceId == SaveDataSpaceId.ProperSystem || spaceId == SaveDataSpaceId.SafeMode
-            ? SaveDataSpaceId.System
-            : spaceId;
-    }
-
-    private static bool IsStaticSaveDataIdValueRange(ulong id)
-    {
-        return unchecked((long)id) < 0;
-    }
-
-    private static bool IsDirectorySaveDataExtraData(in SaveDataExtraData extraData)
-    {
-        return extraData.OwnerId == 0 && extraData.DataSize == 0 && extraData.JournalSize == 0;
-    }
-
-    private static void ModifySaveDataExtraData(ref SaveDataExtraData currentExtraData, in SaveDataExtraData extraData,
-        in SaveDataExtraData extraDataMask)
-    {
-        Span<byte> currentExtraDataBytes = SpanHelpers.AsByteSpan(ref currentExtraData);
-        ReadOnlySpan<byte> extraDataBytes = SpanHelpers.AsReadOnlyByteSpan(in extraData);
-        ReadOnlySpan<byte> extraDataMaskBytes = SpanHelpers.AsReadOnlyByteSpan(in extraDataMask);
-
-        for (int i = 0; i < Unsafe.SizeOf<SaveDataExtraData>(); i++)
-        {
-            currentExtraDataBytes[i] = (byte)(extraDataBytes[i] & extraDataMaskBytes[i] |
-                                              currentExtraDataBytes[i] & ~extraDataMaskBytes[i]);
-        }
-    }
-
-    private static void MaskExtraData(ref SaveDataExtraData extraData, in SaveDataExtraData extraDataMask)
-    {
-        Span<byte> extraDataBytes = SpanHelpers.AsByteSpan(ref extraData);
-        ReadOnlySpan<byte> extraDataMaskBytes = SpanHelpers.AsReadOnlyByteSpan(in extraDataMask);
-
-        for (int i = 0; i < Unsafe.SizeOf<SaveDataExtraData>(); i++)
-        {
-            extraDataBytes[i] &= extraDataMaskBytes[i];
-        }
-    }
-
-    private static StorageLayoutType DecidePossibleStorageFlag(SaveDataType type, SaveDataSpaceId spaceId)
-    {
-        if (type == SaveDataType.Cache || type == SaveDataType.Bcat)
-            return StorageLayoutType.Bis | StorageLayoutType.SdCard | StorageLayoutType.Usb;
-
-        if (type == SaveDataType.System && (spaceId == SaveDataSpaceId.SdSystem || spaceId == SaveDataSpaceId.SdUser))
-            return StorageLayoutType.SdCard | StorageLayoutType.Usb;
-
-        return StorageLayoutType.Bis;
-    }
-
-    private static SaveDataFormatType GetSaveDataFormatType(in SaveDataAttribute attribute)
-    {
-        return SaveDataProperties.IsJournalingSupported(attribute.Type)
-            ? SaveDataFormatType.Normal
-            : SaveDataFormatType.NoJournal;
+        return registry.GetProgramInfoByProgramId(out programInfo, programId).Ret();
     }
 
     public Result GetFreeSpaceSizeForSaveData(out long outFreeSpaceSize, SaveDataSpaceId spaceId)
@@ -617,7 +654,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         using var scopedContext = new ScopedStorageLayoutTypeSetter(StorageLayoutType.NonGameCard);
         using var fileSystem = new SharedRef<IFileSystem>();
 
-        Result res = _serviceImpl.OpenSaveDataDirectoryFileSystem(ref fileSystem.Ref, spaceId);
+        Result res = _serviceImpl.OpenSaveDataDirectoryFileSystem(ref fileSystem.Ref, spaceId, UnspecifiedSaveDataId);
         if (res.IsFailure()) return res.Miss();
 
         using var pathRoot = new Path();
@@ -654,14 +691,14 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         res = OpenSaveDataIndexerAccessor(ref accessor.Ref, SaveDataSpaceId.System);
         if (res.IsFailure()) return res.Miss();
 
-        ReadOnlySpan<ulong> ids = MemoryMarshal.Cast<byte, ulong>(saveDataIds.Buffer);
+        ReadOnlySpan<ulong> saveDataIdArray = saveDataIds.AsSpan<ulong>();
 
         try
         {
             // Try to set the state of all the save IDs as being marked for deletion.
-            for (int i = 0; i < ids.Length; i++)
+            for (int i = 0; i < saveDataIdArray.Length; i++)
             {
-                res = accessor.Get.GetInterface().SetState(ids[i], SaveDataState.MarkedForDeletion);
+                res = accessor.Get.GetInterface().SetState(saveDataIdArray[i], SaveDataState.MarkedForDeletion);
                 if (res.IsFailure()) return res.Miss();
             }
 
@@ -686,13 +723,6 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         }
     }
 
-    public Result DeleteSaveDataFileSystem(ulong saveDataId)
-    {
-        using var scopedContext = new ScopedStorageLayoutTypeSetter(StorageLayoutType.Bis);
-
-        return DeleteSaveDataFileSystemCommon(SaveDataSpaceId.System, saveDataId).Ret();
-    }
-
     private Result DeleteSaveDataFileSystemCore(SaveDataSpaceId spaceId, ulong saveDataId, bool wipeSaveFile)
     {
         // Delete the save data's meta files
@@ -707,6 +737,13 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
             return res.Miss();
 
         return Result.Success;
+    }
+
+    public Result DeleteSaveDataFileSystem(ulong saveDataId)
+    {
+        using var scopedContext = new ScopedStorageLayoutTypeSetter(StorageLayoutType.Bis);
+
+        return DeleteSaveDataFileSystemCommon(SaveDataSpaceId.System, saveDataId).Ret();
     }
 
     public Result DeleteSaveDataFileSystemBySaveDataSpaceId(SaveDataSpaceId spaceId, ulong saveDataId)
@@ -734,12 +771,11 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         return DeleteSaveDataFileSystemCommon(spaceId, saveDataId).Ret();
     }
 
-    public Result DeleteSaveDataFileSystemBySaveDataAttribute(SaveDataSpaceId spaceId,
-        in SaveDataAttribute attribute)
+    public Result DeleteSaveDataFileSystemBySaveDataAttribute(SaveDataSpaceId spaceId, in SaveDataAttribute attribute)
     {
         using var scopedContext = new ScopedStorageLayoutTypeSetter(StorageLayoutType.NonGameCard);
 
-        Result res = GetSaveDataInfo(out SaveDataInfo info, spaceId, in attribute);
+        Result res = GetSaveDataInfo(out SaveDataInfo info, spaceId, attribute);
         if (res.IsFailure()) return res;
 
         return DeleteSaveDataFileSystemBySaveDataSpaceIdCore(spaceId, info.SaveDataId).Ret();
@@ -776,11 +812,14 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
             res = accessor.Get.GetInterface().GetKey(out SaveDataAttribute key, saveDataId);
             if (res.IsFailure()) return res.Miss();
 
-            Result GetExtraData(out SaveDataExtraData data) =>
-                _serviceImpl.ReadSaveDataFileSystemExtraData(out data, targetSpaceId, saveDataId, key.Type,
-                    _saveDataRootPath.DangerousGetPath());
 
-            res = SaveDataAccessibilityChecker.CheckDelete(in key, programInfo, GetExtraData);
+            Result ReadExtraData(out SaveDataExtraData data)
+            {
+                using Path path = _saveDataRootPath.DangerousGetPath();
+                return _serviceImpl.ReadSaveDataFileSystemExtraData(out data, targetSpaceId, saveDataId, key.Type, in path);
+            }
+
+            res = SaveDataAccessibilityChecker.CheckDelete(spaceId, in key, programInfo, _processId, ReadExtraData);
             if (res.IsFailure()) return res.Miss();
 
             // Pre-delete checks successful. Put the save in the Processing state until deletion is finished.
@@ -819,30 +858,178 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
 
     public Result SwapSaveDataKeyAndState(SaveDataSpaceId spaceId, ulong saveDataId1, ulong saveDataId2)
     {
-        throw new NotImplementedException();
+        using var accessor = new UniqueRef<SaveDataIndexerAccessor>();
+        Result res = OpenSaveDataIndexerAccessor(ref accessor.Ref, spaceId);
+        if (res.IsFailure()) return res.Miss();
+
+        res = accessor.Get.GetInterface().GetKey(out SaveDataAttribute lhsKey, saveDataId1);
+        if (res.IsFailure()) return res.Miss();
+
+        res = accessor.Get.GetInterface().GetValue(out SaveDataIndexerValue lhsValue, saveDataId1);
+        if (res.IsFailure()) return res.Miss();
+
+        res = accessor.Get.GetInterface().GetKey(out SaveDataAttribute rhsKey, saveDataId2);
+        if (res.IsFailure()) return res.Miss();
+
+        res = accessor.Get.GetInterface().GetValue(out SaveDataIndexerValue rhsValue, saveDataId2);
+        if (res.IsFailure()) return res.Miss();
+
+        var rhsState = rhsValue.State;
+        rhsValue.State = lhsValue.State;
+        lhsValue.State = rhsState;
+
+        res = accessor.Get.GetInterface().SetValue(in rhsKey, in lhsValue);
+        if (res.IsFailure()) return res.Miss();
+
+        res = accessor.Get.GetInterface().SetValue(in lhsKey, in rhsValue);
+        if (res.IsFailure()) return res.Miss();
+
+        res = accessor.Get.GetInterface().Commit();
+        if (res.IsFailure()) return res.Miss();
+
+        return Result.Success;
     }
 
     public Result SetSaveDataState(SaveDataSpaceId spaceId, ulong saveDataId, SaveDataState state)
     {
-        throw new NotImplementedException();
+        using var accessor = new UniqueRef<SaveDataIndexerAccessor>();
+        Result res = OpenSaveDataIndexerAccessor(ref accessor.Ref, spaceId);
+        if (res.IsFailure()) return res.Miss();
+
+        res = accessor.Get.GetInterface().SetState(saveDataId, state);
+        if (res.IsFailure()) return res.Miss();
+
+        res = accessor.Get.GetInterface().Commit();
+        if (res.IsFailure()) return res.Miss();
+
+        return Result.Success;
     }
 
     public Result SetSaveDataRank(SaveDataSpaceId spaceId, ulong saveDataId, SaveDataRank rank)
     {
-        throw new NotImplementedException();
+        using var accessor = new UniqueRef<SaveDataIndexerAccessor>();
+        Result res = OpenSaveDataIndexerAccessor(ref accessor.Ref, spaceId);
+        if (res.IsFailure()) return res.Miss();
+
+        bool success = false;
+
+        try
+        {
+            // Save data of different ranks are used for different parts of the save data transfer process, with
+            // "secondary" saves being used for temporary transfer saves. When switching ranks, we create a new
+            // save data entry with only the rank changed, and delete the old one.
+            res = accessor.Get.GetInterface().GetKey(out SaveDataAttribute oldKey, saveDataId);
+            if (res.IsFailure()) return res.Miss();
+
+            res = accessor.Get.GetInterface().GetValue(out SaveDataIndexerValue oldValue, saveDataId);
+            if (res.IsFailure()) return res.Miss();
+
+            if (rank == oldKey.Rank)
+            {
+                success = true;
+                return Result.Success;
+            }
+
+            SaveDataAttribute newKey = oldKey;
+            newKey.Rank = rank;
+
+            res = accessor.Get.GetInterface().Publish(out _, in newKey);
+            if (res.IsFailure()) return res.Miss();
+
+            res = accessor.Get.GetInterface().Delete(saveDataId);
+            if (res.IsFailure()) return res.Miss();
+
+            res = accessor.Get.GetInterface().SetValue(in newKey, in oldValue);
+            if (res.IsFailure()) return res.Miss();
+
+            res = accessor.Get.GetInterface().Commit();
+            if (res.IsFailure()) return res.Miss();
+
+            success = true;
+            return Result.Success;
+        }
+        finally
+        {
+            // Rollback the operation if something goes wrong.
+            if (!success)
+            {
+                res = accessor.Get.GetInterface().Rollback();
+                if (res.IsFailure())
+                {
+                    Hos.Diag.Impl.LogImpl(Log.EmptyModuleName, LogSeverity.Info,
+                        "[fs] Error: Failed to rollback save data indexer.\n"u8);
+                }
+            }
+        }
     }
 
     public Result FinalizeSaveDataCreation(ulong saveDataId, SaveDataSpaceId spaceId)
     {
-        throw new NotImplementedException();
+        if (saveDataId == SaveIndexerId)
+            return ResultFs.InvalidArgument.Log();
+
+        using var scopedContext = new ScopedStorageLayoutTypeSetter(StorageLayoutType.NonGameCard);
+
+        using var accessor = new UniqueRef<SaveDataIndexerAccessor>();
+        Result res = OpenSaveDataIndexerAccessor(ref accessor.Ref, spaceId);
+        if (res.IsFailure()) return res.Miss();
+
+        res = accessor.Get.GetInterface().GetKey(out SaveDataAttribute key, saveDataId);
+        if (res.IsFailure()) return res.Miss();
+
+        using Path saveDataRootPath = _saveDataRootPath.DangerousGetPath();
+        res = _serviceImpl.ReadSaveDataFileSystemExtraData(out SaveDataExtraData extraData, spaceId, saveDataId, key.Type, ref saveDataRootPath.Ref());
+        if (res.IsFailure()) return res.Miss();
+
+        extraData.Attribute.UserId = key.UserId;
+        extraData.Attribute.Rank = SaveDataRank.Primary;
+
+        res = _serviceImpl.WriteSaveDataFileSystemExtraData(spaceId, saveDataId, in extraData, ref saveDataRootPath.Ref(), key.Type, updateTimeStamp: false);
+        if (res.IsFailure()) return res.Miss();
+
+        res = accessor.Get.GetInterface().SetState(saveDataId, SaveDataState.Normal);
+        if (res.IsFailure()) return res.Miss();
+
+        res = accessor.Get.GetInterface().Commit();
+        if (res.IsFailure()) return res.Miss();
+
+        return Result.Success;
     }
 
     public Result CancelSaveDataCreation(ulong saveDataId, SaveDataSpaceId spaceId)
     {
-        throw new NotImplementedException();
+        using var scopedContext = new ScopedStorageLayoutTypeSetter(StorageLayoutType.NonGameCard);
+
+        // Don't allow deleting the save data indexer
+        if (saveDataId == SaveIndexerId)
+            return ResultFs.InvalidArgument.Log();
+
+        // Delete the actual save data
+        Result res = DeleteSaveDataFileSystemCore(spaceId, saveDataId, wipeSaveFile: false);
+        if (res.IsFailure()) return res.Miss();
+
+        // Make sure the save data isn't in certain save data spaces
+        using var accessor = new UniqueRef<SaveDataIndexerAccessor>();
+        res = OpenSaveDataIndexerAccessor(ref accessor.Ref, spaceId);
+        if (res.IsFailure()) return res.Miss();
+
+        res = accessor.Get.GetInterface().GetValue(out SaveDataIndexerValue value, saveDataId);
+        if (res.IsFailure()) return res.Miss();
+
+        if (value.SpaceId != ConvertToRealSpaceId(spaceId))
+            return ResultFs.TargetNotFound.Log();
+
+        // Delete the save data from the indexer
+        res = accessor.Get.GetInterface().Delete(saveDataId);
+        if (res.IsFailure()) return res.Miss();
+
+        res = accessor.Get.GetInterface().Commit();
+        if (res.IsFailure()) return res.Miss();
+
+        return Result.Success;
     }
 
-    public Result SetSaveDataRootPath(in FspPath path)
+    public Result SetSaveDataRootPath(ref readonly FspPath path)
     {
         Result res = GetProgramInfo(out ProgramInfo programInfo);
         if (res.IsFailure()) return res.Miss();
@@ -863,12 +1050,12 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
             if (res.IsFailure()) return res.Miss();
         }
 
-        var pathFlags = new PathFlags();
-        pathFlags.AllowWindowsPath();
-        pathFlags.AllowRelativePath();
-        pathFlags.AllowEmptyPath();
+        var flags = new PathFlags();
+        flags.AllowWindowsPath();
+        flags.AllowRelativePath();
+        flags.AllowEmptyPath();
 
-        res = saveDataRootPath.Normalize(pathFlags);
+        res = saveDataRootPath.Normalize(flags);
         if (res.IsFailure()) return res.Miss();
 
         _saveDataRootPath.Initialize(in saveDataRootPath);
@@ -894,7 +1081,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
     }
 
     // ReSharper disable once UnusedParameter.Global
-    public static Result UpdateSaveDataMacForDebug(SaveDataSpaceId spaceId, ulong saveDataId)
+    public Result UpdateSaveDataMacForDebug(SaveDataSpaceId spaceId, ulong saveDataId)
     {
         if (saveDataId == SaveIndexerId)
             return ResultFs.InvalidArgument.Log();
@@ -918,9 +1105,38 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         return Result.Success;
     }
 
-    public Result CheckSaveDataFile(long saveDataId, SaveDataSpaceId spaceId)
+    public Result CheckSaveDataFile(ulong saveDataId, SaveDataSpaceId spaceId)
     {
-        throw new NotImplementedException();
+        using var scopedContext = new ScopedStorageLayoutTypeSetter(StorageLayoutType.NonGameCard);
+
+        Result res = _serviceImpl.RecoverSaveDataFileSystemMasterHeader(spaceId, saveDataId);
+        if (res.IsFailure()) return res.Miss();
+
+        return Result.Success;
+    }
+
+    private Result CreateSaveDataFileSystemCore(in SaveDataAttribute attribute, in SaveDataCreationInfo creationInfo,
+        in SaveDataMetaInfo metaInfo, in Optional<HashSalt> hashSalt, bool leaveUnfinalized)
+    {
+        // Changed: The original allocates a SaveDataCreationInfo2 on the heap
+        Result res = SaveDataCreationInfo2.Make(out SaveDataCreationInfo2 newCreationInfo, in attribute,
+            creationInfo.Size, creationInfo.JournalSize, creationInfo.BlockSize, creationInfo.OwnerId,
+            creationInfo.Flags, creationInfo.SpaceId, GetSaveDataFormatType(in attribute));
+        if (res.IsFailure()) return res.Miss();
+
+        newCreationInfo.IsHashSaltEnabled = hashSalt.HasValue;
+        if (hashSalt.HasValue)
+        {
+            newCreationInfo.HashSalt = hashSalt.ValueRo;
+        }
+
+        newCreationInfo.MetaType = metaInfo.Type;
+        newCreationInfo.MetaSize = metaInfo.Size;
+
+        res = CreateSaveDataFileSystemCore(in newCreationInfo, leaveUnfinalized);
+        if (res.IsFailure()) return res.Miss();
+
+        return Result.Success;
     }
 
     private Result CreateSaveDataFileSystemCore(in SaveDataCreationInfo2 creationInfo, bool leaveUnfinalized)
@@ -981,7 +1197,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
                         }
                     }
 
-                    // If a static save data ID is no specified we're assigned a new save ID
+                    // If a static save data ID is not specified we're assigned a new save ID
                     res = accessor.Get.GetInterface().Publish(out saveDataId, in indexerKey);
                 }
 
@@ -1003,7 +1219,11 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
                     if (res.IsFailure()) return res.Miss();
 
                     res = accessor.Get.GetInterface().Commit();
-                    if (res.IsFailure()) return res.Miss();
+                    if (res.IsFailure())
+                    {
+                        Hos.Diag.Impl.LogImpl(Log.EmptyModuleName, LogSeverity.Info, "[fs] Error : Failed to commit save data indexer.\n"u8);
+                        return res.Miss();
+                    }
                 }
                 else
                 {
@@ -1050,7 +1270,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
 
                 // The save exists on the file system but not in the save indexer.
                 // Delete the save data and try creating it again.
-                res = DeleteSaveDataFileSystemCore(creationInfo.SpaceId, saveDataId, false);
+                res = DeleteSaveDataFileSystemCore(creationInfo.SpaceId, saveDataId, wipeSaveFile: false);
                 if (res.IsFailure()) return res.Miss();
 
                 res = _serviceImpl.CreateSaveDataFileSystem(saveDataId, in creationInfo, in saveDataRootPath,
@@ -1106,7 +1326,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
             // Revert changes if an error happened in the middle of creation
             if (creating)
             {
-                res = DeleteSaveDataFileSystemCore(creationInfo.SpaceId, saveDataId, false);
+                res = DeleteSaveDataFileSystemCore(creationInfo.SpaceId, saveDataId, wipeSaveFile: false);
                 if (res.IsFailure())
                 {
                     Hos.Diag.Impl.LogImpl(Log.EmptyModuleName, LogSeverity.Info, GetRollbackErrorMessage(res));
@@ -1141,31 +1361,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         }
     }
 
-    private Result CreateSaveDataFileSystemCore(in SaveDataAttribute attribute, in SaveDataCreationInfo creationInfo,
-        in SaveDataMetaInfo metaInfo, in Optional<HashSalt> hashSalt, bool leaveUnfinalized)
-    {
-        // Changed: The original allocates a SaveDataCreationInfo2 on the heap for some reason
-        Result res = SaveDataCreationInfo2.Make(out SaveDataCreationInfo2 newCreationInfo, in attribute,
-            creationInfo.Size, creationInfo.JournalSize, creationInfo.BlockSize, creationInfo.OwnerId,
-            creationInfo.Flags, creationInfo.SpaceId, GetSaveDataFormatType(in attribute));
-        if (res.IsFailure()) return res.Miss();
-
-        newCreationInfo.IsHashSaltEnabled = hashSalt.HasValue;
-        if (hashSalt.HasValue)
-        {
-            newCreationInfo.HashSalt = hashSalt.ValueRo;
-        }
-
-        newCreationInfo.MetaType = metaInfo.Type;
-        newCreationInfo.MetaSize = metaInfo.Size;
-
-        res = CreateSaveDataFileSystemCore(in newCreationInfo, leaveUnfinalized);
-        if (res.IsFailure()) return res.Miss();
-
-        return Result.Success;
-    }
-
-    public Result GetSaveDataInfo(out SaveDataInfo info, SaveDataSpaceId spaceId, in SaveDataAttribute attribute)
+    public Result GetSaveDataInfo(out SaveDataInfo info, SaveDataSpaceId spaceId, SaveDataAttribute attribute)
     {
         UnsafeHelpers.SkipParamInit(out info);
 
@@ -1189,7 +1385,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         if (dataSize < 0 || journalSize < 0)
             return ResultFs.InvalidSize.Log();
 
-        Result res = SaveDataFileSystemServiceImpl.QuerySaveDataTotalSize(out long totalSize, SaveDataBlockSize, dataSize, journalSize);
+        Result res = _serviceImpl.QuerySaveDataTotalSize(out long totalSize, SaveDataBlockSize, dataSize, journalSize);
         if (res.IsFailure()) return res.Miss();
 
         outTotalSize = totalSize;
@@ -1199,7 +1395,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
     public Result CreateSaveDataFileSystem(in SaveDataAttribute attribute, in SaveDataCreationInfo creationInfo,
         in SaveDataMetaInfo metaInfo)
     {
-        // Changed: The original allocates a SaveDataCreationInfo2 on the heap for some reason
+        // Changed: The original allocates a SaveDataCreationInfo2 on the heap
         Result res = SaveDataCreationInfo2.Make(out SaveDataCreationInfo2 newCreationInfo, in attribute,
             creationInfo.Size, creationInfo.JournalSize, creationInfo.BlockSize, creationInfo.OwnerId,
             creationInfo.Flags, creationInfo.SpaceId, GetSaveDataFormatType(in attribute));
@@ -1218,7 +1414,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
     public Result CreateSaveDataFileSystemWithHashSalt(in SaveDataAttribute attribute,
         in SaveDataCreationInfo creationInfo, in SaveDataMetaInfo metaInfo, in HashSalt hashSalt)
     {
-        // Changed: The original allocates a SaveDataCreationInfo2 on the heap for some reason
+        // Changed: The original allocates a SaveDataCreationInfo2 on the heap
         Result res = SaveDataCreationInfo2.Make(out SaveDataCreationInfo2 newCreationInfo, in attribute,
             creationInfo.Size, creationInfo.JournalSize, creationInfo.BlockSize, creationInfo.OwnerId,
             creationInfo.Flags, creationInfo.SpaceId, GetSaveDataFormatType(in attribute));
@@ -1250,13 +1446,13 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         }
 
         ProgramId resolvedProgramId = ResolveDefaultSaveDataReferenceProgramId(programInfo.ProgramId);
-        res = SaveDataAccessibilityChecker.CheckCreate(in creationInfo.Attribute, creationInfo.OwnerId, programInfo,
-            resolvedProgramId);
+        res = SaveDataAccessibilityChecker.CheckCreate(creationInfo.SpaceId, in creationInfo.Attribute,
+            creationInfo.OwnerId, programInfo, _processId, resolvedProgramId);
         if (res.IsFailure()) return res.Miss();
 
         if (creationInfo.Attribute.Type == SaveDataType.Account && creationInfo.Attribute.UserId == InvalidUserId)
         {
-            // Changed: The original allocates a SaveDataCreationInfo2 on the heap for some reason
+            // Changed: The original allocates a SaveDataCreationInfo2 on the heap
             SaveDataCreationInfo2 newCreationInfo = creationInfo;
 
             if (newCreationInfo.Attribute.ProgramId == ProgramId.InvalidId)
@@ -1295,10 +1491,10 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
 
         ulong ownerId = creationInfo.OwnerId == 0 ? programInfo.ProgramIdValue : creationInfo.OwnerId;
 
-        res = SaveDataAccessibilityChecker.CheckCreate(in attribute, ownerId, programInfo, programInfo.ProgramId);
+        res = SaveDataAccessibilityChecker.CheckCreate(creationInfo.SpaceId, in attribute, ownerId, programInfo, _processId, programInfo.ProgramId);
         if (res.IsFailure()) return res.Miss();
 
-        // Changed: The original allocates a SaveDataCreationInfo2 on the heap for some reason
+        // Changed: The original allocates a SaveDataCreationInfo2 on the heap
         res = SaveDataCreationInfo2.Make(out SaveDataCreationInfo2 newCreationInfo, in attribute, creationInfo.Size,
             creationInfo.JournalSize, creationInfo.BlockSize, ownerId, creationInfo.Flags, creationInfo.SpaceId,
             GetSaveDataFormatType(in attribute));
@@ -1338,7 +1534,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
             }
 
             // Check if we have permissions to extend this save data.
-            res = SaveDataAccessibilityChecker.CheckExtend(spaceId, in key, programInfo, ReadExtraData);
+            res = SaveDataAccessibilityChecker.CheckExtend(spaceId, in key, programInfo, _processId, ReadExtraData);
             if (res.IsFailure()) return res.Miss();
 
             // Check that the save data is in a state that we can start extending it.
@@ -1401,7 +1597,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
                 accessor.Get.GetInterface().Commit().IgnoreResult();
             }
 
-            return extendResult.Log();
+            return extendResult.Miss();
         }
 
         // Update the save data's size in the indexer.
@@ -1410,7 +1606,17 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
             res = OpenSaveDataIndexerAccessor(ref accessor.Ref, spaceId);
             if (res.IsFailure()) return res.Miss();
 
-            accessor.Get.GetInterface().SetSize(saveDataId, extendedTotalSize).IgnoreResult();
+            Result result = accessor.Get.GetInterface().SetSize(saveDataId, extendedTotalSize);
+            if (result.IsFailure())
+            {
+                Unsafe.SkipInit(out Array80<byte> stringBuffer);
+
+                var sb = new U8StringBuilder(stringBuffer, true);
+                sb.Append("[fs] Failed to set size of save data "u8).AppendFormat(saveDataId, 'x', 16)
+                    .Append(" ("u8).AppendFormat(result.Value, 'x').Append(")\n"u8);
+
+                Hos.Diag.Impl.LogImpl(Log.EmptyModuleName, LogSeverity.Info, sb.Buffer);
+            }
 
             res = accessor.Get.GetInterface().Commit();
             if (res.IsFailure()) return res.Miss();
@@ -1436,18 +1642,6 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         return Result.Success;
     }
 
-    public Result OpenSaveDataFileSystem(ref SharedRef<IFileSystemSf> fileSystem, SaveDataSpaceId spaceId,
-        in SaveDataAttribute attribute)
-    {
-        return OpenUserSaveDataFileSystem(ref fileSystem, spaceId, in attribute, openReadOnly: false).Ret();
-    }
-
-    public Result OpenReadOnlySaveDataFileSystem(ref SharedRef<IFileSystemSf> fileSystem, SaveDataSpaceId spaceId,
-        in SaveDataAttribute attribute)
-    {
-        return OpenUserSaveDataFileSystem(ref fileSystem, spaceId, in attribute, openReadOnly: true).Ret();
-    }
-
     public Result OpenSaveDataFileSystemCore(ref SharedRef<IFileSystem> outFileSystem, out ulong outSaveDataId,
         SaveDataSpaceId spaceId, in SaveDataAttribute attribute, bool openReadOnly, bool cacheExtraData)
     {
@@ -1456,11 +1650,10 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         using var accessor = new UniqueRef<SaveDataIndexerAccessor>();
 
         ulong saveDataId;
-        bool isStaticSaveDataId =
-            attribute.StaticSaveDataId != InvalidSystemSaveDataId && attribute.UserId == InvalidUserId;
+        SaveDataAttribute key = attribute;
 
         // Get the ID of the save data
-        if (isStaticSaveDataId)
+        if (attribute.StaticSaveDataId == SaveIndexerId)
         {
             saveDataId = attribute.StaticSaveDataId;
         }
@@ -1469,16 +1662,16 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
             Result res = OpenSaveDataIndexerAccessor(ref accessor.Ref, spaceId);
             if (res.IsFailure()) return res.Miss();
 
-            res = accessor.Get.GetInterface().Get(out SaveDataIndexerValue indexerValue, in attribute);
+            res = accessor.Get.GetInterface().Get(out SaveDataIndexerValue value, in key);
             if (res.IsFailure()) return res.Miss();
 
-            if (indexerValue.SpaceId != ConvertToRealSpaceId(spaceId))
+            if (value.SpaceId != ConvertToRealSpaceId(spaceId))
                 return ResultFs.TargetNotFound.Log();
 
-            if (indexerValue.State == SaveDataState.Extending)
+            if (value.State == SaveDataState.Extending)
                 return ResultFs.SaveDataExtending.Log();
 
-            saveDataId = indexerValue.SaveDataId;
+            saveDataId = value.SaveDataId;
         }
 
         // Open the save data using its ID
@@ -1486,54 +1679,39 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         Result saveFsResult = _serviceImpl.OpenSaveDataFileSystem(ref outFileSystem, spaceId, saveDataId,
             in saveDataRootPath, openReadOnly, attribute.Type, cacheExtraData);
 
-        if (saveFsResult.IsSuccess())
+        if (!saveFsResult.IsSuccess())
         {
-            outSaveDataId = saveDataId;
-            return Result.Success;
+            // Remove the save from the indexer if the save is missing from the disk.
+            if (ResultFs.PathNotFound.Includes(saveFsResult))
+            {
+                Result res = RemoveSaveIndexerEntry();
+                if (res.IsFailure()) return res.Miss();
+
+                return ResultFs.TargetNotFound.LogConverted(saveFsResult);
+            }
+
+            if (ResultFs.TargetNotFound.Includes(saveFsResult))
+            {
+                Result res = RemoveSaveIndexerEntry();
+                if (res.IsFailure()) return res.Miss();
+
+                return saveFsResult.Rethrow();
+            }
+
+            return saveFsResult.Miss();
         }
 
-        // Copy the key so we can use it in a local function
-        SaveDataAttribute key = attribute;
-
-        // Remove the save from the indexer if the save is missing from the disk.
-        if (ResultFs.PathNotFound.Includes(saveFsResult))
-        {
-            Result res = RemoveSaveIndexerEntry();
-            if (res.IsFailure()) return res.Miss();
-
-            return ResultFs.TargetNotFound.LogConverted(saveFsResult);
-        }
-
-        if (ResultFs.TargetNotFound.Includes(saveFsResult))
-        {
-            Result res = RemoveSaveIndexerEntry();
-            if (res.IsFailure()) return res.Miss();
-        }
-
-        return saveFsResult;
+        outSaveDataId = saveDataId;
+        return Result.Success;
 
         Result RemoveSaveIndexerEntry()
         {
-            if (saveDataId == SaveIndexerId)
-                return Result.Success;
-
-            if (isStaticSaveDataId)
+            if (saveDataId != SaveIndexerId)
             {
-                // The accessor won't be open yet if the save has a static ID
-                Result res = OpenSaveDataIndexerAccessor(ref accessor.Ref, spaceId);
-                if (res.IsFailure()) return res.Miss();
-
-                // Check the space ID of the save data
-                res = accessor.Get.GetInterface().Get(out SaveDataIndexerValue value, in key);
-                if (res.IsFailure()) return res.Miss();
-
-                if (value.SpaceId != ConvertToRealSpaceId(spaceId))
-                    return ResultFs.TargetNotFound.Log();
+                // Remove the indexer entry. Nintendo ignores these results
+                accessor.Get.GetInterface().Delete(saveDataId).IgnoreResult();
+                accessor.Get.GetInterface().Commit().IgnoreResult();
             }
-
-            // Remove the indexer entry. Nintendo ignores these results
-            accessor.Get.GetInterface().Delete(saveDataId).IgnoreResult();
-            accessor.Get.GetInterface().Commit().IgnoreResult();
 
             return Result.Success;
         }
@@ -1551,13 +1729,13 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         if (res.IsFailure()) return res.Miss();
 
         using Path saveDataRootPath = _saveDataRootPath.DangerousGetPath();
-        bool useAsyncFileSystem = !SaveDataFileSystemServiceImpl.IsAllowedDirectorySaveData(spaceId, in saveDataRootPath);
+        bool useAsyncFileSystem = !_serviceImpl.IsAllowedDirectorySaveData(spaceId, in saveDataRootPath);
 
         using var fileSystem = new SharedRef<IFileSystem>();
 
         // Open the file system
-        res = OpenSaveDataFileSystemCore(ref fileSystem.Ref, out ulong saveDataId, spaceId, in attribute,
-            openReadOnly, cacheExtraData: true);
+        res = OpenSaveDataFileSystemCore(ref fileSystem.Ref, out ulong saveDataId, spaceId, in attribute, openReadOnly,
+            cacheExtraData: true);
         if (res.IsFailure()) return res.Miss();
 
         // Can't use attribute in a closure, so copy the needed field
@@ -1570,18 +1748,16 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         }
 
         // Check if we have permissions to open this save data
-        res = SaveDataAccessibilityChecker.CheckOpen(in attribute, programInfo, ReadExtraData);
+        res = SaveDataAccessibilityChecker.CheckOpen(spaceId, in attribute, programInfo, _processId, ReadExtraData);
         if (res.IsFailure()) return res.Miss();
 
         // Add all the wrappers for the file system
-        using var typeSetFileSystem =
-            new SharedRef<IFileSystem>(new StorageLayoutTypeSetFileSystem(ref fileSystem.Ref, storageFlag));
-
+        using var typeSetFileSystem = new SharedRef<IFileSystem>(new StorageLayoutTypeSetFileSystem(in fileSystem, storageFlag));
         using var asyncFileSystem = new SharedRef<IFileSystem>();
 
         if (useAsyncFileSystem)
         {
-            asyncFileSystem.Reset(new AsynchronousAccessFileSystem(ref typeSetFileSystem.Ref));
+            asyncFileSystem.Reset(new AsynchronousAccessFileSystem(in typeSetFileSystem));
         }
         else
         {
@@ -1590,20 +1766,19 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
 
         using SharedRef<SaveDataFileSystemService> saveService = GetSharedFromThis();
         using var openEntryCountAdapter =
-            new SharedRef<IEntryOpenCountSemaphoreManager>(new SaveDataOpenCountAdapter(ref saveService.Ref));
+            new SharedRef<IEntryOpenCountSemaphoreManager>(new SaveDataOpenCountAdapter(in saveService));
 
-        using var openCountFileSystem = new SharedRef<IFileSystem>(new OpenCountFileSystem(ref asyncFileSystem.Ref,
-            ref openEntryCountAdapter.Ref, ref mountCountSemaphore.Ref));
+        using var openCountFileSystem = new SharedRef<IFileSystem>(new OpenCountFileSystem(in asyncFileSystem,
+            in openEntryCountAdapter, ref mountCountSemaphore.Ref));
 
-        var pathFlags = new PathFlags();
+        PathFlags pathFlags = FileSystemInterfaceAdapter.GetDefaultPathFlags();
         pathFlags.AllowBackslash();
-        pathFlags.AllowAllCharacters();
+        pathFlags.AllowInvalidCharacter();
 
         using SharedRef<IFileSystemSf> fileSystemAdapter =
-            FileSystemInterfaceAdapter.CreateShared(ref openCountFileSystem.Ref, pathFlags, false);
+            FileSystemInterfaceAdapter.CreateShared(in openCountFileSystem, pathFlags, allowAllOperations: false);
 
         outFileSystem.SetByMove(ref fileSystemAdapter.Ref);
-
         return Result.Success;
     }
 
@@ -1613,7 +1788,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         Result res = GetProgramInfo(out ProgramInfo programInfo);
         if (res.IsFailure()) return res.Miss();
 
-        res = SaveDataAccessibilityChecker.CheckOpenPre(in attribute, programInfo);
+        res = SaveDataAccessibilityChecker.CheckOpenPre(spaceId, in attribute, programInfo, _processId);
         if (res.IsFailure()) return res.Miss();
 
         SaveDataAttribute tempAttribute;
@@ -1648,6 +1823,18 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
             openReadOnly).Ret();
     }
 
+    public Result OpenSaveDataFileSystem(ref SharedRef<IFileSystemSf> outFileSystem, SaveDataSpaceId spaceId,
+        in SaveDataAttribute attribute)
+    {
+        return OpenUserSaveDataFileSystem(ref outFileSystem, spaceId, in attribute, openReadOnly: false).Ret();
+    }
+
+    public Result OpenReadOnlySaveDataFileSystem(ref SharedRef<IFileSystemSf> outGileSystem, SaveDataSpaceId spaceId,
+        in SaveDataAttribute attribute)
+    {
+        return OpenUserSaveDataFileSystem(ref outGileSystem, spaceId, in attribute, openReadOnly: true).Ret();
+    }
+
     public Result OpenSaveDataFileSystemBySystemSaveDataId(ref SharedRef<IFileSystemSf> outFileSystem,
         SaveDataSpaceId spaceId, in SaveDataAttribute attribute)
     {
@@ -1667,7 +1854,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
             return ResultFs.PermissionDenied.Log();
 
         using Path saveDataRootPath = _saveDataRootPath.DangerousGetPath();
-        bool useAsyncFileSystem = !SaveDataFileSystemServiceImpl.IsAllowedDirectorySaveData(spaceId, in saveDataRootPath);
+        bool useAsyncFileSystem = !_serviceImpl.IsAllowedDirectorySaveData(spaceId, in saveDataRootPath);
 
         using var fileSystem = new SharedRef<IFileSystem>();
 
@@ -1682,22 +1869,20 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         Result ReadExtraData(out SaveDataExtraData data)
         {
             using Path savePath = _saveDataRootPath.DangerousGetPath();
-            return _serviceImpl.ReadSaveDataFileSystemExtraData(out data, spaceId, saveDataId, type, in savePath);
+            return _serviceImpl.ReadSaveDataFileSystemExtraData(out data, spaceId, saveDataId, type, in savePath).Ret();
         }
 
         // Check if we have permissions to open this save data
-        res = SaveDataAccessibilityChecker.CheckOpen(in attribute, programInfo, ReadExtraData);
+        res = SaveDataAccessibilityChecker.CheckOpen(spaceId, in attribute, programInfo, _processId, ReadExtraData);
         if (res.IsFailure()) return res.Miss();
 
         // Add all the wrappers for the file system
-        using var typeSetFileSystem =
-            new SharedRef<IFileSystem>(new StorageLayoutTypeSetFileSystem(ref fileSystem.Ref, storageFlag));
-
+        using var typeSetFileSystem = new SharedRef<IFileSystem>(new StorageLayoutTypeSetFileSystem(in fileSystem, storageFlag));
         using var asyncFileSystem = new SharedRef<IFileSystem>();
 
         if (useAsyncFileSystem)
         {
-            asyncFileSystem.Reset(new AsynchronousAccessFileSystem(ref typeSetFileSystem.Ref));
+            asyncFileSystem.Reset(new AsynchronousAccessFileSystem(in typeSetFileSystem));
         }
         else
         {
@@ -1706,30 +1891,28 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
 
         using SharedRef<SaveDataFileSystemService> saveService = GetSharedFromThis();
         using var openEntryCountAdapter =
-            new SharedRef<IEntryOpenCountSemaphoreManager>(new SaveDataOpenCountAdapter(ref saveService.Ref));
+            new SharedRef<IEntryOpenCountSemaphoreManager>(new SaveDataOpenCountAdapter(in saveService));
 
         using var openCountFileSystem = new SharedRef<IFileSystem>(
-            new OpenCountFileSystem(ref asyncFileSystem.Ref, ref openEntryCountAdapter.Ref));
+            new OpenCountFileSystem(in asyncFileSystem, in openEntryCountAdapter));
 
-        var pathFlags = new PathFlags();
+        PathFlags pathFlags = FileSystemInterfaceAdapter.GetDefaultPathFlags();
         pathFlags.AllowBackslash();
-        pathFlags.AllowAllCharacters();
+        pathFlags.AllowInvalidCharacter();
 
         using SharedRef<IFileSystemSf> fileSystemAdapter =
-            FileSystemInterfaceAdapter.CreateShared(ref openCountFileSystem.Ref, pathFlags,
-                allowAllOperations: false);
+            FileSystemInterfaceAdapter.CreateShared(in openCountFileSystem, pathFlags, allowAllOperations: false);
 
         outFileSystem.SetByMove(ref fileSystemAdapter.Ref);
-
         return Result.Success;
     }
 
     // ReSharper disable once UnusedParameter.Local
-    // Nintendo used isTemporarySaveData in older FS versions, but never removed the parameter.
-    private Result ReadSaveDataFileSystemExtraDataCore(out SaveDataExtraData extraData, SaveDataSpaceId spaceId,
+    // The unused parameter hasn't been removed because this method is part of an interface. It was used in older FS versions.
+    private Result ReadSaveDataFileSystemExtraDataCore(out SaveDataExtraData outExtraData, SaveDataSpaceId spaceId,
         ulong saveDataId, bool isTemporarySaveData)
     {
-        UnsafeHelpers.SkipParamInit(out extraData);
+        UnsafeHelpers.SkipParamInit(out outExtraData);
 
         using var scopedContext = new ScopedStorageLayoutTypeSetter(StorageLayoutType.NonGameCard);
         using var accessor = new UniqueRef<SaveDataIndexerAccessor>();
@@ -1741,14 +1924,14 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         if (res.IsFailure()) return res.Miss();
 
         using Path saveDataRootPath = _saveDataRootPath.DangerousGetPath();
-        return _serviceImpl.ReadSaveDataFileSystemExtraData(out extraData, spaceId, saveDataId, key.Type,
+        return _serviceImpl.ReadSaveDataFileSystemExtraData(out outExtraData, spaceId, saveDataId, key.Type,
             in saveDataRootPath).Ret();
     }
 
-    private Result ReadSaveDataFileSystemExtraDataCore(out SaveDataExtraData extraData,
+    private Result ReadSaveDataFileSystemExtraDataCore(out SaveDataExtraData outExtraData,
         Optional<SaveDataSpaceId> spaceId, ulong saveDataId, in SaveDataExtraData extraDataMask)
     {
-        UnsafeHelpers.SkipParamInit(out extraData);
+        UnsafeHelpers.SkipParamInit(out outExtraData);
 
         using var scopedContext = new ScopedStorageLayoutTypeSetter(StorageLayoutType.NonGameCard);
 
@@ -1791,7 +1974,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
             res = accessor.Get.GetInterface().GetValue(out SaveDataIndexerValue _, saveDataId);
             if (res.IsFailure()) return res.Miss();
 
-            resolvedSpaceId = spaceId.ValueRo;
+            resolvedSpaceId = spaceId.Value;
 
             res = accessor.Get.GetInterface().GetKey(out key, saveDataId);
             if (res.IsFailure()) return res.Miss();
@@ -1804,7 +1987,8 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
                 in savePath);
         }
 
-        res = SaveDataAccessibilityChecker.CheckReadExtraData(in key, in extraDataMask, programInfo, ReadExtraData);
+        res = SaveDataAccessibilityChecker.CheckReadExtraData(resolvedSpaceId, in key, in extraDataMask, programInfo,
+            _processId, ReadExtraData);
         if (res.IsFailure()) return res.Miss();
 
         using Path saveDataRootPath = _saveDataRootPath.DangerousGetPath();
@@ -1813,7 +1997,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         if (res.IsFailure()) return res.Miss();
 
         MaskExtraData(ref tempExtraData, in extraDataMask);
-        extraData = tempExtraData;
+        outExtraData = tempExtraData;
 
         return Result.Success;
     }
@@ -1823,12 +2007,15 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         if (extraData.Size != Unsafe.SizeOf<SaveDataExtraData>())
             return ResultFs.InvalidArgument.Log();
 
+        if (extraData.IsNull)
+            return ResultFs.NullptrArgument.Log();
+
         // Make a mask for reading the entire extra data
         Unsafe.SkipInit(out SaveDataExtraData extraDataMask);
         SpanHelpers.AsByteSpan(ref extraDataMask).Fill(0xFF);
 
-        return ReadSaveDataFileSystemExtraDataCore(out SpanHelpers.AsStruct<SaveDataExtraData>(extraData.Buffer),
-            spaceId: default, saveDataId, in extraDataMask).Ret();
+        return ReadSaveDataFileSystemExtraDataCore(out extraData.As<SaveDataExtraData>(), spaceId: default, saveDataId,
+            in extraDataMask).Ret();
     }
 
     public Result ReadSaveDataFileSystemExtraDataBySaveDataAttribute(OutBuffer extraData, SaveDataSpaceId spaceId,
@@ -1837,7 +2024,10 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         if (extraData.Size != Unsafe.SizeOf<SaveDataExtraData>())
             return ResultFs.InvalidArgument.Log();
 
-        ref SaveDataExtraData extraDataRef = ref SpanHelpers.AsStruct<SaveDataExtraData>(extraData.Buffer);
+        if (extraData.IsNull)
+            return ResultFs.NullptrArgument.Log();
+
+        ref SaveDataExtraData extraDataRef = ref extraData.As<SaveDataExtraData>();
 
         Result res = GetProgramInfo(out ProgramInfo programInfo);
         if (res.IsFailure()) return res.Miss();
@@ -1849,7 +2039,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
             tempAttribute.ProgramId = ResolveDefaultSaveDataReferenceProgramId(programInfo.ProgramId);
         }
 
-        res = GetSaveDataInfo(out SaveDataInfo info, spaceId, in tempAttribute);
+        res = GetSaveDataInfo(out SaveDataInfo info, spaceId, tempAttribute);
         if (res.IsFailure()) return res.Miss();
 
         // Make a mask for reading the entire extra data
@@ -1865,7 +2055,10 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         if (extraData.Size != Unsafe.SizeOf<SaveDataExtraData>())
             return ResultFs.InvalidArgument.Log();
 
-        ref SaveDataExtraData extraDataRef = ref SpanHelpers.AsStruct<SaveDataExtraData>(extraData.Buffer);
+        if (extraData.IsNull)
+            return ResultFs.NullptrArgument.Log();
+
+        ref SaveDataExtraData extraDataRef = ref extraData.As<SaveDataExtraData>();
 
         // Make a mask for reading the entire extra data
         Unsafe.SkipInit(out SaveDataExtraData extraDataMask);
@@ -1880,13 +2073,17 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         if (extraDataMask.Size != Unsafe.SizeOf<SaveDataExtraData>())
             return ResultFs.InvalidArgument.Log();
 
+        if (extraDataMask.IsNull)
+            return ResultFs.NullptrArgument.Log();
+
         if (extraData.Size != Unsafe.SizeOf<SaveDataExtraData>())
             return ResultFs.InvalidArgument.Log();
 
-        ref readonly SaveDataExtraData maskRef =
-            ref SpanHelpers.AsReadOnlyStruct<SaveDataExtraData>(extraDataMask.Buffer);
+        if (extraData.IsNull)
+            return ResultFs.NullptrArgument.Log();
 
-        ref SaveDataExtraData extraDataRef = ref SpanHelpers.AsStruct<SaveDataExtraData>(extraData.Buffer);
+        ref readonly SaveDataExtraData maskRef = ref extraDataMask.As<SaveDataExtraData>();
+        ref SaveDataExtraData extraDataRef = ref extraData.As<SaveDataExtraData>();
 
         Result res = GetProgramInfo(out ProgramInfo programInfo);
         if (res.IsFailure()) return res.Miss();
@@ -1898,7 +2095,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
             tempAttribute.ProgramId = ResolveDefaultSaveDataReferenceProgramId(programInfo.ProgramId);
         }
 
-        res = GetSaveDataInfo(out SaveDataInfo info, spaceId, in tempAttribute);
+        res = GetSaveDataInfo(out SaveDataInfo info, spaceId, tempAttribute);
         if (res.IsFailure()) return res.Miss();
 
         return ReadSaveDataFileSystemExtraDataCore(out extraDataRef, spaceId, info.SaveDataId, in maskRef).Ret();
@@ -1923,12 +2120,13 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         if (res.IsFailure()) return res.Miss();
 
         using var accessor = new UniqueRef<SaveDataIndexerAccessor>();
-
         res = OpenSaveDataIndexerAccessor(ref accessor.Ref, spaceId);
         if (res.IsFailure()) return res.Miss();
 
         res = accessor.Get.GetInterface().GetKey(out SaveDataAttribute key, saveDataId);
         if (res.IsFailure()) return res.Miss();
+
+        SaveDataType saveDataType = key.Type;
 
         Result ReadExtraData(out SaveDataExtraData data)
         {
@@ -1937,18 +2135,18 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
                 in saveDataRootPath);
         }
 
-        res = SaveDataAccessibilityChecker.CheckWriteExtraData(in key, in extraDataMask, programInfo, ReadExtraData);
+        res = SaveDataAccessibilityChecker.CheckWriteExtraData(spaceId, in key, in extraDataMask, programInfo, _processId, ReadExtraData);
         if (res.IsFailure()) return res.Miss();
 
         using Path saveDataRootPath = _saveDataRootPath.DangerousGetPath();
         res = _serviceImpl.ReadSaveDataFileSystemExtraData(out SaveDataExtraData extraDataModify, spaceId, saveDataId,
-            key.Type, in saveDataRootPath);
+            saveDataType, in saveDataRootPath);
         if (res.IsFailure()) return res.Miss();
 
         ModifySaveDataExtraData(ref extraDataModify, in extraData, in extraDataMask);
 
         return _serviceImpl.WriteSaveDataFileSystemExtraData(spaceId, saveDataId, in extraDataModify,
-            in saveDataRootPath, key.Type, updateTimeStamp: false).Ret();
+            in saveDataRootPath, saveDataType, updateTimeStamp: false).Ret();
     }
 
     public Result WriteSaveDataFileSystemExtraData(ulong saveDataId, SaveDataSpaceId spaceId, InBuffer extraData)
@@ -1956,8 +2154,10 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         if (extraData.Size != Unsafe.SizeOf<SaveDataExtraData>())
             return ResultFs.InvalidArgument.Log();
 
-        ref readonly SaveDataExtraData extraDataRef =
-            ref SpanHelpers.AsReadOnlyStruct<SaveDataExtraData>(extraData.Buffer);
+        if (extraData.IsNull)
+            return ResultFs.NullptrArgument.Log();
+
+        ref readonly SaveDataExtraData extraDataRef = ref extraData.As<SaveDataExtraData>();
 
         SaveDataExtraData extraDataMask = default;
         extraDataMask.Flags = unchecked((SaveDataFlags)0xFFFFFFFF);
@@ -1978,7 +2178,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
             tempAttribute.ProgramId = ResolveDefaultSaveDataReferenceProgramId(programInfo.ProgramId);
         }
 
-        res = GetSaveDataInfo(out SaveDataInfo info, spaceId, in tempAttribute);
+        res = GetSaveDataInfo(out SaveDataInfo info, spaceId, tempAttribute);
         if (res.IsFailure()) return res.Miss();
 
         return WriteSaveDataFileSystemExtraDataWithMask(info.SaveDataId, spaceId, extraData, extraDataMask).Ret();
@@ -1990,14 +2190,17 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         if (extraData.Size != Unsafe.SizeOf<SaveDataExtraData>())
             return ResultFs.InvalidArgument.Log();
 
+        if (extraData.IsNull)
+            return ResultFs.NullptrArgument.Log();
+
         if (extraDataMask.Size != Unsafe.SizeOf<SaveDataExtraData>())
             return ResultFs.InvalidArgument.Log();
 
-        ref readonly SaveDataExtraData extraDataRef =
-            ref SpanHelpers.AsReadOnlyStruct<SaveDataExtraData>(extraData.Buffer);
+        if (extraDataMask.IsNull)
+            return ResultFs.NullptrArgument.Log();
 
-        ref readonly SaveDataExtraData maskRef =
-            ref SpanHelpers.AsReadOnlyStruct<SaveDataExtraData>(extraDataMask.Buffer);
+        ref readonly SaveDataExtraData extraDataRef = ref extraData.As<SaveDataExtraData>();
+        ref readonly SaveDataExtraData maskRef = ref extraDataMask.As<SaveDataExtraData>();
 
         return WriteSaveDataFileSystemExtraDataWithMaskCore(saveDataId, spaceId, in extraDataRef, in maskRef).Ret();
     }
@@ -2039,7 +2242,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         Result res = GetProgramInfo(out ProgramInfo programInfo);
         if (res.IsFailure()) return res.Miss();
 
-        res = CheckOpenSaveDataInfoReaderAccessControl(programInfo, spaceId);
+        res = CheckOpenSaveDataInfoReaderAccessControl(programInfo, _processId, spaceId);
         if (res.IsFailure()) return res.Miss();
 
         using var filterReader = new UniqueRef<SaveDataInfoFilterReader>();
@@ -2050,14 +2253,13 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
             if (res.IsFailure()) return res.Miss();
 
             using var reader = new SharedRef<SaveDataInfoReaderImpl>();
-
             res = accessor.Get.GetInterface().OpenSaveDataInfoReader(ref reader.Ref);
             if (res.IsFailure()) return res.Miss();
 
             var filter = new SaveDataInfoFilter(ConvertToRealSpaceId(spaceId), programId: default,
                 saveDataType: default, userId: default, saveDataId: default, index: default, (int)SaveDataRank.Primary);
 
-            filterReader.Reset(new SaveDataInfoFilterReader(ref reader.Ref, in filter));
+            filterReader.Reset(new SaveDataInfoFilterReader(in reader, in filter));
         }
 
         outInfoReader.Set(ref filterReader.Ref);
@@ -2076,7 +2278,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         if (!programInfo.AccessControl.CanCall(OperationType.OpenSaveDataInfoReaderForInternal))
             return ResultFs.PermissionDenied.Log();
 
-        res = CheckOpenSaveDataInfoReaderAccessControl(programInfo, spaceId);
+        res = CheckOpenSaveDataInfoReaderAccessControl(programInfo, _processId, spaceId);
         if (res.IsFailure()) return res.Miss();
 
         using var filterReader = new UniqueRef<SaveDataInfoFilterReader>();
@@ -2093,7 +2295,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
 
             var infoFilter = new SaveDataInfoFilter(ConvertToRealSpaceId(spaceId), in filter);
 
-            filterReader.Reset(new SaveDataInfoFilterReader(ref reader.Ref, in infoFilter));
+            filterReader.Reset(new SaveDataInfoFilterReader(in reader, in infoFilter));
         }
 
         outInfoReader.Set(ref filterReader.Ref);
@@ -2116,7 +2318,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         if (res.IsFailure()) return res.Miss();
 
         using var filterReader =
-            new UniqueRef<SaveDataInfoFilterReader>(new SaveDataInfoFilterReader(ref reader.Ref, in infoFilter));
+            new UniqueRef<SaveDataInfoFilterReader>(new SaveDataInfoFilterReader(in reader, in infoFilter));
 
         return filterReader.Get.Read(out count, new OutBuffer(SpanHelpers.AsByteSpan(ref info))).Ret();
     }
@@ -2129,20 +2331,23 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         if (saveDataInfoBuffer.Size != Unsafe.SizeOf<SaveDataInfo>())
             return ResultFs.InvalidArgument.Log();
 
+        if (saveDataInfoBuffer.IsNull)
+            return ResultFs.NullptrArgument.Log();
+
         using var scopedContext = new ScopedStorageLayoutTypeSetter(StorageLayoutType.NonGameCard);
 
         Result res = GetProgramInfo(out ProgramInfo programInfo);
         if (res.IsFailure()) return res.Miss();
 
-        res = CheckOpenSaveDataInfoReaderAccessControl(programInfo, spaceId);
+        res = CheckOpenSaveDataInfoReaderAccessControl(programInfo, _processId, spaceId);
 
         if (res.IsFailure())
         {
             if (!ResultFs.PermissionDenied.Includes(res))
-                return res;
+                return res.Miss();
 
             // Don't have full info reader permissions. Check if we have find permissions.
-            res = SaveDataAccessibilityChecker.CheckFind(in filter, programInfo);
+            res = SaveDataAccessibilityChecker.CheckFind(spaceId, in filter, programInfo, _processId);
             if (res.IsFailure()) return res.Miss();
         }
 
@@ -2154,8 +2359,11 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
 
         var infoFilter = new SaveDataInfoFilter(ConvertToRealSpaceId(spaceId), in tempFilter);
 
-        return FindSaveDataWithFilterImpl(out count, out SpanHelpers.AsStruct<SaveDataInfo>(saveDataInfoBuffer.Buffer),
-            spaceId, in infoFilter).Ret();
+        res = FindSaveDataWithFilterImpl(out var outCount, out saveDataInfoBuffer.As<SaveDataInfo>(), spaceId, in infoFilter);
+        if (res.IsFailure()) return res.Miss();
+
+        count = outCount;
+        return Result.Success;
     }
 
     private Result CreateEmptyThumbnailFile(SaveDataSpaceId spaceId, ulong saveDataId)
@@ -2175,21 +2383,146 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         return Result.Success;
     }
 
-    private Result OpenSaveDataInternalStorageFileSystemCore(ref SharedRef<IFileSystem> fileSystem,
-        SaveDataSpaceId spaceId, ulong saveDataId, bool useSecondMacKey)
+    private Result OpenSaveDataInternalStorageFileSystemCore(ref SharedRef<IFileSystem> outFileSystem,
+        SaveDataSpaceId spaceId, ulong saveDataId, bool isTemporaryTransferSave)
     {
-        throw new NotImplementedException();
+        Result res;
+        ulong targetSaveDataId;
+        bool isReconstructible;
+
+        const StorageLayoutType storageFlag = StorageLayoutType.NonGameCard;
+        using var scopedContext = new ScopedStorageLayoutTypeSetter(storageFlag);
+
+        using (var accessor = new UniqueRef<SaveDataIndexerAccessor>())
+        {
+            res = OpenSaveDataIndexerAccessor(ref accessor.Ref, spaceId);
+            if (res.IsFailure()) return res.Miss();
+
+            res = accessor.Get.GetInterface().GetValue(out SaveDataIndexerValue value, saveDataId);
+            if (res.IsFailure()) return res.Miss();
+
+            if (value.SpaceId != ConvertToRealSpaceId(spaceId))
+                return ResultFs.TargetNotFound.Log();
+
+            if (value.State == SaveDataState.Extending)
+                return ResultFs.SaveDataExtending.Log();
+
+            targetSaveDataId = value.SaveDataId;
+
+            res = accessor.Get.GetInterface().GetKey(out SaveDataAttribute key, saveDataId);
+            if (res.IsFailure()) return res.Miss();
+
+            isReconstructible = SaveDataProperties.IsReconstructible(key.Type, value.SpaceId);
+        }
+
+        using var fileSystem = new SharedRef<IFileSystem>();
+        using Path saveDataRootPath = _saveDataRootPath.DangerousGetPath();
+
+        res = _serviceImpl.OpenSaveDataInternalStorageFileSystem(ref fileSystem.Ref, spaceId, targetSaveDataId,
+            in saveDataRootPath, isTemporaryTransferSave, isReconstructible);
+        if (res.IsFailure()) return res.Miss();
+
+        using var typeSetFileSystem = new SharedRef<IFileSystem>(new StorageLayoutTypeSetFileSystem(in fileSystem, storageFlag));
+        outFileSystem.SetByMove(ref typeSetFileSystem.Ref);
+        return Result.Success;
     }
 
-    public Result OpenSaveDataInternalStorageFileSystem(ref SharedRef<IFileSystemSf> fileSystem,
+    public Result OpenSaveDataInternalStorageFileSystem(ref SharedRef<IFileSystemSf> outFileSystem,
         SaveDataSpaceId spaceId, ulong saveDataId)
     {
-        throw new NotImplementedException();
+        ulong targetSaveDataId;
+
+        Result res = GetProgramInfo(out ProgramInfo programInfo);
+        if (res.IsFailure()) return res.Miss();
+
+        // Check the caller's permissions
+        Accessibility accessibility = programInfo.AccessControl.GetAccessibilityFor(AccessibilityType.MountSaveDataInternalStorage);
+        bool canAccess = accessibility.CanRead && accessibility.CanWrite;
+
+        if (!canAccess)
+            return ResultFs.PermissionDenied.Log();
+
+        // Try grabbing the mount count semaphore
+        using var mountCountSemaphore = new UniqueRef<IUniqueLock>();
+        res = TryAcquireSaveDataMountCountSemaphore(ref mountCountSemaphore.Ref);
+        if (res.IsFailure()) return res.Miss();
+
+        using (var accessor = new UniqueRef<SaveDataIndexerAccessor>())
+        {
+            res = OpenSaveDataIndexerAccessor(ref accessor.Ref, spaceId);
+            if (res.IsFailure()) return res.Miss();
+
+            res = accessor.Get.GetInterface().GetValue(out SaveDataIndexerValue value, saveDataId);
+            if (res.IsFailure()) return res.Miss();
+
+            if (value.SpaceId != ConvertToRealSpaceId(spaceId))
+                return ResultFs.TargetNotFound.Log();
+
+            if (value.State == SaveDataState.Extending)
+                return ResultFs.SaveDataExtending.Log();
+
+            targetSaveDataId = value.SaveDataId;
+        }
+
+        using var fileSystem = new SharedRef<IFileSystem>();
+        res = OpenSaveDataInternalStorageFileSystemCore(ref fileSystem.Ref, spaceId, targetSaveDataId, isTemporaryTransferSave: false);
+        if (res.IsFailure()) return res.Miss();
+
+        // Add all the wrappers for the file system
+        using var asyncFileSystem = new SharedRef<IFileSystem>(new AsynchronousAccessFileSystem(in fileSystem));
+
+        using SharedRef<SaveDataFileSystemService> saveService = GetSharedFromThis();
+        using var openEntryCountAdapter =
+            new SharedRef<IEntryOpenCountSemaphoreManager>(new SaveDataOpenCountAdapter(in saveService));
+
+        using var openCountFileSystem = new SharedRef<IFileSystem>(new OpenCountFileSystem(in asyncFileSystem,
+            in openEntryCountAdapter, ref mountCountSemaphore.Ref));
+
+        using SharedRef<IFileSystemSf> fileSystemAdapter =
+            FileSystemInterfaceAdapter.CreateShared(in openCountFileSystem, allowAllOperations: false);
+
+        outFileSystem.SetByMove(ref fileSystemAdapter.Ref);
+        return Result.Success;
     }
 
-    public Result QuerySaveDataInternalStorageTotalSize(out long size, SaveDataSpaceId spaceId, ulong saveDataId)
+    public Result QuerySaveDataInternalStorageTotalSize(out long outTotalSize, SaveDataSpaceId spaceId, ulong saveDataId)
     {
-        throw new NotImplementedException();
+        UnsafeHelpers.SkipParamInit(out outTotalSize);
+
+        Result res = GetProgramInfo(out ProgramInfo programInfo);
+        if (res.IsFailure()) return res.Miss();
+
+        if (!programInfo.AccessControl.CanCall(OperationType.QuerySaveDataInternalStorageTotalSize))
+            return ResultFs.PermissionDenied.Log();
+
+        using var internalStorageFs = new SharedRef<IFileSystem>();
+        res = OpenSaveDataInternalStorageFileSystemCore(ref internalStorageFs.Ref, spaceId, saveDataId, isTemporaryTransferSave: false);
+        if (res.IsFailure()) return res.Miss();
+
+        var saveDataCoreInternalStorageFileNames = new SpanArray3<byte>(
+            InternalStorageFileNames.InternalStorageFileNameSaveDataControlArea,
+            InternalStorageFileNames.InternalStorageFileNameAllocationTableMeta,
+            InternalStorageFileNames.InternalStorageFileNameRawSaveDataWithZeroFree);
+
+        long totalSize = 0;
+
+        for (int i = 0; i < saveDataCoreInternalStorageFileNames.Length; i++)
+        {
+            using var path = new InternalStorageFilePath();
+            res = path.Initialize(new U8Span(saveDataCoreInternalStorageFileNames[i]));
+            if (res.IsFailure()) return res.Miss();
+
+            using var file = new UniqueRef<IFile>();
+            res = internalStorageFs.Get.OpenFile(ref file.Ref, in path.GetPath(), OpenMode.Read);
+            if (res.IsFailure()) return res.Miss();
+
+            res = file.Get.GetSize(out long size);
+            if (res.IsFailure()) return res.Miss();
+            totalSize += size;
+        }
+
+        outTotalSize = totalSize;
+        return Result.Success;
     }
 
     public Result GetSaveDataCommitId(out long commitId, SaveDataSpaceId spaceId, ulong saveDataId)
@@ -2219,10 +2552,14 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
 
         if (res.IsFailure())
         {
-            spaceId = SaveDataSpaceId.User;
-
-            if (!ResultFs.TargetNotFound.Includes(res))
-                return res;
+            if (ResultFs.TargetNotFound.Includes(res))
+            {
+                spaceId = SaveDataSpaceId.User;
+            }
+            else
+            {
+                return res.Miss();
+            }
         }
 
         return OpenSaveDataInfoReaderOnlyCacheStorage(ref outInfoReader, spaceId).Ret();
@@ -2236,7 +2573,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         Result res = GetProgramInfo(out ProgramInfo programInfo);
         if (res.IsFailure()) return res.Miss();
 
-        if (spaceId != SaveDataSpaceId.SdUser && spaceId != SaveDataSpaceId.User)
+        if (spaceId != SaveDataSpaceId.User && spaceId != SaveDataSpaceId.SdUser)
             return ResultFs.InvalidSaveDataSpaceId.Log();
 
         using var filterReader = new UniqueRef<SaveDataInfoFilterReader>();
@@ -2255,7 +2592,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
             var filter = new SaveDataInfoFilter(ConvertToRealSpaceId(spaceId), resolvedProgramId, SaveDataType.Cache,
                 userId: default, saveDataId: default, index: default, (int)SaveDataRank.Primary);
 
-            filterReader.Reset(new SaveDataInfoFilterReader(ref reader.Ref, in filter));
+            filterReader.Reset(new SaveDataInfoFilterReader(in reader, in filter));
         }
 
         outInfoReader.Set(ref filterReader.Ref);
@@ -2266,13 +2603,111 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
     private Result OpenSaveDataMetaFileRaw(ref SharedRef<IFile> outFile, SaveDataSpaceId spaceId, ulong saveDataId,
         SaveDataMetaType metaType, OpenMode mode)
     {
-        throw new NotImplementedException();
+        const StorageLayoutType storageFlag = StorageLayoutType.Bis;
+        using var scopedContext = new ScopedStorageLayoutTypeSetter(storageFlag);
+
+        using var fileSystem = new SharedRef<IFileSystem>();
+        Result res = _serviceImpl.OpenSaveDataMetaDirectoryFileSystem(ref fileSystem.Ref, spaceId, saveDataId);
+        if (res.IsFailure()) return res.Miss();
+
+        using var typeSetFileSystem = new SharedRef<IFileSystem>(new StorageLayoutTypeSetFileSystem(in fileSystem, storageFlag));
+
+        Unsafe.SkipInit(out Array15<byte> pathMetaBuffer);
+
+        using scoped var pathMeta = new Path();
+        res = PathFunctions.SetUpFixedPathSaveMetaName(ref pathMeta.Ref(), pathMetaBuffer, (uint)metaType);
+        if (res.IsFailure()) return res.Miss();
+
+        // Create a thumbnail meta file if it's missing
+        if (metaType == SaveDataMetaType.Thumbnail)
+        {
+            res = typeSetFileSystem.Get.GetEntryType(out _, in pathMeta);
+            if (res.IsFailure())
+            {
+                if (ResultFs.TargetNotFound.Includes(res))
+                {
+                    CreateEmptyThumbnailFile(spaceId, saveDataId).IgnoreResult();
+                }
+                else
+                {
+                    return res.Miss();
+                }
+            }
+        }
+
+        using var file = new UniqueRef<IFile>();
+        res = typeSetFileSystem.Get.OpenFile(ref file.Ref, in pathMeta, mode);
+        if (res.IsFailure()) return res.Miss();
+
+        outFile.Set(ref file.Ref);
+        return Result.Success;
     }
 
-    public Result OpenSaveDataMetaFile(ref SharedRef<IFileSf> file, SaveDataSpaceId spaceId,
+    public Result OpenSaveDataMetaFile(ref SharedRef<IFileSf> outFile, SaveDataSpaceId spaceId,
         in SaveDataAttribute attribute, SaveDataMetaType metaType)
     {
-        throw new NotImplementedException();
+        ulong targetSaveDataId;
+
+        StorageLayoutType storageFlag = DecidePossibleStorageFlag(attribute.Type, spaceId);
+        using var scopedContext = new ScopedStorageLayoutTypeSetter(storageFlag);
+
+        Result res = GetProgramInfo(out ProgramInfo programInfo);
+        if (res.IsFailure()) return res.Miss();
+
+        if (!programInfo.AccessControl.CanCall(OperationType.OpenSaveDataMetaFile))
+            return ResultFs.PermissionDenied.Log();
+
+        using (var accessor = new UniqueRef<SaveDataIndexerAccessor>())
+        {
+            res = OpenSaveDataIndexerAccessor(ref accessor.Ref, spaceId);
+            if (res.IsFailure()) return res.Miss();
+
+            SaveDataAttribute key = attribute;
+            res = accessor.Get.GetInterface().Get(out SaveDataIndexerValue value, in key);
+            if (res.IsFailure()) return res.Miss();
+
+            targetSaveDataId = value.SaveDataId;
+        }
+
+        using var tmpFileSystem = new SharedRef<IFileSystem>();
+        res = _serviceImpl.OpenSaveDataMetaDirectoryFileSystem(ref tmpFileSystem.Ref, spaceId, targetSaveDataId);
+        if (res.IsFailure()) return res.Miss();
+
+        using var typeSetFileSystem = new SharedRef<IFileSystem>(new StorageLayoutTypeSetFileSystem(in tmpFileSystem, storageFlag));
+        using var asyncFileSystem = new SharedRef<IFileSystem>(new AsynchronousAccessFileSystem(in typeSetFileSystem));
+        using SharedRef<IFileSystemSf> fileSystem = FileSystemInterfaceAdapter.CreateShared(in asyncFileSystem, allowAllOperations: false);
+
+        Unsafe.SkipInit(out Sf.Path sfPath);
+        var sb = new U8StringBuilder(SpanHelpers.AsByteSpan(ref sfPath));
+        sb.Append((byte)'/').AppendFormat((uint)metaType, 'x', 8).Append(".meta"u8);
+
+        using var prohibiter = new SharedRef<ISaveDataTransferProhibiter>();
+
+        if (metaType == SaveDataMetaType.Thumbnail)
+        {
+            res = fileSystem.Get.GetEntryType(out _, in sfPath);
+            if (res.IsFailure())
+            {
+                if (ResultFs.TargetNotFound.Includes(res))
+                {
+                    CreateEmptyThumbnailFile(spaceId, targetSaveDataId).IgnoreResult();
+                }
+                else
+                {
+                    return res.Miss();
+                }
+            }
+
+            res = OpenSaveDataTransferProhibiterCore(ref prohibiter.Ref, new Ncm.ApplicationId(attribute.ProgramId.Value));
+            if (res.IsFailure()) return res.Miss();
+        }
+
+        using var file = new SharedRef<IFileSf>();
+        fileSystem.Get.OpenFile(ref file.Ref, in sfPath, (uint)FileMode.Open);
+        if (res.IsFailure()) return res.Miss();
+
+        outFile.SetByMove(ref file.Ref);
+        return Result.Success;
     }
 
     private Result GetCacheStorageSpaceId(out SaveDataSpaceId spaceId)
@@ -2283,7 +2718,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         if (res.IsFailure()) return res.Miss();
 
         ulong resolvedProgramId = ResolveDefaultSaveDataReferenceProgramId(programInfo.ProgramId).Value;
-        return GetCacheStorageSpaceId(out spaceId, resolvedProgramId);
+        return GetCacheStorageSpaceId(out spaceId, resolvedProgramId).Ret();
     }
 
     private Result GetCacheStorageSpaceId(out SaveDataSpaceId spaceId, ulong programId)
@@ -2291,7 +2726,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         UnsafeHelpers.SkipParamInit(out spaceId);
         Result res;
 
-        // Cache storage on the SD card will always take priority over case storage in NAND
+        // Cache storage on the SD card will always take priority over cache storage in NAND
         if (_serviceImpl.IsSdCardAccessible())
         {
             res = DoesCacheStorageExist(out bool existsOnSdCard, SaveDataSpaceId.SdUser);
@@ -2319,8 +2754,8 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         {
             UnsafeHelpers.SkipParamInit(out exists);
 
-            var filter = new SaveDataInfoFilter(saveSpaceId, new ProgramId(programId), SaveDataType.Cache,
-                userId: default, saveDataId: default, index: default, (int)SaveDataRank.Primary);
+            var filter = new SaveDataInfoFilter(ConvertToRealSpaceId(saveSpaceId), new ProgramId(programId),
+                SaveDataType.Cache, userId: default, saveDataId: default, index: default, (int)SaveDataRank.Primary);
 
             Result result = FindSaveDataWithFilterImpl(out long count, out _, saveSpaceId, in filter);
             if (result.IsFailure()) return result;
@@ -2388,34 +2823,116 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         return Result.Success;
     }
 
-    public Result OpenSaveDataTransferManager(ref SharedRef<ISaveDataTransferManager> manager)
+    public Result OpenSaveDataTransferManager(ref SharedRef<ISaveDataTransferManager> outManager)
     {
-        throw new NotImplementedException();
+        Result res = GetProgramInfo(out ProgramInfo programInfo);
+        if (res.IsFailure()) return res.Miss();
+
+        Assert.SdkNotNull(_serviceImpl.GetSaveDataTransferCryptoConfiguration());
+
+        if (!programInfo.AccessControl.CanCall(OperationType.OpenSaveDataTransferManager))
+            return ResultFs.PermissionDenied.Log();
+
+        using SharedRef<ISaveDataTransferCoreInterface> transferInterface = GetSaveDataTransferCoreInterfaceFromThis();
+        using var manager = new SharedRef<ISaveDataTransferManager>(
+            new SaveDataTransferManager(_serviceImpl.GetSaveDataTransferCryptoConfiguration(), in transferInterface));
+
+        if (!manager.HasValue)
+            return ResultFs.AllocationMemoryFailedInFileSystemProxyImplA.Log();
+
+        outManager.SetByMove(ref manager.Ref);
+        return Result.Success;
     }
 
-    public Result OpenSaveDataTransferManagerVersion2(ref SharedRef<ISaveDataTransferManagerWithDivision> manager)
+    public Result OpenSaveDataTransferManagerVersion2(ref SharedRef<ISaveDataTransferManagerWithDivision> outManager)
     {
-        throw new NotImplementedException();
+        Result res = GetProgramInfo(out ProgramInfo programInfo);
+        if (res.IsFailure()) return res.Miss();
+
+        Assert.SdkNotNull(_serviceImpl.GetSaveDataTransferCryptoConfiguration());
+
+        if (!programInfo.AccessControl.CanCall(OperationType.OpenSaveDataTransferManagerVersion2))
+            return ResultFs.PermissionDenied.Log();
+
+        using SharedRef<ISaveDataTransferCoreInterface> transferInterface = GetSaveDataTransferCoreInterfaceFromThis();
+        using var manager = new SharedRef<ISaveDataTransferManagerWithDivision>(
+            new SaveDataTransferManagerVersion2(_serviceImpl.GetSaveDataTransferCryptoConfiguration(),
+                in transferInterface, _serviceImpl.GetSaveDataPorterManager()));
+
+        if (!manager.HasValue)
+            return ResultFs.AllocationMemoryFailedInFileSystemProxyImplA.Log();
+
+        outManager.SetByMove(ref manager.Ref);
+        return Result.Success;
     }
 
     public Result OpenSaveDataTransferManagerForSaveDataRepair(
-        ref SharedRef<ISaveDataTransferManagerForSaveDataRepair> manager)
+        ref SharedRef<ISaveDataTransferManagerForSaveDataRepair> outManager)
     {
-        throw new NotImplementedException();
+        Result res = GetProgramInfo(out ProgramInfo programInfo);
+        if (res.IsFailure()) return res.Miss();
+
+        Assert.SdkNotNull(_serviceImpl.GetSaveDataTransferCryptoConfiguration());
+
+        AccessControl accessControl = programInfo.AccessControl;
+        if (!accessControl.CanCall(OperationType.OpenSaveDataTransferManagerForSaveDataRepair))
+            return ResultFs.PermissionDenied.Log();
+
+        bool isOpenPorterWithKeyEnabled = accessControl.CanCall(OperationType.OpenSaveDataTransferManagerForSaveDataRepairTool);
+
+        using SharedRef<ISaveDataTransferCoreInterface> transferInterface = GetSaveDataTransferCoreInterfaceFromThis();
+        using var manager = new SharedRef<ISaveDataTransferManagerForSaveDataRepair>(
+            new SaveDataTransferManagerForSaveDataRepair<SaveDataTransferManagerForSaveDataRepairPolicyV0>(
+                _serviceImpl.GetSaveDataTransferCryptoConfiguration(), in transferInterface,
+                _serviceImpl.GetSaveDataPorterManager(), isOpenPorterWithKeyEnabled));
+
+        if (!manager.HasValue)
+            return ResultFs.AllocationMemoryFailedInFileSystemProxyImplA.Log();
+
+        outManager.SetByMove(ref manager.Ref);
+        return Result.Success;
     }
 
-    public Result OpenSaveDataTransferManagerForRepair(ref SharedRef<ISaveDataTransferManagerForRepair> manager)
+    public Result OpenSaveDataTransferManagerForRepair(ref SharedRef<ISaveDataTransferManagerForRepair> outManager)
     {
-        throw new NotImplementedException();
+        Result res = GetProgramInfo(out ProgramInfo programInfo);
+        if (res.IsFailure()) return res.Miss();
+
+        Assert.SdkNotNull(_serviceImpl.GetSaveDataTransferCryptoConfiguration());
+
+        if (!programInfo.AccessControl.CanCall(OperationType.OpenSaveDataTransferManagerForRepair))
+            return ResultFs.PermissionDenied.Log();
+
+        using SharedRef<ISaveDataTransferCoreInterface> transferInterface = GetSaveDataTransferCoreInterfaceFromThis();
+        using var manager = new SharedRef<ISaveDataTransferManagerForRepair>(
+            new Impl.SaveDataTransferManagerForRepair(_serviceImpl.GetSaveDataTransferCryptoConfiguration(),
+                in transferInterface, _serviceImpl.GetSaveDataPorterManager()));
+
+        if (!manager.HasValue)
+            return ResultFs.AllocationMemoryFailedInFileSystemProxyImplA.Log();
+
+        outManager.SetByMove(ref manager.Ref);
+        return Result.Success;
     }
 
-    private Result OpenSaveDataTransferProhibiterCore(ref SharedRef<ISaveDataTransferProhibiter> prohibiter,
+    private Result OpenSaveDataTransferProhibiterCore(ref SharedRef<ISaveDataTransferProhibiter> outProhibiter,
         Ncm.ApplicationId applicationId)
     {
-        throw new NotImplementedException();
+        Assert.SdkNotNull(_serviceImpl.GetSaveDataTransferCryptoConfiguration());
+
+        using var prohibiter = new SharedRef<SaveDataPorterProhibiter>(
+            new SaveDataPorterProhibiter(_serviceImpl.GetSaveDataPorterManager(), applicationId));
+
+        if (!prohibiter.HasValue)
+            return ResultFs.AllocationMemoryFailedInFileSystemProxyImplA.Log();
+
+        _serviceImpl.GetSaveDataPorterManager().RegisterProhibiter(prohibiter.Get);
+
+        outProhibiter.SetByMove(ref prohibiter.Ref);
+        return Result.Success;
     }
 
-    public Result OpenSaveDataTransferProhibiter(ref SharedRef<ISaveDataTransferProhibiter> prohibiter,
+    public Result OpenSaveDataTransferProhibiter(ref SharedRef<ISaveDataTransferProhibiter> outProhibiter,
         Ncm.ApplicationId applicationId)
     {
         Result res = GetProgramInfo(out ProgramInfo programInfo);
@@ -2423,21 +2940,32 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
 
         Assert.SdkNotNull(_serviceImpl.GetSaveDataTransferCryptoConfiguration());
 
-        res = SaveDataAccessibilityChecker.CheckOpenProhibiter(applicationId, programInfo);
+        res = SaveDataAccessibilityChecker.CheckOpenProhibiter(SaveDataSpaceId.User, applicationId, programInfo, _processId);
         if (res.IsFailure()) return res.Miss();
 
-        return OpenSaveDataTransferProhibiterCore(ref prohibiter, applicationId).Ret();
+        return OpenSaveDataTransferProhibiterCore(ref outProhibiter, applicationId).Ret();
     }
 
     public bool IsProhibited(ref UniqueLock<SdkMutex> outLock, ApplicationId applicationId)
     {
-        throw new NotImplementedException();
+        return _serviceImpl.GetSaveDataPorterManager().IsProhibited(ref outLock, applicationId);
     }
 
-    public Result OpenSaveDataMover(ref SharedRef<ISaveDataMover> saveMover, SaveDataSpaceId sourceSpaceId,
+    public Result OpenSaveDataMover(ref SharedRef<ISaveDataMover> outSaveMover, SaveDataSpaceId sourceSpaceId,
         SaveDataSpaceId destinationSpaceId, NativeHandle workBufferHandle, ulong workBufferSize)
     {
-        throw new NotImplementedException();
+        Result res = GetProgramInfo(out ProgramInfo programInfo);
+        if (res.IsFailure()) return res.Miss();
+
+        if (!programInfo.AccessControl.CanCall(OperationType.OpenSaveDataMover))
+            return ResultFs.PermissionDenied.Log();
+
+        using SharedRef<ISaveDataTransferCoreInterface> transferInterface = GetSaveDataTransferCoreInterfaceFromThis();
+        using var mover = new SharedRef<ISaveDataMover>(new SaveDataMover(in transferInterface, sourceSpaceId,
+            destinationSpaceId, workBufferHandle, workBufferSize));
+
+        outSaveMover.SetByMove(ref mover.Ref);
+        return Result.Success;
     }
 
     public Result SetSdCardEncryptionSeed(in EncryptionSeed seed)
@@ -2457,7 +2985,10 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
 
         if (bufferIdCount > 0)
         {
-            ids = MemoryMarshal.Cast<byte, Ncm.ApplicationId>(idBuffer.Buffer);
+            if (idBuffer.IsNull)
+                return ResultFs.NullptrArgument.Log();
+
+            ids = idBuffer.AsSpan<Ncm.ApplicationId>();
 
             if (ids.Length < bufferIdCount)
                 return ResultFs.InvalidSize.Log();
@@ -2472,7 +3003,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         res = GetProgramInfoByProgramId(out ProgramInfo targetProgramInfo, programId.Value);
         if (res.IsFailure()) return res.Miss();
 
-        targetProgramInfo.AccessControl.ListSaveDataOwnedId(out readCount, ids[..bufferIdCount], startIndex);
+        targetProgramInfo.AccessControl.ListSaveDataOwnedId(out readCount, ids.Slice(0, bufferIdCount), startIndex);
         return Result.Success;
     }
 
@@ -2518,8 +3049,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
 
             using Path saveDataRootPath = _saveDataRootPath.DangerousGetPath();
             res = _serviceImpl.OpenSaveDataFileSystem(ref fileSystem.Ref, value.SpaceId, saveDataId,
-                in saveDataRootPath,
-                openReadOnly: false, saveDataType, cacheExtraData: true);
+                in saveDataRootPath, openReadOnly: false, saveDataType, cacheExtraData: true);
             if (res.IsFailure()) return res.Miss();
 
             // Verify the file system.
@@ -2530,14 +3060,41 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         }
         finally
         {
-            // Make sure we don't leak any invalid data.
+            // Make sure we don't leak any data.
             workBuffer.Buffer.Clear();
         }
     }
 
     public Result CorruptSaveDataFileSystemByOffset(SaveDataSpaceId spaceId, ulong saveDataId, long offset)
     {
-        throw new NotImplementedException();
+        using var scopedContext = new ScopedStorageLayoutTypeSetter(StorageLayoutType.NonGameCard);
+
+        Result res = GetProgramInfo(out ProgramInfo programInfo);
+        if (res.IsFailure()) return res.Miss();
+
+        AccessControl accessControl = programInfo.AccessControl;
+        if (!accessControl.CanCall(OperationType.CorruptSaveData))
+            return ResultFs.PermissionDenied.Log();
+
+        // Check the space ID of the save to corrupt because we need additional permissions to corrupt non-user saves.
+        SaveDataIndexerValue value;
+        using (var accessor = new UniqueRef<SaveDataIndexerAccessor>())
+        {
+            res = OpenSaveDataIndexerAccessor(ref accessor.Ref, spaceId);
+            if (res.IsFailure()) return res.Miss();
+
+            res = accessor.Get.GetInterface().GetValue(out value, saveDataId);
+            if (res.IsFailure()) return res.Miss();
+        }
+
+        if (value.SpaceId != SaveDataSpaceId.User && value.SpaceId != SaveDataSpaceId.SdUser &&
+            !accessControl.CanCall(OperationType.CorruptSystemSaveData))
+        {
+            return ResultFs.PermissionDenied.Log();
+        }
+
+        using Path saveDataRootPath = _saveDataRootPath.DangerousGetPath();
+        return _serviceImpl.CorruptSaveDataFileSystem(value.SpaceId, saveDataId, offset, in saveDataRootPath).Ret();
     }
 
     public Result CleanUpSaveData()
@@ -2551,10 +3108,74 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         return CleanUpSaveData(accessor.Get).Ret();
     }
 
-    private static Result CleanUpSaveData(SaveDataIndexerAccessor accessor)
+    private Result CleanUpSaveData(SaveDataIndexerAccessor accessor)
     {
-        // Todo: Implement
-        return Result.Success;
+        try
+        {
+            using var reader = new SharedRef<SaveDataInfoReaderImpl>();
+            Result res = accessor.GetInterface().OpenSaveDataInfoReader(ref reader.Ref);
+            if (res.IsFailure()) return res.Miss();
+
+            using Path saveDataRootPath = _saveDataRootPath.DangerousGetPath();
+            Unsafe.SkipInit(out SaveDataInfo info);
+
+            while (true)
+            {
+                res = reader.Get.Read(out long readCount, OutBuffer.FromStruct(ref info));
+                if (res.IsFailure()) return res.Miss();
+
+                if (readCount == 0)
+                    break;
+
+                res = accessor.GetInterface().GetValue(out SaveDataIndexerValue value, info.SaveDataId);
+                if (res.IsFailure()) return res.Miss();
+
+                if (value.State == SaveDataState.Processing || value.State == SaveDataState.MarkedForDeletion ||
+                    SaveDataProperties.IsObsoleteSystemSaveData(in info))
+                {
+                    bool needsWipe = SaveDataProperties.IsWipingNeededAtCleanUp(in info);
+
+                    if (!needsWipe)
+                    {
+                        res = _serviceImpl.ReadSaveDataFileSystemExtraData(out SaveDataExtraData extraData,
+                            value.SpaceId, info.SaveDataId, info.Type, in saveDataRootPath);
+
+                        if (res.IsSuccess())
+                        {
+                            needsWipe = extraData.Flags.HasFlag(SaveDataFlags.NeedsSecureDelete);
+                        }
+                        else
+                        {
+                            needsWipe = true;
+                        }
+                    }
+
+                    Result result = DeleteSaveDataFileSystemCore(value.SpaceId, info.SaveDataId, needsWipe);
+
+                    if (result.IsSuccess())
+                    {
+                        res = accessor.GetInterface().Delete(info.SaveDataId);
+                        if (res.IsFailure()) return res.Miss();
+                    }
+                    else
+                    {
+                        Unsafe.SkipInit(out Array80<byte> stringBuffer);
+
+                        var sb = new U8StringBuilder(stringBuffer, true);
+                        sb.Append("[fs] Failed to delete save data "u8).AppendFormat(info.SaveDataId, 'x', 16)
+                            .Append(" ("u8).AppendFormat(result.Value, 'x').Append(")\n"u8);
+
+                        Hos.Diag.Impl.LogImpl(Log.EmptyModuleName, LogSeverity.Info, sb.Buffer);
+                    }
+                }
+            }
+
+            return Result.Success;
+        }
+        finally
+        {
+            accessor.GetInterface().Commit().IgnoreResult();
+        }
     }
 
     public Result CompleteSaveDataExtension()
@@ -2568,9 +3189,49 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         return CompleteSaveDataExtension(accessor.Get).Ret();
     }
 
-    private static Result CompleteSaveDataExtension(SaveDataIndexerAccessor accessor)
+    private Result CompleteSaveDataExtension(SaveDataIndexerAccessor accessor)
     {
-        // Todo: Implement
+        using var reader = new SharedRef<SaveDataInfoReaderImpl>();
+        Result res = accessor.GetInterface().OpenSaveDataInfoReader(ref reader.Ref);
+        if (res.IsFailure()) return res.Miss();
+
+        using Path saveDataRootPath = _saveDataRootPath.DangerousGetPath();
+        Unsafe.SkipInit(out SaveDataInfo info);
+
+        while (true)
+        {
+            res = reader.Get.Read(out long readCount, OutBuffer.FromStruct(ref info));
+            if (res.IsFailure()) return res.Miss();
+
+            if (readCount == 0)
+                break;
+
+            res = accessor.GetInterface().GetValue(out SaveDataIndexerValue value, info.SaveDataId);
+            if (res.IsFailure()) return res.Miss();
+
+            if (value.State == SaveDataState.Extending && info.Type != SaveDataType.Temporary)
+            {
+                Result resultExtend = _serviceImpl.ResumeExtendSaveDataFileSystem(out long extendedTotalSize,
+                    info.SaveDataId, info.SpaceId, info.Type, in saveDataRootPath);
+
+                if (resultExtend.IsSuccess())
+                {
+                    res = accessor.GetInterface().SetSize(info.SaveDataId, extendedTotalSize);
+                    if (res.IsFailure()) return res.Miss();
+
+                    res = accessor.GetInterface().Commit();
+                    if (res.IsFailure()) return res.Miss();
+                }
+
+                _serviceImpl.FinishExtendSaveDataFileSystem(info.SaveDataId, info.SpaceId).IgnoreResult();
+                accessor.GetInterface().SetState(info.SaveDataId, SaveDataState.Normal);
+                if (resultExtend.IsFailure()) return resultExtend.Miss();
+
+                res = accessor.GetInterface().Commit();
+                if (res.IsFailure()) return res.Miss();
+            }
+        }
+
         return Result.Success;
     }
 
@@ -2579,7 +3240,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         using var scopedContext = new ScopedStorageLayoutTypeSetter(StorageLayoutType.Bis);
         using var fileSystem = new SharedRef<IFileSystem>();
 
-        Result res = _serviceImpl.OpenSaveDataDirectoryFileSystem(ref fileSystem.Ref, SaveDataSpaceId.Temporary);
+        Result res = _serviceImpl.OpenSaveDataDirectoryFileSystem(ref fileSystem.Ref, SaveDataSpaceId.Temporary, UnspecifiedSaveDataId);
         if (res.IsFailure()) return res.Miss();
 
         using var pathRoot = new Path();
@@ -2593,22 +3254,63 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         return Result.Success;
     }
 
-    public static Result FixSaveData()
+    public Result FixSaveData()
     {
-        // Todo: Implement
+        const ulong ncmSaveDataOwnerId = 0;
+
+        Result lastFailedResult = Result.Success;
+        using var scopedContext = new ScopedStorageLayoutTypeSetter(StorageLayoutType.Bis);
+
+        ReadOnlySpan<ulong> ncmSystemSaveDataIdArray = [0x8000000000000120, 0x8000000000000121];
+
+        foreach (ulong saveDataId in ncmSystemSaveDataIdArray)
+        {
+            Result result = FixNcmSystemDataOwnerId(saveDataId);
+            if (!ResultFs.TargetNotFound.Includes(result) && result.IsFailure())
+            {
+                lastFailedResult = result;
+            }
+        }
+
+        if (lastFailedResult.IsFailure()) return lastFailedResult.Miss();
         return Result.Success;
+
+        Result FixNcmSystemDataOwnerId(ulong saveDataId)
+        {
+            using Path saveDataRootPath = _saveDataRootPath.DangerousGetPath();
+            Result res = _serviceImpl.ReadSaveDataFileSystemExtraData(out SaveDataExtraData extraData,
+                SaveDataSpaceId.System, saveDataId, SaveDataType.System, in saveDataRootPath);
+            if (res.IsFailure()) return res.Miss();
+
+            if (extraData.OwnerId != ncmSaveDataOwnerId)
+            {
+                Unsafe.SkipInit(out Array100<byte> stringBuffer);
+
+                var sb = new U8StringBuilder(stringBuffer, true);
+                sb.Append("[fs] Fix incorrect ownerId of ncm system data: "u8).AppendFormat(extraData.OwnerId, 'x')
+                    .Append(" -> "u8).AppendFormat(ncmSaveDataOwnerId, 'x').Append(")\n"u8);
+
+                extraData.OwnerId = ncmSaveDataOwnerId;
+
+                res = _serviceImpl.WriteSaveDataFileSystemExtraData(SaveDataSpaceId.System, saveDataId, in extraData,
+                    in saveDataRootPath, SaveDataType.System, updateTimeStamp: false);
+                if (res.IsFailure()) return res.Miss();
+            }
+
+            return Result.Success;
+        }
     }
 
     public Result OpenMultiCommitManager(ref SharedRef<IMultiCommitManager> outCommitManager)
     {
         using SharedRef<ISaveDataMultiCommitCoreInterface> commitInterface = GetSharedMultiCommitInterfaceFromThis();
 
-        outCommitManager.Reset(new MultiCommitManager(_serviceImpl.FsServer, ref commitInterface.Ref));
+        outCommitManager.Reset(new MultiCommitManager(_serviceImpl.FsServer, in commitInterface));
 
         return Result.Success;
     }
 
-    public Result OpenMultiCommitContext(ref SharedRef<IFileSystem> contextFileSystem)
+    public Result OpenMultiCommitContext(ref SharedRef<IFileSystem> outContextFileSystem)
     {
         Result res = SaveDataAttribute.Make(out SaveDataAttribute attribute, new ProgramId(MultiCommitManager.ProgramId),
             SaveDataType.System, InvalidUserId, MultiCommitManager.SaveDataId, index: 0);
@@ -2620,7 +3322,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
             openReadOnly: false, cacheExtraData: true);
         if (res.IsFailure()) return res.Miss();
 
-        contextFileSystem.SetByMove(ref fileSystem.Ref);
+        outContextFileSystem.SetByMove(ref fileSystem.Ref);
         return Result.Success;
     }
 
@@ -2636,8 +3338,12 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
 
     public Result RecoverProvisionallyCommittedSaveData(in SaveDataInfo saveInfo, bool doRollback)
     {
+        ulong saveDataId = IsStaticSaveDataIdValueRange(saveInfo.SaveDataId)
+            ? saveInfo.SaveDataId
+            : InvalidSystemSaveDataId;
+
         Result res = SaveDataAttribute.Make(out SaveDataAttribute attribute, saveInfo.ProgramId, saveInfo.Type,
-            saveInfo.UserId, saveInfo.SaveDataId, saveInfo.Index);
+            saveInfo.UserId, saveDataId, saveInfo.Index);
         if (res.IsFailure()) return res.Miss();
 
         using var fileSystem = new SharedRef<IFileSystem>();
@@ -2660,12 +3366,11 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         return Result.Success;
     }
 
-    private Result TryAcquireSaveDataEntryOpenCountSemaphore(ref UniqueRef<IUniqueLock> outSemaphoreLock)
+    public Result TryAcquireSaveDataEntryOpenCountSemaphore(ref UniqueRef<IUniqueLock> outSemaphoreLock)
     {
         using SharedRef<SaveDataFileSystemService> saveService = GetSharedFromThis();
 
-        Result res = Utility.MakeUniqueLockWithPin(ref outSemaphoreLock, _openEntryCountSemaphore,
-            ref saveService.Ref);
+        Result res = Utility.MakeUniqueLockWithPin(ref outSemaphoreLock, _openEntryCountSemaphore, ref saveService.Ref);
         if (res.IsFailure()) return res.Miss();
 
         return Result.Success;
@@ -2675,8 +3380,7 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
     {
         using SharedRef<SaveDataFileSystemService> saveService = GetSharedFromThis();
 
-        Result res = Utility.MakeUniqueLockWithPin(ref outSemaphoreLock, _saveDataMountCountSemaphore,
-            ref saveService.Ref);
+        Result res = Utility.MakeUniqueLockWithPin(ref outSemaphoreLock, _saveDataMountCountSemaphore, ref saveService.Ref);
         if (res.IsFailure()) return res.Miss();
 
         return Result.Success;
@@ -2684,7 +3388,31 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
 
     public Result OverrideSaveDataTransferTokenSignVerificationKey(InBuffer key)
     {
-        throw new NotImplementedException();
+        Result res = GetProgramInfo(out ProgramInfo programInfo);
+        if (res.IsFailure()) return res.Miss();
+
+        if (!programInfo.AccessControl.CanCall(OperationType.OverrideSaveDataTransferTokenSignVerificationKey))
+            return ResultFs.PermissionDenied.Log();
+
+        if (key.Size == 0)
+        {
+            _serviceImpl.GetSaveDataTransferCryptoConfiguration().ResetConfiguration();
+            return Result.Success;
+        }
+
+        var cryptoConfig = _serviceImpl.GetSaveDataTransferCryptoConfiguration();
+
+        if (key.Size != cryptoConfig.TokenSigningKeyModulus.Length) return ResultFs.InvalidSize.Log();
+        if (key.Size != cryptoConfig.KeySeedPackageSigningKeyModulus.Length) return ResultFs.InvalidSize.Log();
+        key.Buffer.CopyTo(cryptoConfig.TokenSigningKeyModulus);
+        key.Buffer.CopyTo(cryptoConfig.KeySeedPackageSigningKeyModulus);
+
+        if (key.Size != cryptoConfig.KekEncryptionKeyModulus.Length) return ResultFs.InvalidSize.Log();
+        if (key.Size != cryptoConfig.KeyPackageSigningModulus.Length) return ResultFs.InvalidSize.Log();
+        key.Buffer.CopyTo(cryptoConfig.KekEncryptionKeyModulus);
+        key.Buffer.CopyTo(cryptoConfig.KeyPackageSigningModulus);
+
+        return Result.Success;
     }
 
     public Result SetSdCardAccessibility(bool isAccessible)
@@ -2714,8 +3442,23 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
 
         if (isInitialOpen)
         {
-            CleanUpSaveData(accessor.Get).IgnoreResult();
-            CompleteSaveDataExtension(accessor.Get).IgnoreResult();
+            Unsafe.SkipInit(out Array80<byte> stringBuffer);
+
+            Result result = CleanUpSaveData(accessor.Get);
+            if (result.IsFailure())
+            {
+                var sb = new U8StringBuilder(stringBuffer, true);
+                sb.Append("[fs] Failed to clean up save data ("u8).AppendFormat(result.Value, 'x').Append(")\n"u8);
+                Hos.Diag.Impl.LogImpl(Log.EmptyModuleName, LogSeverity.Info, sb.Buffer);
+            }
+
+            result = CompleteSaveDataExtension(accessor.Get);
+            if (result.IsFailure())
+            {
+                var sb = new U8StringBuilder(stringBuffer, true);
+                sb.Append("[fs] Failed to complete save data extension ("u8).AppendFormat(result.Value, 'x').Append(")\n"u8);
+                Hos.Diag.Impl.LogImpl(Log.EmptyModuleName, LogSeverity.Info, sb.Buffer);
+            }
         }
 
         outAccessor.Set(ref accessor.Ref);
@@ -2726,14 +3469,13 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         in SaveDataCreationInfo creationInfo, in SaveDataMetaInfo metaInfo, in Optional<HashSalt> hashSalt,
         bool leaveUnfinalized)
     {
-        return CreateSaveDataFileSystemCore(in attribute, in creationInfo, in metaInfo, in hashSalt,
-            leaveUnfinalized);
+        return CreateSaveDataFileSystemCore(in attribute, in creationInfo, in metaInfo, in hashSalt, leaveUnfinalized);
     }
 
-    Result ISaveDataTransferCoreInterface.ReadSaveDataFileSystemExtraDataCore(out SaveDataExtraData extraData,
+    Result ISaveDataTransferCoreInterface.ReadSaveDataFileSystemExtraDataCore(out SaveDataExtraData outExtraData,
         SaveDataSpaceId spaceId, ulong saveDataId, bool isTemporarySaveData)
     {
-        return ReadSaveDataFileSystemExtraDataCore(out extraData, spaceId, saveDataId, isTemporarySaveData);
+        return ReadSaveDataFileSystemExtraDataCore(out outExtraData, spaceId, saveDataId, isTemporarySaveData);
     }
 
     Result ISaveDataTransferCoreInterface.WriteSaveDataFileSystemExtraDataCore(SaveDataSpaceId spaceId,
@@ -2743,9 +3485,9 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
     }
 
     Result ISaveDataTransferCoreInterface.OpenSaveDataInternalStorageFileSystemCore(
-        ref SharedRef<IFileSystem> fileSystem, SaveDataSpaceId spaceId, ulong saveDataId, bool useSecondMacKey)
+        ref SharedRef<IFileSystem> outFileSystem, SaveDataSpaceId spaceId, ulong saveDataId, bool isTemporaryTransferSave)
     {
-        return OpenSaveDataInternalStorageFileSystemCore(ref fileSystem, spaceId, saveDataId, useSecondMacKey);
+        return OpenSaveDataInternalStorageFileSystemCore(ref outFileSystem, spaceId, saveDataId, isTemporaryTransferSave);
     }
 
     Result ISaveDataTransferCoreInterface.OpenSaveDataMetaFileRaw(ref SharedRef<IFile> outFile, SaveDataSpaceId spaceId,
@@ -2758,5 +3500,29 @@ internal class SaveDataFileSystemService : ISaveDataTransferCoreInterface, ISave
         ref UniqueRef<SaveDataIndexerAccessor> outAccessor, SaveDataSpaceId spaceId)
     {
         return OpenSaveDataIndexerAccessor(ref outAccessor, spaceId);
+    }
+}
+
+// Used in QuerySaveDataInternalStorageTotalSize to get around C# currently not being able to have a span of spans.
+file ref struct SpanArray3<T>(ReadOnlySpan<T> span0, ReadOnlySpan<T> span1, ReadOnlySpan<T> span2)
+{
+    private ReadOnlySpan<T> _0 = span0;
+    private ReadOnlySpan<T> _1 = span1;
+    private ReadOnlySpan<T> _2 = span2;
+
+    public int Length => 3;
+
+    public ReadOnlySpan<T> this[int index]
+    {
+        get
+        {
+            switch (index)
+            {
+                case 0: return _0;
+                case 1: return _1;
+                case 2: return _2;
+                default: throw new IndexOutOfRangeException(nameof(index));
+            }
+        }
     }
 }

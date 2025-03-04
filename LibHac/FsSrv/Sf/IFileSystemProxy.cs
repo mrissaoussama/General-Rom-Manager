@@ -13,18 +13,19 @@ namespace LibHac.FsSrv.Sf;
 /// <summary>
 /// The interface most programs use to interact with the FS service.
 /// </summary>
-/// <remarks>Based on nnSdk 14.3.0 (FS 14.1.0)</remarks>
+/// <remarks>Based on nnSdk 17.5.0 (FS 17.0.0)</remarks>
 public interface IFileSystemProxy : IDisposable
 {
     Result SetCurrentProcess(ulong processId);
     Result OpenDataFileSystemByCurrentProcess(ref SharedRef<IFileSystemSf> outFileSystem);
     Result OpenFileSystemWithPatch(ref SharedRef<IFileSystemSf> outFileSystem, ProgramId programId, FileSystemProxyType fsType);
-    Result OpenFileSystemWithId(ref SharedRef<IFileSystemSf> outFileSystem, in FspPath path, ulong id, FileSystemProxyType fsType);
+    Result OpenFileSystemWithIdObsolete(ref SharedRef<IFileSystemSf> outFileSystem, ref readonly FspPath path, ulong programId, FileSystemProxyType fsType);
     Result OpenDataFileSystemByProgramId(ref SharedRef<IFileSystemSf> outFileSystem, ProgramId programId);
-    Result OpenBisFileSystem(ref SharedRef<IFileSystemSf> outFileSystem, in FspPath rootPath, BisPartitionId partitionId);
+    Result OpenFileSystemWithId(ref SharedRef<IFileSystemSf> outFileSystem, ref readonly FspPath path, ContentAttributes attributes, ulong programId, FileSystemProxyType fsType);
+    Result OpenBisFileSystem(ref SharedRef<IFileSystemSf> outFileSystem, ref readonly FspPath rootPath, BisPartitionId partitionId);
     Result OpenBisStorage(ref SharedRef<IStorageSf> outStorage, BisPartitionId partitionId);
     Result InvalidateBisCache();
-    Result OpenHostFileSystem(ref SharedRef<IFileSystemSf> outFileSystem, in FspPath path);
+    Result OpenHostFileSystem(ref SharedRef<IFileSystemSf> outFileSystem, ref readonly FspPath path);
     Result OpenSdCardFileSystem(ref SharedRef<IFileSystemSf> outFileSystem);
     Result FormatSdCardFileSystem();
     Result DeleteSaveDataFileSystem(ulong saveDataId);
@@ -41,7 +42,7 @@ public interface IFileSystemProxy : IDisposable
     Result DeleteCacheStorage(ushort index);
     Result GetCacheStorageSize(out long dataSize, out long journalSize, ushort index);
     Result CreateSaveDataFileSystemWithHashSalt(in SaveDataAttribute attribute, in SaveDataCreationInfo creationInfo, in SaveDataMetaInfo metaInfo, in HashSalt hashSalt);
-    Result OpenHostFileSystemWithOption(ref SharedRef<IFileSystemSf> outFileSystem, in FspPath path, MountHostOption option);
+    Result OpenHostFileSystemWithOption(ref SharedRef<IFileSystemSf> outFileSystem, ref readonly FspPath path, MountHostOption option);
     Result CreateSaveDataFileSystemWithCreationInfo2(in SaveDataCreationInfo2 creationInfo);
     Result OpenSaveDataFileSystem(ref SharedRef<IFileSystemSf> outFileSystem, SaveDataSpaceId spaceId, in SaveDataAttribute attribute);
     Result OpenSaveDataFileSystemBySystemSaveDataId(ref SharedRef<IFileSystemSf> outFileSystem, SaveDataSpaceId spaceId, in SaveDataAttribute attribute);
@@ -72,15 +73,15 @@ public interface IFileSystemProxy : IDisposable
     Result OpenBaseFileSystem(ref SharedRef<IFileSystemSf> outFileSystem, BaseFileSystemId fileSystemId);
     Result FormatBaseFileSystem(BaseFileSystemId fileSystemId);
     Result OpenContentStorageFileSystem(ref SharedRef<IFileSystemSf> outFileSystem, ContentStorageId storageId);
-    Result OpenCloudBackupWorkStorageFileSystem(ref SharedRef<IFileSystemSf> outFileSystem, CloudBackupWorkStorageId storageId);
     Result OpenCustomStorageFileSystem(ref SharedRef<IFileSystemSf> outFileSystem, CustomStorageId storageId);
     Result OpenDataStorageByCurrentProcess(ref SharedRef<IStorageSf> outStorage);
     Result OpenDataStorageByProgramId(ref SharedRef<IStorageSf> outStorage, ProgramId programId);
     Result OpenDataStorageByDataId(ref SharedRef<IStorageSf> outStorage, DataId dataId, StorageId storageId);
     Result OpenPatchDataStorageByCurrentProcess(ref SharedRef<IStorageSf> outStorage);
     Result OpenDataFileSystemWithProgramIndex(ref SharedRef<IFileSystemSf> outFileSystem, byte programIndex);
-    Result OpenDataStorageByPath(ref SharedRef<IFileSystemSf> outFileSystem, in FspPath path, FileSystemProxyType fsType);
     Result OpenDataStorageWithProgramIndex(ref SharedRef<IStorageSf> outStorage, byte programIndex);
+    Result OpenDataStorageByPath(ref SharedRef<IStorageSf> outStorage, ref readonly FspPath path, ContentAttributes attributes, FileSystemProxyType fsType);
+    Result OpenDataFileSystemByDataId(ref SharedRef<IFileSystemSf> outFileSystem, DataId dataId, StorageId storageId);
     Result OpenDeviceOperator(ref SharedRef<IDeviceOperator> outDeviceOperator);
     Result OpenSdCardDetectionEventNotifier(ref SharedRef<IEventNotifier> outEventNotifier);
     Result OpenGameCardDetectionEventNotifier(ref SharedRef<IEventNotifier> outEventNotifier);
@@ -95,8 +96,7 @@ public interface IFileSystemProxy : IDisposable
     Result GetRightsId(out RightsId rightsId, ProgramId programId, StorageId storageId);
     Result RegisterExternalKey(in RightsId rightsId, in AccessKey externalKey);
     Result UnregisterAllExternalKey();
-    Result GetRightsIdByPath(out RightsId rightsId, in FspPath path);
-    Result GetRightsIdAndKeyGenerationByPath(out RightsId rightsId, out byte keyGeneration, in FspPath path);
+    Result GetRightsIdAndKeyGenerationByPath(out RightsId rightsId, out byte keyGeneration, ref readonly FspPath path, ContentAttributes attributes);
     Result SetCurrentPosixTimeWithTimeDifference(long currentTime, int timeDifference);
     Result GetFreeSpaceSizeForSaveData(out long freeSpaceSize, SaveDataSpaceId spaceId);
     Result VerifySaveDataFileSystemBySaveDataSpaceId(SaveDataSpaceId spaceId, ulong saveDataId, OutBuffer readBuffer);
@@ -104,6 +104,7 @@ public interface IFileSystemProxy : IDisposable
     Result QuerySaveDataInternalStorageTotalSize(out long size, SaveDataSpaceId spaceId, ulong saveDataId);
     Result GetSaveDataCommitId(out long commitId, SaveDataSpaceId spaceId, ulong saveDataId);
     Result UnregisterExternalKey(in RightsId rightsId);
+    Result GetProgramId(out ProgramId outProgramId, ref readonly FspPath path, ContentAttributes attributes);
     Result SetSdCardEncryptionSeed(in EncryptionSeed seed);
     Result SetSdCardAccessibility(bool isAccessible);
     Result IsSdCardAccessible(out bool isAccessible);
@@ -114,9 +115,8 @@ public interface IFileSystemProxy : IDisposable
     Result AbandonAccessFailure(ulong processId);
     Result GetAndClearErrorInfo(out FileSystemProxyErrorInfo errorInfo);
     Result RegisterProgramIndexMapInfo(InBuffer programIndexMapInfoBuffer, int programCount);
-    Result SetBisRootForHost(BisPartitionId partitionId, in FspPath path);
     Result SetSaveDataSize(long saveDataSize, long saveDataJournalSize);
-    Result SetSaveDataRootPath(in FspPath path);
+    Result SetSaveDataRootPath(ref readonly FspPath path);
     Result DisableAutoSaveDataCreation();
     Result SetGlobalAccessLogMode(GlobalAccessLogMode mode);
     Result GetGlobalAccessLogMode(out GlobalAccessLogMode mode);
@@ -136,4 +136,5 @@ public interface IFileSystemProxy : IDisposable
     Result CorruptSaveDataFileSystemByOffset(SaveDataSpaceId spaceId, ulong saveDataId, long offset);
     Result OpenMultiCommitManager(ref SharedRef<IMultiCommitManager> outCommitManager);
     Result OpenBisWiper(ref SharedRef<IWiper> outBisWiper, NativeHandle transferMemoryHandle, ulong transferMemorySize);
+    Result NotifyErrorContextServiceReady(bool isReady);
 }
