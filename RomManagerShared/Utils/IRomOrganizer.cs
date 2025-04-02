@@ -11,12 +11,13 @@ public interface IBaseRomOrganizer
 
 public interface IRomOrganizer : IBaseRomOrganizer
 {
-    void Organize(List<Rom> romList, List<List<Rom>> groupedRomList, bool organizeGamesOnly = false);
+    void Organize(string sourceDirectory, string destinationDirectory, bool removeEmptyFolders = true, bool dryRun = false);
 }
 
 public interface IRomOrganizer<T> : IBaseRomOrganizer where T : GamingConsole
 {
-    void Organize(List<Rom> romList, List<List<Rom>> groupedRomList, bool organizeGamesOnly = false);
+    void Organize(string sourceDirectory, string destinationDirectory, bool removeEmptyFolders = true, bool dryRun = false);
+
 }
 
 public interface ILicenseOrganizer<T> where T : GamingConsole

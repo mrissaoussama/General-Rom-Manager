@@ -19,14 +19,12 @@ RomParserExecutor<PSVitaConsole> romParserExecutor)
     public Task<List<License>> GetLicensesRecursive(string path)
     {
        var rifPaths= FileUtils.GetFilesInDirectoryWithExtensions(path, new List<string> { ".rif" });
-       PSVitaRomOrganizer pSVitaRomOrganizer = new PSVitaRomOrganizer();
         foreach (var rifPath in rifPaths)
         {
             PSVitaLicense license = new PSVitaLicense(rifPath);
        
             RomLicenses.Add(license);
         }
-        pSVitaRomOrganizer.OrganizeLicenses(RomLicenses, RomList);
         return Task.FromResult(RomLicenses);
 
 

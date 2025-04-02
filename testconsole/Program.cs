@@ -268,12 +268,12 @@ namespace RomManagerApp
                 if (selectedOrganizer is IRomOrganizer<T> typedOrganizer)
                 {
                     // Use the generic organizer
-                    typedOrganizer.Organize(manager.RomList, new List<List<Rom>> { manager.RomList });
+                   // typedOrganizer.Organize(manager.RomList, new List<List<Rom>> { manager.RomList });
                 }
                 else if (selectedOrganizer is IRomOrganizer nonGenericOrganizer)
                 {
                     // Use the non-generic organizer
-                    nonGenericOrganizer.Organize(manager.RomList, new List<List<Rom>> { manager.RomList });
+                    nonGenericOrganizer.Organize("D:\\roms\\PSVita", "D:\\roms\\PSVita2");
                 }
                 else
                 {

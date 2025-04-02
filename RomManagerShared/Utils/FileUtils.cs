@@ -57,6 +57,27 @@ public class FileUtils
         Directory.CreateDirectory(Path.GetDirectoryName(logFilePath));
         File.AppendAllText(logFilePath, logText + Environment.NewLine);
     }
+    /// <summary>
+    /// Format bytes to human-readable size
+    /// </summary>
+    /// <param name="bytes">The size in bytes</param>
+    /// <returns>Human-readable size string</returns>
+    public static string FormatFileSize(long bytes)
+    {
+        string[] suffixes = { "B", "KB", "MB", "GB", "TB" };
+        int counter = 0;
+        decimal number = bytes;
+
+        // Divide by 1024 until the number is smaller than 1024 or we run out of suffixes
+        while (Math.Round(number / 1024) >= 1 && counter < suffixes.Length - 1)
+        {
+            number /= 1024;
+            counter++;
+        }
+
+        // Format the number to 2 decimal places and append the appropriate suffix
+        return $"{number:n2} {suffixes[counter]}";
+    }
     public static string CheckForPython()
     {
         ProcessStartInfo pycheck = new()
@@ -274,6 +295,38 @@ public class FileUtils
             Path.GetFullPath(dir2).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
             StringComparison.OrdinalIgnoreCase
         );
+    }
+
+    /// <summary>
+    /// Checks if two files are equal.
+    /// </summary>
+
+    public static bool AreFilesEqual(string file1, string file2)
+    {
+        if (!File.Exists(file1) || !File.Exists(file2))
+        {
+            return false;
+        }
+        FileInfo fileInfo1 = new(file1);
+        FileInfo fileInfo2 = new(file2);
+        if (fileInfo1.Length != fileInfo2.Length)
+        {
+            return false;
+        }
+        using FileStream fs1 = File.OpenRead(file1);
+        using FileStream fs2 = File.OpenRead(file2);
+        int fileByte1;
+        int fileByte2;
+        do
+        {
+            fileByte1 = fs1.ReadByte();
+            fileByte2 = fs2.ReadByte();
+            if (fileByte1 != fileByte2)
+            {
+                return false;
+            }
+        } while (fileByte1 != -1);
+        return true;
     }
 
     /// <summary>

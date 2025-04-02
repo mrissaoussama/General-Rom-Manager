@@ -257,5 +257,10 @@ namespace RomManagerShared.Organizers
                 return false;
             }
         }
+
+        public void Organize(string sourceDirectory, string destinationDirectory, bool removeEmptyFolders = true, bool dryRun = false)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
