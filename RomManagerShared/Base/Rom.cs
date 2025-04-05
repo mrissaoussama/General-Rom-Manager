@@ -2,14 +2,67 @@
 using RomManagerShared.Utils;
 
 namespace RomManagerShared.Base;
+[AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
+public class UiPropertyAttribute : Attribute
+{
+    public bool Visible { get; set; } = true;
+    public string DisplayName { get; set; }
+    public int Order { get; set; } = 100;
+    public string Format { get; set; }
+    public UiPropertyType PropertyType { get; set; } = UiPropertyType.Auto;
+    
+    public UiPropertyAttribute() { }
+    
+    public UiPropertyAttribute(bool visible)
+    {
+        Visible = visible;
+    }
+    
+    public UiPropertyAttribute(string displayName)
+    {
+        DisplayName = displayName;
+    }
+}
 
+public enum UiPropertyType
+{
+    Auto,
+    Text,
+    Number,
+    FileSize,
+    Date,
+    Boolean,
+    Enum,
+    List,
+    Image,
+    Path,
+    Region,
+    Language,
+    URL,
+    Hash,
+    Rating,
+    Genre,
+    Description,
+    Title,
+}
 public class Rom
 {
+        [UiProperty(false)]
     public int Id { get; set; }
+    [UiProperty(DisplayName = "Title ID", Order = 1)]
     public string? TitleID { get; set; }
+    [UiProperty(DisplayName = "Version", Order = 2)]
+
     public string? Version { get; set; }
+
+    [UiProperty(PropertyType = UiPropertyType.List)]
+    
     public  List<Region>? Regions { get; set; }
+    [UiProperty(PropertyType = UiPropertyType.Image)]
+
     public string? Icon { get; set; }
+    [UiProperty(PropertyType = UiPropertyType.List)]
+
     public virtual List<Rating>? Ratings { get; set; }
     public string? Publisher { get; set; }
     public string? Thumbnail { get; set; }
@@ -106,7 +159,8 @@ public class RomDescription
     {
         this.Language = Language;
         this.Value = description;
-    }    public RomDescription()
+    }
+    public RomDescription()
     {
         Value = string.Empty;
 
@@ -166,7 +220,8 @@ public enum HashTypeEnum
 //}
 public enum Region
 {
-    Unknown,    USA,
+    Unknown,
+    USA,
     Europe,
     Japan,
     Asia,
@@ -236,7 +291,8 @@ public class RomTitle
     {
         this.Language = Language;
         this.Value = title;
-    }    public RomTitle()
+    }
+    public RomTitle()
     {
         Value = string.Empty;
     }

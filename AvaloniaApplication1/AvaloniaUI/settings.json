@@ -1,0 +1,92 @@
+{
+  "VisibleColumns": {
+    "Rom Properties": [
+      "Id",
+      "Publisher"
+    ],
+    "Xbox360 Properties": [
+      "Id",
+      "Publisher"
+    ],
+    "Wii Properties": [
+      "Id",
+      "Publisher"
+    ],
+    "WiiU Properties": [
+      "Id",
+      "Publisher"
+    ],
+    "Switch Properties": [
+      "Id",
+      "Publisher"
+    ],
+    "SNES Properties": [
+      "Id",
+      "Publisher"
+    ],
+    "SegaSaturn Properties": [
+      "Id",
+      "Publisher"
+    ],
+    "PSVita Properties": [
+      "Id",
+      "Publisher"
+    ],
+    "PSP Properties": [
+      "Id",
+      "Publisher"
+    ],
+    "PS4 Properties": [
+      "Id",
+      "Publisher"
+    ],
+    "PS3 Properties": [
+      "Id",
+      "Publisher"
+    ],
+    "PS2 Properties": [
+      "Id",
+      "Publisher"
+    ],
+    "OriginalXbox Properties": [
+      "Id",
+      "Publisher"
+    ],
+    "Nintendo64 Properties": [
+      "Id",
+      "Publisher"
+    ],
+    "GameBoy Properties": [
+      "Id",
+      "Publisher"
+    ],
+    "GameBoyAdvance Properties": [
+      "Id",
+      "Publisher"
+    ],
+    "DS Properties": [
+      "Id",
+      "Publisher"
+    ],
+    "DLC Properties": [
+      "Id",
+      "Publisher"
+    ],
+    "Game Properties": [
+      "Id",
+      "Publisher"
+    ],
+    "Update Properties": [
+      "Id",
+      "Publisher"
+    ],
+    "Homebrew Properties": [
+      "Id",
+      "Publisher"
+    ],
+    "ThreeDS Properties": [
+      "Id",
+      "Publisher"
+    ]
+  }
+}
