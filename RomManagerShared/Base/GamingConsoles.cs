@@ -126,3 +126,8 @@ public class PCEngineConsole : GamingConsole
 {
     public PCEngineConsole() { Name = "PC Engine"; }
 }
+
+public class DreamcastConsole : GamingConsole
+{
+    public DreamcastConsole() { Name = "Dreamcast"; }
+}

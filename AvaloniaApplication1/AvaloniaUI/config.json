@@ -27,6 +27,9 @@
     "PCEngine": {
       "RomPath": "D:\\Roms\\PCEngine"
     },
+    "Dreamcast": {
+      "RomPath": "D:\\Roms\\Dreamcast"
+    },
     "PSVita": {
       "RomPath": "D:\\Roms\\PSVita",
       "LicensePath": "D:\\Roms\\PSVita\\Licenses",

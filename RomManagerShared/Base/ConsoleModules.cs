@@ -75,6 +75,7 @@ public static class ConsoleModules
         ["PS3"] = "PlayStation 3", ["PS4"] = "PlayStation 4", ["PSP"] = "PSP", ["PSVita"] = "PS Vita", ["Xbox360"] = "Xbox 360",
         ["OriginalXbox"] = "Xbox", ["SegaSaturn"] = "Sega Saturn", ["Genesis"] = "Mega Drive / Genesis",
         ["MasterSystem"] = "Master System", ["GameGear"] = "Game Gear", ["PCEngine"] = "PC Engine / TurboGrafx-16",
+        ["Dreamcast"] = "Dreamcast",
     };
 
     public static ConsoleDescriptor Describe(Type consoleType)
