@@ -1,6 +1,7 @@
 using RomManagerShared.Switch.Configuration;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -60,6 +61,13 @@ public partial class App : Application
         // Wire FileUtils static logger to the DI logger factory
         var loggerFactory = _host.Services.GetRequiredService<ILoggerFactory>();
         FileUtils.Logger = loggerFactory.CreateLogger("FileUtils");
+
+        // Create/upgrade the SQLite database before anything queries it.
+        using (var dbScope = _host.Services.CreateScope())
+        {
+            try { dbScope.ServiceProvider.GetRequiredService<AppDbContext>().Database.Migrate(); }
+            catch (Exception ex) { FileUtils.Log($"Database migration failed: {ex.Message}"); }
+        }
 
         // Load plugins asynchronously
         Task.Run(async () =>
