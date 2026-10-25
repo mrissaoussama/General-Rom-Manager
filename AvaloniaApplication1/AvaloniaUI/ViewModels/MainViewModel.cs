@@ -19,6 +19,7 @@ public partial class MainViewModel : ViewModelBase
     /// <summary>Sidebar entries: the dashboard followed by the consoles.</summary>
     public ObservableCollection<ViewModelBase> Pages { get; } = [];
     public DashboardViewModel Dashboard { get; }
+    public LibraryViewModel Library { get; }
     public LogViewModel Log { get; } = new();
     public OperationsViewModel OperationsPanel { get; }
 
@@ -33,6 +34,11 @@ public partial class MainViewModel : ViewModelBase
         OperationService = new RomOperationService(Operations, serviceProvider);
         OperationsPanel = new OperationsViewModel(Operations);
         Dashboard = new DashboardViewModel(ConsoleViewModels, c => SelectedPage = c);
+        Library = new LibraryViewModel(ConsoleViewModels, ScanAllAsync, serviceProvider.GetService<ImageCache>())
+        {
+            Operations = OperationService,
+        };
+        Library.OperationQueued += () => SelectedBottomTab = OperationsTab;
         Pages.Add(Dashboard);
         SelectedPage = Dashboard;
     }
@@ -90,6 +96,7 @@ public partial class MainViewModel : ViewModelBase
             var selected = SelectedPage;
             Pages.Clear();
             Pages.Add(Dashboard);
+            if (ordered.Count > 1) Pages.Add(Library);
             foreach (var c in ordered) Pages.Add(c);
             SelectedPage = selected is not null && Pages.Contains(selected) ? selected : Dashboard;
         }
@@ -126,14 +133,21 @@ public partial class MainViewModel : ViewModelBase
         ReloadRomPaths();
         await SyncConsolesAsync();
         foreach (var c in ConsoleViewModels) c.RefreshRequirements();
+        await ScanAllAsync(false);
+        if (Settings.Instance.AutoDownloadMissingDBs)
+            _ = DownloadMissingDatabasesAsync(showPanel: false);
+    }
 
+    /// <summary>Full rescan of every console (Shift+F5).</summary>
+    [RelayCommand]
+    private Task RescanAll() => ScanAllAsync(true);
+
+    private async Task ScanAllAsync(bool fullRescan)
+    {
         // One console at a time: parsers share the disk.
         foreach (var console in ConsoleViewModels.ToList())
-            await console.LoadData();
-
+            await (fullRescan ? console.Rescan() : console.LoadData());
         RecalculateTotalRomCount();
-        if (Settings.Instance.AutoDownloadMissingDBs)
-            _ = CheckForUpdates();
     }
 
     public void RecalculateTotalRomCount()
@@ -156,7 +170,9 @@ public partial class MainViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private async Task CheckForUpdates()
+    private Task CheckForUpdates() => DownloadMissingDatabasesAsync(showPanel: true);
+
+    private async Task DownloadMissingDatabasesAsync(bool showPanel)
     {
         StatusMessage = "Checking for missing database files…";
         DownloadMethodInfo[] missing;
@@ -176,7 +192,7 @@ public partial class MainViewModel : ViewModelBase
             return;
         }
 
-        SelectedBottomTab = DownloadsTab;
+        if (showPanel) SelectedBottomTab = DownloadsTab;
         foreach (var resource in missing)
         {
             if (resource.Url is null || resource.FilePaths is null) continue;

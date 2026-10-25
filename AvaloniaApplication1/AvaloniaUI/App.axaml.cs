@@ -65,6 +65,8 @@ public partial class App : Application
 
         _host = builder.Build();
 
+        RomViewModel.CoverCache = _host.Services.GetRequiredService<ImageCache>();
+
         // Wire FileUtils static logger to the DI logger factory
         var loggerFactory = _host.Services.GetRequiredService<ILoggerFactory>();
         FileUtils.Logger = loggerFactory.CreateLogger("FileUtils");

@@ -18,7 +18,9 @@
 
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6">
                 <TextBox x:Name="SearchBox" Width="220" Watermark="Filter (Ctrl+F)" Text="{Binding SearchText}" />
-                <ToggleButton Content="Group" IsChecked="{Binding IsGrouped}" ToolTip.Tip="Group updates and DLC under their game" />
+                <ToggleButton Content="Cards" IsChecked="{Binding IsCardView}" ToolTip.Tip="Show covers instead of the table" />
+                <ToggleButton Content="Group" IsChecked="{Binding IsGrouped}" IsEnabled="{Binding !IsCardView}"
+                              ToolTip.Tip="Group updates and DLC under their game" />
                 <Button x:Name="ColumnsButton" Content="Columns" />
                 <Button Content="Scan" Command="{Binding LoadDataCommand}" ToolTip.Tip="Scan for new or changed files" />
                 <Button Content="Full rescan" Command="{Binding RescanCommand}" ToolTip.Tip="Re-read every file, ignoring the cache" />
@@ -41,11 +43,41 @@
                           SelectedItem="{Binding SelectedRom, Mode=TwoWay}"
                           AutoGenerateColumns="False" IsReadOnly="True" CanUserSortColumns="True"
                           CanUserReorderColumns="True" CanUserResizeColumns="True"
-                          SelectionMode="Extended" GridLinesVisibility="Horizontal" Margin="4,0">
+                          SelectionMode="Extended" GridLinesVisibility="Horizontal" Margin="4,0"
+                          IsVisible="{Binding !IsCardView}">
                     <DataGrid.ContextMenu>
                         <ContextMenu x:Name="RomMenu" />
                     </DataGrid.ContextMenu>
                 </DataGrid>
+
+                <ScrollViewer IsVisible="{Binding IsCardView}" Margin="8,0">
+                    <ItemsRepeater ItemsSource="{Binding RomsView}">
+                        <ItemsRepeater.Layout>
+                            <UniformGridLayout MinItemWidth="150" MinItemHeight="200" MinRowSpacing="8" MinColumnSpacing="8" />
+                        </ItemsRepeater.Layout>
+                        <ItemsRepeater.ItemTemplate>
+                            <DataTemplate x:DataType="vm:RomViewModel">
+                                <Button Classes="card"
+                                        Command="{Binding $parent[views:ConsoleView].((vm:ConsoleViewModelBase)DataContext).SelectRomCommand}"
+                                        CommandParameter="{Binding}" ToolTip.Tip="{Binding Path}">
+                                    <DockPanel>
+                                        <StackPanel DockPanel.Dock="Bottom" Margin="0,6,0,0">
+                                            <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" FontWeight="SemiBold" />
+                                            <TextBlock Text="{Binding RomType}" Classes="muted" />
+                                        </StackPanel>
+                                        <Border Classes="cover">
+                                            <Panel>
+                                                <TextBlock Text="{Binding Initials}" Classes="initials"
+                                                           IsVisible="{Binding Cover, Converter={x:Static ObjectConverters.IsNull}}" />
+                                                <Image Source="{Binding Cover}" Stretch="Uniform" />
+                                            </Panel>
+                                        </Border>
+                                    </DockPanel>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsRepeater.ItemTemplate>
+                    </ItemsRepeater>
+                </ScrollViewer>
 
                 <StackPanel Spacing="8" HorizontalAlignment="Center" VerticalAlignment="Center"
                             IsVisible="{Binding ShowEmptyState}">

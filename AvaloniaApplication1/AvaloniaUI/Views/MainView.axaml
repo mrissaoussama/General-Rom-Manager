@@ -5,6 +5,7 @@
              x:DataType="vm:MainViewModel">
     <UserControl.KeyBindings>
         <KeyBinding Gesture="F5" Command="{Binding RefreshCommand}" />
+        <KeyBinding Gesture="Shift+F5" Command="{Binding RescanAllCommand}" />
         <KeyBinding Gesture="Ctrl+OemComma" Command="{Binding OpenSettingsCommand}" />
         <KeyBinding Gesture="Ctrl+D" Command="{Binding ShowDashboardCommand}" />
         <KeyBinding Gesture="Ctrl+L" Command="{Binding ShowLogCommand}" />
@@ -30,6 +31,7 @@
             </MenuItem>
             <MenuItem Header="_Library">
                 <MenuItem Header="_Scan all" InputGesture="F5" Command="{Binding RefreshCommand}" />
+                <MenuItem Header="_Full rescan of all consoles" InputGesture="Shift+F5" Command="{Binding RescanAllCommand}" />
                 <MenuItem Header="_Download missing databases" Command="{Binding CheckForUpdatesCommand}" />
             </MenuItem>
         </Menu>

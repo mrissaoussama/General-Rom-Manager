@@ -18,6 +18,7 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
     [ObservableProperty] private string _searchText = "";
     [ObservableProperty] private bool _isGrouped;
     [ObservableProperty] private string? _requirementsWarning;
+    [ObservableProperty] private bool _isCardView;
 
     public string ConsoleName { get; }
     public int RomCount => Roms.Count;
@@ -57,6 +58,9 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
     public abstract IEnumerable<IConsoleRomAction> GetContextActionsForSelection(IEnumerable<Rom> selectedRoms);
     public abstract IReadOnlyList<ConsoleRequirement> GetAllRequirements();
 
+    /// <summary>Columns shown before the user picks any.</summary>
+    public virtual IReadOnlyList<string> DefaultColumns => ["TitleID", "Title", "RomType", "Region", "Version"];
+
     public IReadOnlyList<ConsoleRequirement> GetUnmetRequirements()
         => GetAllRequirements().Where(r => !r.IsOptional && !r.IsMet).ToList();
 
@@ -69,7 +73,17 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
     }
 
     protected void ShowRoms(IEnumerable<Rom> roms) =>
-        Roms = new ObservableCollection<RomViewModel>(roms.Select(r => new RomViewModel(r)));
+        Roms = new ObservableCollection<RomViewModel>(roms.Select(r => new RomViewModel(r) { Console = ConsoleName }));
+
+    /// <summary>Removes a deleted row; the all-consoles view forwards this to the owning console.</summary>
+    public virtual void RemoveRow(RomViewModel row) => Roms.Remove(row);
+
+    /// <summary>Swaps a row for a fresh one after an operation changed the rom.</summary>
+    public virtual void ReplaceRow(RomViewModel row)
+    {
+        var i = Roms.IndexOf(row);
+        if (i >= 0) Roms[i] = new RomViewModel(row.RomSource) { GroupKey = row.GroupKey, Console = row.Console };
+    }
 
     // ── View: filter + grouping ───────────────────────────────────────────
 
@@ -130,6 +144,9 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
 
     [RelayCommand]
     private void ClearSearch() => SearchText = "";
+
+    [RelayCommand]
+    private void SelectRom(RomViewModel rom) => SelectedRom = rom;
 
     // ── Rom commands (parameter: the selected rows) ───────────────────────
 
@@ -193,7 +210,7 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
             try
             {
                 if (File.Exists(r.Path)) File.Delete(r.Path);
-                Roms.Remove(r);
+                RemoveRow(r);
             }
             catch (Exception ex) { StatusMessage = $"Delete failed: {ex.Message}"; }
         }
@@ -228,11 +245,7 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
             if (changed.State != OperationState.Completed) return;
             Dispatcher.UIThread.Post(() =>
             {
-                foreach (var row in rows)
-                {
-                    var i = Roms.IndexOf(row);
-                    if (i >= 0) Roms[i] = new RomViewModel(row.RomSource) { GroupKey = row.GroupKey };
-                }
+                foreach (var row in rows) ReplaceRow(row);
             });
         }
     }

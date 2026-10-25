@@ -11,8 +11,6 @@ namespace AvaloniaUI.Views;
 /// </summary>
 public partial class ConsoleView : UserControl
 {
-    private static readonly List<string> DefaultColumns = ["TitleID", "Title", "RomType", "Region", "Version"];
-
     private readonly DataGrid _grid;
     private readonly TextBox _search;
     private readonly ContextMenu _menu;
@@ -73,12 +71,12 @@ public partial class ConsoleView : UserControl
 
     // ── Columns ───────────────────────────────────────────────────────────
 
-    private List<string> VisibleColumns(string console)
+    private static List<string> VisibleColumns(ConsoleViewModelBase vm)
     {
         var settings = Settings.Instance;
-        if (!settings.VisibleColumns.TryGetValue(console, out var visible))
+        if (!settings.VisibleColumns.TryGetValue(vm.ConsoleName, out var visible))
         {
-            settings.VisibleColumns[console] = visible = [.. DefaultColumns];
+            settings.VisibleColumns[vm.ConsoleName] = visible = [.. vm.DefaultColumns];
             settings.Save();
         }
         return visible;
@@ -88,7 +86,7 @@ public partial class ConsoleView : UserControl
     {
         _grid.Columns.Clear();
         if (Vm is not { } vm) return;
-        var visible = VisibleColumns(vm.ConsoleName);
+        var visible = VisibleColumns(vm);
         foreach (var (prop, header, usesDict) in vm.GetColumnDescriptors())
         {
             _grid.Columns.Add(new DataGridTextColumn
@@ -107,7 +105,7 @@ public partial class ConsoleView : UserControl
     private void ShowColumnsFlyout(Control anchor)
     {
         if (Vm is not { } vm) return;
-        var visible = VisibleColumns(vm.ConsoleName);
+        var visible = VisibleColumns(vm);
         var panel = new WrapPanel { MaxWidth = 460, Margin = new Thickness(8) };
         foreach (var (prop, header, _) in vm.GetColumnDescriptors())
         {
@@ -125,7 +123,7 @@ public partial class ConsoleView : UserControl
         var reset = new Button { Content = "Reset to defaults", Margin = new Thickness(8, 0, 8, 8) };
         reset.Click += (_, _) =>
         {
-            Settings.Instance.VisibleColumns[vm.ConsoleName] = [.. DefaultColumns];
+            Settings.Instance.VisibleColumns[vm.ConsoleName] = [.. vm.DefaultColumns];
             Settings.Instance.Save();
             BuildColumns();
         };

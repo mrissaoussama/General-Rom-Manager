@@ -20,6 +20,49 @@ public partial class RomViewModel : ViewModelBase
 
     /// <summary>Group header text when the list is grouped by game.</summary>
     public string GroupKey { get; set; } = "";
+    /// <summary>Owning console name (shown in the all-consoles view).</summary>
+    public string Console { get; init; } = "";
+
+    /// <summary>Shared cache for card covers; set at startup.</summary>
+    public static ImageCache? CoverCache { get; set; }
+    private Avalonia.Media.Imaging.Bitmap? _cover;
+    private bool _coverRequested;
+
+    /// <summary>Card cover, loaded on first access (i.e. when the card is realized).</summary>
+    public Avalonia.Media.Imaging.Bitmap? Cover
+    {
+        get
+        {
+            if (!_coverRequested)
+            {
+                _coverRequested = true;
+                _ = LoadCoverAsync();
+            }
+            return _cover;
+        }
+    }
+
+    public string Initials => string.Concat(Title.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+        .Where(w => char.IsLetterOrDigit(w[0])).Take(2).Select(w => char.ToUpperInvariant(w[0])));
+
+    private async Task LoadCoverAsync()
+    {
+        var source = new[] { _rom.Icon, _rom.Thumbnail, _rom.Banner, _rom.Images?.FirstOrDefault() }
+            .FirstOrDefault(s => !string.IsNullOrWhiteSpace(s));
+        if (source is null || CoverCache is null) return;
+        var path = await CoverCache.GetAsync(source);
+        if (path is null) return;
+        try
+        {
+            _cover = await Task.Run(() =>
+            {
+                using var fs = FileUtils.OpenRead(path);
+                return Avalonia.Media.Imaging.Bitmap.DecodeToWidth(fs, 160);
+            });
+            OnPropertyChanged(nameof(Cover));
+        }
+        catch (Exception ex) { FileUtils.Log($"[Image] {source}: {ex.Message}"); }
+    }
     public string GetPropertyValue(string key)
     {
         return Properties.FirstOrDefault(p => p.Key == key).Value ?? string.Empty;
