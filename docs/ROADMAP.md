@@ -162,7 +162,7 @@ game data, not Wii), gbc 367, nsp 97, pkg 56, cso 46, iso 33).
 - [ ] XCI via LibHac (the parser claims to support it, but it is untested: no XCI files available).
 - [x] PKG (PS3/PSP/Vita) in C#: the PKG header plus PARAM.SFO is a short read. Delete the Python
       script and its `aenum` dependency. [P1]
-- [ ] PS2: CSO/ZSO (block decompression), CHD (`libchdr` P/Invoke or a managed reader), UDF via
+- [x] PS2/PSP: CSO v1 (`CsoStream`). Still open: ZSO (lz4), CHD (`libchdr` P/Invoke or a managed reader), UDF via
       LTRData.DiscUtils.
 - [x] PS1: cue/bin and iso via `SYSTEM.CNF`. Still open: CHD, PBP.
 - [x] GameCube/Wii: ISO, CISO done. Still open: RVZ/WIA (the disc header holds ID6 and title in the first 0x440

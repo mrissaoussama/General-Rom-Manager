@@ -22,7 +22,8 @@ public class PS2RomParser : IRomParser<PS2Console>
         if (!PS2Utils.IsPS2TitleIDFile(path))
             return Task.FromResult(list);
         string extension = Path.GetExtension(path).TrimStart('.').ToLowerInvariant();
-        if(!extension.Equals("iso"))
+        bool isImage = extension is "iso" or "cso";
+        if (!isImage)
         {
             var region = PS2Utils.GetRegionFile(path);
             if(region is null)
@@ -36,9 +37,9 @@ public class PS2RomParser : IRomParser<PS2Console>
             game.Path = path;
             list.Add(game);
         }
-        if (extension.Equals("iso"))
+        if (isImage)
         {
-            using var isoStream = FileUtils.OpenRead(path);
+            using var isoStream = FileUtils.OpenDiscImage(path);
             using DiscFileSystem? disc = CDReader.Detect(isoStream) ? new CDReader(isoStream, true)
                 : UdfReader.Detect(isoStream) ? new UdfReader(isoStream)
                 : null;

@@ -33,6 +33,15 @@ public class FileUtils
     public static FileStream OpenRead(string path) =>
         new(path, FileMode.Open, FileAccess.Read, FileShare.Read);
 
+    /// <summary>Read-only ISO view of a disc image; transparently decompresses .cso.</summary>
+    public static Stream OpenDiscImage(string path)
+    {
+        var file = OpenRead(path);
+        if (!path.EndsWith(".cso", StringComparison.OrdinalIgnoreCase))
+            return file;
+        return CsoStream.TryOpen(file) ?? throw new InvalidDataException("Unsupported CSO variant");
+    }
+
     /// <summary>Scratch folder under the cache (with trailing separator). Never the ROM folder.</summary>
     public static string GetTempDirectory()
     {

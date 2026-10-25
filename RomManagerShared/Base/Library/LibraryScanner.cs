@@ -11,7 +11,7 @@ public sealed record ScanProgress(int Processed, int Total, int Parsed, string? 
 public sealed class LibraryScanner(AppDbContext db)
 {
     /// <summary>Bump when parser output changes so cached entries get re-parsed.</summary>
-    public const int ScanVersion = 8;
+    public const int ScanVersion = 9;
     private const int SaveBatchSize = 25;
     /// <summary>Files parsed concurrently. Kept low: most libraries live on HDDs or network shares.</summary>
     public int MaxParallelism { get; init; } = 4;

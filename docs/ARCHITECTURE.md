@@ -80,10 +80,10 @@ there is likely pending model drift. The scanned **library is not persisted**.
 | Switch | nsp, nsz, xci | NSP/NSZ: LibHac with ticket import (names from NACP; DLC names from titledb). Header scan is the fallback without keys. XCI untested |
 | 3DS | cia | OK; updates/DLC have no SMDH, titles come from title DB |
 | DS / GB / GBC / GBA / SNES / N64 / Saturn(mdf) | header | OK, raw header titles (DS falls back to file name for invalid headers) |
-| PS2 | iso | OK via SYSTEM.CNF, ISO9660 + UDF. No CHD/CSO |
+| PS2 | iso, cso | OK via SYSTEM.CNF, ISO9660 + UDF. No CHD/ZSO |
 | PS3 | PARAM.SFO folder, pkg | OK (managed PKG reader) |
 | PS4 | pkg | OK (PS4_Tools) |
-| PSP | iso, pkg | OK (managed SFO + PKG readers) |
+| PSP | iso, cso, pkg | OK (managed SFO + PKG readers) |
 | PS Vita | vpk, sfo | vpk ok |
 | Wii | wbfs, wad, iso, ciso | OK (region from game ID) |
 | GameCube | iso, gcm, ciso | OK |

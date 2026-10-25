@@ -12,6 +12,7 @@ public static class PS2Utils
                                  .Select(n => n.ToString("D2"))
                                  .ToList();
         Extensions.Add("iso");
+        Extensions.Add("cso");
     }
     public static Region? GetRegionFile(string path)
     {

@@ -10,7 +10,7 @@ public class PSPRomParser : IRomParser<PSPConsole>
 
     public PSPRomParser()
     {
-        Extensions = ["iso"];
+        Extensions = ["iso", "cso"];
     }
     public List<string> Extensions { get; set; }
 
@@ -18,7 +18,7 @@ public class PSPRomParser : IRomParser<PSPConsole>
     {
         try
         {
-            using var isoStream = FileUtils.OpenRead(path);
+            using var isoStream = FileUtils.OpenDiscImage(path);
             using var cd = new CDReader(isoStream, true);
             if (!cd.FileExists(SfoPath))
                 return Task.FromResult<List<Rom>>([]);
