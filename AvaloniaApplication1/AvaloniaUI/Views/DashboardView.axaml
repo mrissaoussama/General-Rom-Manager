@@ -47,6 +47,16 @@
                 </Border>
             </WrapPanel>
 
+            <StackPanel Spacing="4">
+                <TextBlock Text="DAT files" Classes="h3" />
+                <TextBlock Text="{Binding DatSummary}" Classes="muted" TextWrapping="Wrap" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <SelectableTextBlock Text="{Binding DatDirectory}" Classes="muted" VerticalAlignment="Center" />
+                    <Button Content="Open folder" Classes="small" Command="{Binding OpenDatFolderCommand}" />
+                    <Button Content="Refresh" Classes="small" Command="{Binding RefreshDatsCommand}" />
+                </StackPanel>
+            </StackPanel>
+
             <TextBlock Text="Consoles" Classes="h2" />
 
             <StackPanel Spacing="8" IsVisible="{Binding !HasConsoles}">

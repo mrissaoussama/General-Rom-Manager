@@ -31,6 +31,7 @@ public sealed partial class DashboardViewModel : ViewModelBase
             OnPropertyChanged(nameof(HasConsoles));
             ScheduleRecalculate();
         };
+        RefreshDats();
     }
 
     private void OnConsoleChanged(object? sender, PropertyChangedEventArgs e)
@@ -61,4 +62,33 @@ public sealed partial class DashboardViewModel : ViewModelBase
 
     [RelayCommand]
     private void Open(ConsoleViewModelBase console) => _open(console);
+
+    // ── DAT files (No-Intro / Redump) ─────────────────────────────────────
+
+    [ObservableProperty] private string _datSummary = "";
+
+    public string DatDirectory => RomManagerShared.Utils.Dat.DatIndex.DatDirectory;
+
+    [RelayCommand]
+    public void RefreshDats()
+    {
+        try
+        {
+            var count = Directory.Exists(DatDirectory)
+                ? Directory.EnumerateFiles(DatDirectory, "*.*", SearchOption.AllDirectories)
+                    .Count(f => f.EndsWith(".dat", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".xml", StringComparison.OrdinalIgnoreCase))
+                : 0;
+            DatSummary = count == 0
+                ? "No DAT files. Add No-Intro DATs to name cartridge ROMs by hash, then run a full rescan."
+                : $"{count} DAT file(s). Run a full rescan after adding new ones.";
+        }
+        catch (Exception ex) { DatSummary = $"Cannot read DAT folder: {ex.Message}"; }
+    }
+
+    [RelayCommand]
+    private void OpenDatFolder()
+    {
+        Directory.CreateDirectory(DatDirectory);
+        Shell.OpenWithDefaultApp(DatDirectory);
+    }
 }

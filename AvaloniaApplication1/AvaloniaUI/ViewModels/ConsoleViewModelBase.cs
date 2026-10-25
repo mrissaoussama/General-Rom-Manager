@@ -96,14 +96,57 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
         return view;
     }
 
+    public const string AnyOption = "All";
+    public IReadOnlyList<string> TypeOptions { get; } = [AnyOption, "Game", "Update", "DLC", "Homebrew"];
+    [ObservableProperty] private IReadOnlyList<string> _regionOptions = [AnyOption];
+    [ObservableProperty] private string _typeFilter = AnyOption;
+    [ObservableProperty] private string _regionFilter = AnyOption;
+    /// <summary>Only rows whose title is missing or just the file name (unidentified).</summary>
+    [ObservableProperty] private bool _unnamedOnly;
+
+    public bool IsFiltered => SearchText.Length > 0 || TypeFilter != AnyOption || RegionFilter != AnyOption || UnnamedOnly;
+
     private bool Matches(RomViewModel r)
     {
+        if (TypeFilter != AnyOption && r.RomType != TypeFilter) return false;
+        if (RegionFilter != AnyOption && !r.Region.Split(", ").Contains(RegionFilter)) return false;
+        if (UnnamedOnly && !IsUnnamed(r)) return false;
         var q = SearchText.Trim();
         return q.Length == 0
             || r.Title.Contains(q, StringComparison.OrdinalIgnoreCase)
             || r.TitleID.Contains(q, StringComparison.OrdinalIgnoreCase)
             || r.Path.Contains(q, StringComparison.OrdinalIgnoreCase)
             || r.RomType.Contains(q, StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static bool IsUnnamed(RomViewModel r) =>
+        r.Title == "Unknown" || string.Equals(r.Title, Path.GetFileNameWithoutExtension(r.Path), StringComparison.OrdinalIgnoreCase);
+
+    partial void OnTypeFilterChanged(string value) => RefreshFilter();
+    partial void OnRegionFilterChanged(string value) => RefreshFilter();
+    partial void OnUnnamedOnlyChanged(bool value) => RefreshFilter();
+
+    private void RefreshFilter()
+    {
+        RomsView.Refresh();
+        OnPropertyChanged(nameof(IsFiltered));
+    }
+
+    [RelayCommand]
+    private void ClearFilters()
+    {
+        SearchText = "";
+        TypeFilter = AnyOption;
+        RegionFilter = AnyOption;
+        UnnamedOnly = false;
+    }
+
+    private void UpdateRegionOptions()
+    {
+        var regions = Roms.SelectMany(r => r.Region.Split(", ")).Distinct().Order().ToList();
+        if (!RegionOptions.Skip(1).SequenceEqual(regions))
+            RegionOptions = [AnyOption, .. regions];
+        if (!RegionOptions.Contains(RegionFilter)) RegionFilter = AnyOption;
     }
 
     // Updates/DLC share the game's base title ID prefix (Switch-style IDs); group them under the game's name.
@@ -117,7 +160,7 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
             r.GroupKey = BaseId(r.TitleID) is { } b && names.TryGetValue(b, out var n) ? n : r.Title;
     }
 
-    partial void OnSearchTextChanged(string value) => RomsView.Refresh();
+    partial void OnSearchTextChanged(string value) => RefreshFilter();
 
     partial void OnIsGroupedChanged(bool value) => RomsView = CreateView(Roms);
 
@@ -127,6 +170,7 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
         newValue.CollectionChanged += OnRomsCollectionChanged;
         RomsView = CreateView(newValue);
         OnRomsCollectionChanged(null, null);
+        UpdateRegionOptions();
     }
 
     private void OnRomsCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs? e)
