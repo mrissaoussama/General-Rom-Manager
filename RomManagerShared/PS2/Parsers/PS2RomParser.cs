@@ -1,4 +1,6 @@
-﻿using DiscUtils.Iso9660;
+﻿using DiscUtils;
+using DiscUtils.Iso9660;
+using DiscUtils.Udf;
 using RomManagerShared.Utils;
 using RomManagerShared.Base;
 using RomManagerShared.Interfaces;
@@ -37,10 +39,18 @@ public class PS2RomParser : IRomParser<PS2Console>
         if (extension.Equals("iso"))
         {
             using var isoStream = FileUtils.OpenRead(path);
-            var isoFile = new CDReader(isoStream, true);
+            using DiscFileSystem? disc = CDReader.Detect(isoStream) ? new CDReader(isoStream, true)
+                : UdfReader.Detect(isoStream) ? new UdfReader(isoStream)
+                : null;
+            if (disc is null)
+                return Task.FromResult(list);
 
-            foreach (var file in isoFile.Root.GetFiles()
-     .Select(file => file.Name.Split(';')[0]))
+            // SYSTEM.CNF names the boot ELF, which is the title ID. Fall back to scanning the root.
+            var bootFile = ReadBootFile(disc);
+            var candidates = bootFile is not null
+                ? [bootFile]
+                : disc.Root.GetFiles().Select(file => file.Name.Split(';')[0]);
+            foreach (var file in candidates)
             {
                 var region = PS2Utils.GetRegionFile(file);
                 if (region is null)
@@ -53,10 +63,26 @@ public class PS2RomParser : IRomParser<PS2Console>
                 };
                 game.AddRegion((Region)region);
                 list.Add(game);
+                if (bootFile is not null) break;
             }
-
         }
         return Task.FromResult(list);
 
+    }
+    // BOOT2 = cdrom0:\SLUS_200.90;1
+    private static string? ReadBootFile(DiscFileSystem disc)
+    {
+        if (!disc.FileExists("SYSTEM.CNF"))
+            return null;
+        using var reader = new StreamReader(disc.OpenFile("SYSTEM.CNF", FileMode.Open, FileAccess.Read));
+        while (reader.ReadLine() is { } line)
+        {
+            if (!line.TrimStart().StartsWith("BOOT2", StringComparison.OrdinalIgnoreCase))
+                continue;
+            var value = line[(line.IndexOf('=') + 1)..].Trim();
+            var name = value[(value.LastIndexOfAny([':', '\\', '/']) + 1)..];
+            return name.Split(';')[0];
+        }
+        return null;
     }
 }
