@@ -106,3 +106,23 @@ public class NESConsole : GamingConsole
 {
     public NESConsole() { Name = "NES"; }
 }
+
+public class GenesisConsole : GamingConsole
+{
+    public GenesisConsole() { Name = "Genesis"; }
+}
+
+public class MasterSystemConsole : GamingConsole
+{
+    public MasterSystemConsole() { Name = "Master System"; }
+}
+
+public class GameGearConsole : GamingConsole
+{
+    public GameGearConsole() { Name = "Game Gear"; }
+}
+
+public class PCEngineConsole : GamingConsole
+{
+    public PCEngineConsole() { Name = "PC Engine"; }
+}

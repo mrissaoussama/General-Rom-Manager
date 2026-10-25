@@ -15,6 +15,18 @@
     "NES": {
       "RomPath": "D:\\Roms\\NES"
     },
+    "Genesis": {
+      "RomPath": "D:\\Roms\\Genesis"
+    },
+    "MasterSystem": {
+      "RomPath": "D:\\Roms\\MasterSystem"
+    },
+    "GameGear": {
+      "RomPath": "D:\\Roms\\GameGear"
+    },
+    "PCEngine": {
+      "RomPath": "D:\\Roms\\PCEngine"
+    },
     "PSVita": {
       "RomPath": "D:\\Roms\\PSVita",
       "LicensePath": "D:\\Roms\\PSVita\\Licenses",
