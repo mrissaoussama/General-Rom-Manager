@@ -30,13 +30,20 @@ public  class ConsoleManager<T> :IConsoleManager<T>, IHasContextMenuActions wher
 
     public virtual async Task ProcessFile(string file)
     {
-        var processedhash = await RomParserExecutor.ExecuteParsers(file);
-        if (RomParserExecutor.Parsers.Count == 0)
+        var roms = await ParseFile(file);
+        RomList.AddRange(roms);
+    }
+
+    /// <summary>Parses and enriches one file without touching <see cref="RomList"/>.</summary>
+    public virtual async Task<List<Rom>> ParseFile(string file)
+    {
+        var roms = await RomParserExecutor.ExecuteParsers(file);
+        if (TitleInfoProviderManager is not null)
         {
-           // processedhash= await IdentifyRomFromHash(file);
+            for (int i = 0; i < roms.Count; i++)
+                roms[i] = await TitleInfoProviderManager.GetTitleInfo(roms[i]);
         }
-        var processedlist = processedhash.ToList();
-        RomList.AddRange(processedlist);
+        return roms;
     }
 
     public virtual Task IdentifyRomFromHash(string file)
