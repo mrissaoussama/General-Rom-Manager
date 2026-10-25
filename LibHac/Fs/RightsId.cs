@@ -20,7 +20,7 @@ public struct RightsId : IEquatable<RightsId>
 
         Unsafe.SkipInit(out Value);
 
-        Span<ulong> longsThis = MemoryMarshal.Cast<byte, ulong>(Value);
+        Span<ulong> longsThis = MemoryMarshal.Cast<byte, ulong>((Span<byte>)Value);
         ReadOnlySpan<ulong> longsValue = MemoryMarshal.Cast<byte, ulong>(value);
 
         longsThis[1] = longsValue[1];

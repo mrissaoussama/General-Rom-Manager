@@ -27,11 +27,6 @@ public static class Utilities
         return true;
     }
 
-    public static bool SpansEqual<T>(Span<T> a1, Span<T> a2) where T : IEquatable<T>
-    {
-        return a1.SequenceEqual(a2);
-    }
-
     public static bool SpansEqual<T>(ReadOnlySpan<T> a1, ReadOnlySpan<T> a2) where T : IEquatable<T>
     {
         return a1.SequenceEqual(a2);

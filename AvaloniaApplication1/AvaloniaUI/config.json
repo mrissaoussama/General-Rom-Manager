@@ -1,0 +1,50 @@
+{
+  "GlobalPaths": {
+    "BaseDirectory": "D:\\RomManager",
+    "Plugins": "Plugins",
+    "NoIntroDB": "NoIntro",
+    "Database": "Data\\roms.db",
+    "ErrorLogs": "Logs\\errors.log",
+    "Cache": "Cache"
+  },
+  "Consoles": {
+    "PSVita": {
+      "RomPath": "D:\\Roms\\PSVita",
+      "LicensePath": "D:\\Roms\\PSVita\\Licenses",
+      "Tools": {
+        "ParamSfo": "param.sfo.dll"
+      }
+    },
+    "PS3": {
+      "RomPath": "D:\\Roms\\PS3",
+      "Tools": {
+        "PS3Tools": "ps3_tools.dll"
+      }
+    },
+    "PS4": {
+      "RomPath": "D:\\Roms\\PS4",
+      "Tools": {
+        "PS4Tools": "ps4_tools.dll"
+      }
+    },
+    "Switch": {
+      "RomPath": "D:\\Roms\\Switch",
+      "TitleDB": {
+        "Path": "Data\\Switch\\titledb",
+        "VersionsFile": "versions.json"
+      }
+    },
+    "Xbox360": {
+      "RomPath": "D:\\Roms\\Xbox360",
+      "Tools": {
+        "Xextool": "xextool.exe"
+      }
+    },
+    "WiiU": {
+      "RomPath": "D:\\Roms\\WiiU",
+      "TitleDB": {
+        "Path": "Data\\WiiU\\titledb.xml"
+      }
+    }
+  }
+}
