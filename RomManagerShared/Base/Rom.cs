@@ -245,7 +245,8 @@ public enum Region
     Netherlands,
     Canada,
     Scandinavia,
-    UnitedKingdom
+    UnitedKingdom,
+    World
 }
 
 public enum RatingContent

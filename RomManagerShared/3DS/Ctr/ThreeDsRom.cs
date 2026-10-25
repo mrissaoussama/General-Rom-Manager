@@ -28,73 +28,51 @@ public class ThreeDsRom : IExtendedFileSystem, IDisposable
     {
         return Partitions[0]?.Header?.ProductCode;
     }
-    //titlename
-    public string GetShortDescription()
+    // SMDH: 16 x 0x200 title entries at 0x8 (short 0x80, long 0x100, publisher 0x80), region lockout at 0x2018.
+    private const int SmdhTitlesOffset = 0x8;
+    private const int SmdhTitleSize = 0x200;
+    private const int SmdhEnglish = 1;
+
+    private byte[]? GetSmdh()
     {
-        var exefsByteArray = Partitions[0].ExeFs.Files["icon"].RawData;
-        var byteArray = new byte[exefsByteArray.Length];
-        Array.Copy(exefsByteArray, byteArray, exefsByteArray.Length);
-        int shortDescriptionOffset = 0x8;
-        int shortDescriptionSize = 0x80;
-        string shortDescription = Encoding.Unicode.GetString(byteArray, shortDescriptionOffset, shortDescriptionSize).TrimEnd('\0');
-        return shortDescription;
+        var exeFs = Partitions?.FirstOrDefault()?.ExeFs;
+        if (exeFs is null || !exeFs.Files.TryGetValue("icon", out var icon) || icon is null)
+            return null;
+        return icon.RawData.Length >= 0x2040 ? icon.RawData : null;
     }
+
+    private string? ReadSmdhString(int fieldOffset, int size)
+    {
+        var smdh = GetSmdh();
+        if (smdh is null) return null;
+        // Prefer English, fall back to Japanese.
+        foreach (var lang in new[] { SmdhEnglish, 0 })
+        {
+            var offset = SmdhTitlesOffset + lang * SmdhTitleSize + fieldOffset;
+            var value = Encoding.Unicode.GetString(smdh, offset, size).TrimEnd('\0');
+            if (!string.IsNullOrWhiteSpace(value)) return value;
+        }
+        return null;
+    }
+
+    public string? GetShortDescription() => ReadSmdhString(0, 0x80);
+    public string? GetLongDescription() => ReadSmdhString(0x80, 0x100);
+    public string? GetPublisher() => ReadSmdhString(0x180, 0x80);
+
     public Region GetRegion()
     {
-        var exefsByteArray = Partitions[0].ExeFs.Files["icon"].RawData;
-        int regionLockoutOffset = 0x2018;
-        int regionLockoutSize = 0x4;        // Ensure that the regionLockoutOffset is within the bounds of the exefsByteArray
-        if (regionLockoutOffset + regionLockoutSize <= exefsByteArray.Length)
-        {
-            // Extract the region data from the specified offset and size
-            byte[] regionBytes = new byte[regionLockoutSize];
-            Array.Copy(exefsByteArray, regionLockoutOffset, regionBytes, 0, regionLockoutSize);            // Convert the byte array to a uint (assuming little-endian byte order)
-            uint regionFlag = BitConverter.ToUInt32(regionBytes, 0);            // Check each bitmask and return the corresponding region
-            Dictionary<uint, Region> regionBitmasks = new()
-            {
-        { 0x01, Region.Japan },
-        { 0x02, Region.USA },
-        { 0x04, Region.Europe },
-        { 0x08, Region.Australia },
-        { 0x10, Region.China},
-        { 0x20, Region.Korea },
-        { 0x40, Region.Taiwan }
-    };            foreach (var region in regionBitmasks)
-            {
-                if ((regionFlag & region.Key) != 0)
-                {
-                    return region.Value;
-                }
-            }            // Handle the case where no matching region is found
-            return Region.Unknown;
-        }
-        else
-        {
-            // Handle the case where the specified offset and size are out of bounds
-            return Region.Unknown;
-        }
-    }    public string GetLongDescription()
-    {
-        var exefsByteArray = Partitions[0].ExeFs.Files["icon"].RawData;
-        var byteArray = new byte[exefsByteArray.Length];
-        Array.Copy(exefsByteArray, byteArray, exefsByteArray.Length);        int shortDescriptionOffset = 0x8;
-        int shortDescriptionSize = 0x80;
-        int longDescriptionOffset = shortDescriptionOffset + shortDescriptionSize;
-        int longDescriptionSize = 0x80;
-        int publisherOffset = longDescriptionOffset + longDescriptionSize;
-        int publisherSize = 0x80;        string longDescription = Encoding.Unicode.GetString(byteArray, longDescriptionOffset, longDescriptionSize).TrimEnd('\0');        return longDescription;
-    }
-    public string GetPublisher()
-    {
-        var exefsByteArray = Partitions[0].ExeFs.Files["icon"].RawData;
-        var byteArray = new byte[exefsByteArray.Length];
-        Array.Copy(exefsByteArray, byteArray, exefsByteArray.Length);        int shortDescriptionOffset = 0x8;
-        int shortDescriptionSize = 0x80;
-        int longDescriptionOffset = shortDescriptionOffset + shortDescriptionSize;
-        int longDescriptionSize = 0x80;
-        int publisherOffset = longDescriptionOffset + longDescriptionSize;
-        int publisherSize = 0x80;
-        string publisher = Encoding.Unicode.GetString(byteArray, publisherOffset, publisherSize).TrimEnd('\0');        return publisher;
+        var smdh = GetSmdh();
+        if (smdh is null) return Region.Unknown;
+        uint regionFlag = BitConverter.ToUInt32(smdh, 0x2018);
+        if ((regionFlag & 0x7) == 0x7) return Region.World;
+        (uint Mask, Region Region)[] masks =
+        [
+            (0x01, Region.Japan), (0x02, Region.USA), (0x04, Region.Europe), (0x08, Region.Australia),
+            (0x10, Region.China), (0x20, Region.Korea), (0x40, Region.Taiwan),
+        ];
+        foreach (var (mask, region) in masks)
+            if ((regionFlag & mask) != 0) return region;
+        return Region.Unknown;
     }
     public string GetVersion()
     {
