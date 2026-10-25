@@ -1,3 +1,4 @@
+using RomManagerShared.Base;
 using RomManagerShared.Interfaces;
 
 namespace RomManagerShared.Utils.Dat;
@@ -8,6 +9,8 @@ public class NESDatProvider : DatTitleInfoProvider<NESConsole>
 {
     protected override bool MatchesDat(string f) => f.Contains("Nintendo Entertainment System", StringComparison.OrdinalIgnoreCase)
         && !f.Contains("Super Nintendo", StringComparison.OrdinalIgnoreCase);
+
+    protected override string? LibretroSystem(Rom rom) => "Nintendo - Nintendo Entertainment System";
 
     // Headered DATs hash the whole file, headerless ones skip the 16-byte iNES header.
     protected override IEnumerable<ReadOnlyMemory<byte>> Payloads(byte[] data)
@@ -22,6 +25,8 @@ public class SNESDatProvider : DatTitleInfoProvider<SNESConsole>
 {
     protected override bool MatchesDat(string f) => f.Contains("Super Nintendo Entertainment System", StringComparison.OrdinalIgnoreCase);
 
+    protected override string? LibretroSystem(Rom rom) => "Nintendo - Super Nintendo Entertainment System";
+
     // Copier dumps carry a 512-byte header.
     protected override IEnumerable<ReadOnlyMemory<byte>> Payloads(byte[] data)
     {
@@ -32,6 +37,9 @@ public class SNESDatProvider : DatTitleInfoProvider<SNESConsole>
 
 public class GameBoyDatProvider : DatTitleInfoProvider<GameBoyConsole>
 {
+    protected override string? LibretroSystem(Rom rom) =>
+        rom.Path?.EndsWith(".gbc", StringComparison.OrdinalIgnoreCase) == true ? "Nintendo - Game Boy Color" : "Nintendo - Game Boy";
+
     // Covers "Game Boy" and "Game Boy Color", not "Game Boy Advance".
     protected override bool MatchesDat(string f) =>
         f.Contains("Nintendo - Game Boy", StringComparison.OrdinalIgnoreCase) && !f.Contains("Advance", StringComparison.OrdinalIgnoreCase);
@@ -40,10 +48,14 @@ public class GameBoyDatProvider : DatTitleInfoProvider<GameBoyConsole>
 public class GameBoyAdvanceDatProvider : DatTitleInfoProvider<GameBoyAdvanceConsole>
 {
     protected override bool MatchesDat(string f) => f.Contains("Game Boy Advance", StringComparison.OrdinalIgnoreCase);
+
+    protected override string? LibretroSystem(Rom rom) => "Nintendo - Game Boy Advance";
 }
 
 public class N64DatProvider : DatTitleInfoProvider<N64Console>
 {
+    protected override string? LibretroSystem(Rom rom) => "Nintendo - Nintendo 64";
+
     protected override bool MatchesDat(string f) => f.Contains("Nintendo 64", StringComparison.OrdinalIgnoreCase)
         && !f.Contains("64DD", StringComparison.OrdinalIgnoreCase);
 

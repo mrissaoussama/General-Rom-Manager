@@ -1,3 +1,4 @@
+using RomManagerShared.Base;
 using RomManagerShared.Genesis;
 using RomManagerShared.Interfaces;
 using RomManagerShared.MasterSystem;
@@ -7,6 +8,8 @@ namespace RomManagerShared.Utils.Dat;
 
 public class GenesisDatProvider : DatTitleInfoProvider<GenesisConsole>
 {
+    protected override string? LibretroSystem(Rom rom) => "Sega - Mega Drive - Genesis";
+
     protected override bool MatchesDat(string f) => f.Contains("Mega Drive - Genesis", StringComparison.OrdinalIgnoreCase);
 
     // No-Intro hashes the plain image: strip copier headers and de-interleave SMD dumps.
@@ -20,6 +23,8 @@ public class GenesisDatProvider : DatTitleInfoProvider<GenesisConsole>
 
 public class MasterSystemDatProvider : DatTitleInfoProvider<MasterSystemConsole>
 {
+    protected override string? LibretroSystem(Rom rom) => "Sega - Master System - Mark III";
+
     protected override bool MatchesDat(string f) => f.Contains("Sega - Master System", StringComparison.OrdinalIgnoreCase);
 
     protected override IEnumerable<ReadOnlyMemory<byte>> Payloads(byte[] data)
@@ -31,6 +36,8 @@ public class MasterSystemDatProvider : DatTitleInfoProvider<MasterSystemConsole>
 
 public class GameGearDatProvider : DatTitleInfoProvider<GameGearConsole>
 {
+    protected override string? LibretroSystem(Rom rom) => "Sega - Game Gear";
+
     protected override bool MatchesDat(string f) => f.Contains("Sega - Game Gear", StringComparison.OrdinalIgnoreCase);
 
     protected override IEnumerable<ReadOnlyMemory<byte>> Payloads(byte[] data)
@@ -42,6 +49,8 @@ public class GameGearDatProvider : DatTitleInfoProvider<GameGearConsole>
 
 public class PCEngineDatProvider : DatTitleInfoProvider<PCEngineConsole>
 {
+    protected override string? LibretroSystem(Rom rom) => "NEC - PC Engine - TurboGrafx 16";
+
     // HuCard set only, not the CD or SuperGrafx DATs.
     protected override bool MatchesDat(string f) => f.Contains("PC Engine - TurboGrafx", StringComparison.OrdinalIgnoreCase);
 

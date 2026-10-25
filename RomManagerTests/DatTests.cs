@@ -95,7 +95,18 @@ public sealed class DatTests : IDisposable
         rom.Titles![0].Value.Should().Be("Super Mario Bros. 3");
         rom.Regions.Should().Equal(Region.USA);
         rom.ProductCode.Should().Be("NES-UM-USA");
+        rom.Thumbnail.Should().EndWith("Named_Boxarts/Super%20Mario%20Bros.%203%20%28USA%29.png");
         rom.Hashes.Should().Contain(h => h.Type == HashTypeEnum.SHA1 && h.IsVerified);
+    }
+
+    [Fact]
+    public void LibretroBoxartUrl_EscapesNameAndReplacesReservedChars()
+    {
+        var url = DatTitleInfoProvider<RomManagerShared.Interfaces.NESConsole>.LibretroBoxartUrl(
+            "Nintendo - Nintendo Entertainment System", "Legend of Zelda, The: Test? (USA)");
+
+        url.Should().StartWith("https://thumbnails.libretro.com/Nintendo%20-%20Nintendo%20Entertainment%20System/Named_Boxarts/");
+        Uri.UnescapeDataString(url).Should().EndWith("/Legend of Zelda, The_ Test_ (USA).png");
     }
 
     [Fact]

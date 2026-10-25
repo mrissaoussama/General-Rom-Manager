@@ -24,6 +24,16 @@ public abstract class DatTitleInfoProvider<T> : ITitleInfoProvider<T> where T : 
 
     protected virtual DatIndex? GetIndex() => DatIndex.ForConsole(MatchesDat);
 
+    /// <summary>libretro-thumbnails system folder (e.g. "Nintendo - Game Boy"); null disables box art URLs.</summary>
+    protected virtual string? LibretroSystem(Rom rom) => null;
+
+    /// <summary>Box art URL for a No-Intro name; libretro replaces &amp;*/:`&lt;&gt;?\| with '_'.</summary>
+    public static string LibretroBoxartUrl(string system, string datName)
+    {
+        var file = string.Concat(datName.Select(c => "&*/:`<>?\\|".Contains(c) ? '_' : c));
+        return $"https://thumbnails.libretro.com/{Uri.EscapeDataString(system)}/Named_Boxarts/{Uri.EscapeDataString(file)}.png";
+    }
+
     public Task LoadTitleDatabaseAsync() => Task.CompletedTask;
 
     public async Task<Rom> GetTitleInfo(Rom rom)
@@ -40,6 +50,8 @@ public abstract class DatTitleInfoProvider<T> : ITitleInfoProvider<T> where T : 
             var crc = System.IO.Hashing.Crc32.HashToUInt32(payload.Span).ToString("x8");
             if (index.Find(sha1, crc, payload.Length) is not { } hit) continue;
             Apply(rom, hit, sha1, crc);
+            if (string.IsNullOrEmpty(rom.Thumbnail) && LibretroSystem(rom) is { } system)
+                rom.Thumbnail = LibretroBoxartUrl(system, hit.Game);
             break;
         }
         return rom;
