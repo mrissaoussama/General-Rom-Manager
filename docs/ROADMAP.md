@@ -156,7 +156,7 @@ These were all reproduced against real files with `tools/ParserHarness`.
 Ordered by how many files of each you actually have (Everything counts: nsz 1230, wad 1687 (mostly
 game data, not Wii), gbc 367, nsp 97, pkg 56, cso 46, iso 33).
 
-- [ ] **NSZ/XCZ real parsing**: NCZ section headers + `ZstdSharp` to read the control NCA (NACP,
+- [x] **NSZ real parsing**: control/meta NCAs stay uncompressed in NSZ, so LibHac reads names and versions directly (no zstd needed). Still open: XCZ, sizes of individual NCZ. Was: **NSZ/XCZ real parsing**: NCZ section headers + `ZstdSharp` to read the control NCA (NACP,
       icon). [P1]
 - [ ] XCI via LibHac (the parser claims to support it, but it is untested: no XCI files available).
 - [x] PKG (PS3/PSP/Vita) in C#: the PKG header plus PARAM.SFO is a short read. Delete the Python

@@ -79,7 +79,7 @@ public class SwitchRomNSPXCIParser : IRomParser<SwitchConsole>, IHasRequirements
 
     public SwitchRomNSPXCIParser()
     {
-        Extensions = ["xci", "nsp"];
+        Extensions = ["xci", "nsp", "nsz"];
     }
 
     public Task<List<Rom>> ProcessFile(string path)
@@ -102,6 +102,9 @@ public class SwitchRomNSPXCIParser : IRomParser<SwitchConsole>, IHasRequirements
                 if (roms.Count == 0)
                     AddIdsFromNcaHeaders(fs, keyset, path, roms);
             }
+            // NSZ program data is in .ncz files LibHac doesn't count; the file size is closer to the truth.
+            if (path.EndsWith(".nsz", StringComparison.OrdinalIgnoreCase))
+                foreach (var rom in roms) rom.Size = FileUtils.GetFileSize(path);
         }
         catch (Exception ex)
         {

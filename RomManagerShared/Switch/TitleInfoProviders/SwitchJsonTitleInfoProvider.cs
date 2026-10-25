@@ -193,6 +193,9 @@ public class SwitchJsonTitleInfoProvider : TitleInfoProvider<SwitchConsole>, ICa
 
     public async override Task<Rom> GetTitleInfo(Rom rom)
     {
+        // Not loaded yet (Setup skipped or download failed), or nothing to look up.
+        if (TitlesDatabase is null || string.IsNullOrEmpty(rom.TitleID))
+            return rom;
 
         bool existsInDatabase = false;
         try
