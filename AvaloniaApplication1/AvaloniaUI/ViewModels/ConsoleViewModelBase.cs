@@ -272,7 +272,23 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
         if (Operations is null || roms.Count == 0) return;
         var target = await Shell.PickFolderAsync("Select target directory");
         if (target is null) return;
-        Track(Operations.EnqueueMove([.. roms.Select(r => r.RomSource)], target), roms);
+        var sources = roms.Select(r => r.RomSource).ToList();
+
+        // Dry run first: the user sees every destination (folder structure kept) before anything moves.
+        var plan = await Task.Run(() => new RomMover(target).PreviewMoves(sources));
+        var moving = plan.Where(m => m.Changed).ToList();
+        if (moving.Count == 0)
+        {
+            StatusMessage = "Nothing to move: files are already there.";
+            return;
+        }
+        var bytes = sources.Sum(r => r.Size ?? 0);
+        var preview = new PreviewWindow("Move",
+            $"Move {moving.Count} file(s) ({FileUtils.FormatFileSize(bytes)}) to {target}:",
+            moving.Select(m => $"{m.SourcePath}  →  {m.DestinationPath}"), "Move");
+        await Shell.ShowDialogAsync(preview);
+        if (!preview.Confirmed) return;
+        Track(Operations.EnqueueMove(sources, target), roms);
     }
 
     [RelayCommand]

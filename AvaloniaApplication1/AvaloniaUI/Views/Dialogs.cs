@@ -124,3 +124,38 @@ public sealed class PropertiesWindow : Window
         Content = new ScrollViewer { Content = list };
     }
 }
+
+/// <summary>Lists planned changes (one line each) and asks to go ahead; <see cref="Confirmed"/> holds the answer.</summary>
+public sealed class PreviewWindow : Window
+{
+    public bool Confirmed { get; private set; }
+
+    public PreviewWindow(string title, string summary, IEnumerable<string> lines, string confirmText)
+    {
+        Title = title;
+        Width = 820;
+        Height = 480;
+        WindowStartupLocation = WindowStartupLocation.CenterOwner;
+
+        var ok = new Button { Content = confirmText, IsDefault = true };
+        var cancel = new Button { Content = "Cancel", IsCancel = true };
+        ok.Click += (_, _) => { Confirmed = true; Close(); };
+        cancel.Click += (_, _) => Close();
+
+        var buttons = new StackPanel
+        {
+            Orientation = Orientation.Horizontal, Spacing = 8, HorizontalAlignment = HorizontalAlignment.Right,
+            Margin = new Thickness(0, 10, 0, 0), Children = { cancel, ok },
+        };
+        var header = new TextBlock { Text = summary, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 8) };
+        var list = new ListBox
+        {
+            ItemsSource = lines.ToList(),
+            FontFamily = new FontFamily("Cascadia Mono, Consolas, monospace"),
+            FontSize = 11,
+        };
+        DockPanel.SetDock(header, Dock.Top);
+        DockPanel.SetDock(buttons, Dock.Bottom);
+        Content = new DockPanel { Margin = new Thickness(16), Children = { header, buttons, list } };
+    }
+}
