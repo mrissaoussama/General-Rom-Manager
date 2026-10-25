@@ -172,7 +172,7 @@ game data, not Wii), gbc 367, nsp 97, pkg 56, cso 46, iso 33).
 - [x] GameCube/Wii: ISO, CISO, RVZ and WIA (disc header read from the uncompressed `dhead` copy).
 - [x] NES (iNES/NES 2.0 header + DAT names).
 - [x] Genesis/MD (incl. SMD interleave), Master System, Game Gear, PC Engine: header parsers + DAT providers.
-- [ ] Dreamcast GDI/CHD.
+- [x] Dreamcast GDI and GD-ROM CHD (IP.BIN). Still open: CDI.
 - [x] Wii U: TMD and WUD/WUX read without keys; cdecrypt is optional and no longer bundled (ADR 0002). Still open: in-process meta.xml decryption. Only decrypt `meta.xml`
       when the title key is available.
 - [ ] Switch: missing-update/DLC report (the backend exists in `SwitchManager.GetMissingUpdates`)
@@ -201,17 +201,18 @@ game data, not Wii), gbc 367, nsp 97, pkg 56, cso 46, iso 33).
 - [x] Box art in the details panel: `ImageCache` downloads URLs once into `Cache/Images`.
 - [x] **Cards toggle** (`ItemsRepeater` + `UniformGridLayout`, covers load lazily per realized card).
 - [x] Embedded covers: Switch control-NCA icon, PS4 icon0.png, 3DS SMDH (CIA), DS banner, PSP ICON0.
-- [ ] libretro-thumbnails for cartridges; 3DS icons for .3ds/.cxi; PS4 thumbnails still stored as hex.
+- [x] libretro-thumbnails box art URLs for DAT-matched cartridges (NES/SNES/GB/GBC/GBA/N64/Sega/PCE).
+- [ ] 3DS icons for .3ds/.cxi; PS4 thumbnails still stored as hex.
 - [ ] Test the card view with 5k+ rows; release cover bitmaps for cards scrolled far away.
 - [x] **Filters**: type, region, unnamed only, text search (title, TitleID, path).
-- [ ] Filters: has/no update, language, format, duplicates.
-- [ ] **Per-file scan progress** in the status bar with cancel. Errors are clickable and show the
-      file and reason.
-- [ ] Drag-and-drop a folder onto the window to add it as a ROM root (with console auto-detect).
+- [x] Filters: has/no update, duplicates (same title ID, type and version).
+- [ ] Filters: language, format.
+- [x] Per-file scan progress with cancel; unrecognised files listed from a button on the console page.
+- [ ] Per-file failure reasons (needs `ParseResult` diagnostics, 3.2).
+- [x] Drag-and-drop a folder onto the window to add it as a ROM root (`ConsoleDetector` ranks consoles by extension).
 - [x] Rename shows an old → new preview (dry run of the real renamer).
-- [ ] Move preview.
-- [ ] Settings: validate paths (green/red), show the key status for Switch (`prod.keys` version,
-      `title.keys` count), and add a "Download title DBs" button with progress.
+- [x] Move preview (dry run of `RomMover`).
+- [x] Settings: live path status, Switch key status (`SwitchKeyStatus`, never shows key values), "Download title databases" button.
 - [x] Remember window position, size and maximized state; ignore positions on disconnected monitors.
 - [x] Keyboard: Ctrl+F search, F5 scan all, Ctrl+D dashboard, Ctrl+L log, Del delete (confirmed),
       F2 rename, Enter properties, Shift+F5 full rescan.
