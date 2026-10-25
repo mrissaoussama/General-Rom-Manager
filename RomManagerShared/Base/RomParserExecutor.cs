@@ -9,7 +9,7 @@ public class RomParserExecutor<T> where T : GamingConsole
 
     public RomParserExecutor(IEnumerable<IRomParser<T>> titleparsers)
     {
-        Parsers = titleparsers.ToList() ;
+        Parsers = [.. titleparsers.OrderByDescending(p => p.Extensions.Count)];
     }
 
     public void AddParser(IRomParser<T> parser)
@@ -28,6 +28,7 @@ public class RomParserExecutor<T> where T : GamingConsole
             try
             {
                 parsedRomList = await parser.ProcessFile(file);
+                parsedRomList?.RemoveAll(IsEmpty);
                 if (parsedRomList == null || parsedRomList.Count == 0)
                 {
                     continue;
@@ -62,6 +63,10 @@ public class RomParserExecutor<T> where T : GamingConsole
         }
         return mergedRomList;
     }
+    // A parser that matched the extension but found nothing usable.
+    private static bool IsEmpty(Rom rom) =>
+        string.IsNullOrWhiteSpace(rom.TitleID) && (rom.Titles is null || rom.Titles.Count == 0);
+
     public List<string> GetSupportedExtensions()
     {
         if (Parsers.Count == 0)
