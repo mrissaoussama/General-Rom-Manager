@@ -1,6 +1,7 @@
 ﻿using RomManagerShared.Base;
 using RomManagerShared.Interfaces;
 using RomManagerShared.Utils;
+using RomManagerShared.WiiU.Configuration;
 using System.Diagnostics;
 
 namespace RomManagerShared.WiiU.Parsers;
@@ -34,25 +35,33 @@ public class WiiUTMDTIKParser : IRomParser<WiiUConsole>
             return list;
         }
 
-        // Run the command-line tool "cdecrypt" with the path to the TMD file
-        string cdecryptPath = "cdecrypt"; // Update with the actual path to cdecrypt
-        string arguments = $"\"{titleTmdPath}\"";
-        ProcessStartInfo psi = new()
-        {
-            FileName = "WiiU\\Parsers\\cdecrypt.exe",
-            Arguments = arguments,
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            CreateNoWindow = false
-        };
-
-        using Process process = Process.Start(psi);
-        using StreamReader reader = process.StandardOutput;
-        string output = reader.ReadToEnd();
         string codeAppXmlPath = Path.Combine(directory, "code", "app.xml");
         string metaMetaXmlPath = Path.Combine(directory, "meta", "meta.xml");
-        var metadir = Path.GetDirectoryName(metaMetaXmlPath);
-        var appdir= Path.GetDirectoryName(codeAppXmlPath);
+        var metadir = Path.GetDirectoryName(metaMetaXmlPath)!;
+        var appdir = Path.GetDirectoryName(codeAppXmlPath)!;
+
+        // cdecrypt writes into the ROM folder; only run it when enabled and only remove what it created.
+        bool metaExisted = Directory.Exists(metadir);
+        bool appExisted = Directory.Exists(appdir);
+        bool decrypted = false;
+        if (!(metaExisted && appExisted))
+        {
+            if (!WiiUConfiguration.AllowCdecrypt())
+                return list;
+            ProcessStartInfo psi = new()
+            {
+                FileName = Path.Combine(AppContext.BaseDirectory, "WiiU", "Parsers", "cdecrypt.exe"),
+                Arguments = $"\"{titleTmdPath}\"",
+                WorkingDirectory = directory,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                CreateNoWindow = true
+            };
+            using Process process = Process.Start(psi)!;
+            await process.StandardOutput.ReadToEndAsync();
+            await process.WaitForExitAsync();
+            decrypted = true;
+        }
         Rom rom = new();
 
         if (File.Exists(codeAppXmlPath) )
@@ -84,10 +93,13 @@ public class WiiUTMDTIKParser : IRomParser<WiiUConsole>
             RomUtils.CopyNonNullProperties(rom, (Rom)metadataInstance);
             rom = (Rom)metadataInstance;
         }
-        if (Directory.Exists(metadir))
-            Directory.Delete(metadir, true);
-        if (Directory.Exists(appdir))
-            Directory.Delete(appdir, true);
+        if (decrypted)
+        {
+            if (!metaExisted && Directory.Exists(metadir))
+                Directory.Delete(metadir, true);
+            if (!appExisted && Directory.Exists(appdir))
+                Directory.Delete(appdir, true);
+        }
         rom.IsFolderFormat = true;
         rom.Path = path;
         list.Add(rom);
