@@ -17,82 +17,72 @@ public class WiiUTMDTIKParser : IRomParser<WiiUConsole>
 
     public async Task<List<Rom>> ProcessFile(string path)
     {
-        List<Rom> list = [];
-        string extension = Path.GetExtension(path)?.TrimStart('.').ToLower();
+        var tmd = WiiUFormats.ReadTmd(path);
+        if (tmd is null)
+            return [];
 
-        if (!Extensions.Contains(extension))
-        {
-            return list;
-        }
-
-        string directory = Path.GetDirectoryName(path);
-
-        string titleTikPath = Path.Combine(directory, $"title.tik");
-        string titleTmdPath = Path.Combine(directory, $"title.tmd");
-
-        if (!File.Exists(titleTikPath) || !File.Exists(titleTmdPath))
-        {
-            return list;
-        }
-
-        string codeAppXmlPath = Path.Combine(directory, "code", "app.xml");
-        string metaMetaXmlPath = Path.Combine(directory, "meta", "meta.xml");
-        var metadir = Path.GetDirectoryName(metaMetaXmlPath)!;
-        var appdir = Path.GetDirectoryName(codeAppXmlPath)!;
-
-        // cdecrypt writes into the ROM folder; only run it when enabled and only remove what it created.
+        string directory = Path.GetDirectoryName(path)!;
+        var metadir = Path.Combine(directory, "meta");
+        var appdir = Path.Combine(directory, "code");
         bool metaExisted = Directory.Exists(metadir);
         bool appExisted = Directory.Exists(appdir);
+
+        // Optional: a user-supplied cdecrypt extracts meta/code for names and icons. It writes into the
+        // title folder, so only folders it created are removed afterwards.
         bool decrypted = false;
-        if (!(metaExisted && appExisted))
+        if (!(metaExisted && appExisted) && WiiUConfiguration.AllowCdecrypt()
+            && File.Exists(Path.Combine(directory, "title.tik")))
         {
-            if (!WiiUConfiguration.AllowCdecrypt())
-                return list;
-            ProcessStartInfo psi = new()
+            var tool = WiiUConfiguration.GetCdecryptPath();
+            if (File.Exists(tool))
             {
-                FileName = Path.Combine(AppContext.BaseDirectory, "WiiU", "Parsers", "cdecrypt.exe"),
-                Arguments = $"\"{titleTmdPath}\"",
-                WorkingDirectory = directory,
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                CreateNoWindow = true
-            };
-            using Process process = Process.Start(psi)!;
-            await process.StandardOutput.ReadToEndAsync();
-            await process.WaitForExitAsync();
-            decrypted = true;
+                ProcessStartInfo psi = new()
+                {
+                    FileName = tool,
+                    Arguments = $"\"{path}\"",
+                    WorkingDirectory = directory,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    CreateNoWindow = true
+                };
+                using Process process = Process.Start(psi)!;
+                await process.StandardOutput.ReadToEndAsync();
+                await process.WaitForExitAsync();
+                decrypted = true;
+            }
+            else
+            {
+                FileUtils.Log($"[WiiU] cdecrypt not found at '{tool}'");
+            }
         }
+
         Rom rom = new();
+        var appXml = Path.Combine(appdir, "app.xml");
+        if (File.Exists(appXml))
+            rom = WiiUUtils.ParseAppXml(await File.ReadAllTextAsync(appXml), rom);
 
-        if (File.Exists(codeAppXmlPath) )
+        var metaXml = Path.Combine(metadir, "meta.xml");
+        if (File.Exists(metaXml))
         {
-            string appXmlContent = await File.ReadAllTextAsync(codeAppXmlPath);
-            rom = WiiUUtils.ParseAppXml(appXmlContent, rom);
+            rom = WiiUUtils.ParseMetaXml(await File.ReadAllTextAsync(metaXml), rom);
+            // Icons only survive when the folder was already there.
+            if (!decrypted || metaExisted)
+                rom.AddImages(new[] { "iconTex.tga", "bootTvTex.tga", "bootDrcTex.tga" }
+                    .Select(name => Path.Combine(metadir, name))
+                    .Where(File.Exists));
         }
 
-        if (  File.Exists(metaMetaXmlPath))
-        {
-            string metaXmlContent = await File.ReadAllTextAsync(metaMetaXmlPath);
-            rom = WiiUUtils.ParseMetaXml(metaXmlContent, rom);
-            List<string> images = [];
-            var iconTexpath = Path.Combine(metadir, "iconTex.tga");
-            if (File.Exists(iconTexpath))
-                images.Add(iconTexpath);
-            var bootTvTexpath = Path.Combine(metadir, "bootTvTex.tga");
-            if (File.Exists(bootTvTexpath))
-                images.Add(bootTvTexpath);
-            var bootDrcTexpath = Path.Combine(metadir, "bootDrcTex.tga");
-            if (File.Exists(bootDrcTexpath))
-                images.Add(bootDrcTexpath);
-            rom.AddImages(images);
-        }
-        var metadataClass = WiiUUtils.GetRomMetadataClass(rom.TitleID);
+        // The TMD is authoritative for ID and version.
+        rom.TitleID = tmd.Value.TitleId;
+        rom.Version = tmd.Value.Version.ToString();
+        var metadataClass = WiiUUtils.GetRomMetadataClass(rom.TitleID) ?? typeof(WiiUGame);
         if (metadataClass != rom.GetType())
         {
-            var metadataInstance = Activator.CreateInstance(metadataClass);
-            RomUtils.CopyNonNullProperties(rom, (Rom)metadataInstance);
-            rom = (Rom)metadataInstance;
+            var typed = (Rom)Activator.CreateInstance(metadataClass)!;
+            RomUtils.CopyNonNullProperties(rom, typed);
+            rom = typed;
         }
+
         if (decrypted)
         {
             if (!metaExisted && Directory.Exists(metadir))
@@ -102,8 +92,6 @@ public class WiiUTMDTIKParser : IRomParser<WiiUConsole>
         }
         rom.IsFolderFormat = true;
         rom.Path = path;
-        list.Add(rom);
-        return list;
+        return [rom];
     }
- 
 }

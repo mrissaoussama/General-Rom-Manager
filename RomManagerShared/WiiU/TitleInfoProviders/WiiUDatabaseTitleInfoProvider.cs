@@ -15,7 +15,12 @@ public class WiiUDatabaseTitleInfoProvider : TitleInfoProvider<WiiUConsole>
     }    public override async Task<Rom> GetTitleInfo(Rom rom)
     {
 
-        var titleInfoDto =await TitlesDatabase.GetByPropertyAsync(nameof(WiiUWikiBrewTitleDTO.TitleID),rom.TitleID);
+        // Disc images only expose a product code.
+        var titleInfoDto = rom.TitleID is not null
+            ? await TitlesDatabase.GetByPropertyAsync(nameof(WiiUWikiBrewTitleDTO.TitleID), rom.TitleID)
+            : rom.ProductCode is not null
+                ? await TitlesDatabase.GetByPropertyAsync(nameof(WiiUWikiBrewTitleDTO.ProductCode), rom.ProductCode)
+                : null;
         if (titleInfoDto is not null) { 
             
            var newrom= WiiUWikiBrewTitleDTO.ToRom(rom, titleInfoDto);

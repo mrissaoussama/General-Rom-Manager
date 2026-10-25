@@ -9,6 +9,12 @@ public static class WiiUConfiguration
         return RomManagerConfiguration.GetPathOrDefault("WiiU:TitleDB:Path", "Data/WiiU/titledb.xml");
     }
 
+    /// <summary>User-supplied cdecrypt; not shipped with the app.</summary>
+    public static string GetCdecryptPath()
+    {
+        return RomManagerConfiguration.GetPathOrDefault("WiiU:CdecryptPath", "Tools/cdecrypt.exe");
+    }
+
     /// <summary>Opt-in: cdecrypt extracts into the ROM folder.</summary>
     public static bool AllowCdecrypt()
     {

@@ -65,7 +65,8 @@ public class RomParserExecutor<T> where T : GamingConsole
     }
     // A parser that matched the extension but found nothing usable.
     private static bool IsEmpty(Rom rom) =>
-        string.IsNullOrWhiteSpace(rom.TitleID) && (rom.Titles is null || rom.Titles.Count == 0);
+        string.IsNullOrWhiteSpace(rom.TitleID) && string.IsNullOrWhiteSpace(rom.ProductCode)
+        && (rom.Titles is null || rom.Titles.Count == 0);
 
     public List<string> GetSupportedExtensions()
     {

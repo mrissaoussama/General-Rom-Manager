@@ -1,9 +1,10 @@
 ﻿using RomManagerShared.Base;
 using RomManagerShared.Interfaces;
-using System.Text;
+using RomManagerShared.Utils;
 
 namespace RomManagerShared.WiiU.Parsers;
 
+/// <summary>Disc images: only the product code is readable without the per-disc key; names come from the title DB.</summary>
 public class WiiUWudWuxParser : IRomParser<WiiUConsole>
 {
     public List<string> Extensions { get; set; }
@@ -13,45 +14,22 @@ public class WiiUWudWuxParser : IRomParser<WiiUConsole>
         Extensions = ["wud", "wux"];
     }
 
-    public async Task<List<Rom>> ProcessFile(string path)
+    public Task<List<Rom>> ProcessFile(string path)
     {
-        List<Rom> list = [];
-        string extension = Path.GetExtension(path)?.TrimStart('.').ToLower();
-
-        if (!Extensions.Contains(extension))
+        try
         {
-            return list;
-        }
+            var productCode = WiiUFormats.ReadDiscProductCode(path);
+            if (productCode is null)
+                return Task.FromResult<List<Rom>>([]);
 
-        string productCode;
-        if (extension == "wud")
+            var game = new WiiUGame { Path = path, ProductCode = productCode, Size = FileUtils.GetFileSize(path) };
+            game.AddRegion(WiiUFormats.RegionFromProductCode(productCode));
+            return Task.FromResult<List<Rom>>([game]);
+        }
+        catch (Exception ex)
         {
-            productCode = await GetProductCodeFromOffset(path, 0x0);
+            FileUtils.Log($"[WiiU disc] {path}: {ex.Message}");
+            return Task.FromResult<List<Rom>>([]);
         }
-        else 
-        {
-            productCode = await GetProductCodeFromOffset(path, 0x2F0000);
-        }
-
-        if (!productCode.StartsWith("WUP"))
-        {
-            return list;
-        }
-
-        WiiUGame wiiUGame = new()
-        { Path = path,
-            ProductCode = productCode
-        };
-        list.Add(wiiUGame);
-        return list;
-    }
-
-    private static async Task<string> GetProductCodeFromOffset(string filePath, long offset)
-    {
-        using FileStream fileStream = File.OpenRead(filePath);
-        fileStream.Seek(offset, SeekOrigin.Begin);
-        byte[] buffer = new byte[22];
-        await fileStream.ReadAsync(buffer);
-        return Encoding.ASCII.GetString(buffer);
     }
 }
