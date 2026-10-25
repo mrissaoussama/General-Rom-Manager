@@ -73,20 +73,20 @@ there is likely pending model drift. The scanned **library is not persisted**.
 - ViewModels use CommunityToolkit.Mvvm source generators. Grid columns come from
   `IConsoleViewModel.GetColumnDescriptors()`.
 
-## Console support matrix (tested against real files, 2026-10-25)
+## Console support matrix (tested against real files, 2026-10-25, after phase 2 fixes)
 
 | Console | Formats | Status |
 |---|---|---|
-| Switch | nsp, xci, nsz | NSP ok via header scan; LibHac path fails (tickets not imported); NSZ IDs only |
-| 3DS | cia | Broken (NRE) |
-| DS / GB / GBC / GBA / SNES / N64 / Saturn(mdf) | header | OK, raw header titles |
-| PS2 | iso | ISO9660 ok; UDF (DVD9) fails; duplicate game entries; no CHD/CSO |
-| PS3 | PARAM.SFO folder, pkg | SFO ok; pkg needs Python + `aenum` |
-| PS4 | pkg | OK |
-| PSP | iso, pkg | ISO ok but extra empty entry; pkg needs Python |
+| Switch | nsp, xci, nsz | NSP: LibHac with ticket import (names from NACP). NSZ: IDs/versions from header scan. XCI untested |
+| 3DS | cia | OK; updates/DLC have no SMDH, titles come from title DB |
+| DS / GB / GBC / GBA / SNES / N64 / Saturn(mdf) | header | OK, raw header titles (DS falls back to file name for invalid headers) |
+| PS2 | iso | OK via SYSTEM.CNF, ISO9660 + UDF. No CHD/CSO |
+| PS3 | PARAM.SFO folder, pkg | OK (managed PKG reader) |
+| PS4 | pkg | OK (PS4_Tools) |
+| PSP | iso, pkg | OK (managed SFO + PKG readers) |
 | PS Vita | vpk, sfo | vpk ok |
-| Wii | wbfs, wad | wbfs ok; wad broken (writes to a directory path) |
-| Wii U | wux/wud, tmd, xml | wux returns empty rom; tmd ok via cdecrypt.exe (slow, writes files) |
-| OG Xbox | iso, xbe | OK; writes icon folder into base dir |
-| Xbox 360 | iso, xex | Returns nothing, logs nothing |
+| Wii | wbfs, wad | OK |
+| Wii U | wux/wud, tmd, xml | Decrypted folders (code/meta) ok; tmd needs opt-in `WiiU:AllowCdecrypt`; wux not parsed |
+| OG Xbox | iso, xbe | OK; icons cached under Cache/OriginalXbox |
+| Xbox 360 | iso, xex | Needs `xextool.exe` (Xbox360:XexToolPath); skipped with a log line otherwise |
 | GameCube, PS1, NES, Genesis… | — | Not supported |

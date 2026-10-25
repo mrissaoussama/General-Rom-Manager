@@ -47,6 +47,8 @@ public class PS2RomParser : IRomParser<PS2Console>
 
             // SYSTEM.CNF names the boot ELF, which is the title ID. Fall back to scanning the root.
             var bootFile = ReadBootFile(disc);
+            if (bootFile is not null && PS2Utils.GetRegionFile(bootFile) is null)
+                bootFile = null; // e.g. cheat discs booting a custom ELF
             var candidates = bootFile is not null
                 ? [bootFile]
                 : disc.Root.GetFiles().Select(file => file.Name.Split(';')[0]);
