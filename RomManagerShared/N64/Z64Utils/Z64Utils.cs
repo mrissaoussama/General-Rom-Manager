@@ -14,7 +14,8 @@ public class Z64Utils
        ,
             Path = filePath,
             Version = n64Rom.Version.ToString(),
-            Developer = n64Rom.Developer
+            Developer = n64Rom.Developer,
+            Size = new FileInfo(filePath).Length,
         };
         game.AddRegion(GetRegion(n64Rom.CountryCode));
 
@@ -200,23 +201,46 @@ public class Nintendo64RomMetadata
 
     public byte[] RawRom { get; set; }
 
-    public Nintendo64RomMetadata(string file) : this(File.ReadAllBytes(file))
+    // Only the header and boot code (first 0x1000 bytes) are needed; full ROMs are 8-64 MB.
+    public Nintendo64RomMetadata(string file) : this(ReadHeader(file))
     {
-
     }
+
+    private static byte[] ReadHeader(string file)
+    {
+        using var fs = RomManagerShared.Utils.FileUtils.OpenRead(file);
+        if (fs.Length < 0x1000 || fs.Length % 4 != 0)
+            throw new Exception("Invalid n64 ROM Size");
+        var header = new byte[0x1000];
+        fs.ReadExactly(header);
+        return header;
+    }
+
     public Nintendo64RomMetadata(byte[] data)
     {
         if (data.Length < 0x1000 || data.Length % 4 != 0)
             throw new Exception("Invalid n64 ROM Size");
 
-        //check for endian swap
         if (data[0] != 0x80 && data[1] == 0x80)
         {
+            // .v64: byte-swapped 16-bit words
             RawRom = new byte[data.Length];
             for (int i = 0; i < data.Length; i += 2)
             {
                 RawRom[i + 0] = data[i + 1];
                 RawRom[i + 1] = data[i + 0];
+            }
+        }
+        else if (data[0] != 0x80 && data[3] == 0x80)
+        {
+            // .n64: little-endian 32-bit words
+            RawRom = new byte[data.Length];
+            for (int i = 0; i < data.Length; i += 4)
+            {
+                RawRom[i + 0] = data[i + 3];
+                RawRom[i + 1] = data[i + 2];
+                RawRom[i + 2] = data[i + 1];
+                RawRom[i + 3] = data[i + 0];
             }
         }
         else RawRom = data;

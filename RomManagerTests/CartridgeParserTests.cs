@@ -129,6 +129,19 @@ public sealed class CartridgeParserTests : IDisposable
     }
 
     [Fact]
+    public async Task N64_N64_LittleEndian_ReadsSameHeader()
+    {
+        var rom = N64Header();
+        for (int i = 0; i < rom.Length; i += 4)
+            Array.Reverse(rom, i, 4);
+
+        var game = (await new Nintendo64RomParser().ProcessFile(Write("mk.n64", rom))).Should().ContainSingle().Subject;
+
+        game.TitleID.Should().Be("KT");
+        game.Size.Should().Be(rom.Length);
+    }
+
+    [Fact]
     public async Task Snes_LoRom_ReadsTrimmedTitleAndRegion()
     {
         var rom = new byte[0x80000];
