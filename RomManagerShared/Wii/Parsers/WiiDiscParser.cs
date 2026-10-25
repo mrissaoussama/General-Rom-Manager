@@ -5,7 +5,7 @@ namespace RomManagerShared.Wii.Parsers;
 
 public class WiiDiscParser : IRomParser<WiiConsole>
 {
-    public List<string> Extensions { get; set; } = ["iso", "ciso"];
+    public List<string> Extensions { get; set; } = ["iso", "ciso", "rvz", "wia"];
 
     public Task<List<Rom>> ProcessFile(string path)
     {

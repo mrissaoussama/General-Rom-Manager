@@ -5,7 +5,7 @@ namespace RomManagerShared.GameCube.Parsers;
 
 public class GameCubeDiscParser : IRomParser<GameCubeConsole>
 {
-    public List<string> Extensions { get; set; } = ["iso", "gcm", "ciso"];
+    public List<string> Extensions { get; set; } = ["iso", "gcm", "ciso", "rvz", "wia"];
 
     public Task<List<Rom>> ProcessFile(string path)
     {
