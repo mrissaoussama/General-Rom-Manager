@@ -101,3 +101,8 @@ public class PS1Console : GamingConsole
 {
     public PS1Console() { Name = "PS1"; }
 }
+
+public class NESConsole : GamingConsole
+{
+    public NESConsole() { Name = "NES"; }
+}

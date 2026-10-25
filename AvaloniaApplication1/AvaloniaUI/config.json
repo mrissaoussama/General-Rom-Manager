@@ -3,6 +3,7 @@
     "BaseDirectory": "D:\\RomManager",
     "Plugins": "Plugins",
     "NoIntroDB": "NoIntro",
+    "Dats": "Data/DAT",
     "Database": "Data\\roms.db",
     "ErrorLogs": "Logs\\errors.log",
     "Cache": "Cache"
@@ -10,6 +11,9 @@
   "Consoles": {
     "N64": {
       "RomPath": "D:\\Roms\\N64"
+    },
+    "NES": {
+      "RomPath": "D:\\Roms\\NES"
     },
     "PSVita": {
       "RomPath": "D:\\Roms\\PSVita",
