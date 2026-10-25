@@ -145,7 +145,8 @@ These were all reproduced against real files with `tools/ParserHarness`.
   CRC+size) + `DatTitleInfoProvider<T>` (strips iNES/copier headers, normalises N64 byte order) sets the
   No-Intro title, regions, serial and verified hashes. DATs go in `Data/DAT` (`GlobalPaths:Dats`).
 - [ ] Redump DATs for discs (hash the whole image; slow, so opt-in).
-- [ ] DAT status in Settings, and trigger a rescan of cartridge consoles when DATs change. The legacy
+- [x] DAT folder status + "Open folder" on the dashboard.
+- [ ] Trigger a rescan of cartridge consoles when DATs change. The legacy
   EF-backed `NoIntroRomHashIdentifier` is unused and can go with a migration.
 
 ### 3.6 Plugins [P2]
@@ -168,10 +169,10 @@ game data, not Wii), gbc 367, nsp 97, pkg 56, cso 46, iso 33).
       LTRData.DiscUtils.
 - [x] PS1: cue/bin, iso, chd via `SYSTEM.CNF`. PBP (EBOOT/PS1 classics) handled by the PSP parser.
 - [x] PSP: ICON0.PNG from ISO/PBP and the DS banner icon + English title are cached under `Cache/Icons` as covers.
-- [x] GameCube/Wii: ISO, CISO done. Still open: RVZ/WIA (the disc header holds ID6 and title in the first 0x440
-      bytes, even for RVZ). [P1, you have GameCube files]
+- [x] GameCube/Wii: ISO, CISO, RVZ and WIA (disc header read from the uncompressed `dhead` copy).
 - [x] NES (iNES/NES 2.0 header + DAT names).
-- [ ] Genesis/MD, Master System, PCE, Dreamcast GDI/CHD.
+- [x] Genesis/MD (incl. SMD interleave), Master System, Game Gear, PC Engine: header parsers + DAT providers.
+- [ ] Dreamcast GDI/CHD.
 - [x] Wii U: TMD and WUD/WUX read without keys; cdecrypt is optional and no longer bundled (ADR 0002). Still open: in-process meta.xml decryption. Only decrypt `meta.xml`
       when the title key is available.
 - [ ] Switch: missing-update/DLC report (the backend exists in `SwitchManager.GetMissingUpdates`)
@@ -199,19 +200,19 @@ game data, not Wii), gbc 367, nsp 97, pkg 56, cso 46, iso 33).
 - [ ] Console icons in the sidebar.
 - [x] Box art in the details panel: `ImageCache` downloads URLs once into `Cache/Images`.
 - [x] **Cards toggle** (`ItemsRepeater` + `UniformGridLayout`, covers load lazily per realized card).
-- [ ] More cover sources: Switch NACP icon, PS4 icon0.png, 3DS SMDH, libretro-thumbnails for cartridges.
+- [x] Embedded covers: Switch control-NCA icon, PS4 icon0.png, 3DS SMDH (CIA), DS banner, PSP ICON0.
+- [ ] libretro-thumbnails for cartridges; 3DS icons for .3ds/.cxi; PS4 thumbnails still stored as hex.
 - [ ] Test the card view with 5k+ rows; release cover bitmaps for cards scrolled far away.
-- [ ] **Filters**: unidentified only, has update or no update, region, language, format, duplicates,
-      and text search across title, TitleID and filename.
+- [x] **Filters**: type, region, unnamed only, text search (title, TitleID, path).
+- [ ] Filters: has/no update, language, format, duplicates.
 - [ ] **Per-file scan progress** in the status bar with cancel. Errors are clickable and show the
       file and reason.
 - [ ] Drag-and-drop a folder onto the window to add it as a ROM root (with console auto-detect).
-- [ ] Rename and move: show a preview table (old → new) before running. Undo already exists in
-      `OperationQueue`.
+- [x] Rename shows an old → new preview (dry run of the real renamer).
+- [ ] Move preview.
 - [ ] Settings: validate paths (green/red), show the key status for Switch (`prod.keys` version,
       `title.keys` count), and add a "Download title DBs" button with progress.
-- [ ] Remember the window position as well as the size, and handle DPI and multi-monitor setups.
-      The window currently restores at an offset.
+- [x] Remember window position, size and maximized state; ignore positions on disconnected monitors.
 - [x] Keyboard: Ctrl+F search, F5 scan all, Ctrl+D dashboard, Ctrl+L log, Del delete (confirmed),
       F2 rename, Enter properties, Shift+F5 full rescan.
 - [x] Accessibility: real `Menu` control, no emoji in menu labels.

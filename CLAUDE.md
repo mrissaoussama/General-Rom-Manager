@@ -41,7 +41,7 @@ dotnet run --project tools/ParserHarness -- PS4Console "Y:\roms\PS4" 5
 
 ## How the pipeline works (short)
 
-1. `App.RegisterConsoleServices` reflects over `RomManagerShared` and, for every `GamingConsole`
+1. `ConsoleModules.Register` (ADR 0003) reflects over `RomManagerShared` plus any `Modules/*.dll` and, for every `GamingConsole`
    subtype `T`, registers (scoped): all `IRomParser<T>`, `ITitleInfoProvider<T>`,
    `IUpdateVersionProvider<T>`, `IRomOrganizer<T>`, `RomParserExecutor<T>`,
    `TitleInfoProviderManager<T>`, and `ConsoleManager<T>` (or its subclass, e.g. `SwitchManager`).

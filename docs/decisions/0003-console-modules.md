@@ -1,6 +1,6 @@
 # ADR 0003 — Console modules and metadata providers
 
-- Status: proposed
+- Status: accepted (step 1 done: `RomManagerShared/Base/ConsoleModules.cs`; project splits pending)
 - Date: 2026-10-25
 
 ## Context
