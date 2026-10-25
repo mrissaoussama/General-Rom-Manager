@@ -158,7 +158,37 @@ public class SwitchRomNSPXCIParser : IRomParser<SwitchConsole>, IHasRequirements
         rom.Path = path;
         if (!string.IsNullOrEmpty(title.Name))
             rom.AddTitleName(title.Name);
+        if (rom is not SwitchDLC)
+            rom.Icon = IconCache.Save("Switch", rom.TitleID, ReadIcon(title), ".jpg");
         return rom;
+    }
+
+    // Preferred icon languages; any other icon_*.dat is used as a last resort.
+    private static readonly string[] IconLanguages = ["AmericanEnglish", "BritishEnglish", "Japanese"];
+
+    // The control NCA romfs holds icon_<Language>.dat (JPEG) next to control.nacp; only that file is read.
+    private static byte[]? ReadIcon(Title title)
+    {
+        if (title.ControlNca is null) return null;
+        try
+        {
+            using var romfs = title.ControlNca.OpenFileSystem(NcaSectionType.Data, IntegrityCheckLevel.None);
+            var names = romfs.EnumerateEntries("/", "icon_*.dat").Select(e => e.Name).ToList();
+            var name = IconLanguages.Select(l => $"icon_{l}.dat").FirstOrDefault(names.Contains) ?? names.FirstOrDefault();
+            if (name is null) return null;
+            using var file = new UniqueRef<IFile>();
+            romfs.OpenFile(ref file.Ref, ("/" + name).ToU8Span(), OpenMode.Read).ThrowIfFailure();
+            file.Get.GetSize(out long size).ThrowIfFailure();
+            if (size is <= 0 or > 1024 * 1024) return null;
+            var data = new byte[size];
+            file.Get.Read(out _, 0, data).ThrowIfFailure();
+            return data;
+        }
+        catch (Exception ex)
+        {
+            FileUtils.Log($"[SwitchNSPXCI] icon {title.Id:X16}: {ex.Message}");
+            return null;
+        }
     }
 
     // Fallback when metadata can't be decrypted: title IDs from NCA headers only (header key suffices).
