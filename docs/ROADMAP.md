@@ -102,7 +102,7 @@ These were all reproduced against real files with `tools/ParserHarness`.
 
 ## Phase 3: Architecture (1–2 weeks)
 
-### 3.1 Persist the library and scan incrementally [P1]
+### 3.1 Persist the library and scan incrementally [P1] — done (`LibraryScanner`, `LibraryFile`, JSON snapshots); watcher still open
 - New entities: `LibraryFile` (Path, Size, MTimeUtc, Console, ScanVersion, LastScanUtc, Error?)
   1→N `Rom`. Add an index on Path.
 - The scanner diffs the file system against `LibraryFile`: new or changed files are parsed, deleted
@@ -114,7 +114,8 @@ These were all reproduced against real files with `tools/ParserHarness`.
 - A file watcher (`FileSystemWatcher`) per ROM root, debounced, with a fallback for network shares
   where watchers are unreliable.
 
-### 3.2 Scanner service off the UI thread [P1]
+### 3.2 Scanner service off the UI thread [P1] — partly done
+- [x] Parsing runs off the UI thread in parallel batches (`LibraryScanner.MaxParallelism`, default 4); enrichment and DB writes stay sequential. Progress + cancel in the UI.
 - `ILibraryScanner` (in Shared): `Channel<string>` producer → `Parallel.ForEachAsync`
   (MaxDegreeOfParallelism configurable; lower it for network drives) → batched DB writes →
   `IProgress<ScanProgress>` (file, count, errors).
