@@ -6,6 +6,8 @@ public partial class MainViewModel : ViewModelBase
     /// <summary>Exposes the root service provider for the context menu handler.</summary>
     public IServiceProvider ServiceProvider => _serviceProvider;
     private bool _configLoaded = false;
+    // Startup and Refresh can both trigger a load; overlapping runs duplicated the tabs.
+    private readonly SemaphoreSlim _configLock = new(1, 1);
     public static Dictionary<Type, string> RomPaths = LoadConsolePaths();
     public List<Type>? ConsoleTypes { get; set; }
 
@@ -217,12 +219,12 @@ public partial class MainViewModel : ViewModelBase
 // Update LoadConfigAsync method in MainViewModel.cs
     private async Task LoadConfigAsync()
     {
-        // Return early if already loaded (unless refresh requested)
-        if (_configLoaded)
-            return;
-
+        await _configLock.WaitAsync();
         try
         {
+            if (_configLoaded)
+                return;
+
             // Clear existing view models first
             await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
             {
@@ -276,6 +278,10 @@ public partial class MainViewModel : ViewModelBase
         catch (Exception ex)
         {
             FileUtils.Log($"[LoadConfigAsync] Error loading config: {ex}");
+        }
+        finally
+        {
+            _configLock.Release();
         }
     }
 }

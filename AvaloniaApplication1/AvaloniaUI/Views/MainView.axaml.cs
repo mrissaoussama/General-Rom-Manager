@@ -816,7 +816,12 @@ public class MainView : UserControl
         };
         statusText.Bind(TextBox.TextProperty, new Binding("StatusMessage") { Source = console });
 
+        var cancelScanBtn = new Button { Content = "Cancel", Padding = new Thickness(6, 0), FontSize = 11 };
+        cancelScanBtn.Bind(Button.IsVisibleProperty, new Binding("IsLoading") { Source = console });
+        cancelScanBtn.Click += (_, _) => console.CancelScan();
+
         statusPanel.Children.Add(progressBar);
+        statusPanel.Children.Add(cancelScanBtn);
         statusPanel.Children.Add(statusText);
         DockPanel.SetDock(statusPanel, Dock.Top);
         dockPanel.Children.Add(statusPanel);
@@ -880,8 +885,36 @@ public class MainView : UserControl
         BuildColumnsFromDescriptors(dataGrid, console);
         _consoleDataGrids[console.ConsoleName] = dataGrid;
 
-        dockPanel.Children.Add(dataGrid);
+        dockPanel.Children.Add(new Grid { Children = { dataGrid, BuildEmptyState(console) } });
         return dockPanel;
+    }
+
+    private Control BuildEmptyState(IConsoleViewModel console)
+    {
+        var settingsBtn = new Button { Content = "Open Settings…", HorizontalAlignment = HorizontalAlignment.Center };
+        settingsBtn.Click += (_, _) => { if (DataContext is MainViewModel vm) vm.OpenSettingsCommand.Execute(null); };
+        var refreshBtn = new Button { Content = "⟳ Scan now", HorizontalAlignment = HorizontalAlignment.Center };
+        refreshBtn.Click += async (_, _) => await console.LoadData();
+
+        var panel = new StackPanel
+        {
+            Spacing = 8,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Children =
+            {
+                new TextBlock { Text = $"No {console.ConsoleName} ROMs yet", FontSize = 16, FontWeight = FontWeight.SemiBold, HorizontalAlignment = HorizontalAlignment.Center },
+                new TextBlock
+                {
+                    Text = "Choose the folder that holds your ROMs in Settings, then scan it.",
+                    Opacity = 0.7,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                },
+                new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, HorizontalAlignment = HorizontalAlignment.Center, Children = { settingsBtn, refreshBtn } },
+            },
+        };
+        panel.Bind(IsVisibleProperty, new Binding(nameof(IConsoleViewModel.ShowEmptyState)) { Source = console });
+        return panel;
     }
 
     private void ApplySearchFilter()

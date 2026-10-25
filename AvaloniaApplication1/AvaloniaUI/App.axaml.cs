@@ -111,6 +111,8 @@ public partial class App : Application
             desktop.MainWindow.Opened += async (_, _) =>
             {
                 await OnboardingWindow.ShowIfFirstRunAsync(desktop.MainWindow);
+                // Cached libraries show immediately; only new/changed files are parsed.
+                await mainVm.RefreshCommand.ExecuteAsync(null);
             };
 
             // Persist window size on close

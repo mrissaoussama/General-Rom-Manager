@@ -19,6 +19,8 @@ public interface IConsoleViewModel
     ObservableCollection<RomViewModel> Roms { get; }
     RomViewModel SelectedRom { get; set; }
     bool IsLoading { get; }
+    /// <summary>True when nothing is loading and there are no roms to show.</summary>
+    bool ShowEmptyState { get; }
     bool IsIndeterminate { get; }
     double ProgressPercent { get; }
     string StatusMessage { get; set; }
@@ -173,6 +175,20 @@ public partial class ConsoleViewModel<T> : ViewModelBase , IConsoleViewModel whe
     {
         Roms = new ObservableCollection<RomViewModel>(roms.Select(r => new RomViewModel(r)));
     }
+
+    public bool ShowEmptyState => !IsLoading && Roms.Count == 0;
+
+    partial void OnIsLoadingChanged(bool value) => OnPropertyChanged(nameof(ShowEmptyState));
+
+    partial void OnRomsChanged(ObservableCollection<RomViewModel>? oldValue, ObservableCollection<RomViewModel> newValue)
+    {
+        if (oldValue is not null) oldValue.CollectionChanged -= OnRomsCollectionChanged;
+        newValue.CollectionChanged += OnRomsCollectionChanged;
+        OnPropertyChanged(nameof(ShowEmptyState));
+    }
+
+    private void OnRomsCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        => OnPropertyChanged(nameof(ShowEmptyState));
 
 
 
