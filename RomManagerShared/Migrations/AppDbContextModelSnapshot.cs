@@ -21,6 +21,44 @@ namespace RomManagerShared.Migrations
                 .HasAnnotation("Proxies:CheckEquality", false)
                 .HasAnnotation("Proxies:LazyLoading", true);
 
+            modelBuilder.Entity("RomManagerShared.Base.Library.LibraryFile", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Console")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("LastWriteUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Path")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RomsJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ScanVersion")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("ScannedUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("Size")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Console", "Path")
+                        .IsUnique();
+
+                    b.ToTable("LibraryFiles");
+                });
+
             modelBuilder.Entity("RomManagerShared.Base.Rating", b =>
                 {
                     b.Property<int>("Id")

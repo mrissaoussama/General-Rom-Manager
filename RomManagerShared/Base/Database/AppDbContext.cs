@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using RomManagerShared.Base;
+using RomManagerShared.Base.Library;
 using RomManagerShared.Configuration;
 using RomManagerShared.Utils;
 
@@ -26,6 +27,7 @@ public partial class AppDbContext : DbContext, IUnitOfWork
     public DbSet<Rating> Ratings { get; set; } = null!;
     public DbSet<RomHash> RomHashes { get; set; } = null!;
     public DbSet<RomHashProperty> RomHashProperties { get; set; } = null!;
+    public DbSet<LibraryFile> LibraryFiles { get; set; } = null!;
 
     // ── Configuration ─────────────────────────────────────────────────────
 
@@ -88,6 +90,10 @@ public partial class AppDbContext : DbContext, IUnitOfWork
             .WithMany(game => game.Updates)
             .HasForeignKey("RelatedGameId")
             .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<LibraryFile>()
+            .HasIndex(f => new { f.Console, f.Path })
+            .IsUnique();
 
         // Platform-specific model configurations are in partial methods
         ConfigureNintendoModels(modelBuilder);
