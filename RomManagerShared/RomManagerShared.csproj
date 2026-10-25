@@ -17,12 +17,6 @@
 		<None Update="PS4\PS4_Tools.dll">
 		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
-		<None Update="Utils\PKGUtils\PSN_get_pkg_info.py">
-		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-		<None Update="Utils\PKGUtils\PSN_get_pkg_inforequirements.txt">
-		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
 		<None Update="WiiU\Parsers\cdecrypt.exe">
 		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>

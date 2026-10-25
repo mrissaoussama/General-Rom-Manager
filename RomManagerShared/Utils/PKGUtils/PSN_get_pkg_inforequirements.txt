@@ -1,4 +1,0 @@
-pycryptodomex
-requests
-aenum
-fastxor
