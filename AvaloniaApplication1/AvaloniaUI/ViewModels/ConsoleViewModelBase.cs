@@ -90,6 +90,7 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
     private DataGridCollectionView CreateView(IList<RomViewModel> roms)
     {
         AssignGroupKeys(roms);
+        ComputeSets(roms);
         var view = new DataGridCollectionView(roms) { Filter = o => Matches((RomViewModel)o) };
         if (IsGrouped)
             view.GroupDescriptions.Add(new DataGridPathGroupDescription(nameof(RomViewModel.GroupKey)));
@@ -103,14 +104,41 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
     [ObservableProperty] private string _regionFilter = AnyOption;
     /// <summary>Only rows whose title is missing or just the file name (unidentified).</summary>
     [ObservableProperty] private bool _unnamedOnly;
+    public const string HasUpdate = "Has update", NoUpdate = "No update";
+    public IReadOnlyList<string> UpdateOptions { get; } = [AnyOption, HasUpdate, NoUpdate];
+    /// <summary>Games with or without an update in the library (other rows are hidden when set).</summary>
+    [ObservableProperty] private string _updateFilter = AnyOption;
+    /// <summary>Rows sharing title ID, type and version with another row.</summary>
+    [ObservableProperty] private bool _duplicatesOnly;
 
-    public bool IsFiltered => SearchText.Length > 0 || TypeFilter != AnyOption || RegionFilter != AnyOption || UnnamedOnly;
+    private HashSet<RomViewModel> _withUpdate = [];
+    private HashSet<RomViewModel> _duplicates = [];
+
+    public bool IsFiltered => SearchText.Length > 0 || TypeFilter != AnyOption || RegionFilter != AnyOption || UnnamedOnly
+        || UpdateFilter != AnyOption || DuplicatesOnly;
+
+    // Switch-style 16-char IDs share the first 13 chars across game/update/DLC; other consoles reuse the ID.
+    private static string BaseKey(RomViewModel r) =>
+        r.TitleID.Length == 16 ? r.TitleID[..13] : r.TitleID.Length > 0 ? r.TitleID : r.GroupKey;
+
+    private void ComputeSets(IList<RomViewModel> roms)
+    {
+        var updated = roms.Where(r => r.RomType == "Update").Select(BaseKey).ToHashSet();
+        _withUpdate = [.. roms.Where(r => r.RomType == "Game"
+            && (updated.Contains(BaseKey(r)) || (r.RomSource is Game { Updates.Count: > 0 })))];
+        _duplicates = [.. roms.Where(r => r.TitleID.Length > 0)
+            .GroupBy(r => (r.TitleID, r.RomType, r.Version))
+            .Where(g => g.Count() > 1)
+            .SelectMany(g => g)];
+    }
 
     private bool Matches(RomViewModel r)
     {
         if (TypeFilter != AnyOption && r.RomType != TypeFilter) return false;
         if (RegionFilter != AnyOption && !r.Region.Split(", ").Contains(RegionFilter)) return false;
         if (UnnamedOnly && !IsUnnamed(r)) return false;
+        if (UpdateFilter != AnyOption && (r.RomType != "Game" || _withUpdate.Contains(r) != (UpdateFilter == HasUpdate))) return false;
+        if (DuplicatesOnly && !_duplicates.Contains(r)) return false;
         var q = SearchText.Trim();
         return q.Length == 0
             || r.Title.Contains(q, StringComparison.OrdinalIgnoreCase)
@@ -125,6 +153,8 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
     partial void OnTypeFilterChanged(string value) => RefreshFilter();
     partial void OnRegionFilterChanged(string value) => RefreshFilter();
     partial void OnUnnamedOnlyChanged(bool value) => RefreshFilter();
+    partial void OnUpdateFilterChanged(string value) => RefreshFilter();
+    partial void OnDuplicatesOnlyChanged(bool value) => RefreshFilter();
 
     private void RefreshFilter()
     {
@@ -139,6 +169,8 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
         TypeFilter = AnyOption;
         RegionFilter = AnyOption;
         UnnamedOnly = false;
+        UpdateFilter = AnyOption;
+        DuplicatesOnly = false;
     }
 
     private void UpdateRegionOptions()
@@ -177,6 +209,7 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
     {
         OnPropertyChanged(nameof(ShowEmptyState));
         OnPropertyChanged(nameof(RomCount));
+        if (e is not null) ComputeSets(Roms);
     }
 
     partial void OnIsLoadingChanged(bool value) => OnPropertyChanged(nameof(ShowEmptyState));

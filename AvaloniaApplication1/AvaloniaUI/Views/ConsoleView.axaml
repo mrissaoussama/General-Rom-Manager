@@ -33,8 +33,12 @@
             <ComboBox ItemsSource="{Binding TypeOptions}" SelectedItem="{Binding TypeFilter}" MinWidth="110" />
             <TextBlock Text="Region" VerticalAlignment="Center" Classes="muted" Margin="6,0,0,0" />
             <ComboBox ItemsSource="{Binding RegionOptions}" SelectedItem="{Binding RegionFilter}" MinWidth="110" />
+            <TextBlock Text="Updates" VerticalAlignment="Center" Classes="muted" Margin="6,0,0,0" />
+            <ComboBox ItemsSource="{Binding UpdateOptions}" SelectedItem="{Binding UpdateFilter}" MinWidth="120" />
             <CheckBox Content="Unnamed only" IsChecked="{Binding UnnamedOnly}" Margin="6,0,0,0"
                       ToolTip.Tip="ROMs with no title or only their file name as title" />
+            <CheckBox Content="Duplicates" IsChecked="{Binding DuplicatesOnly}"
+                      ToolTip.Tip="Files with the same title ID, type and version as another file" />
             <Button Content="Clear filters" Classes="small" Command="{Binding ClearFiltersCommand}"
                     IsVisible="{Binding IsFiltered}" VerticalAlignment="Center" />
             <TextBlock Text="{Binding RomsView.Count, StringFormat='{}{0:N0} shown'}" Classes="muted"
