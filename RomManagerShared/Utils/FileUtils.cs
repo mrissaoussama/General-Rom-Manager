@@ -34,7 +34,7 @@ public class FileUtils
         new(path, FileMode.Open, FileAccess.Read, FileShare.Read);
 
     /// <summary>
-    /// Read-only view of a disc image; transparently decompresses .cso and .chd.
+    /// Read-only view of a disc image; transparently decompresses .cso, .zso and .chd.
     /// CHD CD images keep their 2448-byte frames, so read them with <see cref="RawCdReader"/>.
     /// </summary>
     public static Stream OpenDiscImage(string path)
@@ -45,9 +45,9 @@ public class FileUtils
             return chd ?? throw new InvalidDataException($"CHD open failed: {error}");
         }
         var file = OpenRead(path);
-        if (!path.EndsWith(".cso", StringComparison.OrdinalIgnoreCase))
+        if (!path.EndsWith(".cso", StringComparison.OrdinalIgnoreCase) && !path.EndsWith(".zso", StringComparison.OrdinalIgnoreCase))
             return file;
-        return CsoStream.TryOpen(file) ?? throw new InvalidDataException("Unsupported CSO variant");
+        return CsoStream.TryOpen(file) ?? throw new InvalidDataException("Unsupported CSO/ZSO variant");
     }
 
     /// <summary>Scratch folder under the cache (with trailing separator). Never the ROM folder.</summary>

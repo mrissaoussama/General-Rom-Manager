@@ -13,6 +13,7 @@ public static class PS2Utils
                                  .ToList();
         Extensions.Add("iso");
         Extensions.Add("cso");
+        Extensions.Add("zso");
         Extensions.Add("chd");
     }
     public static Region? GetRegionFile(string path)

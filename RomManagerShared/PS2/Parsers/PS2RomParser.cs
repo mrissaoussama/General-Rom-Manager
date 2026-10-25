@@ -22,7 +22,7 @@ public class PS2RomParser : IRomParser<PS2Console>
         if (!PS2Utils.IsPS2TitleIDFile(path))
             return Task.FromResult(list);
         string extension = Path.GetExtension(path).TrimStart('.').ToLowerInvariant();
-        bool isImage = extension is "iso" or "cso" or "chd";
+        bool isImage = extension is "iso" or "cso" or "zso" or "chd";
         if (!isImage)
         {
             var region = PS2Utils.GetRegionFile(path);

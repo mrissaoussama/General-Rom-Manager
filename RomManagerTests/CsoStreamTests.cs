@@ -87,4 +87,47 @@ public class CsoStreamTests
             File.Delete(path);
         }
     }
+
+    // "abcd" then a 2044-byte overlapping match at offset 4: 2048 bytes of "abcd" repeated.
+    private static byte[] Lz4AbcdBlock() =>
+        [0x4F, (byte)'a', (byte)'b', (byte)'c', (byte)'d', 0x04, 0x00, 255, 255, 255, 255, 255, 255, 255, 240];
+
+    [Fact]
+    public void Lz4DecodeBlock_HandlesLongOverlappingMatches()
+    {
+        var output = new byte[2048];
+
+        CsoStream.Lz4DecodeBlock(Lz4AbcdBlock(), output).Should().Be(2048);
+
+        for (int i = 0; i < output.Length; i++) output[i].Should().Be((byte)"abcd"[i % 4]);
+    }
+
+    [Fact]
+    public void ZsoStream_ReadsRawAndLz4Blocks()
+    {
+        var raw = new byte[0x800];
+        new Random(7).NextBytes(raw);
+        var lz4 = Lz4AbcdBlock();
+        var dataStart = 0x18 + 3 * 4;
+        var zso = new byte[dataStart + raw.Length + lz4.Length];
+        var s = zso.AsSpan();
+        BinaryPrimitives.WriteUInt32LittleEndian(s, 0x4F53495A); // ZISO
+        BinaryPrimitives.WriteUInt32LittleEndian(s[4..], 0x18);
+        BinaryPrimitives.WriteUInt64LittleEndian(s[8..], 0x1000);
+        BinaryPrimitives.WriteUInt32LittleEndian(s[0x10..], 0x800);
+        s[0x14] = 1;
+        BinaryPrimitives.WriteUInt32LittleEndian(s[0x18..], (uint)dataStart | 0x80000000);
+        BinaryPrimitives.WriteUInt32LittleEndian(s[0x1C..], (uint)(dataStart + raw.Length));
+        BinaryPrimitives.WriteUInt32LittleEndian(s[0x20..], (uint)zso.Length);
+        raw.CopyTo(zso, dataStart);
+        lz4.CopyTo(zso, dataStart + raw.Length);
+
+        using var stream = CsoStream.TryOpen(new MemoryStream(zso))!;
+        var all = new byte[0x1000];
+        stream.ReadExactly(all);
+
+        all.AsSpan(0, 0x800).ToArray().Should().Equal(raw);
+        all[0x800].Should().Be((byte)'a');
+        all[0xFFF].Should().Be((byte)'d');
+    }
 }

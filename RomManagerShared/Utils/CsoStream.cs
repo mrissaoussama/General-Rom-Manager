@@ -4,12 +4,14 @@ using System.IO.Compression;
 namespace RomManagerShared.Utils;
 
 /// <summary>
-/// Read-only seekable view of a CSO v1 (CISO, deflate) image as a plain ISO, so disc readers work unchanged.
-/// Header: "CISO", header size, total size (u64), block size, version, index shift; then one u32 per block + 1.
+/// Read-only seekable view of a CSO v1 (CISO, deflate) or ZSO (ZISO, LZ4) image as a plain ISO, so disc readers
+/// work unchanged. Header: magic, header size, total size (u64), block size, version, index shift; then one u32
+/// per block + 1.
 /// </summary>
 public sealed class CsoStream : Stream
 {
     private const uint Magic = 0x4F534943; // "CISO"
+    private const uint ZisoMagic = 0x4F53495A; // "ZISO"
     private const uint UncompressedFlag = 0x80000000;
     private readonly Stream _inner;
     private readonly uint[] _index;
@@ -19,9 +21,11 @@ public sealed class CsoStream : Stream
     private long _position;
     private long _cachedBlock = -1;
     private readonly byte[] _cache;
+    private readonly bool _lz4;
 
-    private CsoStream(Stream inner, uint[] index, int blockSize, int shift, long length)
+    private CsoStream(Stream inner, uint[] index, int blockSize, int shift, long length, bool lz4)
     {
+        _lz4 = lz4;
         _inner = inner;
         _index = index;
         _blockSize = blockSize;
@@ -30,13 +34,14 @@ public sealed class CsoStream : Stream
         _cache = new byte[blockSize];
     }
 
-    /// <summary>Opens a CSO v1, or returns null when the stream isn't one (e.g. GameCube CISO, ZSO).</summary>
+    /// <summary>Opens a CSO v1 or ZSO, or returns null when the stream isn't one (e.g. GameCube CISO).</summary>
     public static CsoStream? TryOpen(Stream inner)
     {
         Span<byte> header = stackalloc byte[0x18];
         inner.Position = 0;
         if (inner.ReadAtLeast(header, header.Length, throwOnEndOfStream: false) < header.Length) return null;
-        if (BinaryPrimitives.ReadUInt32LittleEndian(header) != Magic) return null;
+        var magic = BinaryPrimitives.ReadUInt32LittleEndian(header);
+        if (magic is not (Magic or ZisoMagic)) return null;
         var headerSize = BinaryPrimitives.ReadUInt32LittleEndian(header[4..]);
         var totalSize = (long)BinaryPrimitives.ReadUInt64LittleEndian(header[8..]);
         var blockSize = (int)BinaryPrimitives.ReadUInt32LittleEndian(header[0x10..]);
@@ -51,7 +56,7 @@ public sealed class CsoStream : Stream
         var index = new uint[blocks + 1];
         for (int i = 0; i < index.Length; i++)
             index[i] = BinaryPrimitives.ReadUInt32LittleEndian(raw.AsSpan(i * 4));
-        return new CsoStream(inner, index, blockSize, shift, totalSize);
+        return new CsoStream(inner, index, blockSize, shift, totalSize, magic == ZisoMagic);
     }
 
     public override int Read(byte[] buffer, int offset, int count) => Read(buffer.AsSpan(offset, count));
@@ -87,10 +92,43 @@ public sealed class CsoStream : Stream
         {
             var compressed = new byte[end - start];
             _inner.ReadAtLeast(compressed, compressed.Length, throwOnEndOfStream: false);
-            using var deflate = new DeflateStream(new MemoryStream(compressed), CompressionMode.Decompress);
-            deflate.ReadAtLeast(_cache, _blockSize, throwOnEndOfStream: false);
+            if (_lz4)
+                Lz4DecodeBlock(compressed, _cache);
+            else
+            {
+                using var deflate = new DeflateStream(new MemoryStream(compressed), CompressionMode.Decompress);
+                deflate.ReadAtLeast(_cache, _blockSize, throwOnEndOfStream: false);
+            }
         }
         _cachedBlock = block;
+    }
+
+    /// <summary>Decodes one raw LZ4 block (no frame); returns the bytes written.</summary>
+    public static int Lz4DecodeBlock(ReadOnlySpan<byte> src, Span<byte> dst)
+    {
+        int s = 0, d = 0;
+        while (s < src.Length)
+        {
+            var token = src[s++];
+            var literals = token >> 4;
+            if (literals == 15)
+                for (byte b = 255; b == 255 && s < src.Length; literals += b) b = src[s++];
+            literals = Math.Min(literals, Math.Min(src.Length - s, dst.Length - d));
+            src.Slice(s, literals).CopyTo(dst[d..]);
+            s += literals;
+            d += literals;
+            if (s + 2 > src.Length) break; // last sequence has literals only
+
+            var offset = src[s] | src[s + 1] << 8;
+            s += 2;
+            var match = (token & 0x0F) + 4;
+            if ((token & 0x0F) == 15)
+                for (byte b = 255; b == 255 && s < src.Length; match += b) b = src[s++];
+            if (offset == 0 || offset > d) throw new InvalidDataException("Bad LZ4 offset");
+            match = Math.Min(match, dst.Length - d);
+            for (int i = 0; i < match; i++, d++) dst[d] = dst[d - offset]; // may overlap
+        }
+        return d;
     }
 
     public override long Seek(long offset, SeekOrigin origin) => _position = origin switch
