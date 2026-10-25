@@ -23,7 +23,9 @@ public class WiiUWikiBrewTitleDTO : IExternalRomFormat<WiiUConsole>
             rom.AddRegion(Base.Region.Europe);
         if (title.Region == "USA")
             rom.AddRegion(Base.Region.USA);
-        rom.AddTitleName(title.Description!);
+        // DB name goes first so it replaces file-name placeholders in the UI.
+        if (!string.IsNullOrWhiteSpace(title.Description))
+            rom.Titles = [new RomTitle { Value = title.Description }, .. (rom.Titles ?? []).Where(t => t.Value != title.Description)];
         if (string.IsNullOrEmpty(rom.ProductCode))
             rom.ProductCode = title.ProductCode;
         if (title.TitleID is not null && rom.TitleID is null)
