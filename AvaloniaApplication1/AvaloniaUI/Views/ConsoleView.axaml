@@ -52,6 +52,8 @@
                          Value="{Binding ProgressPercent}" />
             <Button Content="Cancel" Classes="small" Command="{Binding CancelScanCommand}" IsVisible="{Binding IsLoading}" />
             <SelectableTextBlock Text="{Binding StatusMessage}" Classes="muted" VerticalAlignment="Center" />
+            <Button Content="{Binding UnrecognizedText}" Classes="small" Command="{Binding ShowUnrecognizedCommand}"
+                    IsVisible="{Binding UnrecognizedText, Converter={x:Static ObjectConverters.IsNotNull}}" />
         </StackPanel>
 
         <Grid ColumnDefinitions="*,4,300">

@@ -130,7 +130,7 @@ public sealed class PreviewWindow : Window
 {
     public bool Confirmed { get; private set; }
 
-    public PreviewWindow(string title, string summary, IEnumerable<string> lines, string confirmText)
+    public PreviewWindow(string title, string summary, IEnumerable<string> lines, string confirmText, bool showCancel = true)
     {
         Title = title;
         Width = 820;
@@ -147,6 +147,7 @@ public sealed class PreviewWindow : Window
             Orientation = Orientation.Horizontal, Spacing = 8, HorizontalAlignment = HorizontalAlignment.Right,
             Margin = new Thickness(0, 10, 0, 0), Children = { cancel, ok },
         };
+        cancel.IsVisible = showCancel;
         var header = new TextBlock { Text = summary, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 8) };
         var list = new ListBox
         {

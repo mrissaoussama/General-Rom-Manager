@@ -19,6 +19,17 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
     [ObservableProperty] private bool _isGrouped;
     [ObservableProperty] private string? _requirementsWarning;
     [ObservableProperty] private bool _isCardView;
+    /// <summary>Files from the last scan that matched an extension but parsed to nothing.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(UnrecognizedText))]
+    private IReadOnlyList<string> _unrecognized = [];
+
+    public string? UnrecognizedText => Unrecognized.Count == 0 ? null : $"{Unrecognized.Count} file(s) not recognised";
+
+    [RelayCommand]
+    private Task ShowUnrecognized() => Shell.ShowDialogAsync(new PreviewWindow("Not recognised",
+        "These files have a matching extension but no parser could read them (wrong console, corrupt, encrypted or missing keys).",
+        Unrecognized, "Close", showCancel: false));
 
     public string ConsoleName { get; }
     public int RomCount => Roms.Count;

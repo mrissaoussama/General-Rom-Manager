@@ -103,7 +103,8 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
             ShowRoms(roms);
             StatusMessage = scanner.Unrecognized.Count == 0
                 ? $"Loaded {Roms.Count} ROMs"
-                : $"Loaded {Roms.Count} ROMs · {scanner.Unrecognized.Count} file(s) not recognised (see log)";
+                : $"Loaded {Roms.Count} ROMs · {scanner.Unrecognized.Count} file(s) not recognised";
+            Unrecognized = scanner.Unrecognized;
             if (scanner.Unrecognized.Count > 0)
                 FileUtils.Log($"[{ConsoleName}] Not recognised:{Environment.NewLine}  " + string.Join(Environment.NewLine + "  ", scanner.Unrecognized));
             EnsureWatcher(romPath, manager.RomParserExecutor.GetSupportedExtensions());
