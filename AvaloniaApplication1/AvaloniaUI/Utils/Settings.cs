@@ -54,6 +54,9 @@ public class Settings
     // ── UI preferences ────────────────────────────────────────────────────
     public int WindowWidth { get; set; } = 1280;
     public int WindowHeight { get; set; } = 800;
+    public int? WindowX { get; set; }
+    public int? WindowY { get; set; }
+    public bool WindowMaximized { get; set; }
 
     /// <summary>
     /// Application colour theme: "Default" (follows OS), "Dark", or "Light".

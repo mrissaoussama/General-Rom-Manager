@@ -115,6 +115,8 @@ public partial class App : Application
                 Title  = "RomManager",
             };
 
+            RestoreWindowPlacement(desktop.MainWindow, s);
+
             // Show onboarding wizard on first run (after the main window has rendered)
             desktop.MainWindow.Opened += async (_, _) =>
             {
@@ -128,8 +130,14 @@ public partial class App : Application
             {
                 if (desktop.MainWindow is { } win)
                 {
-                    s.WindowWidth  = (int)win.Width;
-                    s.WindowHeight = (int)win.Height;
+                    s.WindowMaximized = win.WindowState == WindowState.Maximized;
+                    if (win.WindowState == WindowState.Normal)
+                    {
+                        s.WindowWidth  = (int)win.Width;
+                        s.WindowHeight = (int)win.Height;
+                        s.WindowX = win.Position.X;
+                        s.WindowY = win.Position.Y;
+                    }
                     s.Save();
                 }
             };
@@ -273,6 +281,22 @@ public partial class App : Application
         {
             services.AddScoped(closedInterface, impl);
         }
+    }
+
+    // Restores the last position only if it is still on a connected screen (monitors change).
+    private static void RestoreWindowPlacement(Window win, Settings s)
+    {
+        if (s.WindowX is { } x && s.WindowY is { } y)
+        {
+            var topLeft = new PixelPoint(x, y);
+            var onScreen = win.Screens.All.Any(sc => sc.WorkingArea.Contains(topLeft + new PixelPoint(40, 20)));
+            if (onScreen)
+            {
+                win.WindowStartupLocation = WindowStartupLocation.Manual;
+                win.Position = topLeft;
+            }
+        }
+        if (s.WindowMaximized) win.WindowState = WindowState.Maximized;
     }
 
     private void ApplyThemeFromSettings()
