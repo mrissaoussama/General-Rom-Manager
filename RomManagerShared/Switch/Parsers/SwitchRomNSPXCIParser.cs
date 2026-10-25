@@ -6,6 +6,8 @@ using LibHac.FsSystem;
 using LibHac.Tools.Fs;
 using LibHac.Tools.FsSystem;
 using LibHac.Tools.FsSystem.NcaUtils;
+using LibHac.Tools.Es;
+using LibHac.Spl;
 using RomManagerShared.Base;
 using RomManagerShared.Interfaces;
 using RomManagerShared.Utils;
@@ -126,6 +128,7 @@ public class SwitchRomNSPXCIParser : IRomParser<SwitchConsole>, IHasRequirements
         if (IsNSP(path))
         {
             ParseNSP();
+            ImportTickets(NSPPartitionFileSystem!, keyset);
             switchFs = SwitchFs.OpenNcaDirectory(keyset, NSPPartitionFileSystem!);
             foreach (LibHac.Tools.Fs.Application app in switchFs.Applications.Values.OrderBy(x => x.Name))
             {
@@ -268,6 +271,26 @@ public class SwitchRomNSPXCIParser : IRomParser<SwitchConsole>, IHasRequirements
     {
         NSPPartitionFileSystem = new PartitionFileSystem();
         NSPPartitionFileSystem.Initialize(localStorage!);
+    }
+    // Titlekey-encrypted NSPs carry their key in a .tik; without it every NCA fails to open.
+    private static void ImportTickets(IFileSystem fs, KeySet keyset)
+    {
+        foreach (var entry in fs.EnumerateEntries("/", "*.tik"))
+        {
+            try
+            {
+                using var tikFile = new UniqueRef<IFile>();
+                fs.OpenFile(ref tikFile.Ref, entry.FullPath.ToU8Span(), OpenMode.Read).ThrowIfFailure();
+                var ticket = new Ticket(tikFile.Get.AsStream());
+                var titleKey = ticket.GetTitleKey(keyset);
+                if (titleKey is null) continue;
+                keyset.ExternalKeySet.Add(new RightsId(ticket.RightsId), new AccessKey(titleKey));
+            }
+            catch (Exception ex)
+            {
+                FileUtils.Log($"[SwitchNSPXCI] Bad ticket {entry.FullPath}: {ex.Message}");
+            }
+        }
     }
     public void RemoveFileLock()
     {
