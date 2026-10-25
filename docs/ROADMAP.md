@@ -10,14 +10,14 @@ Legend: **[P0]** = data-safety or correctness, **[P1]** = high value, **[P2]** =
 
 ## Phase 0: Hygiene (½ day)
 
-- [ ] **[P0]** Commit the current working tree. 79 files are modified or untracked, including whole
+- [x] **[P0]** Commit the current working tree. 79 files are modified or untracked, including whole
       features (OperationQueue, plugins, duplicate detector, mover, settings/onboarding windows,
       tests), and the last commit was April 2025. Use small logical commits.
-- [ ] Remove or archive the dead projects: root `RomManager.csproj` + `App.axaml`, `MainWindow.axaml`,
+- [x] Remove or archive the dead projects: root `RomManager.csproj` + `App.axaml`, `MainWindow.axaml`,
       `Program.cs`, `app.manifest`, `Avalonia/` at the root, `RomManagerMaui/`, `ConsoleTest2/`,
       `testconsole/`. Decide whether Android and Browser are kept. If they are, retarget them to
       `net10.0-android` / `net10.0-browser`; if not, delete them.
-- [ ] Delete junk from the repo root: `RomManager.zip`, `hs_err_pid5052.log`, `output.txt`, `es.exe`,
+- [x] Delete junk from the repo root (zip removed; local logs/tools git-ignored): `RomManager.zip`, `hs_err_pid5052.log`, `output.txt`, `es.exe`,
       `RomManager.sln.DotSettings.user`, `AvaloniaUI.Desktop/{err,out}.txt`, `AvaloniaUI.Desktop/US.en.json`.
 - [ ] `.gitignore`: `settings.json`, `*.db`, `Logs/`, `Cache/`, `*.keys`, `.vscode/` (or commit a
       shared `.vscode` on purpose), `tools/ParserHarness/paths.json`.

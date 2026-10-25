@@ -11,8 +11,7 @@ RomManagerTests ──► RomManagerShared
 SamplePlugin    ──► RomManagerShared
 ```
 
-Unmaintained / dead: `AvaloniaUI.Android`, `AvaloniaUI.Browser` (net9.0-*), `RomManagerMaui`
-(net7/8), root `RomManager.csproj`, `ConsoleTest2`, `testconsole`.
+Unmaintained: `AvaloniaUI.Android`, `AvaloniaUI.Browser` (net9.0-*).
 
 ## Domain model (`RomManagerShared/Base`)
 

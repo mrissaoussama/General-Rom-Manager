@@ -19,11 +19,10 @@ dotnet run --project tools/ParserHarness -- PS4Console "Y:\roms\PS4" 5
 ```
 
 - SDK pinned in `global.json` (10.0.103, rollForward latestFeature).
-- Do **not** build the solution blindly: `AvaloniaUI.Android` / `AvaloniaUI.Browser` target net9.0-*
-  and are not maintained; `RomManager.csproj` (repo root), `RomManagerMaui`, `ConsoleTest2`,
-  `testconsole` are dead/scratch projects (see ROADMAP phase 0).
-- Known baseline: 0 errors, ~11 warnings (obsolete `OpenFolderDialog`/`OpenFileDialog`, nullability in
-  `ConsoleViewModel`). Don't add new warnings.
+- `AvaloniaUI.Android` / `AvaloniaUI.Browser` target net9.0-* and are not maintained; only the
+  Desktop head matters.
+- Don't add new warnings (Desktop head baseline is small; vendored code in `Utils/ISO2GOD`,
+  `Utils/AltoMultiThreadDownloadManager` and `LibHac` is noisy).
 
 ## Layout
 
