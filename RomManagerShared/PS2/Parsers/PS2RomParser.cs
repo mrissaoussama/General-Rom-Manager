@@ -1,4 +1,5 @@
 ﻿using DiscUtils.Iso9660;
+using RomManagerShared.Utils;
 using RomManagerShared.Base;
 using RomManagerShared.Interfaces;
 namespace RomManagerShared.PS2.Parsers;
@@ -35,7 +36,7 @@ public class PS2RomParser : IRomParser<PS2Console>
         }
         if (extension.Equals("iso"))
         {
-            using var isoStream = new FileStream(path, FileMode.Open);
+            using var isoStream = FileUtils.OpenRead(path);
             var isoFile = new CDReader(isoStream, true);
 
             foreach (var file in isoFile.Root.GetFiles()

@@ -66,7 +66,7 @@ public static class PSVitaUtils
         var sfoPath = Path.Combine(folderPath, "sce_sys", "param.sfo");
         if (!File.Exists(sfoPath)) return null;
 
-        using var fs = new FileStream(sfoPath, FileMode.Open);
+        using var fs = FileUtils.OpenRead(sfoPath);
         using MemoryStream memoryStream = new();
         fs.CopyTo(memoryStream);
 
@@ -82,7 +82,7 @@ public static class PSVitaUtils
             if (!File.Exists(sfoPath)) return false;
 
             // Verify SFO content is Vita-specific
-            using var fs = new FileStream(sfoPath, FileMode.Open);
+            using var fs = FileUtils.OpenRead(sfoPath);
             using MemoryStream memoryStream = new();
             fs.CopyTo(memoryStream);
             return IsPSVitaSFO(memoryStream);
@@ -139,4 +139,4 @@ public static class PSVitaUtils
 
         return license;
     }
-}
+}

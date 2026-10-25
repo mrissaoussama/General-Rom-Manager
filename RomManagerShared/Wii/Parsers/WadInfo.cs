@@ -1,4 +1,5 @@
 ﻿using RomManagerShared.Wii.Configuration;
+using RomManagerShared.Utils;
 using System.Security.Cryptography;
 using System.Text;
 namespace RomManagerShared.Wii.Parsers;
@@ -121,7 +122,7 @@ public class WadInfo
     {
         if (File.Exists(sourcefile))
         {
-            using FileStream fs = new(sourcefile, FileMode.Open);
+            using FileStream fs = FileUtils.OpenRead(sourcefile);
             byte[] filearray = new byte[fs.Length];
             fs.Read(filearray, 0, filearray.Length);
             return filearray;
@@ -636,7 +637,7 @@ public class WadInfo
     /// <returns></returns>
     public string GetNandBlocks(string wadtmd)
     {
-        using FileStream fs = new(wadtmd, FileMode.Open);
+        using FileStream fs = FileUtils.OpenRead(wadtmd);
         byte[] temp = new byte[fs.Length];
         fs.Read(temp, 0, temp.Length);
         return GetNandBlocks(temp);
@@ -677,7 +678,7 @@ public class WadInfo
     {
         if (File.Exists(sourcefile))
         {
-            using FileStream fs = new(sourcefile, FileMode.Open);
+            using FileStream fs = FileUtils.OpenRead(sourcefile);
             if (fs.Length < length) length = (int)fs.Length;
             byte[] filearray = new byte[length];
             fs.Seek(offset, SeekOrigin.Begin);

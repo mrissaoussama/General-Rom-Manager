@@ -29,6 +29,10 @@ public class FileUtils
     {
         ExcludedFolders = ["ErrorFiles"];
     }
+    /// <summary>Read-only, shared open. Use for all ROM access.</summary>
+    public static FileStream OpenRead(string path) =>
+        new(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+
     public static long GetFileSize(string filePath)
     {
         if (File.Exists(filePath))
