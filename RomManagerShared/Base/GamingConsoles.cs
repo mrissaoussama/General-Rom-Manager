@@ -96,3 +96,8 @@ public class GameCubeConsole : GamingConsole
 {
     public GameCubeConsole() { Name = "GameCube"; }
 }
+
+public class PS1Console : GamingConsole
+{
+    public PS1Console() { Name = "PS1"; }
+}

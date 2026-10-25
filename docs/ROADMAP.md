@@ -25,7 +25,7 @@ Legend: **[P0]** = data-safety or correctness, **[P1]** = high value, **[P2]** =
 - [ ] Add `Directory.Build.props` at the root with the shared settings: `Nullable`,
       `LangVersion latest`, `TreatWarningsAsErrors` for new projects, and `AnalysisLevel latest`.
       Add `Directory.Packages.props` for central package management.
-- [ ] CI: a GitHub Actions workflow on windows-latest that builds Desktop and runs the tests.
+- [x] CI: a GitHub Actions workflow on windows-latest that builds Desktop and runs the tests.
 
 ## Phase 1: Dependencies and frameworks (1–2 days)
 
@@ -163,7 +163,7 @@ game data, not Wii), gbc 367, nsp 97, pkg 56, cso 46, iso 33).
       script and its `aenum` dependency. [P1]
 - [ ] PS2: CSO/ZSO (block decompression), CHD (`libchdr` P/Invoke or a managed reader), UDF via
       LTRData.DiscUtils.
-- [ ] PS1: cue/bin, CHD → read `SYSTEM.CNF` from the ISO9660 track.
+- [x] PS1: cue/bin and iso via `SYSTEM.CNF`. Still open: CHD, PBP.
 - [x] GameCube/Wii: ISO, CISO done. Still open: RVZ/WIA (the disc header holds ID6 and title in the first 0x440
       bytes, even for RVZ). [P1, you have GameCube files]
 - [ ] NES (iNES header + No-Intro hash), Genesis/MD, Master System, PCE, Dreamcast GDI/CHD.

@@ -90,4 +90,5 @@ there is likely pending model drift. The scanned **library is not persisted**.
 | Wii U | wux/wud, tmd, xml | TMD: ID/version without keys. WUD/WUX: product code + region (names via title DB). Decrypted folders: full metadata. cdecrypt optional, user-supplied |
 | OG Xbox | iso, xbe | OK; icons cached under Cache/OriginalXbox |
 | Xbox 360 | iso, xex | Title ID from XEX header; name/icon only with user-supplied `xextool.exe` |
-| PS1, NES, Genesis… | — | Not supported |
+| PS1 | cue, iso | Serial from SYSTEM.CNF (raw 2352 or 2048 sectors). No CHD/PBP |
+| NES, Genesis… | — | Not supported |
