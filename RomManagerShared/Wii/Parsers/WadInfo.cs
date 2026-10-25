@@ -6,7 +6,8 @@ namespace RomManagerShared.Wii.Parsers;
 public class WadInfo
 {
     public const int Headersize = 64;
-    public string[] RegionCode = ["Japan", "USA", "Europe", "Region Free"];    /// <summary>
+    public string[] RegionCode = ["Japan", "USA", "Europe", "Region Free"];
+    /// <summary>
     /// Adds a padding to the next 64 bytes, if necessary
     /// </summary>
     /// <param name="size"></param>
@@ -26,7 +27,8 @@ public class WadInfo
         if (value % padding != 0)
         {
             value += padding - (value % padding);
-        }        return value;
+        }
+        return value;
     }
     /// <summary>
     /// Returns the Header of a Wadfile
@@ -35,11 +37,14 @@ public class WadInfo
     /// <returns></returns>
     public static byte[] GetHeader(byte[] wadfile)
     {
-        byte[] Header = new byte[0x20];        for (int i = 0; i < Header.Length; i++)
+        byte[] Header = new byte[0x20];
+        for (int i = 0; i < Header.Length; i++)
         {
             Header[i] = wadfile[i];
-        }        return Header;
-    }    /// <summary>
+        }
+        return Header;
+    }
+    /// <summary>
     /// Returns the size of the Certificate
     /// </summary>
     /// <param name="wadfile"></param>
@@ -48,7 +53,8 @@ public class WadInfo
     {
         int size = int.Parse(wadfile[0x08].ToString("x2") + wadfile[0x09].ToString("x2") + wadfile[0x0a].ToString("x2") + wadfile[0x0b].ToString("x2"), System.Globalization.NumberStyles.HexNumber);
         return size;
-    }    /// <summary>
+    }
+    /// <summary>
     /// Returns the size of the Ticket
     /// </summary>
     /// <param name="wadfile"></param>
@@ -57,7 +63,8 @@ public class WadInfo
     {
         int size = int.Parse(wadfile[0x10].ToString("x2") + wadfile[0x11].ToString("x2") + wadfile[0x12].ToString("x2") + wadfile[0x13].ToString("x2"), System.Globalization.NumberStyles.HexNumber);
         return size;
-    }    /// <summary>
+    }
+    /// <summary>
     /// Returns the size of the TMD
     /// </summary>
     /// <param name="wadfile"></param>
@@ -66,7 +73,8 @@ public class WadInfo
     {
         int size = int.Parse(wadfile[0x14].ToString("x2") + wadfile[0x15].ToString("x2") + wadfile[0x16].ToString("x2") + wadfile[0x17].ToString("x2"), System.Globalization.NumberStyles.HexNumber);
         return size;
-    }    /// <summary>
+    }
+    /// <summary>
     /// Returns the size of all Contents
     /// </summary>
     /// <param name="wadfile"></param>
@@ -75,7 +83,8 @@ public class WadInfo
     {
         int size = int.Parse(wadfile[0x18].ToString("x2") + wadfile[0x19].ToString("x2") + wadfile[0x1a].ToString("x2") + wadfile[0x1b].ToString("x2"), System.Globalization.NumberStyles.HexNumber);
         return size;
-    }    /// <summary>
+    }
+    /// <summary>
     /// Returns the size of the Footer
     /// </summary>
     /// <param name="wadfile"></param>
@@ -84,7 +93,8 @@ public class WadInfo
     {
         int size = int.Parse(wadfile[0x1c].ToString("x2") + wadfile[0x1d].ToString("x2") + wadfile[0x1e].ToString("x2") + wadfile[0x1f].ToString("x2"), System.Globalization.NumberStyles.HexNumber);
         return size;
-    }    /// <summary>
+    }
+    /// <summary>
     /// Returns the position of the tmd in the wad file
     /// </summary>
     /// <param name="wadfile"></param>
@@ -92,7 +102,8 @@ public class WadInfo
     public static int GetTmdPos(byte[] wadfile)
     {
         return Headersize + AddPadding(GetCertSize(wadfile)) + AddPadding(GetTikSize(wadfile));
-    }    /// <summary>
+    }
+    /// <summary>
     /// Returns the position of the ticket in the wad file, ticket or tmd
     /// </summary>
     /// <param name="wadfile"></param>
@@ -116,7 +127,8 @@ public class WadInfo
             return filearray;
         }
         else throw new FileNotFoundException("File couldn't be found:\r\n" + sourcefile);
-    }    /// <summary>
+    }
+    /// <summary>
     /// Returns the title ID of the wad file.
     /// </summary>
     /// <param name="wadfile"></param>
@@ -126,7 +138,8 @@ public class WadInfo
     {
         byte[] temp = LoadFileToByteArray(wadtiktmd);
         return GetTitleID(temp, type);
-    }    /// <summary>
+    }
+    /// <summary>
     /// Converts a Hex-String to Int
     /// </summary>
     /// <param name="hexstring"></param>
@@ -146,12 +159,14 @@ public class WadInfo
     {
         string channeltype = GetChannelType(wadtiktmd, type);
         int tikpos = 0;
-        int tmdpos = 0;        if (IsThisWad(wadtiktmd) == true)
+        int tmdpos = 0;
+        if (IsThisWad(wadtiktmd) == true)
         {
             //It's a wad
             tikpos = GetTikPos(wadtiktmd);
             tmdpos = GetTmdPos(wadtiktmd);
-        }        if (type == 1)
+        }
+        if (type == 1)
         {
             if (!channeltype.Contains("System:"))
             {
@@ -187,7 +202,8 @@ public class WadInfo
             }
             else return channeltype.Contains("System") ? "SYSTEM" : "";
         }
-    }    /// <summary>
+    }
+    /// <summary>
     /// Returns the full title ID of the wad file as a hex string.
     /// </summary>
     /// <param name="wadfile"></param>
@@ -196,12 +212,14 @@ public class WadInfo
     public string GetFullTitleID(byte[] wadtiktmd, int type)
     {
         int tikpos = 0;
-        int tmdpos = 0;        if (IsThisWad(wadtiktmd) == true)
+        int tmdpos = 0;
+        if (IsThisWad(wadtiktmd) == true)
         {
             //It's a wad
             tikpos = GetTikPos(wadtiktmd);
             tmdpos = GetTmdPos(wadtiktmd);
-        }        if (type == 1)
+        }
+        if (type == 1)
         {
             string tmdid = wadtiktmd[tmdpos + 0x18c].ToString("x2") +
                 wadtiktmd[tmdpos + 0x18d].ToString("x2") +
@@ -225,7 +243,8 @@ public class WadInfo
                 wadtiktmd[tikpos + 0x1e3].ToString();
             return tikid;
         }
-    }    /// <summary>
+    }
+    /// <summary>
     /// Returns the title for each language of a wad file.
     /// Order: Jap, Eng, Ger, Fra, Spa, Ita, Dut
     /// </summary>
@@ -235,7 +254,8 @@ public class WadInfo
     {
         byte[] wadarray = LoadFileToByteArray(wadfile);
         return GetChannelTitles(wadarray);
-    }    /// <summary>
+    }
+    /// <summary>
     /// Creates the Common Key
     /// </summary>
     /// <param name="fat">Must be "45e"</param>
@@ -245,30 +265,39 @@ public class WadInfo
         //What an effort, lol
         byte[] encryptedwater = [0x4d, 0x89, 0x21, 0x34, 0x62, 0x81, 0xe4, 0x02, 0x37, 0x36, 0xc4, 0xb4, 0xde, 0x40, 0x32, 0xab];
         byte[] key = [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, byte.Parse(fat.Remove(2), System.Globalization.NumberStyles.HexNumber), byte.Parse(fat.Remove(0, 2) + "0", System.Globalization.NumberStyles.HexNumber)];
-        byte[] decryptedwater = new byte[10];        using var decryptkey = Aes.Create();
+        byte[] decryptedwater = new byte[10];
+        using var decryptkey = Aes.Create();
         decryptkey.Mode = CipherMode.CBC;
         decryptkey.Padding = PaddingMode.None;
         decryptkey.KeySize = 128;
         decryptkey.BlockSize = 128;
         decryptkey.Key = key;
         Array.Reverse(key);
-        decryptkey.IV = key;        ICryptoTransform cryptor = decryptkey.CreateDecryptor();        using (MemoryStream memory = new(encryptedwater))
+        decryptkey.IV = key;
+        ICryptoTransform cryptor = decryptkey.CreateDecryptor();
+        using (MemoryStream memory = new(encryptedwater))
         {
             using CryptoStream crypto = new(memory, cryptor, CryptoStreamMode.Read);
             crypto.Read(decryptedwater, 0, 10);
-        }        string water = BitConverter.ToString(decryptedwater).Replace("-", "").ToLower() + " ";        water = water.Insert(0, fat[2].ToString());
+        }
+        string water = BitConverter.ToString(decryptedwater).Replace("-", "").ToLower() + " ";
+        water = water.Insert(0, fat[2].ToString());
         water = water.Insert(2, fat[2].ToString());
         water = water.Insert(7, fat[2].ToString());
-        water = water.Insert(11, fat[2].ToString());        water = water.Insert(7, fat[1].ToString());
+        water = water.Insert(11, fat[2].ToString());
+        water = water.Insert(7, fat[1].ToString());
         water = water.Insert(10, fat[1].ToString());
         water = water.Insert(18, fat[1].ToString());
-        water = water.Insert(19, fat[1].ToString());        water = water.Insert(3, fat[0].ToString());
+        water = water.Insert(19, fat[1].ToString());
+        water = water.Insert(3, fat[0].ToString());
         water = water.Insert(15, fat[0].ToString());
         water = water.Insert(16, fat[0].ToString());
-        water = water.Insert(22, fat[0].ToString());        byte[] cheese = new byte[16];
-        int count = -1;        for (int i = 0; i < 32; i += 2)
+        water = water.Insert(22, fat[0].ToString());
+        byte[] cheese = new byte[16];
+        int count = -1;
+        for (int i = 0; i < 32; i += 2)
             cheese[++count] = byte.Parse(water.Remove(0, i).Remove(2), System.Globalization.NumberStyles.HexNumber);
-        Directory.CreateDirectory(Path.GetDirectoryName(WiiConfiguration.GetWadCommonKeyPath()));
+        try { Directory.CreateDirectory(Path.GetDirectoryName(WiiConfiguration.GetWadCommonKeyPath())); } catch { /* best-effort */ }
         using FileStream keystream = new(WiiConfiguration.GetWadCommonKeyPath(), FileMode.Create);
         keystream.Write(cheese, 0, cheese.Length);
     }
@@ -284,19 +313,28 @@ public class WadInfo
         byte[] iv = new byte[16];
         string[,] continfo = wadinfo.GetContentInfo(wadfile);
         int contentsize = Convert.ToInt32(continfo[contentcount, 3]);
-        int paddedsize = AddPadding(contentsize, 16);        int contentpos = 64 + AddPadding(GetCertSize(wadfile)) + AddPadding(GetTikSize(wadfile)) + AddPadding(WadInfo.GetTmdSize(wadfile));        for (int x = 0; x < contentcount; x++)
+        int paddedsize = AddPadding(contentsize, 16);
+        int contentpos = 64 + AddPadding(GetCertSize(wadfile)) + AddPadding(GetTikSize(wadfile)) + AddPadding(WadInfo.GetTmdSize(wadfile));
+        for (int x = 0; x < contentcount; x++)
         {
             contentpos += AddPadding(Convert.ToInt32(continfo[x, 3]));
-        }        iv[0] = wadfile[tmdpos + 0x1e8 + (0x24 * contentcount)];
-        iv[1] = wadfile[tmdpos + 0x1e9 + (0x24 * contentcount)];        using var decrypt = Aes.Create();        decrypt.Mode = CipherMode.CBC;
+        }
+        iv[0] = wadfile[tmdpos + 0x1e8 + (0x24 * contentcount)];
+        iv[1] = wadfile[tmdpos + 0x1e9 + (0x24 * contentcount)];
+        using var decrypt = Aes.Create();
+        decrypt.Mode = CipherMode.CBC;
         decrypt.Padding = PaddingMode.None;
         decrypt.KeySize = 128;
         decrypt.BlockSize = 128;
         decrypt.Key = titlekey;
-        decrypt.IV = iv;        ICryptoTransform cryptor = decrypt.CreateDecryptor();        MemoryStream memory = new(wadfile, contentpos, paddedsize);
-        CryptoStream crypto = new(memory, cryptor, CryptoStreamMode.Read);        bool fullread = false;
+        decrypt.IV = iv;
+        ICryptoTransform cryptor = decrypt.CreateDecryptor();
+        MemoryStream memory = new(wadfile, contentpos, paddedsize);
+        CryptoStream crypto = new(memory, cryptor, CryptoStreamMode.Read);
+        bool fullread = false;
         byte[] buffer = new byte[16384];
-        byte[] cont = new byte[1];        using (MemoryStream ms = new())
+        byte[] cont = new byte[1];
+        using (MemoryStream ms = new())
         {
             while (fullread == false)
             {
@@ -308,9 +346,13 @@ public class WadInfo
                 }
                 ms.Write(buffer, 0, len);
             }
-        }        memory.Close();
-        crypto.Close();        Array.Resize(ref cont, contentsize);        return cont;
-    }    /// <summary>
+        }
+        memory.Close();
+        crypto.Close();
+        Array.Resize(ref cont, contentsize);
+        return cont;
+    }
+    /// <summary>
     /// Returns the title for each language of a wad file.
     /// Order: Jap, Eng, Ger, Fra, Spa, Ita, Dut
     /// </summary>
@@ -319,20 +361,27 @@ public class WadInfo
     public string[] GetChannelTitles(byte[] wadfile)
     {
         if (!File.Exists(WiiConfiguration.GetWadCommonKeyPath()))
-        { CreateCommonKey("45e"); }        if (File.Exists(WiiConfiguration.GetWadCommonKeyPath()))
+        { CreateCommonKey("45e"); }
+        if (File.Exists(WiiConfiguration.GetWadCommonKeyPath()))
         {
-            string channeltype = GetChannelType(wadfile, 0);            if (!channeltype.Contains("System:"))
+            string channeltype = GetChannelType(wadfile, 0);
+            if (!channeltype.Contains("System:"))
             {
                 if (!channeltype.Contains("Hidden"))
                 {
-                    string[] titles = new string[8];                    string[,] conts = GetContentInfo(wadfile);
+                    string[] titles = new string[8];
+                    string[,] conts = GetContentInfo(wadfile);
                     byte[] titlekey = GetTitleKey(wadfile);
-                    int nullapp = 0;                    for (int i = 0; i < conts.GetLength(0); i++)
+                    int nullapp = 0;
+                    for (int i = 0; i < conts.GetLength(0); i++)
                     {
                         if (conts[i, 1] == "00000000")
                             nullapp = i;
-                    }                    byte[] contenthandle = DecryptContent(wadfile, nullapp, titlekey);
-                    int imetpos = 0;                    if (contenthandle.Length < 400) return new string[7];                    if (!channeltype.Contains("Downloaded"))
+                    }
+                    byte[] contenthandle = DecryptContent(wadfile, nullapp, titlekey);
+                    int imetpos = 0;
+                    if (contenthandle.Length < 400) return new string[7];
+                    if (!channeltype.Contains("Downloaded"))
                     {
                         for (int z = 0; z < 400; z++)
                         {
@@ -344,8 +393,10 @@ public class WadInfo
                                             imetpos = z;
                                             break;
                                         }
-                        }                        int jappos = imetpos + 29;
-                        int count = 0;                        for (int i = jappos; i < jappos + 588; i += 84)
+                        }
+                        int jappos = imetpos + 29;
+                        int count = 0;
+                        for (int i = jappos; i < jappos + 588; i += 84)
                         {
                             for (int j = 0; j < 40; j += 2)
                             {
@@ -354,15 +405,18 @@ public class WadInfo
                                     char temp = BitConverter.ToChar([contenthandle[i + j], contenthandle[i + j - 1]], 0);
                                     titles[count] += temp;
                                 }
-                            }                            count++;
-                        }                        for (int i = jappos + (9 * 84); i < jappos + (9 * 84) + 40; i += 2)
+                            }
+                            count++;
+                        }
+                        for (int i = jappos + (9 * 84); i < jappos + (9 * 84) + 40; i += 2)
                         {
                             if (contenthandle[i] != 0x00)
                             {
                                 char temp = BitConverter.ToChar([contenthandle[i], contenthandle[i - 1]], 0);
                                 titles[count] += temp;
                             }
-                        }                        return titles;
+                        }
+                        return titles;
                     }
                     else
                     {
@@ -374,8 +428,10 @@ public class WadInfo
                                 char temp = BitConverter.ToChar([contenthandle[j], contenthandle[j - 1]], 0);
                                 titles[0] += temp;
                             }
-                        }                        for (int i = 1; i < 8; i++)
-                            titles[i] = titles[0];                        return titles;
+                        }
+                        for (int i = 1; i < 8; i++)
+                            titles[i] = titles[0];
+                        return titles;
                     }
                 }
                 else return new string[8];
@@ -383,7 +439,8 @@ public class WadInfo
             else return new string[8];
         }
         else return new string[8];
-    }    /// <summary>
+    }
+    /// <summary>
     /// Returns the title for each language of a 00.app file
     /// Order: Jap, Eng, Ger, Fra, Spa, Ita, Dut
     /// </summary>
@@ -393,7 +450,8 @@ public class WadInfo
     {
         byte[] tmp = LoadFileToByteArray(app);
         return GetChannelTitlesFromApp(tmp);
-    }    /// <summary>
+    }
+    /// <summary>
     /// Returns the title for each language of a 00.app file
     /// Order: Jap, Eng, Ger, Fra, Spa, Ita, Dut
     /// </summary>
@@ -401,8 +459,11 @@ public class WadInfo
     /// <returns></returns>
     public static string[] GetChannelTitlesFromApp(byte[] app)
     {
-        string[] titles = new string[8];        int imetpos = 0;
-        int length = 400;        if (app.Length < 400) length = app.Length - 4;        for (int z = 0; z < length; z++)
+        string[] titles = new string[8];
+        int imetpos = 0;
+        int length = 400;
+        if (app.Length < 400) length = app.Length - 4;
+        for (int z = 0; z < length; z++)
         {
             if (Convert.ToChar(app[z]) == 'I')
                 if (Convert.ToChar(app[z + 1]) == 'M')
@@ -412,10 +473,12 @@ public class WadInfo
                             imetpos = z;
                             break;
                         }
-        }        if (imetpos != 0)
+        }
+        if (imetpos != 0)
         {
             int jappos = imetpos + 29;
-            int count = 0;            for (int i = jappos; i < jappos + 588; i += 84)
+            int count = 0;
+            for (int i = jappos; i < jappos + 588; i += 84)
             {
                 for (int j = 0; j < 40; j += 2)
                 {
@@ -424,8 +487,10 @@ public class WadInfo
                         char temp = BitConverter.ToChar([app[i + j], app[i + j - 1]], 0);
                         titles[count] += temp;
                     }
-                }                count++;
-            }            for (int i = jappos + (9 * 84); i < jappos + (9 * 84) + 40; i += 2)
+                }
+                count++;
+            }
+            for (int i = jappos + (9 * 84); i < jappos + (9 * 84) + 40; i += 2)
             {
                 if (app[i] != 0x00)
                 {
@@ -433,8 +498,10 @@ public class WadInfo
                     titles[count] += temp;
                 }
             }
-        }        return titles;
-    }    /// <summary>
+        }
+        return titles;
+    }
+    /// <summary>
     /// Returns the Type of the Channel as a string
     /// Wad or Tik needed for WiiWare / VC detection!
     /// </summary>
@@ -443,14 +510,18 @@ public class WadInfo
     public string GetChannelType(byte[] wadtiktmd, int type)
     {
         int tikpos = 0;
-        int tmdpos = 0;        if (IsThisWad(wadtiktmd) == true)
+        int tmdpos = 0;
+        if (IsThisWad(wadtiktmd) == true)
         {
             //It's a wad
             tikpos = GetTikPos(wadtiktmd);
             tmdpos = GetTmdPos(wadtiktmd);
-        }        string thistype = type == 0
+        }
+        string thistype = type == 0
             ? wadtiktmd[tikpos + 0x1dc].ToString("x2") + wadtiktmd[tikpos + 0x1dd].ToString("x2") + wadtiktmd[tikpos + 0x1de].ToString("x2") + wadtiktmd[tikpos + 0x1df].ToString("x2")
-            : wadtiktmd[tmdpos + 0x18c].ToString("x2") + wadtiktmd[tmdpos + 0x18d].ToString("x2") + wadtiktmd[tmdpos + 0x18e].ToString("x2") + wadtiktmd[tmdpos + 0x18f].ToString("x2");        string channeltype = "Unknown";        if (thistype == "00010001")
+            : wadtiktmd[tmdpos + 0x18c].ToString("x2") + wadtiktmd[tmdpos + 0x18d].ToString("x2") + wadtiktmd[tmdpos + 0x18e].ToString("x2") + wadtiktmd[tmdpos + 0x18f].ToString("x2");
+        string channeltype = "Unknown";
+        if (thistype == "00010001")
         {
             channeltype = CheckWiiWareVC(wadtiktmd, type);
         }
@@ -460,36 +531,47 @@ public class WadInfo
         else if (thistype == "00010008") channeltype = "Hidden Channel";
         else if (thistype == "00000001")
         {
-            channeltype = "System: IOS";            string thisid = type == 0
+            channeltype = "System: IOS";
+            string thisid = type == 0
                 ? wadtiktmd[tikpos + 0x1e0].ToString("x2") + wadtiktmd[tikpos + 0x1e1].ToString("x2") + wadtiktmd[tikpos + 0x1e2].ToString("x2") + wadtiktmd[tikpos + 0x1e3].ToString("x2")
                 : wadtiktmd[tmdpos + 0x190].ToString("x2") + wadtiktmd[tmdpos + 0x191].ToString("x2") + wadtiktmd[tmdpos + 0x192].ToString("x2") + wadtiktmd[tmdpos + 0x193].ToString("x2");
             if (thisid == "00000001") channeltype = "System: Boot2";
             else if (thisid == "00000002") channeltype = "System: Menu";
             else if (thisid == "00000100") channeltype = "System: BC";
             else if (thisid == "00000101") channeltype = "System: MIOS";
-        }        return channeltype;
-    }    /// <summary>
+        }
+        return channeltype;
+    }
+    /// <summary>
     /// Returns the amount of included Contents (app-files)
     /// </summary>
     /// <param name="wadfile"></param>
     /// <returns></returns>
     public int GetContentNum(byte[] wadtmd)
     {
-        int tmdpos = 0;        if (IsThisWad(wadtmd) == true)
+        int tmdpos = 0;
+        if (IsThisWad(wadtmd) == true)
         {
             //It's a wad file, so get the tmd position
             tmdpos = GetTmdPos(wadtmd);
-        }        int contents = HexStringToInt(wadtmd[tmdpos + 0x1de].ToString("x2") + wadtmd[tmdpos + 0x1df].ToString("x2"));        return contents;
-    }    /// <summary>
+        }
+        int contents = HexStringToInt(wadtmd[tmdpos + 0x1de].ToString("x2") + wadtmd[tmdpos + 0x1df].ToString("x2"));
+        return contents;
+    }
+    /// <summary>
     /// Returns the boot index specified in the tmd
     /// </summary>
     /// <param name="wadfile"></param>
     /// <returns></returns>
     public int GetBootIndex(byte[] wadtmd)
     {
-        int tmdpos = 0;        if (IsThisWad(wadtmd))
-            tmdpos = GetTmdPos(wadtmd);        int bootIndex = HexStringToInt(wadtmd[tmdpos + 0x1e0].ToString("x2") + wadtmd[tmdpos + 0x1e1].ToString("x2"));        return bootIndex;
-    }    /// <summary>
+        int tmdpos = 0;
+        if (IsThisWad(wadtmd))
+            tmdpos = GetTmdPos(wadtmd);
+        int bootIndex = HexStringToInt(wadtmd[tmdpos + 0x1e0].ToString("x2") + wadtmd[tmdpos + 0x1e1].ToString("x2"));
+        return bootIndex;
+    }
+    /// <summary>
     /// Returns the approx. destination size on the Wii
     /// </summary>
     /// <param name="wadfile"></param>
@@ -499,11 +581,13 @@ public class WadInfo
         int tmdpos = 0;
         int minsize = 0;
         int maxsize = 0;
-        int numcont = GetContentNum(wadtmd);        if (IsThisWad(wadtmd) == true)
+        int numcont = GetContentNum(wadtmd);
+        if (IsThisWad(wadtmd) == true)
         {
             //It's a wad
             tmdpos = GetTmdPos(wadtmd);
-        }        for (int i = 0; i < numcont; i++)
+        }
+        for (int i = 0; i < numcont; i++)
         {
             int cont = 36 * i;
             int contentsize = HexStringToInt(wadtmd[tmdpos + 0x1e4 + 8 + cont].ToString("x2") +
@@ -513,19 +597,24 @@ public class WadInfo
                 wadtmd[tmdpos + 0x1e8 + 8 + cont].ToString("x2") +
                 wadtmd[tmdpos + 0x1e9 + 8 + cont].ToString("x2") +
                 wadtmd[tmdpos + 0x1ea + 8 + cont].ToString("x2") +
-                wadtmd[tmdpos + 0x1eb + 8 + cont].ToString("x2"));            string type = wadtmd[tmdpos + 0x1e4 + 6 + cont].ToString("x2") + wadtmd[tmdpos + 0x1e5 + 6 + cont].ToString("x2");            if (type == "0001")
+                wadtmd[tmdpos + 0x1eb + 8 + cont].ToString("x2"));
+            string type = wadtmd[tmdpos + 0x1e4 + 6 + cont].ToString("x2") + wadtmd[tmdpos + 0x1e5 + 6 + cont].ToString("x2");
+            if (type == "0001")
             {
                 minsize += contentsize;
                 maxsize += contentsize;
             }
             else if (type == "8001")
                 maxsize += contentsize;
-        }        string size = maxsize == minsize ? maxsize.ToString() : minsize.ToString() + " - " + maxsize.ToString();        if (ConvertToMB == true)
+        }
+        string size = maxsize == minsize ? maxsize.ToString() : minsize.ToString() + " - " + maxsize.ToString();
+        if (ConvertToMB == true)
         {
             if (size.Contains("-"))
             {
                 string min = size.Remove(size.IndexOf(' '));
-                string max = size.Remove(0, size.IndexOf('-') + 2);                min = Convert.ToString(Math.Round(Convert.ToDouble(min) * 0.0009765625 * 0.0009765625, 2));
+                string max = size.Remove(0, size.IndexOf('-') + 2);
+                min = Convert.ToString(Math.Round(Convert.ToDouble(min) * 0.0009765625 * 0.0009765625, 2));
                 max = Convert.ToString(Math.Round(Convert.ToDouble(max) * 0.0009765625 * 0.0009765625, 2));
                 if (min.Length > 4) { min = min.Remove(4); }
                 if (max.Length > 4) { max = max.Remove(4); }
@@ -537,8 +626,10 @@ public class WadInfo
                 if (size.Length > 4) { size = size.Remove(4); }
                 size += " MB";
             }
-        }        return size.Replace(",", ".");
-    }    /// <summary>
+        }
+        return size.Replace(",", ".");
+    }
+    /// <summary>
     /// Returns the approx. destination block on the Wii
     /// </summary>
     /// <param name="wadfile"></param>
@@ -549,24 +640,30 @@ public class WadInfo
         byte[] temp = new byte[fs.Length];
         fs.Read(temp, 0, temp.Length);
         return GetNandBlocks(temp);
-    }    /// <summary>
+    }
+    /// <summary>
     /// Returns the approx. destination block on the Wii
     /// </summary>
     /// <param name="wadfile"></param>
     /// <returns></returns>
     public string GetNandBlocks(byte[] wadtmd)
     {
-        string size = GetNandSize(wadtmd, false);        if (size.Contains('-'))
+        string size = GetNandSize(wadtmd, false);
+        if (size.Contains('-'))
         {
             string size1 = size.Remove(size.IndexOf(' '));
-            string size2 = size.Remove(0, size.LastIndexOf(' ') + 1);            double blocks1 = (double)(Convert.ToDouble(size1) / 1024 / 128);
-            double blocks2 = (double)(Convert.ToDouble(size2) / 1024 / 128);            return Math.Ceiling(blocks1) + " - " + Math.Ceiling(blocks2);
+            string size2 = size.Remove(0, size.LastIndexOf(' ') + 1);
+            double blocks1 = (double)(Convert.ToDouble(size1) / 1024 / 128);
+            double blocks2 = (double)(Convert.ToDouble(size2) / 1024 / 128);
+            return Math.Ceiling(blocks1) + " - " + Math.Ceiling(blocks2);
         }
         else
         {
-            double blocks = (double)(Convert.ToDouble(size) / 1024 / 128);            return Math.Ceiling(blocks).ToString();
+            double blocks = (double)(Convert.ToDouble(size) / 1024 / 128);
+            return Math.Ceiling(blocks).ToString();
         }
-    }    /// <summary>
+    }
+    /// <summary>
     /// Returns the title version of the wad file
     /// </summary>
     /// <param name="wadfile"></param>
@@ -588,30 +685,35 @@ public class WadInfo
             return filearray;
         }
         else throw new FileNotFoundException("File couldn't be found:\r\n" + sourcefile);
-    }    /// <summary>
+    }
+    /// <summary>
     /// Returns the title version of the wad file
     /// </summary>
     /// <param name="wadfile"></param>
     /// <returns></returns>
     public int GetTitleVersion(byte[] wadtmd)
     {
-        int tmdpos = 0;        if (IsThisWad(wadtmd) == true) { tmdpos = GetTmdPos(wadtmd); }
+        int tmdpos = 0;
+        if (IsThisWad(wadtmd) == true) { tmdpos = GetTmdPos(wadtmd); }
         return HexStringToInt(wadtmd[tmdpos + 0x1dc].ToString("x2") + wadtmd[tmdpos + 0x1dd].ToString("x2"));
-    }    /// <summary>
+    }
+    /// <summary>
     /// Returns the IOS that is needed by the wad file
     /// </summary>
     /// <param name="wadfile"></param>
     /// <returns></returns>
     public string GetIosFlag(byte[] wadtmd)
     {
-        string type = GetChannelType(wadtmd, 1);        if (!type.Contains("IOS") && !type.Contains("BC"))
+        string type = GetChannelType(wadtmd, 1);
+        if (!type.Contains("IOS") && !type.Contains("BC"))
         {
             int tmdpos = 0;
             if (IsThisWad(wadtmd) == true) { tmdpos = GetTmdPos(wadtmd); }
             return "IOS" + HexStringToInt(wadtmd[tmdpos + 0x188].ToString("x2") + wadtmd[tmdpos + 0x189].ToString("x2") + wadtmd[tmdpos + 0x18a].ToString("x2") + wadtmd[tmdpos + 0x18b].ToString("x2"));
         }
         else return "";
-    }    /// <summary>
+    }
+    /// <summary>
     /// Returns the region of the wad file
     /// </summary>
     /// <param name="wadfile"></param>
@@ -619,13 +721,16 @@ public class WadInfo
     public string GetRegionFlag(byte[] wadtmd)
     {
         int tmdpos = 0;
-        string channeltype = GetChannelType(wadtmd, 1);        if (IsThisWad(wadtmd) == true) { tmdpos = GetTmdPos(wadtmd); }        if (!channeltype.Contains("System:"))
+        string channeltype = GetChannelType(wadtmd, 1);
+        if (IsThisWad(wadtmd) == true) { tmdpos = GetTmdPos(wadtmd); }
+        if (!channeltype.Contains("System:"))
         {
             int region = HexStringToInt(wadtmd[tmdpos + 0x19d].ToString("x2"));
             return RegionCode[region];
         }
         else return "";
-    }    /// <summary>
+    }
+    /// <summary>
     /// Returns the Path where the wad will be installed on the Wii
     /// </summary>
     /// <param name="wadfile"></param>
@@ -634,7 +739,8 @@ public class WadInfo
     {
         byte[] wad = LoadFileToByteArray(wadfile);
         return GetNandPath(wad, 0);
-    }    /// <summary>
+    }
+    /// <summary>
     /// Returns the Path where the wad will be installed on the Wii
     /// </summary>
     /// <param name="wadfile"></param>
@@ -643,11 +749,13 @@ public class WadInfo
     public string GetNandPath(byte[] wadtiktmd, int type)
     {
         int tikpos = 0;
-        int tmdpos = 0;        if (IsThisWad(wadtiktmd) == true)
+        int tmdpos = 0;
+        if (IsThisWad(wadtiktmd) == true)
         {
             tikpos = GetTikPos(wadtiktmd);
             tmdpos = GetTmdPos(wadtiktmd);
-        }        string thispath = type == 0
+        }
+        string thispath = type == 0
             ? wadtiktmd[tikpos + 0x1dc].ToString("x2") +
                 wadtiktmd[tikpos + 0x1dd].ToString("x2") +
                 wadtiktmd[tikpos + 0x1de].ToString("x2") +
@@ -663,9 +771,11 @@ public class WadInfo
                 wadtiktmd[tmdpos + 0x190].ToString("x2") +
                 wadtiktmd[tmdpos + 0x191].ToString("x2") +
                 wadtiktmd[tmdpos + 0x192].ToString("x2") +
-                wadtiktmd[tmdpos + 0x193].ToString("x2");        thispath = thispath.Insert(8, "\\");
+                wadtiktmd[tmdpos + 0x193].ToString("x2");
+        thispath = thispath.Insert(8, "\\");
         return thispath;
-    }    /// <summary>
+    }
+    /// <summary>
     /// Returns true, if the wad file is a WiiWare / VC title.
     /// </summary>
     /// <param name="wadtiktmd"></param>
@@ -675,14 +785,17 @@ public class WadInfo
     {
         int tiktmdpos = 0;
         int offset = 0x221;
-        int idoffset = 0x1e0;        if (type == 1) { offset = 0x197; idoffset = 0x190; }
+        int idoffset = 0x1e0;
+        if (type == 1) { offset = 0x197; idoffset = 0x190; }
         if (IsThisWad(wadtiktmd) == true)
         {
             tiktmdpos = type == 1 ? GetTmdPos(wadtiktmd) : GetTikPos(wadtiktmd);
-        }        if (wadtiktmd[tiktmdpos + offset] == 0x01)
+        }
+        if (wadtiktmd[tiktmdpos + offset] == 0x01)
         {
             char idchar = Convert.ToChar(wadtiktmd[tiktmdpos + idoffset]);
-            char idchar2 = Convert.ToChar(wadtiktmd[tiktmdpos + idoffset + 1]);            if (idchar == 'H') return "System Channel";
+            char idchar2 = Convert.ToChar(wadtiktmd[tiktmdpos + idoffset + 1]);
+            if (idchar == 'H') return "System Channel";
             else if (idchar == 'W') return "WiiWare";
             else
             {
@@ -698,7 +811,8 @@ public class WadInfo
             }
         }
         else return "Channel Title";
-    }    /// <summary>
+    }
+    /// <summary>
     /// Returns all information stored in the tmd for all contents in the wad file.
     /// [x, 0] = Content ID, [x, 1] = Index, [x, 2] = Type, [x, 3] = Size, [x, 4] = Sha1
     /// </summary>
@@ -706,9 +820,11 @@ public class WadInfo
     /// <returns></returns>
     public string[,] GetContentInfo(byte[] wadtmd)
     {
-        int tmdpos = 0;        if (IsThisWad(wadtmd) == true) { tmdpos = GetTmdPos(wadtmd); }
+        int tmdpos = 0;
+        if (IsThisWad(wadtmd) == true) { tmdpos = GetTmdPos(wadtmd); }
         int contentcount = GetContentNum(wadtmd);
-        string[,] contentinfo = new string[contentcount, 5];        for (int i = 0; i < contentcount; i++)
+        string[,] contentinfo = new string[contentcount, 5];
+        for (int i = 0; i < contentcount; i++)
         {
             contentinfo[i, 0] = wadtmd[tmdpos + 0x1e4 + (36 * i)].ToString("x2") +
                 wadtmd[tmdpos + 0x1e5 + (36 * i)].ToString("x2") +
@@ -727,12 +843,15 @@ public class WadInfo
                 wadtmd[tmdpos + 0x1f0 + (36 * i)].ToString("x2") +
                 wadtmd[tmdpos + 0x1f1 + (36 * i)].ToString("x2") +
                 wadtmd[tmdpos + 0x1f2 + (36 * i)].ToString("x2") +
-                wadtmd[tmdpos + 0x1f3 + (36 * i)].ToString("x2")).ToString();            for (int j = 0; j < 20; j++)
+                wadtmd[tmdpos + 0x1f3 + (36 * i)].ToString("x2")).ToString();
+            for (int j = 0; j < 20; j++)
             {
                 contentinfo[i, 4] += wadtmd[tmdpos + 0x1f4 + (36 * i) + j].ToString("x2");
             }
-        }        return contentinfo;
-    }    /// <summary>
+        }
+        return contentinfo;
+    }
+    /// <summary>
     /// Returns the Tik of the wad file as a Byte-Array
     /// </summary>
     /// <param name="wadfile"></param>
@@ -740,11 +859,15 @@ public class WadInfo
     public byte[] ReturnTik(byte[] wadfile)
     {
         int tikpos = GetTikPos(wadfile);
-        int tiksize = GetTikSize(wadfile);        byte[] tik = new byte[tiksize];        for (int i = 0; i < tiksize; i++)
+        int tiksize = GetTikSize(wadfile);
+        byte[] tik = new byte[tiksize];
+        for (int i = 0; i < tiksize; i++)
         {
             tik[i] = wadfile[tikpos + i];
-        }        return tik;
-    }    /// <summary>
+        }
+        return tik;
+    }
+    /// <summary>
     /// Returns the Tmd of the wad file as a Byte-Array
     /// </summary>
     /// <param name="wadfile"></param>
@@ -752,11 +875,15 @@ public class WadInfo
     public byte[] ReturnTmd(byte[] wadfile)
     {
         int tmdpos = GetTmdPos(wadfile);
-        int tmdsize = GetTmdSize(wadfile);        byte[] tmd = new byte[tmdsize];        for (int i = 0; i < tmdsize; i++)
+        int tmdsize = GetTmdSize(wadfile);
+        byte[] tmd = new byte[tmdsize];
+        for (int i = 0; i < tmdsize; i++)
         {
             tmd[i] = wadfile[tmdpos + i];
-        }        return tmd;
-    }    /// <summary>
+        }
+        return tmd;
+    }
+    /// <summary>
     /// Checks, if the given file is a wad
     /// </summary>
     /// <param name="wadtiktmd"></param>
@@ -768,42 +895,56 @@ public class WadInfo
             wadtiktmd[2] == 0x00 &&
             wadtiktmd[3] == 0x20 &&
             wadtiktmd[4] == 0x49 &&
-            wadtiktmd[5] == 0x73;    }    /// <summary>
+            wadtiktmd[5] == 0x73;
+    }
+    /// <summary>
     /// Returns the decrypted TitleKey
     /// </summary>
     /// <param name="wadtik"></param>
     /// <returns></returns>
     public byte[] GetTitleKey(byte[] wadtik)
     {
-        byte[] commonkey = new byte[16];        if (File.Exists(WiiConfiguration.GetWadCommonKeyPath()))
+        byte[] commonkey = new byte[16];
+        if (File.Exists(WiiConfiguration.GetWadCommonKeyPath()))
         { commonkey = LoadFileToByteArray(WiiConfiguration.GetWadCommonKeyPath()); }
         else
         {
             CreateCommonKey("45e");
             commonkey = LoadFileToByteArray(WiiConfiguration.GetWadCommonKeyPath());
-        }        byte[] encryptedkey = new byte[16];
+        }
+        byte[] encryptedkey = new byte[16];
         byte[] iv = new byte[16];
-        int tikpos = 0;        if (IsThisWad(wadtik) == true)
+        int tikpos = 0;
+        if (IsThisWad(wadtik) == true)
         {
             //It's a wad file, so get the tik position
             tikpos = GetTikPos(wadtik);
-        }        for (int i = 0; i < 16; i++)
+        }
+        for (int i = 0; i < 16; i++)
         {
             encryptedkey[i] = wadtik[tikpos + 0x1bf + i];
-        }        for (int j = 0; j < 8; j++)
+        }
+        for (int j = 0; j < 8; j++)
         {
             iv[j] = wadtik[tikpos + 0x1dc + j];
             iv[j + 8] = 0x00;
-        }        using var decrypt = Aes.Create(); decrypt.Mode = CipherMode.CBC;
+        }
+        using var decrypt = Aes.Create(); decrypt.Mode = CipherMode.CBC;
         decrypt.Padding = PaddingMode.None;
         decrypt.KeySize = 128;
         decrypt.BlockSize = 128;
         decrypt.Key = commonkey;
-        decrypt.IV = iv;        ICryptoTransform cryptor = decrypt.CreateDecryptor();        MemoryStream memory = new(encryptedkey);
-        CryptoStream crypto = new(memory, cryptor, CryptoStreamMode.Read);        byte[] decryptedkey = new byte[16];
-        crypto.Read(decryptedkey, 0, decryptedkey.Length);        crypto.Close();
-        memory.Close();        return decryptedkey;
-    }    /// <summary>
+        decrypt.IV = iv;
+        ICryptoTransform cryptor = decrypt.CreateDecryptor();
+        MemoryStream memory = new(encryptedkey);
+        CryptoStream crypto = new(memory, cryptor, CryptoStreamMode.Read);
+        byte[] decryptedkey = new byte[16];
+        crypto.Read(decryptedkey, 0, decryptedkey.Length);
+        crypto.Close();
+        memory.Close();
+        return decryptedkey;
+    }
+    /// <summary>
     /// Decodes the Timestamp in the Trailer, if available.
     /// Returns null if no Timestamp was found.
     /// </summary>
@@ -813,7 +954,8 @@ public class WadInfo
     {
         byte[] bTrailer = LoadFileToByteArray(trailer);
         return GetCreationTime(bTrailer);
-    }    /// <summary>
+    }
+    /// <summary>
     /// Decodes the Timestamp in the Trailer, if available.
     /// Returns null if no Timestamp was found.
     /// </summary>
@@ -821,7 +963,8 @@ public class WadInfo
     /// <returns></returns>
     public static DateTime GetCreationTime(byte[] footer)
     {
-        DateTime result = new(1970, 1, 1);        if ((footer[0] == 'C' &&
+        DateTime result = new(1970, 1, 1);
+        if ((footer[0] == 'C' &&
             footer[1] == 'M' &&
             footer[2] == 'i' &&
             footer[3] == 'i' &&
@@ -836,12 +979,14 @@ public class WadInfo
         {
             ASCIIEncoding enc = new();
             string stringSeconds = enc.GetString(footer, 6, 10);
-            int seconds = 0;            if (int.TryParse(stringSeconds, out seconds))
+            int seconds = 0;
+            if (int.TryParse(stringSeconds, out seconds))
             {
                 result = result.AddSeconds(seconds);
                 return result;
             }
             else return result;
-        }        return result;
+        }
+        return result;
     }
-}
+}

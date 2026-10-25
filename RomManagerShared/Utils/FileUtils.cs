@@ -1,17 +1,33 @@
-﻿using RomManagerShared.Configuration;
+﻿using Microsoft.Extensions.Logging;
+using RomManagerShared.Configuration;
 using System.Diagnostics;
 
 namespace RomManagerShared.Utils;
 
 public class FileUtils
 {
+    /// <summary>
+    /// Optional structured logger. When set (wired via DI in App.axaml.cs),
+    /// log messages are forwarded to the ILogger sink in addition to the flat file.
+    /// </summary>
+    public static ILogger? Logger { get; set; }
+
     public static List<string> ExcludedFolders;
-    static readonly string logFilePath = RomManagerConfiguration.GetErrorLogPath();    static FileUtils()
+
+    private static string GetLogFilePath()
     {
-        ExcludedFolders =
-        [
-            "ErrorFiles"
-        ];
+        try { return RomManagerConfiguration.GetErrorLogPath(); }
+        catch
+        {
+            return Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "GeneralRomManager", "Logs", "errors.log");
+        }
+    }
+
+    static FileUtils()
+    {
+        ExcludedFolders = ["ErrorFiles"];
     }
     public static long GetFileSize(string filePath)
     {
@@ -19,7 +35,8 @@ public class FileUtils
         {
             FileInfo fileInfo = new(filePath);
             return fileInfo.Length; // Size in bytes
-        }        return -1; // Return -1 if the file doesn't exist
+        }
+        return -1; // Return -1 if the file doesn't exist
     }
     public static List<string> GetFilesInDirectoryWithExtensions(string directory, IEnumerable<string> extensions)
     {
@@ -28,35 +45,80 @@ public class FileUtils
             .Where(s =>
             {
                 var fileExtension = Path.GetExtension(s).TrimStart('.').ToLowerInvariant();
-                var folderName = Path.GetDirectoryName(s);#pragma warning disable CS8602 // Dereference of a possibly null reference.
+                var folderName = Path.GetDirectoryName(s);
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
                 return extensions.Contains(fileExtension) && !ExcludedFolders.Any(folderName.Contains);
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
             })
-            .ToList();        return results;
-    }    public static void MoveFileToErrorFiles(string filePath)
+            .ToList();
+        return results;
+    }
+    public static void MoveFileToErrorFiles(string filePath)
     {
         try
         {
             string fileName = Path.GetFileName(filePath);
             string fileDirectory = Path.GetDirectoryName(filePath);
-            string errorFilesDirectory = Path.Combine(fileDirectory, "ErrorFiles");            Directory.CreateDirectory(errorFilesDirectory);            string errorFilePath = Path.Combine(errorFilesDirectory, fileName);            // Check if the file already exists in the ErrorFiles directory
+            string errorFilesDirectory = Path.Combine(fileDirectory, "ErrorFiles");
+            Directory.CreateDirectory(errorFilesDirectory);
+            string errorFilePath = Path.Combine(errorFilesDirectory, fileName);
+            // Check if the file already exists in the ErrorFiles directory
             int fileCounter = 1;
             while (File.Exists(errorFilePath))
             {
                 string newFileName = $"{Path.GetFileNameWithoutExtension(fileName)}_{fileCounter}{Path.GetExtension(fileName)}";
                 errorFilePath = Path.Combine(errorFilesDirectory, newFileName);
                 fileCounter++;
-            }            File.Move(filePath, errorFilePath);
+            }
+            File.Move(filePath, errorFilePath);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error moving file: {ex.Message}");
         }
-    }    public static void Log(string logText)
-    {// create dir and file if they don't exist
-        Directory.CreateDirectory(Path.GetDirectoryName(logFilePath));
-        File.AppendAllText(logFilePath, logText + Environment.NewLine);
     }
+    /// <summary>Fired on the calling thread whenever a new log entry is added.</summary>
+    public static event Action<string>? LogAdded;
+
+    public static void Log(string logText)
+    {
+        // Keep an in-memory ring-buffer of the last 500 messages for the LogWindow.
+        var entry = $"[{DateTime.Now:HH:mm:ss}] {logText}";
+        lock (_recentLogs)
+        {
+            _recentLogs.Add(entry);
+            if (_recentLogs.Count > 500)
+                _recentLogs.RemoveAt(0);
+        }
+
+        // Notify subscribers (UI can marshal to dispatcher)
+        LogAdded?.Invoke(entry);
+
+        // Write directly to the flat log file.
+        // Do NOT forward to Logger here — FileUtilsLoggerProvider already bridges
+        // Microsoft.Extensions.Logging → FileUtils.Log(), so calling Logger here
+        // would create an infinite feedback loop.
+        try
+        {
+            var logFilePath = GetLogFilePath();
+            Directory.CreateDirectory(Path.GetDirectoryName(logFilePath)!);
+            File.AppendAllText(logFilePath, entry + Environment.NewLine);
+        }
+        catch { /* swallow — don't let logging failures crash the app */ }
+    }
+
+    /// <summary>
+    /// Thread-safe snapshot of recent log lines (last 500). Used by the Log window.
+    /// </summary>
+    public static IReadOnlyList<string> GetRecentLogs()
+    {
+        lock (_recentLogs) return _recentLogs.ToList();
+    }
+
+    /// <summary>Path to the active log file.</summary>
+    public static string LogFilePath => GetLogFilePath();
+
+    private static readonly List<string> _recentLogs = [];
     /// <summary>
     /// Format bytes to human-readable size
     /// </summary>
@@ -369,4 +431,5 @@ public class FileUtils
             string destSubDir = Path.Combine(destDir, dirName);
             CopyDirectory(dir, destSubDir);
         }
-    }}
+    }
+}

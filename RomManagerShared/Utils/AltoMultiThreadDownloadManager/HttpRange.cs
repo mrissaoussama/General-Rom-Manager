@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 using AltoMultiThreadDownloadManager.FileVerification;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using AltoMultiThreadDownloadManager.Helpers;
 using System.Collections.Generic;
 using AltoMultiThreadDownloadManager.Enums;

@@ -10,6 +10,35 @@ public class SwitchManager : ConsoleManager<SwitchConsole>, IRomMissingContentCh
 {
     public SwitchUpdateVersionProvider? UpdateVersionProvider { get; set; }
     public List<List<Rom>> GroupedRomList { get; set; }
+
+    // ── Manager-level requirements ────────────────────────────────────────
+    private readonly ConsoleRequirement _titleDbDirReq = new()
+    {
+        Id          = "switch.titledb_dir",
+        DisplayName = "TitleDB directory",
+        Description = "Local directory containing Switch TitleDB JSON files.",
+        Kind        = RequirementKind.DirectoryPath,
+        DefaultValue = SwitchConfiguration.GetTitleDBPath(),
+        IsOptional  = true,
+    };
+    private readonly ConsoleRequirement _versionsFileReq = new()
+    {
+        Id          = "switch.versions_json",
+        DisplayName = "versions.json",
+        Description = "Switch version database JSON file used for update checks.",
+        Kind        = RequirementKind.DatabaseFile,
+        DefaultValue = SwitchConfiguration.GetVersionsPath(),
+        IsOptional  = true,
+    };
+
+    public override IReadOnlyList<ConsoleRequirement> GetAllRequirements()
+    {
+        var baseReqs = base.GetAllRequirements().ToList();
+        baseReqs.Add(_titleDbDirReq);
+        baseReqs.Add(_versionsFileReq);
+        return baseReqs.DistinctBy(r => r.Id).ToList();
+    }
+
     public SwitchManager(TitleInfoProviderManager<SwitchConsole> titleInfoProviderManager,
 RomParserExecutor<SwitchConsole> romParserExecutor)
 : base(romParserExecutor,titleInfoProviderManager)
@@ -22,7 +51,8 @@ RomParserExecutor<SwitchConsole> romParserExecutor)
             FileUtils.Log("Switch version path not found");
             return;
         }
-        UpdateVersionProvider = new(versionjsonPath);    }
+        UpdateVersionProvider = new(versionjsonPath);
+    }
 
  
     public async Task<List<RomMissingUpdates>> GetMissingUpdates()
@@ -38,10 +68,12 @@ RomParserExecutor<SwitchConsole> romParserExecutor)
                 set.Add(missingreport);
         }
         return set;
-    }    public void LoadGroupRomList()
+    }
+    public void LoadGroupRomList()
     {
         GroupedRomList = SwitchUtils.GroupRomList(RomList);
-    }    public List<string> GetSupportedExtensions()
+    }
+    public List<string> GetSupportedExtensions()
     {
         if (RomParserExecutor.Parsers.Count == 0)
         {
@@ -119,4 +151,15 @@ RomParserExecutor<SwitchConsole> romParserExecutor)
             .ToList();
         return group;
     }
-}
+
+    // ── IHasContextMenuActions ────────────────────────────────────────────
+    public override IEnumerable<IConsoleRomAction> GetContextMenuActions()
+    {
+        // Universal actions from base
+        foreach (var action in base.GetContextMenuActions())
+            yield return action;
+        // Switch-specific actions
+        yield return new SwitchCheckMissingUpdatesAction();
+        yield return new SwitchGroupByTitleAction();
+    }
+}

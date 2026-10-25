@@ -1,22 +1,18 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace AltoMultiThreadDownloadManager.NativeMessages
 {
     public class Sender
     {
-        public static void Write(JToken data)
+        public static void Write(JsonNode? data)
         {
-            var json = new JObject();
-            json["data"] = data;
+            var json = new JsonObject { ["data"] = data };
 
-            var bytes = System.Text.Encoding.UTF8.GetBytes(json.ToString(Formatting.None));
+            var bytes = Encoding.UTF8.GetBytes(json.ToJsonString());
 
             var stdout = Console.OpenStandardOutput();
             stdout.WriteByte((byte)((bytes.Length >> 0) & 0xFF));

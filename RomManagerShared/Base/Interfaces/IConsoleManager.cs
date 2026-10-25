@@ -1,4 +1,5 @@
 ﻿using RomManagerShared.Base;
+using RomManagerShared.Utils;
 
 namespace RomManagerShared.Interfaces;
 
@@ -9,7 +10,7 @@ public interface IConsoleManager<T>  where T : GamingConsole
     Task ProcessFile(string file);
     Task Setup();
 }
-public  class ConsoleManager<T> :IConsoleManager<T> where T : GamingConsole
+public  class ConsoleManager<T> :IConsoleManager<T>, IHasContextMenuActions where T : GamingConsole
 {
     public TitleInfoProviderManager<T>? TitleInfoProviderManager { get; set; }
     public RomParserExecutor<T> RomParserExecutor { get; set; }
@@ -50,148 +51,34 @@ public  class ConsoleManager<T> :IConsoleManager<T> where T : GamingConsole
         await TitleInfoProviderManager.Setup();
     }
 
-}
-#region console classes
-public class GamingConsole
+    // ── Requirement aggregation ───────────────────────────────────────────
+    /// <summary>
+    /// Collects all <see cref="ConsoleRequirement"/>s from parsers and
+    /// title-info providers that implement <see cref="IHasRequirements"/>.
+    /// Override in subclasses to add manager-level requirements.
+    /// </summary>
+    public virtual IReadOnlyList<ConsoleRequirement> GetAllRequirements()
     {
-    public string Name { get; set; } = "";
-    public string Icon { get; set; } = "";
-}
+        var reqs = new List<ConsoleRequirement>();
+        foreach (var parser in RomParserExecutor.Parsers)
+            if (parser is IHasRequirements hr) reqs.AddRange(hr.GetRequirements());
+        // Deduplicate by Id
+        return reqs.DistinctBy(r => r.Id).ToList();
+    }
 
-public class SwitchConsole : GamingConsole
-{
-    public SwitchConsole()
+    /// <summary>Non-optional requirements that are currently unmet.</summary>
+    public IReadOnlyList<ConsoleRequirement> GetUnmetRequirements()
+        => GetAllRequirements().Where(r => !r.IsOptional && !r.IsMet).ToList();
+
+    // ── Universal context menu actions (all consoles) ─────────────────────
+    /// <summary>
+    /// Returns the universal set of context actions available for every console.
+    /// Subclasses can override to add console-specific actions.
+    /// </summary>
+    public virtual IEnumerable<IConsoleRomAction> GetContextMenuActions()
     {
-        Name = "Switch";
+        yield return new FindDuplicatesAction();
+        yield return new RenameRomsAction();
+        yield return new CalculateHashesAction();
     }
 }
-
-public class ThreeDSConsole : GamingConsole
-{
-    public ThreeDSConsole()
-    {
-        Name = "3DS";
-    }
-}
-
-public class DSConsole : GamingConsole
-{
-    public DSConsole()
-    {
-        Name = "DS";
-    }
-}
-
-public class GameBoyConsole : GamingConsole
-{
-    public GameBoyConsole()
-    {
-        Name = "GameBoy";
-    }
-}
-
-public class GameBoyAdvanceConsole : GamingConsole
-{
-    public GameBoyAdvanceConsole()
-    {
-        Name = "GameBoy Advance";
-    }
-}
-
-public class PS4Console : GamingConsole
-{
-    public PS4Console()
-    {
-        Name = "PS4";
-    }
-}
-
-public class PSPConsole : GamingConsole
-{
-    public PSPConsole()
-    {
-        Name = "PSP";
-    }
-}
-
-public class SNESConsole : GamingConsole
-{
-    public SNESConsole()
-    {
-        Name = "SNES";
-    }
-}
-
-public class WiiConsole : GamingConsole
-{
-    public WiiConsole()
-    {
-        Name = "Wii";
-    }
-}
-
-public class N64Console : GamingConsole
-{
-    public N64Console()
-    {
-        Name = "Nintendo 64";
-    }
-}
-
-public class SegaSaturnConsole : GamingConsole
-{
-    public SegaSaturnConsole()
-    {
-        Name = "Sega Saturn";
-    }
-}
-
-public class PSVitaConsole : GamingConsole
-{
-    public PSVitaConsole()
-    {
-        Name = "PS Vita";
-    }
-}
-
-public class OriginalXboxConsole : GamingConsole
-{
-    public OriginalXboxConsole()
-    {
-        Name = "Original Xbox";
-    }
-}
-
-public class Xbox360Console : GamingConsole
-{
-    public Xbox360Console()
-    {
-        Name = "Xbox 360";
-    }
-}
-
-public class PS3Console : GamingConsole
-{
-    public PS3Console()
-    {
-        Name = "PS3";
-    }
-}
-
-public class PS2Console : GamingConsole
-{
-    public PS2Console()
-    {
-        Name = "PS2";
-    }
-}
-
-public class WiiUConsole : GamingConsole
-{
-    public WiiUConsole()
-    {
-        Name = "Wii U";
-    }
-}
-
-#endregion

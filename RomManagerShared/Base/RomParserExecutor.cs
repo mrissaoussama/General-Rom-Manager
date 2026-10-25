@@ -32,21 +32,21 @@ public class RomParserExecutor<T> where T : GamingConsole
                 {
                     continue;
                 }
-                //f title id exists, merged properties
-                for (int i = 0; i < parsedRomList.Count; i++)
+
+                // Merge parsed ROMs into already-accumulated results by TitleID.
+                // Build the remove-list first to avoid modifying the collection during iteration.
+                var toMerge = new List<Rom>();
+                foreach (var parsedrom in parsedRomList)
                 {
-                    var parsedrom = parsedRomList[i];
-                    foreach (var mergedrom in mergedRomList)
+                    var existing = mergedRomList.FirstOrDefault(m =>
+                        parsedrom.TitleID != null && parsedrom.TitleID == m.TitleID);
+                    if (existing != null)
                     {
-                        if (parsedrom.TitleID == mergedrom.TitleID)
-                        {
-                            RomUtils.CopyNonNullProperties(parsedrom, mergedrom);
-                            parsedRomList.RemoveAt(i);
-                            i--;
-                            break; 
-                        }
+                        RomUtils.CopyNonNullProperties(parsedrom, existing);
+                        toMerge.Add(parsedrom);
                     }
                 }
+                foreach (var r in toMerge) parsedRomList.Remove(r);
                 mergedRomList.AddRange(parsedRomList);
                 
             }

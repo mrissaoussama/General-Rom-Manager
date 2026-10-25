@@ -1,6 +1,7 @@
 ﻿using RomManagerShared.Base;
 using RomManagerShared.Interfaces;
 using RomManagerShared.PS4.Parsers;
+using RomManagerShared.Utils;
 namespace RomManagerShared.PS4;
 
 public class PS4Manager : ConsoleManager<PS4Console>, IRomMissingContentChecker
@@ -75,26 +76,33 @@ RomParserExecutor<PS4Console> romParserExecutor)
 
     public Task<List<RomMissingUpdates>> GetMissingUpdates()
     {
-        throw new NotImplementedException();
+        FileUtils.Log("[PS4] GetMissingUpdates not yet implemented");
+        return Task.FromResult(new List<RomMissingUpdates>());
     }
 
     public Task<RomMissingUpdates?> GetMissingUpdates(Rom rom)
     {
-        throw new NotImplementedException();
+        FileUtils.Log("[PS4] GetMissingUpdates(rom) not yet implemented");
+        return Task.FromResult<RomMissingUpdates?>(null);
     }
 
     public Task<List<RomMissingDLCs>> GetMissingDLC()
     {
-        throw new NotImplementedException();
+        FileUtils.Log("[PS4] GetMissingDLC not yet implemented");
+        return Task.FromResult(new List<RomMissingDLCs>());
     }
 
     Task<RomMissingDLCs> IRomMissingContentChecker.GetMissingDLC(Rom rom)
     {
-        throw new NotImplementedException();
+        FileUtils.Log("[PS4] GetMissingDLC(rom) not yet implemented");
+        return Task.FromResult(new RomMissingDLCs());
     }
 
     public List<Rom> GetRomGroup(Rom rom)
     {
-        throw new NotImplementedException();
+        LoadGroupRomList();
+        var group = GroupedRomList.Where(g => g.Contains(rom))
+            .SelectMany(g => g).ToList();
+        return group;
     }
 }

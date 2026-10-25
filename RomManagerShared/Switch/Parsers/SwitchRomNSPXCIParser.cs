@@ -11,34 +11,101 @@ using RomManagerShared.Interfaces;
 using RomManagerShared.Utils;
 namespace RomManagerShared.Switch.Parsers;
 
-public class SwitchRomNSPXCIParser : IRomParser<SwitchConsole>
+public class SwitchRomNSPXCIParser : IRomParser<SwitchConsole>, IHasRequirements
 {
     public List<string> Extensions { get; set; }
-    public string prodKeys;
-    public string titleKeys; readonly KeySet keyset;
-    List<Rom> RomList;
-    PartitionFileSystem NSPPartitionFileSystem;
-    XciPartition XCIPartitionFileSystem;
-    LocalStorage localStorage;
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-    public SwitchRomNSPXCIParser()
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+
+    // ── Requirements ──────────────────────────────────────────────────────
+    private static readonly string DefaultProdKeys =
+        Environment.ExpandEnvironmentVariables(@"%USERPROFILE%\.switch\prod.keys");
+    private static readonly string DefaultTitleKeys =
+        Environment.ExpandEnvironmentVariables(@"%USERPROFILE%\.switch\title.keys");
+
+    private readonly ConsoleRequirement _prodKeysReq = new()
     {
-        Extensions = ["xci", "nsp"];        prodKeys = Environment.ExpandEnvironmentVariables(@"%USERPROFILE%\.switch\prod.keys");
-        titleKeys = Environment.ExpandEnvironmentVariables(@"%USERPROFILE%\.switch\title.keys");
-        keyset = new KeySet();
-        ExternalKeyReader.ReadKeyFile(keyset, titleKeysFilename: titleKeys, prodKeysFilename: prodKeys); ;        RomList = [];    }
+        Id          = "switch.prod_keys",
+        DisplayName = "prod.keys",
+        Description = "Nintendo Switch production keys file required for NSP/XCI decryption.",
+        Kind        = RequirementKind.KeyFile,
+        DefaultValue = DefaultProdKeys,
+        IsOptional  = false,
+    };
+    private readonly ConsoleRequirement _titleKeysReq = new()
+    {
+        Id          = "switch.title_keys",
+        DisplayName = "title.keys",
+        Description = "Per-title decryption keys (optional but recommended).",
+        Kind        = RequirementKind.KeyFile,
+        DefaultValue = DefaultTitleKeys,
+        IsOptional  = true,
+    };
+
+    public IReadOnlyList<ConsoleRequirement> GetRequirements() => [_prodKeysReq, _titleKeysReq];
+
+    // ── Lazy keyset ───────────────────────────────────────────────────────
+    private KeySet? _keyset;
+    private bool _keysetInitAttempted;
+
+    private KeySet? EnsureKeyset()
+    {
+        if (_keysetInitAttempted) return _keyset;
+        _keysetInitAttempted = true;
+
+        var prodPath  = _prodKeysReq.EffectiveValue;
+        var titlePath = _titleKeysReq.EffectiveValue;
+
+        if (string.IsNullOrEmpty(prodPath) || !File.Exists(prodPath))
+        {
+            FileUtils.Log($"[SwitchNSPXCI] prod.keys not found at '{prodPath}' — parser disabled.");
+            return null;
+        }
+
+        try
+        {
+            _keyset = new KeySet();
+            ExternalKeyReader.ReadKeyFile(_keyset,
+                titleKeysFilename: File.Exists(titlePath) ? titlePath : null,
+                prodKeysFilename: prodPath);
+        }
+        catch (Exception ex)
+        {
+            FileUtils.Log($"[SwitchNSPXCI] Failed to load keys: {ex.Message}");
+            _keyset = null;
+        }
+        return _keyset;
+    }
+
+    // ── Fields ────────────────────────────────────────────────────────────
+    List<Rom> RomList;
+    PartitionFileSystem? NSPPartitionFileSystem;
+    XciPartition? XCIPartitionFileSystem;
+    LocalStorage? localStorage;
+
+    public SwitchRomNSPXCIParser()
+    {
+        Extensions = ["xci", "nsp"];
+        RomList = [];
+    }
+
     public async Task<List<Rom>> ProcessFile(string path)
     {
+        // Abort early if keys are unavailable
+        var keyset = EnsureKeyset();
+        if (keyset is null)
+        {
+            FileUtils.Log($"[SwitchNSPXCI] Skipping '{System.IO.Path.GetFileName(path)}' — no valid keyset.");
+            return [];
+        }
+
         List<Rom> roms = [];
         try
         {
             localStorage = new LocalStorage(path, FileAccess.Read);
-            await FillRomList(path, roms);
+            await FillRomList(path, roms, keyset);
         }
         catch (Exception ex)
         {
-            localStorage.Dispose();
+            localStorage?.Dispose();
             NSPPartitionFileSystem?.Dispose();
             XCIPartitionFileSystem?.Dispose();
             FileUtils.Log($"exception error {path} {ex.Message}");
@@ -50,13 +117,16 @@ public class SwitchRomNSPXCIParser : IRomParser<SwitchConsole>
         }
         RemoveFileLock();
         RomList.AddRange(roms);
-        return roms;    }    private Task FillRomList(string path, List<Rom> roms)
+        return roms;
+    }
+    private Task FillRomList(string path, List<Rom> roms, KeySet keyset)
     {
         IEnumerable<DirectoryEntryEx> entries = [];
         SwitchFs switchFs;
         if (IsNSP(path))
         {
-            ParseNSP();            switchFs = SwitchFs.OpenNcaDirectory(keyset, NSPPartitionFileSystem);
+            ParseNSP();
+            switchFs = SwitchFs.OpenNcaDirectory(keyset, NSPPartitionFileSystem!);
             foreach (LibHac.Tools.Fs.Application app in switchFs.Applications.Values.OrderBy(x => x.Name))
             {
                 if (app.Main != null)
@@ -109,7 +179,8 @@ public class SwitchRomNSPXCIParser : IRomParser<SwitchConsole>
         }
         else
         {
-            ParseXCI();            entries = XCIPartitionFileSystem.EnumerateEntries();
+            ParseXCI(keyset);
+            entries = XCIPartitionFileSystem!.EnumerateEntries();
             foreach (var entry in entries)
             {
                 if (entry.Name.EndsWith(".tik"))
@@ -118,7 +189,8 @@ public class SwitchRomNSPXCIParser : IRomParser<SwitchConsole>
                     var romtype = SwitchUtils.GetRomMetadataClass(titleid);
                     var rom = (Rom)Activator.CreateInstance(romtype);
                     rom.TitleID = titleid.ToUpper();
-                    rom.Path = path;                    if (roms.FirstOrDefault(x => x.TitleID == rom.TitleID) is null)
+                    rom.Path = path;
+                    if (roms.FirstOrDefault(x => x.TitleID == rom.TitleID) is null)
                         roms.Add(rom);
                 }
             }
@@ -169,9 +241,9 @@ public class SwitchRomNSPXCIParser : IRomParser<SwitchConsole>
         return Task.CompletedTask;
 
     }
-    private void ParseXCI()
+    private void ParseXCI(KeySet keyset)
     {
-        var xci = new Xci(keyset, localStorage);
+        var xci = new Xci(keyset, localStorage!);
         if (xci.HasPartition(XciPartitionType.Secure))
         {
             XCIPartitionFileSystem = xci.OpenPartition(XciPartitionType.Secure);
@@ -195,11 +267,11 @@ public class SwitchRomNSPXCIParser : IRomParser<SwitchConsole>
     private void ParseNSP()
     {
         NSPPartitionFileSystem = new PartitionFileSystem();
-        NSPPartitionFileSystem.Initialize(localStorage);
+        NSPPartitionFileSystem.Initialize(localStorage!);
     }
     public void RemoveFileLock()
     {
-        localStorage.Dispose();
+        localStorage?.Dispose();
         NSPPartitionFileSystem?.Dispose();
         XCIPartitionFileSystem?.Dispose();
     }

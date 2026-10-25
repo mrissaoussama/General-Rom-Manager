@@ -76,9 +76,144 @@ public class FileDownloader
         return list.ToArray();
 
     }
+
+    /// <summary>
+    /// Returns one <see cref="DownloadMethodInfo"/> per file that is missing on disk.
+    /// Each returned entry has exactly one URL and one FilePath so callers can
+    /// iterate and queue individual downloads.
+    /// </summary>
+    public static DownloadMethodInfo[] GetMissingResources()
+    {
+        var missing = new List<DownloadMethodInfo>();
+
+        // ── Switch region title-DB files ──────────────────────────────────
+        try
+        {
+            var regionFiles = SwitchConfiguration.GetTitleDBRegionFiles();
+            var titleDbPath = SwitchConfiguration.GetTitleDBPath();
+            var baseUrl     = SwitchConfiguration.GetTitleDBUrl();
+
+            if (regionFiles != null && !string.IsNullOrEmpty(titleDbPath))
+            {
+                foreach (var regionFile in regionFiles)
+                {
+                    if (string.IsNullOrEmpty(regionFile)) continue;
+                    var localPath = Path.Combine(titleDbPath, regionFile);
+                    if (!File.Exists(localPath))
+                        missing.Add(new DownloadMethodInfo
+                        {
+                            DownloadName = $"Switch titledb ({regionFile})",
+                            Url          = [baseUrl + regionFile],
+                            FilePaths    = [localPath],
+                        });
+                }
+            }
+        }
+        catch (Exception ex) { FileUtils.Log($"GetMissingResources (Switch region): {ex.Message}"); }
+
+        // ── Switch versions.json ──────────────────────────────────────────
+        try
+        {
+            var versionsPath = SwitchConfiguration.GetVersionsPath();
+            var versionsUrl  = SwitchConfiguration.GetVersionsUrl();
+            if (!string.IsNullOrEmpty(versionsPath) && !File.Exists(versionsPath))
+                missing.Add(new DownloadMethodInfo
+                {
+                    DownloadName = "Switch versions",
+                    Url          = [versionsUrl],
+                    FilePaths    = [versionsPath],
+                });
+        }
+        catch (Exception ex) { FileUtils.Log($"GetMissingResources (Switch versions): {ex.Message}"); }
+
+        // ── Switch global titledb ─────────────────────────────────────────
+        try
+        {
+            var globalPath = Path.Combine(SwitchConfiguration.GetTitleDBPath(),
+                                          SwitchConfiguration.GetGlobalTitleDBPath());
+            var globalUrl = SwitchConfiguration.GetGlobalTitleDBUrl();
+            if (!string.IsNullOrEmpty(globalPath) && !File.Exists(globalPath))
+                missing.Add(new DownloadMethodInfo
+                {
+                    DownloadName = "Switch global titledb",
+                    Url          = [globalUrl],
+                    FilePaths    = [globalPath],
+                });
+        }
+        catch (Exception ex) { FileUtils.Log($"GetMissingResources (Switch global): {ex.Message}"); }
+
+        // ── WiiU title-DB ─────────────────────────────────────────────────
+        try
+        {
+            var wiiuPath = WiiUConfiguration.GetTitleDBPath();
+            var wiiuUrl  = WiiUConfiguration.GetTitleDBUrl();
+            if (!string.IsNullOrEmpty(wiiuPath) && !File.Exists(wiiuPath))
+                missing.Add(new DownloadMethodInfo
+                {
+                    DownloadName = "WiiU TitleDB",
+                    Url          = [wiiuUrl],
+                    FilePaths    = [wiiuPath],
+                });
+        }
+        catch (Exception ex) { FileUtils.Log($"GetMissingResources (WiiU): {ex.Message}"); }
+
+        // ── 3DS region files ──────────────────────────────────────────────
+        try
+        {
+            var regionFiles = ThreeDSConfiguration.GetTitleDBRegionFilenames();
+            var savePath    = ThreeDSConfiguration.GetTitleDBPath();
+            var baseUrl     = ThreeDSConfiguration.GetTitleDBBaseUrl();
+
+            if (regionFiles != null && !string.IsNullOrEmpty(savePath))
+            {
+                foreach (var regionFile in regionFiles)
+                {
+                    if (string.IsNullOrEmpty(regionFile)) continue;
+                    var localPath = savePath + regionFile;
+                    if (!File.Exists(localPath))
+                        missing.Add(new DownloadMethodInfo
+                        {
+                            DownloadName = $"3DS titledb ({regionFile})",
+                            Url          = [baseUrl + regionFile],
+                            FilePaths    = [localPath],
+                        });
+                }
+            }
+        }
+        catch (Exception ex) { FileUtils.Log($"GetMissingResources (3DS): {ex.Message}"); }
+
+        return missing.ToArray();
+    }
+
+    private static readonly HttpClient _sharedClient = new() { Timeout = System.Threading.Timeout.InfiniteTimeSpan };
+
     public static async Task StartFileDownload(string fileUrl, string localFileName, string? extractPath = null)
     {
-        DownloadManager.StartDownload(fileUrl, Path.GetDirectoryName(localFileName), Path.GetFileName(localFileName), "C:\\Users\\oussama\\Downloads", 3);
+        try
+        {
+            var dir = Path.GetDirectoryName(localFileName);
+            if (!string.IsNullOrEmpty(dir))
+                Directory.CreateDirectory(dir);
+
+            using var response = await _sharedClient.GetAsync(fileUrl, HttpCompletionOption.ResponseHeadersRead);
+            response.EnsureSuccessStatusCode();
+
+            using var stream = await response.Content.ReadAsStreamAsync();
+            using var file   = File.Create(localFileName);
+            await stream.CopyToAsync(file);
+
+            if (extractPath is not null && localFileName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+            {
+                Directory.CreateDirectory(extractPath);
+                ZipFile.ExtractToDirectory(localFileName, extractPath, overwriteFiles: true);
+            }
+
+            FileUtils.Log($"Downloaded: {localFileName}");
+        }
+        catch (Exception ex)
+        {
+            FileUtils.Log($"Error downloading {fileUrl}: {ex.Message}");
+        }
     }
     [ResourceDownload("Switch region titledb",  nameof(SwitchConfiguration.GetTitleDBUrl) ,  nameof(SwitchConfiguration.GetTitleDBRegionFiles) , typeof(SwitchConfiguration) )]
     public static async Task DownloadSwitchTitleDBFiles(bool overrideExistingFiles = false)

@@ -42,30 +42,47 @@ public class SwitchJsonRomDTO : IExternalRomFormat<SwitchConsole>
 {
     public int Id { get; set; }
     [JsonPropertyName("name")]
-    public string? TitleName { get; set; }    [JsonPropertyName("id")]
-    public string? TitleID { get; set; }    [JsonPropertyName("version")]
+    public string? TitleName { get; set; }
+    [JsonPropertyName("id")]
+    public string? TitleID { get; set; }
+    [JsonPropertyName("version")]
     [JsonConverter(typeof(LongToStringConverter))]
-    public long? Version { get; set; }    [JsonPropertyName("region")]
-    public string? Region { get; set; }    [JsonPropertyName("iconUrl")]
-    public string? Icon { get; set; }    [JsonPropertyName("rating")]
-    public int? Rating { get; set; }    [JsonPropertyName("publisher")]
-    public string? Publisher { get; set; }    [JsonPropertyName("ratingContent")]
-    public List<string>? RatingContent { get; set; }    [JsonPropertyName("category")]
-    public List<string>? Genres { get; set; }    [JsonPropertyName("languages")]
-    public List<string>? Languages { get; set; }    [JsonPropertyName("developer")]
-    public string? Developer { get; set; }    [JsonPropertyName("size")]
-    public long? Size { get; set; }    [JsonPropertyName("description")]
-    public string? Description { get; set; }    [JsonPropertyName("isDemo")]
-    public bool? IsDemo { get; set; }    [JsonPropertyName("numberOfPlayers")]
-    public int? NumberOfPlayers { get; set; }    [JsonPropertyName("releaseDate")]
-    public int? ReleaseDate { get; set; }    [JsonPropertyName("bannerUrl")]
+    public long? Version { get; set; }
+    [JsonPropertyName("region")]
+    public string? Region { get; set; }
+    [JsonPropertyName("iconUrl")]
+    public string? Icon { get; set; }
+    [JsonPropertyName("rating")]
+    public int? Rating { get; set; }
+    [JsonPropertyName("publisher")]
+    public string? Publisher { get; set; }
+    [JsonPropertyName("ratingContent")]
+    public List<string>? RatingContent { get; set; }
+    [JsonPropertyName("category")]
+    public List<string>? Genres { get; set; }
+    [JsonPropertyName("languages")]
+    public List<string>? Languages { get; set; }
+    [JsonPropertyName("developer")]
+    public string? Developer { get; set; }
+    [JsonPropertyName("size")]
+    public long? Size { get; set; }
+    [JsonPropertyName("description")]
+    public string? Description { get; set; }
+    [JsonPropertyName("isDemo")]
+    public bool? IsDemo { get; set; }
+    [JsonPropertyName("numberOfPlayers")]
+    public int? NumberOfPlayers { get; set; }
+    [JsonPropertyName("releaseDate")]
+    public int? ReleaseDate { get; set; }
+    [JsonPropertyName("bannerUrl")]
     public string? Banner { get; set; }
     [JsonPropertyName("nsuId")]
 
     public long? NsuID { get; set; }
     [JsonPropertyName("screenshots")]
     public List<string>? Images { get; set; }
-}public class SwitchJsonTitleInfoProvider : TitleInfoProvider<SwitchConsole>, ICanSaveToDB
+}
+public class SwitchJsonTitleInfoProvider : TitleInfoProvider<SwitchConsole>, ICanSaveToDB
 {
     public GenericRepository<SwitchJsonRomDTO> TitlesDatabaseRepository { get; set; }
 
@@ -73,7 +90,8 @@ public class SwitchJsonRomDTO : IExternalRomFormat<SwitchConsole>
     public SwitchJsonTitleInfoProvider(GenericRepository<SwitchJsonRomDTO> repo)
     {
         TitlesDatabaseRepository = repo;
-    }    public override async Task LoadTitleDatabaseAsync()
+    }
+    public override async Task LoadTitleDatabaseAsync()
     {
         await FileDownloader.DownloadSwitchGlobalTitleDBFile();
         await FileDownloader.DownloadSwitchTitleDBFiles();
@@ -88,23 +106,49 @@ public class SwitchJsonRomDTO : IExternalRomFormat<SwitchConsole>
         }
         if (!Directory.Exists(Source))
         {
-            Directory.CreateDirectory(Source);
+            try { Directory.CreateDirectory(Source); }
+            catch (Exception ex)
+            {
+                FileUtils.Log($"[SwitchTitleDB] Could not create directory '{Source}': {ex.Message}");
+                return;
+            }
         }
 
+        var globalJsonPath = Path.Combine(Source, SwitchConfiguration.GetGlobalTitleDBPath());
+        if (File.Exists(globalJsonPath))
+        {
+            try
+            {
+                var globaljsonContent = await File.ReadAllTextAsync(globalJsonPath);
+                var globaldb = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(globaljsonContent);
+                if (globaldb is not null)
+                    TitlesDatabase = TitlesDatabase.Union(globaldb)
+                        .GroupBy(pair => pair.Key)
+                        .ToDictionary(group => group.Key, group => group.First().Value);
+            }
+            catch (Exception ex) { FileUtils.Log($"[SwitchTitleDB] Error loading global titledb: {ex.Message}"); }
+        }
+        else
+        {
+            FileUtils.Log($"[SwitchTitleDB] Global titledb not found at '{globalJsonPath}'. Run 'Check for Updates' to download.");
+        }
 
-        var globaljsonContent = await File.ReadAllTextAsync(Path.Combine(Source, SwitchConfiguration.GetGlobalTitleDBPath()));
-        var globaldb = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(globaljsonContent);
-        TitlesDatabase = TitlesDatabase.Union(globaldb)
- .GroupBy(pair => pair.Key)
- .ToDictionary(group => group.Key, group => group.First().Value);
         foreach (var regionFile in SwitchConfiguration.GetTitleDBRegionFiles())
         {
-            var jsonContent = await File.ReadAllTextAsync(Path.Combine(Source, regionFile));
-            var regiondb = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(jsonContent);
-            TitlesDatabase = TitlesDatabase
- .Union(regiondb)
- .GroupBy(pair => pair.Key)
- .ToDictionary(group => group.Key, group => group.First().Value);
+            if (string.IsNullOrEmpty(regionFile)) continue;
+            var regionPath = Path.Combine(Source, regionFile);
+            if (!File.Exists(regionPath)) { FileUtils.Log($"[SwitchTitleDB] Region file not found: {regionPath}"); continue; }
+            try
+            {
+                var jsonContent = await File.ReadAllTextAsync(regionPath);
+                var regiondb = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(jsonContent);
+                if (regiondb is not null)
+                    TitlesDatabase = TitlesDatabase
+                        .Union(regiondb)
+                        .GroupBy(pair => pair.Key)
+                        .ToDictionary(group => group.Key, group => group.First().Value);
+            }
+            catch (Exception ex) { FileUtils.Log($"[SwitchTitleDB] Error loading region file '{regionFile}': {ex.Message}"); }
         }
 
 
@@ -275,19 +319,23 @@ public class SwitchJsonRomDTO : IExternalRomFormat<SwitchConsole>
 
         return string.Empty;
     }
-    private static Rom MapToRom(Rom rom, JsonElement titleInfo, Type metadataClass)
+
+    private static Rom MapToRom(Rom rom, JsonElement titleInfo, Type metadataClass)
     {
         if (metadataClass != null)
         {
             var jsonString = titleInfo.GetRawText();
-            var romDto = JsonSerializer.Deserialize<SwitchJsonRomDTO>(jsonString);            // Copy non-null and non-default values from DTO to IRom
-            CopyNonNullValues(romDto, rom);            return rom;
+            var romDto = JsonSerializer.Deserialize<SwitchJsonRomDTO>(jsonString);
+            // Copy non-null and non-default values from DTO to IRom
+            CopyNonNullValues(romDto, rom);
+            return rom;
         }
         else
         {
             return null;
         }
-    }    private static void CopyNonNullValues(SwitchJsonRomDTO romDto, Rom rom)
+    }
+    private static void CopyNonNullValues(SwitchJsonRomDTO romDto, Rom rom)
     {
         // Set IsDemo to false if it's null
         rom.IsDemo = romDto.IsDemo ?? false;
@@ -332,7 +380,8 @@ public class SwitchJsonRomDTO : IExternalRomFormat<SwitchConsole>
             foreach (var language in romDto.Languages)
                 rom.AddLanguage(LanguageUtils.ConvertToLanguage(language));
         }
-        rom.NumberOfPlayers = romDto.NumberOfPlayers ?? rom.NumberOfPlayers;        if (romDto.ReleaseDate != null)
+        rom.NumberOfPlayers = romDto.NumberOfPlayers ?? rom.NumberOfPlayers;
+        if (romDto.ReleaseDate != null)
         {
             int releasedate = (int)romDto.ReleaseDate;
             string datestring = releasedate.ToString();
@@ -341,7 +390,8 @@ public class SwitchJsonRomDTO : IExternalRomFormat<SwitchConsole>
                 "yyyyMMdd",
                 CultureInfo.InvariantCulture);
             rom.ReleaseDate = dateonly;
-        }        rom.Banner = romDto.Banner ?? rom.Banner;
+        }
+        rom.Banner = romDto.Banner ?? rom.Banner;
         rom.Images = romDto.Images ?? rom.Images;
     }
 }

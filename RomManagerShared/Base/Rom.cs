@@ -88,10 +88,11 @@ public class Rom
     }
     public override bool Equals(object? obj)
     {
-        if (obj is null) return false;
-        Rom otherRom = (Rom)obj;
-        return otherRom.TitleID == TitleID && otherRom.Path==Path;
+        if (obj is null || obj is not Rom otherRom) return false;
+        return otherRom.TitleID == TitleID && otherRom.Path == Path;
     }
+
+    public override int GetHashCode() => HashCode.Combine(TitleID, Path);
     public void AddTitleName(string title, Language Language = Language.Unknown)
     {
         Titles ??= [];
@@ -119,7 +120,9 @@ public class Rom
     }
     public override string ToString()
     {
-        return $"{TitleID}| {Titles?.First().Value} |{Regions[0]}| {Version}";
+        var title = Titles?.FirstOrDefault()?.Value ?? "Unknown";
+        var region = Regions?.FirstOrDefault().ToString() ?? "Unknown";
+        return $"{TitleID}| {title} |{region}| {Version}";
     }
     public void AddDescription(string description, Language Language = Language.Unknown)
     {

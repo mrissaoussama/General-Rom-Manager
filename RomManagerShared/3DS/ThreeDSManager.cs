@@ -1,8 +1,8 @@
 ﻿using RomManagerShared.Base;
 using RomManagerShared.Interfaces;
-using RomManagerShared.Switch;
 using RomManagerShared.ThreeDS.Configuration;
 using RomManagerShared.ThreeDS.TitleInfoProviders;
+using RomManagerShared.Utils;
 
 namespace RomManagerShared.ThreeDS;
 public class ThreeDSManager : ConsoleManager<ThreeDSConsole>, IRomMissingContentChecker
@@ -19,22 +19,26 @@ public class ThreeDSManager : ConsoleManager<ThreeDSConsole>, IRomMissingContent
 
     public Task<List<RomMissingDLCs>> GetMissingDLC()
     {
-        throw new NotImplementedException();
+        FileUtils.Log("[3DS] GetMissingDLC not yet implemented");
+        return Task.FromResult(new List<RomMissingDLCs>());
     }
 
     public Task<RomMissingDLCs> GetMissingDLC(Rom rom)
     {
-        throw new NotImplementedException();
+        FileUtils.Log("[3DS] GetMissingDLC(rom) not yet implemented");
+        return Task.FromResult(new RomMissingDLCs());
     }
 
     public Task<List<RomMissingUpdates>> GetMissingUpdates()
     {
-        throw new NotImplementedException();
+        FileUtils.Log("[3DS] GetMissingUpdates not yet implemented");
+        return Task.FromResult(new List<RomMissingUpdates>());
     }
 
     public Task<RomMissingUpdates?> GetMissingUpdates(Rom rom)
     {
-        throw new NotImplementedException();
+        FileUtils.Log("[3DS] GetMissingUpdates(rom) not yet implemented");
+        return Task.FromResult<RomMissingUpdates?>(null);
     }
 
     public List<Rom> GetRomGroup(Rom rom)

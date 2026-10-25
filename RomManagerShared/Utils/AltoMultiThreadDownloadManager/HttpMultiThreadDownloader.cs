@@ -5,7 +5,7 @@ using AltoMultiThreadDownloadManager.Helpers;
 using AltoMultiThreadDownloadManager.NativeMessages;
 using AltoMultiThreadDownloadManager.Exceptions;
 using SC = System.ComponentModel;
-using Newtonsoft.Json;
+using System.Text.Json;
 using AltoMultiThreadDownloadManager.Enums;
 using System.Timers;
 // ReSharper disable All
@@ -304,8 +304,8 @@ namespace AltoMultiThreadDownloadManager
         /// <returns></returns>
         public HttpMultiThreadDownloader Clone()
         {
-            var json = JsonConvert.SerializeObject(this);
-            return JsonConvert.DeserializeObject<HttpMultiThreadDownloader>(json);
+            var json = JsonSerializer.Serialize(this);
+            return JsonSerializer.Deserialize<HttpMultiThreadDownloader>(json)!;
         }
         #endregion
 

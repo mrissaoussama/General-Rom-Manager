@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace AltoMultiThreadDownloadManager.NativeMessages
 {
@@ -15,24 +15,23 @@ namespace AltoMultiThreadDownloadManager.NativeMessages
         /// </summary>
         /// <param name="data">The native message data</param>
         /// <returns></returns>
-        public static string ProcessMessage(JObject data)
+        public static string? ProcessMessage(JsonObject? data)
         {
             if (data == null)
                 return null;
-            return (data["text"] ?? string.Empty).Value<string>();
+            return data["text"]?.GetValue<string>();
         }
         /// <summary>
         /// Reads the native message using stdio
         /// </summary>
         /// <returns></returns>
-        public static JObject Read()
+        public static JsonObject? Read()
         {
             var stdin = Console.OpenStandardInput();
-            var length = 0;
 
             var lengthBytes = new byte[4];
             stdin.Read(lengthBytes, 0, 4);
-            length = BitConverter.ToInt32(lengthBytes, 0);
+            var length = BitConverter.ToInt32(lengthBytes, 0);
 
             var buffer = new char[length];
             using (var reader = new StreamReader(stdin))
@@ -40,14 +39,13 @@ namespace AltoMultiThreadDownloadManager.NativeMessages
                 reader.Read(buffer, 0, buffer.Length);
             }
 
-
-            return (JObject)JsonConvert.DeserializeObject<JObject>(new string(buffer));
+            return JsonNode.Parse(new string(buffer))?.AsObject();
         }
         /// <summary>
         /// Gets the native message as parsed to DownloadMessage
         /// </summary>
         /// <returns></returns>
-        public static DownloadMessage ReadDownloadMessage()
+        public static DownloadMessage? ReadDownloadMessage()
         {
             var jobj = Read();
             if (jobj == null)
@@ -55,7 +53,7 @@ namespace AltoMultiThreadDownloadManager.NativeMessages
             var prc = ProcessMessage(jobj);
             if (prc == null)
                 return null;
-            return JsonConvert.DeserializeObject<DownloadMessage>(prc);
+            return JsonSerializer.Deserialize<DownloadMessage>(prc);
         }
     }
     

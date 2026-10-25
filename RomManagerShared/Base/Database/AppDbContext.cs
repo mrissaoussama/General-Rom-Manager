@@ -1,123 +1,155 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
-using Microsoft.EntityFrameworkCore.Proxies;
 using RomManagerShared.Base;
 using RomManagerShared.Configuration;
-using RomManagerShared.DS;
-using RomManagerShared.GameBoy;
-using RomManagerShared.GameBoyAdvance;
-using RomManagerShared.Nintendo64;
-using RomManagerShared.OriginalXbox;
-using RomManagerShared.PS2;
-using RomManagerShared.PS3;
-using RomManagerShared.PS4;
-using RomManagerShared.PSP;
-using RomManagerShared.PSVita;
-using RomManagerShared.SegaSaturn;
-using RomManagerShared.SNES;
-using RomManagerShared.Switch;
-using RomManagerShared.Switch.TitleInfoProviders;
-using RomManagerShared.ThreeDS;
-using RomManagerShared.ThreeDS.TitleInfoProviders;
-using RomManagerShared.Wii;
-using RomManagerShared.Wii.TitleInfoProviders;
-using RomManagerShared.WiiU;
-using RomManagerShared.Xbox360;
-using static RomManagerShared.ThreeDS.TitleInfoProviders.ThreeDSJsonTitleInfoProvider;
 using RomManagerShared.Utils;
 
 namespace RomManagerShared.Base.Database;
 
-public class AppDbContext : DbContext
+// ──────────────────────────────────────────────────────────────────────────────
+// AppDbContext — core configuration
+// Platform DbSets live in the AppDbContext.*.cs partial files.
+// ──────────────────────────────────────────────────────────────────────────────
+
+public partial class AppDbContext : DbContext, IUnitOfWork
 {
-    public DbSet<Rom> Roms { get; set; }
-    public DbSet<ThreeDSGame> ThreeDSGames { get; set; }
-    public DbSet<ThreeDSDLC> ThreeDSDLCs { get; set; }
-    public DbSet<ThreeDSUpdate> ThreeDSUpdates { get; set; }
-    public DbSet<DSGame> DSGames { get; set; }
-    public DbSet<GameBoyAdvanceGame> GBAGames { get; set; }
-    public DbSet<GameBoyGame> GBGames { get; set; }
-    public DbSet<Nintendo64Game> N64Games { get; set; }
-    public DbSet<OriginalXboxGame> OriginalXboxGames { get; set; }
-    public DbSet<PS2Game> PS2Games { get; set; }
-    public DbSet<PS3Game> PS3Games { get; set; }
-    public DbSet<PS3DLC> PS3DLCs { get; set; }
-    public DbSet<PS3Update> PS3Updates { get; set; }
-    public DbSet<PS4Game> PS4Games { get; set; }
-    public DbSet<PS4DLC> PS4DLCs { get; set; }
-    public DbSet<PS4Update> PS4Updates { get; set; }
-    public DbSet<PSPGame> PSPGames { get; set; }
-    public DbSet<PSPDLC> PSPDLCs { get; set; }
-    public DbSet<PSPUpdate> PSPUpdates { get; set; }
-    public DbSet<PSVitaGame> PSVitaGames { get; set; }
-    public DbSet<PSVitaDLC> PSVitaDLCs { get; set; }
-    public DbSet<PSVitaUpdate> PSVitaUpdates { get; set; }
-    public DbSet<SegaSaturnGame> SegaSaturnGames { get; set; }
-    public DbSet<SNESGame> SNESGames { get; set; }
-    public DbSet<SwitchGame> SwitchGames { get; set; }
-    public DbSet<SwitchDLC> SwitchDLCs { get; set; }
-    public DbSet<SwitchUpdate> SwitchUpdates { get; set; }
-    public DbSet<WiiGame> WiiGames { get; set; }
-    public DbSet<WiiUGame> WiiUGames { get; set; }
-    public DbSet<WiiUDLC> WiiUDLCs { get; set; }
-    public DbSet<WiiUUpdate> WiiUUpdates { get; set; }
-    public DbSet<Xbox360Game> Xbox360Games { get; set; }
-    public DbSet<Xbox360DLC> Xbox360DLCs { get; set; }
-    public DbSet<Xbox360Update> Xbox360Updates { get; set; }
-    //public DbSet<PS5DLC> PS5DLCs { get; set; }
-    //public DbSet<PS5Update> PS5Updates { get; set; }
-    //public DbSet<PS5Game> PS5Updates { get; set; }
+    // ── Constructors ───────────────────────────────────────────────────────
 
-    public DbSet<WiiUWikiBrewTitleDTO> WiiUWikiBrewTitleDTOs { get; set; }
-    public DbSet<ThreeDSJsonDTO> ThreeDSJsonDTOs { get; set; }
-    public DbSet<SwitchJsonRomDTO> SwitchJsonRomDTOs { get; set; }
-    public DbSet<WiiGameTDBXmlRomDTO> WiiXmlRomDTOs { get; set; }
-    public DbSet<Rating> Ratings { get; set; }
-    public DbSet<RomHash> RomHashes { get; set; }
-    public DbSet<RomHashProperty> RomHashProperties { get; set; }
-    public DbSet<NoIntroDataFile> NoIntroDataFiles { get; set; }
-    public DbSet<NoIntroGame> NoIntroGames { get; set; }
-    public DbSet<NoIntroHeader> NoIntroHeaders { get; set; }
-    public DbSet<NoIntroRom> NoIntroRoms { get; set; }
+    /// <summary>Default constructor for production/runtime use.</summary>
+    public AppDbContext() { }
 
-    public string DbPath { get; set; }
+    /// <summary>Constructor for testing / factory scenarios with pre-configured options.</summary>
+    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-    public AppDbContext()
-    {
-        Database.EnsureCreated();
-    }
+    // ── Shared / cross-platform sets ─────────────────────────────────────
+
+    public DbSet<Rom> Roms { get; set; } = null!;
+    public DbSet<Rating> Ratings { get; set; } = null!;
+    public DbSet<RomHash> RomHashes { get; set; } = null!;
+    public DbSet<RomHashProperty> RomHashProperties { get; set; } = null!;
+
+    // ── Configuration ─────────────────────────────────────────────────────
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
-        string appDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        DbPath= Path.Combine(appDataFolder, "GeneralRomManager\\RomDB.sqlite");
-        options.UseSqlite($"Data Source={DbPath}");
+        if (options.IsConfigured) return; // respect factory-supplied options in tests
+
+        var dbPath = GetDbPath();
+
+        // Ensure the directory exists before SQLite tries to create the file
+        try
+        {
+            var dir = Path.GetDirectoryName(dbPath);
+            if (!string.IsNullOrEmpty(dir))
+                Directory.CreateDirectory(dir);
+        }
+        catch { /* best-effort; SQLite will emit a clearer error if path is unavailable */ }
+
+        options.UseSqlite($"Data Source={dbPath}");
         options.UseLazyLoadingProxies();
     }
+
+    public static string GetDbPath()
+    {
+        try
+        {
+            return RomManagerConfiguration.GetSqliteDBPath();
+        }
+        catch
+        {
+            // Fallback when config is not yet loaded (e.g. design-time migrations)
+            return Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "GeneralRomManager", "Data", "roms.db");
+        }
+    }
+
+    // ── Model creation ────────────────────────────────────────────────────
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // Base hierarchy — use TPH (Table-Per-Hierarchy)
+        modelBuilder.Entity<Rom>()
+            .HasDiscriminator<string>("RomType")
+            .HasValue<Rom>("Rom")
+            .HasValue<Game>("Game")
+            .HasValue<Update>("Update")
+            .HasValue<DLC>("DLC")
+            .HasValue<Homebrew>("Homebrew");
+
+        // Game → Updates / DLCs relationships
         modelBuilder.Entity<DLC>()
             .HasOne(dlc => dlc.RelatedGame)
             .WithMany(game => game.DLCs)
-            .HasForeignKey(dlc => dlc.Id);
+            .HasForeignKey("RelatedGameId")
+            .OnDelete(DeleteBehavior.SetNull);
 
         modelBuilder.Entity<Update>()
             .HasOne(update => update.RelatedGame)
             .WithMany(game => game.Updates)
-            .HasForeignKey(update => update.Id);
-       // modelBuilder.Entity<WiiUWikiBrewTitleDTO>()
-       //.HasIndex(e => e.ProductCode) 
-       //.IsUnique(); 
-        modelBuilder.Entity<ThreeDSJsonDTO>()
-       .HasIndex(e => e.TitleID)
-       .IsUnique(); 
-        modelBuilder.Entity<SwitchJsonRomDTO>()
-       .HasIndex(e => e.TitleID)
-       .IsUnique();
-        modelBuilder.Entity<WiiGameTDBXmlRomDTO>()
-       .HasIndex(e => e.TitleID)
-       .IsUnique();
-      
+            .HasForeignKey("RelatedGameId")
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // Platform-specific model configurations are in partial methods
+        ConfigureNintendoModels(modelBuilder);
+        ConfigureSonyModels(modelBuilder);
+        ConfigureMicrosoftModels(modelBuilder);
+        ConfigureNoIntroModels(modelBuilder);
+
         base.OnModelCreating(modelBuilder);
     }
+
+    // Partial configuration hooks — implemented in their respective files
+    partial void ConfigureNintendoModels(ModelBuilder modelBuilder);
+    partial void ConfigureSonyModels(ModelBuilder modelBuilder);
+    partial void ConfigureMicrosoftModels(ModelBuilder modelBuilder);
+    partial void ConfigureNoIntroModels(ModelBuilder modelBuilder);
+
+    // ── IUnitOfWork ───────────────────────────────────────────────────────
+
+    private Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction? _currentTransaction;
+
+    public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)
+    {
+        if (_currentTransaction is not null)
+            throw new InvalidOperationException("A transaction is already in progress.");
+        _currentTransaction = await Database.BeginTransactionAsync(cancellationToken);
+    }
+
+    public async Task CommitAsync(CancellationToken cancellationToken = default)
+    {
+        if (_currentTransaction is null) throw new InvalidOperationException("No active transaction.");
+        try
+        {
+            await SaveChangesAsync(cancellationToken);
+            await _currentTransaction.CommitAsync(cancellationToken);
+        }
+        finally
+        {
+            await _currentTransaction.DisposeAsync();
+            _currentTransaction = null;
+        }
+    }
+
+    public async Task RollbackAsync(CancellationToken cancellationToken = default)
+    {
+        if (_currentTransaction is null) throw new InvalidOperationException("No active transaction.");
+        try { await _currentTransaction.RollbackAsync(cancellationToken); }
+        finally
+        {
+            await _currentTransaction.DisposeAsync();
+            _currentTransaction = null;
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_currentTransaction is not null)
+        {
+            await _currentTransaction.DisposeAsync();
+            _currentTransaction = null;
+        }
+        await base.DisposeAsync();
+        GC.SuppressFinalize(this);
+    }
 }
+
