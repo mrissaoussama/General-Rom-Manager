@@ -1,0 +1,147 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:AvaloniaUI.ViewModels"
+             x:Class="AvaloniaUI.Views.MainView"
+             x:DataType="vm:MainViewModel">
+    <UserControl.KeyBindings>
+        <KeyBinding Gesture="F5" Command="{Binding RefreshCommand}" />
+        <KeyBinding Gesture="Ctrl+OemComma" Command="{Binding OpenSettingsCommand}" />
+        <KeyBinding Gesture="Ctrl+D" Command="{Binding ShowDashboardCommand}" />
+        <KeyBinding Gesture="Ctrl+L" Command="{Binding ShowLogCommand}" />
+    </UserControl.KeyBindings>
+
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="_Settings…" InputGesture="Ctrl+OemComma" Command="{Binding OpenSettingsCommand}" />
+                <Separator />
+                <MenuItem Header="E_xit" Command="{Binding ExitCommand}" />
+            </MenuItem>
+            <MenuItem Header="_View">
+                <MenuItem Header="_Dashboard" InputGesture="Ctrl+D" Command="{Binding ShowDashboardCommand}" />
+                <MenuItem Header="_Log" InputGesture="Ctrl+L" Command="{Binding ShowLogCommand}" />
+                <Separator />
+                <MenuItem Header="_Theme">
+                    <MenuItem Header="_System" Command="{Binding SetThemeCommand}" CommandParameter="Default" />
+                    <MenuItem Header="_Light" Command="{Binding SetThemeCommand}" CommandParameter="Light" />
+                    <MenuItem Header="_Dark" Command="{Binding SetThemeCommand}" CommandParameter="Dark" />
+                </MenuItem>
+                <MenuItem Header="_Compact rows" Command="{Binding ToggleCompactModeCommand}" />
+            </MenuItem>
+            <MenuItem Header="_Library">
+                <MenuItem Header="_Scan all" InputGesture="F5" Command="{Binding RefreshCommand}" />
+                <MenuItem Header="_Download missing databases" Command="{Binding CheckForUpdatesCommand}" />
+            </MenuItem>
+        </Menu>
+
+        <Border DockPanel.Dock="Bottom" Classes="statusbar">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+                <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center" />
+                <ProgressBar IsIndeterminate="True" Width="80" MinWidth="80" Height="4" MinHeight="4"
+                             VerticalAlignment="Center" IsVisible="{Binding IsAnyLoading}" />
+            </StackPanel>
+        </Border>
+
+        <Grid ColumnDefinitions="190,4,*" RowDefinitions="*,4,180">
+            <!-- Sidebar -->
+            <ListBox Grid.RowSpan="3" Classes="sidebar" ItemsSource="{Binding Pages}"
+                     SelectedItem="{Binding SelectedPage, Mode=TwoWay}">
+                <ListBox.DataTemplates>
+                    <DataTemplate DataType="vm:DashboardViewModel">
+                        <TextBlock Text="Dashboard" FontWeight="SemiBold" />
+                    </DataTemplate>
+                    <DataTemplate DataType="vm:ConsoleViewModelBase">
+                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                            <TextBlock Text="{Binding ConsoleName}" />
+                            <TextBlock Grid.Column="1" Text="{Binding RomCount}" Opacity="0.6" />
+                            <ProgressBar Grid.Row="1" Grid.ColumnSpan="2" IsIndeterminate="True"
+                                         Height="2" MinHeight="2" Margin="0,3,0,0" IsVisible="{Binding IsLoading}" />
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.DataTemplates>
+            </ListBox>
+            <GridSplitter Grid.Column="1" Grid.RowSpan="3" ResizeDirection="Columns" />
+
+            <!-- Page (dashboard or console); views resolved by ViewLocator -->
+            <ContentControl Grid.Column="2" Content="{Binding SelectedPage}" />
+
+            <GridSplitter Grid.Row="1" Grid.Column="2" ResizeDirection="Rows" />
+
+            <TabControl Grid.Row="2" Grid.Column="2" Classes="panel" SelectedIndex="{Binding SelectedBottomTab}">
+                <TabItem Header="Log">
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Top" Classes="toolbar">
+                            <Button Content="Reload" Command="{Binding Log.ReloadCommand}" />
+                            <Button Content="Copy" Command="{Binding Log.CopyCommand}" />
+                            <Button Content="Open file" Command="{Binding Log.OpenFileCommand}" />
+                        </StackPanel>
+                        <ListBox x:Name="LogList" Classes="log" ItemsSource="{Binding Log.Lines}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate x:DataType="x:String">
+                                    <SelectableTextBlock Text="{Binding}" />
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </DockPanel>
+                </TabItem>
+
+                <TabItem Header="Operations">
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Top" Classes="toolbar">
+                            <Button Content="Clear finished" Command="{Binding OperationsPanel.ClearFinishedCommand}" />
+                            <Button Content="Cancel all" Command="{Binding OperationsPanel.CancelAllCommand}" />
+                        </StackPanel>
+                        <Panel>
+                            <TextBlock Text="No operations queued." Opacity="0.5" Margin="8"
+                                       IsVisible="{Binding OperationsPanel.IsEmpty}" />
+                            <ItemsControl ItemsSource="{Binding OperationsPanel.Items}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:OperationItemViewModel">
+                                        <DockPanel Margin="6,2">
+                                            <TextBlock DockPanel.Dock="Left" Text="{Binding State}" Width="80" Opacity="0.7" />
+                                            <Button DockPanel.Dock="Right" Content="Cancel" Classes="small"
+                                                    IsVisible="{Binding CanCancel}"
+                                                    Command="{Binding $parent[ItemsControl].((vm:OperationsViewModel)DataContext).CancelCommand}"
+                                                    CommandParameter="{Binding}" />
+                                            <Button DockPanel.Dock="Right" Content="Undo" Classes="small"
+                                                    IsVisible="{Binding CanUndo}"
+                                                    Command="{Binding $parent[ItemsControl].((vm:OperationsViewModel)DataContext).UndoCommand}"
+                                                    CommandParameter="{Binding}" />
+                                            <ProgressBar DockPanel.Dock="Right" Width="80" MinWidth="80" Margin="4,0"
+                                                         Value="{Binding Progress}" IsVisible="{Binding IsRunning}" />
+                                            <TextBlock Text="{Binding Text}" TextTrimming="CharacterEllipsis" />
+                                        </DockPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Panel>
+                    </DockPanel>
+                </TabItem>
+
+                <TabItem Header="Downloads">
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Top" Classes="toolbar">
+                            <Button Content="Pause all" Command="{Binding DownloadManager.PauseAllCommand}" />
+                            <Button Content="Resume all" Command="{Binding DownloadManager.ResumeAllCommand}" />
+                            <Button Content="Clear completed" Command="{Binding DownloadManager.ClearCompletedCommand}" />
+                        </StackPanel>
+                        <ItemsControl ItemsSource="{Binding DownloadManager.Downloads}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:DownloadEntryViewModel">
+                                    <Grid Margin="6,2" ColumnDefinitions="*,90,140,80,Auto">
+                                        <TextBlock Text="{Binding FileName}" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Grid.Column="1" Text="{Binding Status}" />
+                                        <TextBlock Grid.Column="2" Text="{Binding ProgressText}" />
+                                        <TextBlock Grid.Column="3" Text="{Binding SpeedText}" />
+                                        <Button Grid.Column="4" Content="Cancel" Classes="small"
+                                                Command="{Binding CancelCommand}" IsVisible="{Binding CanPause}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </DockPanel>
+                </TabItem>
+            </TabControl>
+        </Grid>
+    </DockPanel>
+</UserControl>

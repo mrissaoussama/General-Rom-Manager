@@ -18,13 +18,8 @@ public partial class RomViewModel : ViewModelBase
     public string RomType => DetermineRomType();
     public string Path => _rom.Path ?? string.Empty;
 
-    // ── Grouping support ──────────────────────────────────────────────────
-    /// <summary>0 = top-level or ungrouped, 1 = child of a group header.</summary>
-    public int GroupDepth { get; set; }
-    /// <summary>True if this row is the group header (parent).</summary>
-    public bool IsGroupHeader { get; set; }
-    /// <summary>Number of children under this group header.</summary>
-    public int ChildCount { get; set; }
+    /// <summary>Group header text when the list is grouped by game.</summary>
+    public string GroupKey { get; set; } = "";
     public string GetPropertyValue(string key)
     {
         return Properties.FirstOrDefault(p => p.Key == key).Value ?? string.Empty;
@@ -49,22 +44,6 @@ public partial class RomViewModel : ViewModelBase
         {
             dict.TryAdd(prop, string.Empty);
         }
-        return dict;
-    }
-    private Dictionary<string, object> InitializePropertiesDictionary()
-    {
-        var dict = new Dictionary<string, object>();
-        
-        // Get all properties with UiPropertyAttribute
-        foreach (var prop in _rom.GetType().GetProperties())
-        {
-            var value = prop.GetValue(_rom);
-            if (value != null)
-            {
-                dict[prop.Name] = value;
-            }
-        }
-        
         return dict;
     }
     public RomViewModel(Rom rom)
@@ -158,16 +137,6 @@ public partial class RomViewModel : ViewModelBase
     private void AddProperty(string key, string value)
     {
         Properties.Add(new KeyValuePair<string, string>(key, value ?? string.Empty));
-    }
-
-    [RelayCommand]
-    private void ViewDetails()
-    {
-    }
-
-    [RelayCommand]
-    private void RenameFile()
-    {
     }
 
     private string DetermineRomType()

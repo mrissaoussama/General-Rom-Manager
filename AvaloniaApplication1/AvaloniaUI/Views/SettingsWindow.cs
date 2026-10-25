@@ -103,6 +103,7 @@ public sealed class SettingsWindow : Window
         compactCheck.IsCheckedChanged += (_, _) =>
         {
             settings.IsCompactMode = compactCheck.IsChecked ?? false;
+            Settings.RaiseCompactModeChanged();
         };
         sp.Children.Add(compactCheck);
 

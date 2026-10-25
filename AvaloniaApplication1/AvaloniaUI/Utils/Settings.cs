@@ -32,6 +32,10 @@ public class Settings
     public static void RaiseColumnsChanged(string consoleName) =>
         ColumnsChanged?.Invoke(consoleName);
 
+    /// <summary>Raised when compact mode is toggled.</summary>
+    public static event Action? CompactModeChanged;
+    public static void RaiseCompactModeChanged() => CompactModeChanged?.Invoke();
+
     // ── Library Paths ─────────────────────────────────────────────────────
     /// <summary>Root directory for database / metadata storage.</summary>
     public string? DatabasePath { get; set; }

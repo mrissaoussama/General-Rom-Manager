@@ -32,7 +32,7 @@ dotnet run --project tools/ParserHarness -- PS4Console "Y:\roms\PS4" 5
 | `RomManagerShared/Base/` | `Rom`/`Game`/`Update`/`DLC`, `ConsoleManager<T>`, `RomParserExecutor<T>`, `OperationQueue`, actions |
 | `RomManagerShared/<Console>/` | One folder per console: `Parsers/`, `TitleInfoProviders/`, `*Manager.cs`, `*Rom.cs` |
 | `RomManagerShared/Utils/` | File/hash/download utils, `PluginManager`, renamer, mover, duplicate detector; vendored ISO2GOD + Alto downloader |
-| `AvaloniaApplication1/AvaloniaUI/` | UI library: `App.axaml.cs` (DI composition root), ViewModels, code-built Views |
+| `AvaloniaApplication1/AvaloniaUI/` | UI library: `App.axaml.cs` (DI composition root), ViewModels, AXAML Views (`MainView` shell, `DashboardView`, `ConsoleView`, `RomDetailsView`); `ViewLocator` maps VM → view |
 | `AvaloniaApplication1/AvaloniaUI.Desktop/` | Desktop head (the only head that matters) |
 | `SkyEditor.IO/` | Vendored binary IO lib (netstandard2.0) used by 3DS code |
 | `RomManagerTests/` | xUnit tests (DB, DI resolution, renamer, mover, duplicates). No parser tests yet |

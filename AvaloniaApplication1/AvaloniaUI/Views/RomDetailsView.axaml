@@ -1,0 +1,74 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:AvaloniaUI.ViewModels"
+             xmlns:imaging="using:Avalonia.Media.Imaging"
+             x:Class="AvaloniaUI.Views.RomDetailsView"
+             x:DataType="vm:RomDetailsViewModel">
+    <StackPanel Margin="10" Spacing="4">
+        <ItemsControl ItemsSource="{Binding Images}" IsVisible="{Binding HasImages}" Margin="0,0,0,6">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <WrapPanel />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="imaging:Bitmap">
+                    <Image Source="{Binding}" MaxWidth="280" MaxHeight="200" Margin="0,0,6,6" Stretch="Uniform" />
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <SelectableTextBlock Text="{Binding Title}" Classes="h3" TextWrapping="Wrap" />
+        <TextBlock Text="{Binding Subtitle}" Classes="muted" Margin="0,0,0,8" />
+
+        <ItemsControl ItemsSource="{Binding Properties}">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:DetailRow">
+                    <Grid ColumnDefinitions="110,*" Margin="0,1">
+                        <TextBlock Text="{Binding Key}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                        <SelectableTextBlock Grid.Column="1" Text="{Binding Value}" TextWrapping="Wrap" />
+                    </Grid>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <TextBlock Text="{Binding BaseGame, StringFormat='Base game: {0}'}" Classes="muted" Margin="0,6,0,0"
+                   IsVisible="{Binding BaseGame, Converter={x:Static ObjectConverters.IsNotNull}}" />
+
+        <StackPanel IsVisible="{Binding Description, Converter={x:Static ObjectConverters.IsNotNull}}">
+            <TextBlock Text="Description" Classes="section" />
+            <SelectableTextBlock Text="{Binding Description}" TextWrapping="Wrap" Opacity="0.85" />
+        </StackPanel>
+
+        <ItemsControl ItemsSource="{Binding Sections}">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:DetailSection">
+                    <StackPanel>
+                        <TextBlock Text="{Binding Header}" Classes="section" />
+                        <ItemsControl ItemsSource="{Binding Items}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="x:String">
+                                    <TextBlock Text="{Binding}" Margin="8,0,0,1" TextTrimming="CharacterEllipsis" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <StackPanel IsVisible="{Binding HasHashes}">
+            <TextBlock Text="Hashes" Classes="section" />
+            <ItemsControl ItemsSource="{Binding Hashes}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:DetailRow">
+                        <Grid ColumnDefinitions="60,*" Margin="0,1">
+                            <TextBlock Text="{Binding Key}" FontWeight="SemiBold" />
+                            <SelectableTextBlock Grid.Column="1" Text="{Binding Value}" Classes="mono" TextWrapping="Wrap" />
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </StackPanel>
+</UserControl>

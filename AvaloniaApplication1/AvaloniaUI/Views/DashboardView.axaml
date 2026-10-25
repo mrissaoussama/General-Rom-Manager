@@ -1,0 +1,85 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:AvaloniaUI.ViewModels"
+             xmlns:views="using:AvaloniaUI.Views"
+             x:Class="AvaloniaUI.Views.DashboardView"
+             x:DataType="vm:DashboardViewModel">
+    <ScrollViewer>
+        <StackPanel Margin="20" Spacing="18">
+            <TextBlock Text="Library" Classes="h1" />
+
+            <WrapPanel>
+                <Border Classes="stat">
+                    <StackPanel>
+                        <TextBlock Classes="stat-value" Text="{Binding TotalRoms, StringFormat='{}{0:N0}'}" />
+                        <TextBlock Classes="stat-label" Text="ROMs" />
+                    </StackPanel>
+                </Border>
+                <Border Classes="stat">
+                    <StackPanel>
+                        <TextBlock Classes="stat-value" Text="{Binding Games, StringFormat='{}{0:N0}'}" />
+                        <TextBlock Classes="stat-label" Text="Games" />
+                    </StackPanel>
+                </Border>
+                <Border Classes="stat">
+                    <StackPanel>
+                        <TextBlock Classes="stat-value" Text="{Binding Updates, StringFormat='{}{0:N0}'}" />
+                        <TextBlock Classes="stat-label" Text="Updates" />
+                    </StackPanel>
+                </Border>
+                <Border Classes="stat">
+                    <StackPanel>
+                        <TextBlock Classes="stat-value" Text="{Binding Dlcs, StringFormat='{}{0:N0}'}" />
+                        <TextBlock Classes="stat-label" Text="DLC" />
+                    </StackPanel>
+                </Border>
+                <Border Classes="stat">
+                    <StackPanel>
+                        <TextBlock Classes="stat-value" Text="{Binding Unidentified, StringFormat='{}{0:N0}'}" />
+                        <TextBlock Classes="stat-label" Text="Without a name" />
+                    </StackPanel>
+                </Border>
+                <Border Classes="stat">
+                    <StackPanel>
+                        <TextBlock Classes="stat-value" Text="{Binding TotalSize}" />
+                        <TextBlock Classes="stat-label" Text="On disk" />
+                    </StackPanel>
+                </Border>
+            </WrapPanel>
+
+            <TextBlock Text="Consoles" Classes="h2" />
+
+            <StackPanel Spacing="8" IsVisible="{Binding !HasConsoles}">
+                <TextBlock Text="No ROM folders configured yet." />
+                <Button Content="Open Settings…" HorizontalAlignment="Left"
+                        Command="{Binding $parent[views:MainView].((vm:MainViewModel)DataContext).OpenSettingsCommand}" />
+            </StackPanel>
+
+            <ItemsControl ItemsSource="{Binding Consoles}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:ConsoleViewModelBase">
+                        <Button Classes="tile"
+                                Command="{Binding $parent[ItemsControl].((vm:DashboardViewModel)DataContext).OpenCommand}"
+                                CommandParameter="{Binding}">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="{Binding ConsoleName}" Classes="h3" />
+                                <TextBlock Text="{Binding RomCount, StringFormat='{}{0:N0} ROMs'}" />
+                                <TextBlock Text="{Binding StatusMessage}" Classes="muted" TextTrimming="CharacterEllipsis" />
+                                <ProgressBar IsVisible="{Binding IsLoading}" IsIndeterminate="{Binding IsIndeterminate}"
+                                             Value="{Binding ProgressPercent}" Height="4" MinHeight="4" />
+                                <TextBlock Text="Missing requirements" Classes="warning"
+                                           IsVisible="{Binding RequirementsWarning, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                           ToolTip.Tip="{Binding RequirementsWarning}" />
+                            </StackPanel>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

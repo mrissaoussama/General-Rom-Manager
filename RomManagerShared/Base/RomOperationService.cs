@@ -13,6 +13,8 @@ public sealed class RomOperationService
     private readonly OperationQueue _queue;
     private readonly IServiceProvider _services;
 
+    public OperationQueue Queue => _queue;
+
     public RomOperationService(OperationQueue queue, IServiceProvider services)
     {
         _queue = queue ?? throw new ArgumentNullException(nameof(queue));

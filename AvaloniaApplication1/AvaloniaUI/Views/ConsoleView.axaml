@@ -1,0 +1,73 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:AvaloniaUI.ViewModels"
+             xmlns:views="using:AvaloniaUI.Views"
+             x:Class="AvaloniaUI.Views.ConsoleView"
+             x:DataType="vm:ConsoleViewModelBase">
+    <DockPanel>
+        <Border DockPanel.Dock="Top" Classes="banner"
+                IsVisible="{Binding RequirementsWarning, Converter={x:Static ObjectConverters.IsNotNull}}">
+            <TextBlock Text="{Binding RequirementsWarning}" TextWrapping="Wrap" />
+        </Border>
+
+        <!-- Header: name + actions + filter -->
+        <DockPanel DockPanel.Dock="Top" Margin="10,8,10,4" LastChildFill="False">
+            <TextBlock DockPanel.Dock="Left" Text="{Binding ConsoleName}" Classes="h2" VerticalAlignment="Center" />
+            <TextBlock DockPanel.Dock="Left" Text="{Binding RomCount, StringFormat='{}{0:N0} ROMs'}"
+                       Classes="muted" VerticalAlignment="Center" Margin="10,0,0,0" />
+
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6">
+                <TextBox x:Name="SearchBox" Width="220" Watermark="Filter (Ctrl+F)" Text="{Binding SearchText}" />
+                <ToggleButton Content="Group" IsChecked="{Binding IsGrouped}" ToolTip.Tip="Group updates and DLC under their game" />
+                <Button x:Name="ColumnsButton" Content="Columns" />
+                <Button Content="Scan" Command="{Binding LoadDataCommand}" ToolTip.Tip="Scan for new or changed files" />
+                <Button Content="Full rescan" Command="{Binding RescanCommand}" ToolTip.Tip="Re-read every file, ignoring the cache" />
+            </StackPanel>
+        </DockPanel>
+
+        <!-- Scan status -->
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="10,0,10,4">
+            <ProgressBar Width="120" MinWidth="120" Height="6" MinHeight="6" VerticalAlignment="Center"
+                         IsVisible="{Binding IsLoading}" IsIndeterminate="{Binding IsIndeterminate}"
+                         Value="{Binding ProgressPercent}" />
+            <Button Content="Cancel" Classes="small" Command="{Binding CancelScanCommand}" IsVisible="{Binding IsLoading}" />
+            <SelectableTextBlock Text="{Binding StatusMessage}" Classes="muted" VerticalAlignment="Center" />
+        </StackPanel>
+
+        <Grid ColumnDefinitions="*,4,300">
+            <Panel>
+                <DataGrid x:Name="RomsGrid"
+                          ItemsSource="{Binding RomsView}"
+                          SelectedItem="{Binding SelectedRom, Mode=TwoWay}"
+                          AutoGenerateColumns="False" IsReadOnly="True" CanUserSortColumns="True"
+                          CanUserReorderColumns="True" CanUserResizeColumns="True"
+                          SelectionMode="Extended" GridLinesVisibility="Horizontal" Margin="4,0">
+                    <DataGrid.ContextMenu>
+                        <ContextMenu x:Name="RomMenu" />
+                    </DataGrid.ContextMenu>
+                </DataGrid>
+
+                <StackPanel Spacing="8" HorizontalAlignment="Center" VerticalAlignment="Center"
+                            IsVisible="{Binding ShowEmptyState}">
+                    <TextBlock Text="{Binding ConsoleName, StringFormat='No {0} ROMs yet'}" Classes="h3" HorizontalAlignment="Center" />
+                    <TextBlock Text="Choose the folder that holds your ROMs in Settings, then scan it." Classes="muted" />
+                    <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                        <Button Content="Open Settings…"
+                                Command="{Binding $parent[views:MainView].((vm:MainViewModel)DataContext).OpenSettingsCommand}" />
+                        <Button Content="Scan now" Command="{Binding LoadDataCommand}" />
+                    </StackPanel>
+                </StackPanel>
+            </Panel>
+
+            <GridSplitter Grid.Column="1" ResizeDirection="Columns" />
+
+            <ScrollViewer Grid.Column="2">
+                <Panel>
+                    <TextBlock Text="Select a ROM to see details." Classes="muted" Margin="10"
+                               IsVisible="{Binding Details, Converter={x:Static ObjectConverters.IsNull}}" />
+                    <ContentControl Content="{Binding Details}" />
+                </Panel>
+            </ScrollViewer>
+        </Grid>
+    </DockPanel>
+</UserControl>

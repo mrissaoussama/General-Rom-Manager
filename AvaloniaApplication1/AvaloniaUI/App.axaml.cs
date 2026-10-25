@@ -52,6 +52,12 @@ public partial class App : Application
                 services.AddScoped<RomHashRepository>();
                 services.AddScoped<NoIntroRomHashIdentifier>();
                 services.AddScoped<LibraryScanner>();
+                services.AddSingleton(_ =>
+                {
+                    var http = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(15) };
+                    http.DefaultRequestHeaders.UserAgent.ParseAdd("RomManager/1.0");
+                    return new ImageCache(Path.Combine(RomManagerConfiguration.GetCachePath(), "Images"), http);
+                });
 
                 // Plugin manager — singleton so plugins stay loaded for the app lifetime
                 services.AddSingleton<PluginManager>();

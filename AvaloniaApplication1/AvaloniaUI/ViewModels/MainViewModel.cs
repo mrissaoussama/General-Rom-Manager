@@ -1,112 +1,164 @@
 ﻿namespace AvaloniaUI.ViewModels;
 
+/// <summary>Shell: navigation (dashboard + one page per console), menus and the bottom panels.</summary>
 public partial class MainViewModel : ViewModelBase
 {
+    public const int LogTab = 0, OperationsTab = 1, DownloadsTab = 2;
+
     private readonly IServiceProvider _serviceProvider;
-    /// <summary>Exposes the root service provider for the context menu handler.</summary>
-    public IServiceProvider ServiceProvider => _serviceProvider;
-    private bool _configLoaded = false;
-    // Startup and Refresh can both trigger a load; overlapping runs duplicated the tabs.
+    // Startup and Refresh can both trigger a load; serialize them.
     private readonly SemaphoreSlim _configLock = new(1, 1);
     public static Dictionary<Type, string> RomPaths = LoadConsolePaths();
-    public List<Type>? ConsoleTypes { get; set; }
 
-    // ── Global download manager ────────────────────────────────────────────
+    public IServiceProvider ServiceProvider => _serviceProvider;
     public DownloadManagerViewModel DownloadManager { get; } = new();
-
-    // ── Operation queue for bulk operations ─────────────────────────────────
     public OperationQueue Operations { get; } = new();
-
-    // ── Core operation service — all logic lives here, UI just calls ────────
     public RomOperationService OperationService { get; }
 
-    // ── Total ROM count for status bar ────────────────────────────────────
-    [ObservableProperty] private int _totalRomCount;
+    public ObservableCollection<ConsoleViewModelBase> ConsoleViewModels { get; } = [];
+    /// <summary>Sidebar entries: the dashboard followed by the consoles.</summary>
+    public ObservableCollection<ViewModelBase> Pages { get; } = [];
+    public DashboardViewModel Dashboard { get; }
+    public LogViewModel Log { get; } = new();
+    public OperationsViewModel OperationsPanel { get; }
+
+    [ObservableProperty] private ViewModelBase? _selectedPage;
+    [ObservableProperty] private int _selectedBottomTab;
+    [ObservableProperty] private bool _isAnyLoading;
     [ObservableProperty] private string _statusMessage = "Ready";
+
+    public MainViewModel(IServiceProvider serviceProvider)
+    {
+        _serviceProvider = serviceProvider;
+        OperationService = new RomOperationService(Operations, serviceProvider);
+        OperationsPanel = new OperationsViewModel(Operations);
+        Dashboard = new DashboardViewModel(ConsoleViewModels, c => SelectedPage = c);
+        Pages.Add(Dashboard);
+        SelectedPage = Dashboard;
+    }
+
     /// <summary>Rebuilds RomPaths from config.json and Settings (Settings wins).</summary>
     public static void ReloadRomPaths() => RomPaths = LoadConsolePaths();
 
     private static Dictionary<Type, string> LoadConsolePaths()
     {
         var consolePaths = new Dictionary<Type, string>();
-        var assembly = Assembly.Load("RomManagerShared");
+        var consoleTypes = typeof(GamingConsole).Assembly.GetTypes()
+            .Where(t => typeof(GamingConsole).IsAssignableFrom(t) && !t.IsAbstract)
+            .ToDictionary(t => t.Name, StringComparer.OrdinalIgnoreCase);
 
-        // Source 1: config.json
         try
         {
-            foreach (var consoleSection in RomManagerConfiguration.Configuration
-                         .GetSection("Consoles").GetChildren())
-            {
-                var consoleName = consoleSection.Key + "Console";
-                var consoleType = assembly.GetTypes().FirstOrDefault(t =>
-                    t.Name.Equals(consoleName, StringComparison.OrdinalIgnoreCase));
-                if (consoleType != null)
-                {
-                    var romPath = consoleSection["RomPath"];
-                    if (!string.IsNullOrEmpty(romPath))
-                        consolePaths.TryAdd(consoleType, romPath);
-                }
-            }
+            foreach (var section in RomManagerConfiguration.Configuration.GetSection("Consoles").GetChildren())
+                if (consoleTypes.TryGetValue(section.Key + "Console", out var type) && !string.IsNullOrEmpty(section["RomPath"]))
+                    consolePaths.TryAdd(type, section["RomPath"]!);
         }
         catch { /* config missing/malformed */ }
 
-        // Source 2: Settings.ConsoleLibraryPaths overrides config.json
         foreach (var kv in Settings.Instance.ConsoleLibraryPaths)
-        {
-            var consoleName = kv.Key + "Console";
-            var consoleType = assembly.GetTypes()
-                .FirstOrDefault(t => t.Name.Equals(consoleName, StringComparison.OrdinalIgnoreCase));
-            if (consoleType != null && !string.IsNullOrEmpty(kv.Value))
-                consolePaths[consoleType] = kv.Value;
-        }
+            if (consoleTypes.TryGetValue(kv.Key + "Console", out var type) && !string.IsNullOrEmpty(kv.Value))
+                consolePaths[type] = kv.Value;
 
         return consolePaths;
     }
-    [ObservableProperty] private IConsoleViewModel? _selectedConsole;
 
-    public ObservableCollection<IConsoleViewModel> ConsoleViewModels { get; } = new();
-    public MainViewModel(IServiceProvider serviceProvider)
+    // Adds pages for newly configured consoles and drops ones whose folder is gone; existing pages keep their state.
+    private async Task<List<ConsoleViewModelBase>> SyncConsolesAsync()
     {
-        _serviceProvider = serviceProvider;
-        OperationService = new RomOperationService(Operations, serviceProvider);
-        InitializeConsoles();
-        // Load console tabs from config
-        Task.Run(LoadConfigAsync);
-    }
-    private void InitializeConsoles()
-    {
-        var consoleTypes = GetAvailableConsoleTypes();
-        foreach (var consoleType in consoleTypes)
+        var added = new List<ConsoleViewModelBase>();
+        await _configLock.WaitAsync();
+        try
         {
-            // Create appropriate generic instance using reflection
-            var viewModelType = typeof(ConsoleViewModel<>).MakeGenericType(consoleType);
-            var consoleName = consoleType.Name.Replace("Console", "");
-        
-            var viewModel = (IConsoleViewModel)Activator.CreateInstance(
-                viewModelType, 
-                new object[] { consoleName, consoleType, _serviceProvider })!;
-            
-            ConsoleViewModels.Add(viewModel);
+            var wanted = await Task.Run(() => RomPaths
+                .Where(kv => !string.IsNullOrEmpty(kv.Value) && Directory.Exists(kv.Value))
+                .Select(kv => kv.Key)
+                .ToList());
+
+            foreach (var stale in ConsoleViewModels.Where(c => !wanted.Any(t => Name(t) == c.ConsoleName)).ToList())
+                ConsoleViewModels.Remove(stale);
+            foreach (var type in wanted.Where(t => ConsoleViewModels.All(c => c.ConsoleName != Name(t))))
+            {
+                var vm = CreateConsole(type);
+                ConsoleViewModels.Add(vm);
+                added.Add(vm);
+            }
+
+            var ordered = ConsoleViewModels.OrderBy(c => c.ConsoleName).ToList();
+            ConsoleViewModels.Clear();
+            foreach (var c in ordered) ConsoleViewModels.Add(c);
+
+            var selected = SelectedPage;
+            Pages.Clear();
+            Pages.Add(Dashboard);
+            foreach (var c in ordered) Pages.Add(c);
+            SelectedPage = selected is not null && Pages.Contains(selected) ? selected : Dashboard;
         }
+        catch (Exception ex)
+        {
+            FileUtils.Log($"[Consoles] Failed to load console list: {ex}");
+        }
+        finally
+        {
+            _configLock.Release();
+        }
+        return added;
+
+        static string Name(Type t) => t.Name.Replace("Console", "");
     }
-    [RelayCommand]
-    private async Task ReloadConfig()
+
+    private ConsoleViewModelBase CreateConsole(Type consoleType)
     {
-        await LoadConfigAsync();
+        var vmType = typeof(ConsoleViewModel<>).MakeGenericType(consoleType);
+        var vm = (ConsoleViewModelBase)Activator.CreateInstance(vmType, consoleType.Name.Replace("Console", ""), _serviceProvider)!;
+        vm.Operations = OperationService;
+        vm.OperationQueued += () => SelectedBottomTab = OperationsTab;
+        vm.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(ConsoleViewModelBase.IsLoading))
+                IsAnyLoading = ConsoleViewModels.Any(c => c.IsLoading);
+        };
+        return vm;
     }
+
+    [RelayCommand]
+    private async Task Refresh()
+    {
+        ReloadRomPaths();
+        await SyncConsolesAsync();
+        foreach (var c in ConsoleViewModels) c.RefreshRequirements();
+
+        // One console at a time: parsers share the disk.
+        foreach (var console in ConsoleViewModels.ToList())
+            await console.LoadData();
+
+        RecalculateTotalRomCount();
+        if (Settings.Instance.AutoDownloadMissingDBs)
+            _ = CheckForUpdates();
+    }
+
+    public void RecalculateTotalRomCount()
+    {
+        var total = ConsoleViewModels.Sum(c => c.RomCount);
+        StatusMessage = total > 0 ? $"{total:N0} ROMs in {ConsoleViewModels.Count} consoles" : "Ready";
+    }
+
+    [RelayCommand]
+    private void ShowDashboard() => SelectedPage = Dashboard;
+
+    [RelayCommand]
+    private void ShowLog() => SelectedBottomTab = LogTab;
 
     [RelayCommand]
     private void Exit()
     {
-        Environment.Exit(0);
+        if (Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime d)
+            d.Shutdown();
     }
 
     [RelayCommand]
     private async Task CheckForUpdates()
     {
         StatusMessage = "Checking for missing database files…";
-        DownloadManager.IsPanelExpanded = true;
-
         DownloadMethodInfo[] missing;
         try
         {
@@ -124,36 +176,29 @@ public partial class MainViewModel : ViewModelBase
             return;
         }
 
-        StatusMessage = $"Queuing {missing.Length} missing database file(s)…";
-
+        SelectedBottomTab = DownloadsTab;
         foreach (var resource in missing)
         {
             if (resource.Url is null || resource.FilePaths is null) continue;
             for (int i = 0; i < resource.Url.Length; i++)
             {
-                var url  = resource.Url[i];
                 var path = i < resource.FilePaths.Length ? resource.FilePaths[i] : resource.FilePaths[0];
-                _ = DownloadManager.DownloadAsync(url, path, resource.DownloadName);
+                _ = DownloadManager.DownloadAsync(resource.Url[i], path, resource.DownloadName);
             }
         }
-
         StatusMessage = $"Queued {missing.Length} missing database download(s).";
     }
 
     [RelayCommand]
     private void SetTheme(string theme)
     {
-        // theme: "Default" | "Dark" | "Light"
-        var variant = theme switch
-        {
-            "Dark"  => Avalonia.Styling.ThemeVariant.Dark,
-            "Light" => Avalonia.Styling.ThemeVariant.Light,
-            _       => Avalonia.Styling.ThemeVariant.Default,
-        };
-
         if (Application.Current is not null)
-            Application.Current.RequestedThemeVariant = variant;
-
+            Application.Current.RequestedThemeVariant = theme switch
+            {
+                "Dark" => Avalonia.Styling.ThemeVariant.Dark,
+                "Light" => Avalonia.Styling.ThemeVariant.Light,
+                _ => Avalonia.Styling.ThemeVariant.Default,
+            };
         Settings.Instance.Theme = theme;
         Settings.Instance.Save();
     }
@@ -163,125 +208,19 @@ public partial class MainViewModel : ViewModelBase
     {
         Settings.Instance.IsCompactMode = !Settings.Instance.IsCompactMode;
         Settings.Instance.Save();
-    }
-
-    public void RecalculateTotalRomCount()
-    {
-        TotalRomCount = ConsoleViewModels.Sum(c => c.Roms?.Count ?? 0);
-        StatusMessage = TotalRomCount > 0 ? $"{TotalRomCount:N0} ROMs loaded" : "Ready";
-    }
-
-    [RelayCommand]
-    private void RenameAllRoms()
-    {
-        // Implementation
+        Settings.RaiseCompactModeChanged();
     }
 
     [RelayCommand]
     private async Task OpenSettings()
     {
-        var plugins = _serviceProvider.GetService<PluginManager>();
-        var win = new SettingsWindow(plugins, ConsoleViewModels);
-
-        // Find the owner window
-        var owner = Application.Current?.ApplicationLifetime is
-            Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop
-            ? desktop.MainWindow
-            : null;
-
-        if (owner is not null)
-            await win.ShowDialog(owner);
-        else
-            win.Show();
-    }
-
-
-    [RelayCommand]
-    private async Task Refresh()
-    {
-        _configLoaded = false;
-        ReloadRomPaths();          // pick up any path changes from Settings
-        await LoadConfigAsync();
-
-        // Load each console in sequence (parsers share I/O; parallel opens too many files)
-        foreach (var console in ConsoleViewModels)
-            await console.LoadData();
-
+        var win = new SettingsWindow(_serviceProvider.GetService<PluginManager>(), ConsoleViewModels);
+        await Shell.ShowDialogAsync(win);
+        // Paths may have changed.
+        ReloadRomPaths();
+        var added = await SyncConsolesAsync();
+        foreach (var c in ConsoleViewModels) c.RefreshRequirements();
+        foreach (var c in added) await c.LoadData();
         RecalculateTotalRomCount();
-    }
-    public List<Type> GetAvailableConsoleTypes()
-    {
-        var assembly = Assembly.Load("RomManagerShared");
-        return assembly.GetTypes()
-            .Where(t => typeof(GamingConsole).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract)
-            .ToList();
-    }
-// Update LoadConfigAsync method in MainViewModel.cs
-    private async Task LoadConfigAsync()
-    {
-        await _configLock.WaitAsync();
-        try
-        {
-            if (_configLoaded)
-                return;
-
-            // Clear existing view models first
-            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
-            {
-                ConsoleViewModels.Clear();
-            });
-
-            // Ensure configuration is loaded
-            RomManagerShared.Configuration.RomManagerConfiguration.Load("config.json");
-
-            // Create console VMs
-            var consoleVMs = new List<IConsoleViewModel>();
-            foreach (var romPathEntry in RomPaths)
-            {
-                var consoleType = romPathEntry.Key;
-                var consolePath = romPathEntry.Value;
-                var consoleName = consoleType.Name.Replace("Console", "");
-
-                if (string.IsNullOrEmpty(consolePath) || !Directory.Exists(consolePath))
-                {
-                    FileUtils.Log($"[LoadConfigAsync] Skipping {consoleName}: path not configured or not found.");
-                    continue;
-                }
-
-                var viewModelType = typeof(ConsoleViewModel<>).MakeGenericType(consoleType);
-
-                var vm = (IConsoleViewModel?)Activator.CreateInstance(
-                    viewModelType, 
-                    new object[] { consoleName, consoleType, _serviceProvider });
-                if (vm is null) continue;
-                consoleVMs.Add(vm);
-            }
-
-            // Update on UI thread
-            await Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(() =>
-            {
-                foreach (var vm in consoleVMs.OrderBy(vm => vm.ConsoleName)) ConsoleViewModels.Add(vm);
-
-                // Select first tab if available
-                if (ConsoleViewModels.Count > 0 && SelectedConsole == null)
-                {
-                    SelectedConsole = ConsoleViewModels[0];
-                }
-            });
-
-            _configLoaded = true;
-
-            // Auto-check for missing metadata database files only if the user opted in
-            if (Settings.Instance.AutoDownloadMissingDBs)
-                _ = Task.Run(CheckForUpdates);
-        }
-        catch (Exception ex)
-        {
-            FileUtils.Log($"[LoadConfigAsync] Error loading config: {ex}");
-        }
-        finally
-        {
-            _configLock.Release();
-        }
     }
 }
