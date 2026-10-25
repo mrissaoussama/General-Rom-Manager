@@ -1,0 +1,14 @@
+<Project>
+  <PropertyGroup>
+    <!-- Suppress NU1202 for legacy transitive packages (e.g. Microsoft.NETCore.Platforms 1.1.0
+         pulled in by DiscUtils) that declare only netstandard1.0 but are runtime metadata only
+         and work fine on net10.0 via compatibility. -->
+    <NoWarn>$(NoWarn);NU1202</NoWarn>
+  </PropertyGroup>
+
+  <!-- Override the old transitive Microsoft.NETCore.Platforms 1.1.0 with a version
+       that supports modern TFMs, fixing NU1202 warnings at the source. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETCore.Platforms" Version="7.0.4" />
+  </ItemGroup>
+</Project>
