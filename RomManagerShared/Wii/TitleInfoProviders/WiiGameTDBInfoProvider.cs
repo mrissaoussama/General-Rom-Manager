@@ -46,7 +46,7 @@ public class WiiGameTDBInfoProvider : ITitleInfoProvider<WiiConsole>
             }        }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading Wii XML title database: {ex.Message}");
+            FileUtils.Log($"Error loading Wii XML title database: {ex.Message}");
         }
     }    public async Task<Rom> GetTitleInfo(Rom rom)
     {
@@ -66,7 +66,7 @@ public class WiiGameTDBInfoProvider : ITitleInfoProvider<WiiConsole>
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error getting title info from Wii XML file: {ex.Message}");
+            FileUtils.Log($"Error getting title info from Wii XML file: {ex.Message}");
         }        return rom;
     }    private static WiiGameTDBXmlRomDTO DeserializeGameElement(XmlNode gameNode)
     {

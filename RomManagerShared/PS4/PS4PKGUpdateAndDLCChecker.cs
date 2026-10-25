@@ -89,7 +89,6 @@ public class PS4PKGUpdateAndDLCChecker
                             var Genres = localizedGenresElement.EnumerateArray()
                                 .Select(genreElement => genreElement.GetProperty("value").GetString())
                                 .ToList();
-                            Console.WriteLine(Genres);
                         }
                         dlcs.Add(rom);
                     }

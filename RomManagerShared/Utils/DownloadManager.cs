@@ -41,22 +41,19 @@ public class DownloadManager
 
     private static void Downloader_MergingProgressChanged(object? sender, MergingProgressChangedEventArgs e)
     {
-        Console.WriteLine($"Download MergingProgressChanged: {e.Progress}%");
     }
 
     private static void Downloader_MergeCompleted(object? sender, EventArgs e)
     {
-        Console.WriteLine($"Download MergeCompleted: {e}%");
     }
 
     private static void Downloader_Stopped(object? sender, EventArgs e)
     {
-        Console.WriteLine($"Download stopped: {e}%");
     }
 
     private static void Downloader_ErrorOccured(object? sender, ErrorEventArgs e)
     {
-        Console.WriteLine($"Download errorr: {e.ToString()}%");
+        FileUtils.Log($"Download error: {e}");
     }
 
     public static void PauseDownload(HttpMultiThreadDownloader downloader)
@@ -72,7 +69,6 @@ public class DownloadManager
     private static void Downloader_ProgressChanged(object sender, ProgressChangedEventArgs e)
     {
         // Update progress UI
-        Console.WriteLine($"Download Progress: {e.Progress}%");
     }
 
     private static void Downloader_DownloadInfoReceived(object sender, EventArgs e)
@@ -91,13 +87,11 @@ public class DownloadManager
     private static void Downloader_StatusChanged(object sender, StatusChangedEventArgs e)
     {
         var downloader = (HttpMultiThreadDownloader)sender;
-        Console.WriteLine($"Download status changed: {e.OldStatus} to {e.CurrentStatus}%");
     }
 
     private static void Downloader_Completed(object sender, EventArgs e)
     {
         var downloader = (HttpMultiThreadDownloader)sender;
-        Console.WriteLine($"Download of {downloader.Info.ServerFileName} completed.");
     }
 
     private static void LoadInterruptedDownloads()

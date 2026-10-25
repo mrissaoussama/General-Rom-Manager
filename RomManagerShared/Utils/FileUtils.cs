@@ -87,7 +87,7 @@ public class FileUtils
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error moving file: {ex.Message}");
+            FileUtils.Log($"Error moving file: {ex.Message}");
         }
     }
     /// <summary>Fired on the calling thread whenever a new log entry is added.</summary>
@@ -254,7 +254,6 @@ public class FileUtils
         // Check if source and destination directories are equal
         if (AreDirectoriesEqual(sourceDir, destDir))
         {
-            Console.WriteLine("Source and destination directories are the same. Skipping move operation.");
             return;
         }
 

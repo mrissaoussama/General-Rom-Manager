@@ -274,7 +274,7 @@ namespace RomManagerShared.Utils
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error parsing file {filePath}: {ex.Message}");
+                FileUtils.Log($"Error parsing file {filePath}: {ex.Message}");
                 return null;
             }
         }

@@ -18,7 +18,7 @@ public class WiiUUtils
         }
         else
         {
-            Console.WriteLine($"Unknown title ID format: {titleId}");
+            FileUtils.Log($"Unknown title ID format: {titleId}");
             return null;
         }
     }

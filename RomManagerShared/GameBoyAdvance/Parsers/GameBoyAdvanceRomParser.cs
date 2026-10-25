@@ -50,7 +50,6 @@ public class GameBoyAdvanceRomParser : IRomParser<GameBoyAdvanceConsole>
                 break;
         }        GameBoyAdvancerom.Size = FileUtils.GetFileSize(path);
         GameBoyAdvancerom.Path = path;
-        Console.WriteLine(GameBoyAdvancerom.ToString());
         List<Rom> list = [GameBoyAdvancerom];        return Task.FromResult(list);
     }
 }

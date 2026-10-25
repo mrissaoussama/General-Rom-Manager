@@ -21,7 +21,6 @@ public class DSNDSParser : IRomParser<DSConsole>
         DSrom.Size = FileUtils.GetFileSize(path);
         DSrom.Path = path;
 
-        Console.WriteLine(DSrom.ToString());
         List<Rom> list = [DSrom];
         return Task.FromResult(list);
     }

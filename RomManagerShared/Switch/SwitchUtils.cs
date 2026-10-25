@@ -1,4 +1,5 @@
-﻿using RomManagerShared.Base;namespace RomManagerShared.Switch;
+﻿using RomManagerShared.Utils;
+using RomManagerShared.Base;namespace RomManagerShared.Switch;
 
 public class SwitchUtils
 {
@@ -18,7 +19,7 @@ public class SwitchUtils
         }
         else
         {
-            Console.WriteLine($"Unknown title ID format: {titleId}");
+            FileUtils.Log($"Unknown title ID format: {titleId}");
             return null;
         }
     }

@@ -31,7 +31,6 @@ public class PSVitaVPKRomParser : IRomParser<PSVitaConsole>
                     using MemoryStream memoryStream = new();
                     sfoStream.CopyTo(memoryStream);
                     var sfodata = memoryStream.ToArray();
-                    Console.WriteLine(sfodata.Length);
                     if (PSVitaUtils.IsPSVitaSFO(sfodata))
                     {
                         Rom? vitarom = PSVitaSFOReader.ParseSFO(memoryStream);

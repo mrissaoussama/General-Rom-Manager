@@ -35,7 +35,6 @@ public class SNESRomParser : IRomParser<SNESConsole>
         {
             SNESrom.AddRegion(Region.Europe);        }
         SNESrom.Size = FileUtils.GetFileSize(path);
-        Console.WriteLine(SNESrom.ToString());
         List<Rom> list = [SNESrom];
         return Task.FromResult(list);
     }}

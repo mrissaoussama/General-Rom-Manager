@@ -53,7 +53,7 @@ public class ThreeDSJsonTitleInfoProvider :TitleInfoProvider<ThreeDSConsole>,ICa
             catch (JsonException ex)
             {
                 // Log the error or handle it as needed
-                Console.WriteLine($"Error deserializing JSON from file '{regionFilePath}': {ex.Message}");
+                FileUtils.Log($"Error deserializing JSON from file '{regionFilePath}': {ex.Message}");
             }
         }
     }    public async Task SaveToDatabase()

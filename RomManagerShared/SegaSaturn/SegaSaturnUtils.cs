@@ -18,7 +18,7 @@ public static class SegaSaturnUtils
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error: {ex.Message}");
+            FileUtils.Log($"Error: {ex.Message}");
             FileUtils.Log("Error checking for sega saturn rom " + ex.Message);
             return false;
         }

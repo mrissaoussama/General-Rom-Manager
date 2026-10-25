@@ -29,7 +29,6 @@ public class GameBoyRomParser : IRomParser<GameBoyConsole>
         {
             gameboyrom.AddRegion(Region.Unknown);
         }
-        Console.WriteLine(gameboyrom.ToString());
         List<Rom> list = [gameboyrom];
         return Task.FromResult(list);
     }

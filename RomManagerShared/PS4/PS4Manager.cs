@@ -66,11 +66,6 @@ RomParserExecutor<PS4Console> romParserExecutor)
         PS4Update latestUpdate = (PS4Update)relatedUpdates
             .OrderByDescending(rom => Version.Parse(((PS4Update)rom).Version))
             .First();
-        Console.WriteLine("Updates found:");
-        foreach (var update in relatedUpdates)
-        {
-            Console.WriteLine($"Version: {((PS4Update)update).Version}");
-        }
         return latestUpdate;
     }
 

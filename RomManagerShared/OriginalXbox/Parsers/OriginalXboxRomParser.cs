@@ -22,7 +22,6 @@ public class OriginalXboxRomParser : IRomParser<OriginalXboxConsole>
         originalxboxrom.Size = FileUtils.GetFileSize(path);
         originalxboxrom.Path = path;
         originalxboxrom.IsFolderFormat = true;
-        Console.WriteLine(originalxboxrom.ToString());
         List<Rom> list = [originalxboxrom];
         return Task.FromResult(list);
     }

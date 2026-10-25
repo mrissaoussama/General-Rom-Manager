@@ -1,4 +1,5 @@
-﻿using RomManagerShared.Base;
+﻿using RomManagerShared.Utils;
+using RomManagerShared.Base;
 using RomManagerShared.Interfaces;
 using System.Text;
 namespace RomManagerShared.Wii.Parsers;
@@ -43,7 +44,7 @@ public class WiiWBFSRomParser : IRomParser<WiiConsole>
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error parsing WBFS file: {ex.Message}");
+            FileUtils.Log($"Error parsing WBFS file: {ex.Message}");
         }        return roms;
     }
 }
