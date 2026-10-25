@@ -26,7 +26,7 @@ public partial class App : Application
     {
         // Load configuration first
         RomManagerConfiguration.Load("config.json");
-        var assembly = Assembly.Load("RomManagerShared");
+        ConsoleModules.Load();
 
         var builder = Host.CreateDefaultBuilder()
             .ConfigureLogging(logging =>
@@ -39,7 +39,7 @@ public partial class App : Application
             .ConfigureServices((hostContext, services) =>
             {
                 // Register all console-related services
-                RegisterConsoleServices(services, assembly);
+                ConsoleModules.Register(services);
 
                 // EF Core — scoped so each UI action gets its own context
                 services.AddDbContext<AppDbContext>(options => { /* configured in OnConfiguring */ },
@@ -186,101 +186,6 @@ public partial class App : Application
         };
         win.Show();
         return Task.CompletedTask;
-    }
-
-    private static void RegisterConsoleServices(IServiceCollection services, Assembly assembly)
-    {
-        var gamingConsoleType = typeof(GamingConsole);
-
-        var consoleTypes = assembly.GetTypes()
-            .Where(t => gamingConsoleType.IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract)
-            .ToList();
-
-        // Non-generic IRomOrganizer implementations
-        foreach (var organizerType in assembly.GetTypes()
-            .Where(t => typeof(IRomOrganizer).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract))
-        {
-            services.AddScoped(typeof(IRomOrganizer), organizerType);
-        }
-
-        foreach (var consoleType in consoleTypes)
-        {
-            // Per-console generic services
-            services.AddScoped(typeof(GenericRepository<>).MakeGenericType(consoleType));
-            services.AddScoped(typeof(RomParserExecutor<>).MakeGenericType(consoleType));
-
-            // TitleInfoProviderManager<T> aggregates all ITitleInfoProvider<T> implementations
-            services.AddScoped(typeof(TitleInfoProviderManager<>).MakeGenericType(consoleType));
-
-            RegisterOpenGeneric(services, assembly, typeof(ITitleInfoProvider<>), consoleType);
-            RegisterOpenGeneric(services, assembly, typeof(IRomParser<>), consoleType);
-            RegisterOpenGeneric(services, assembly, typeof(IUpdateVersionProvider<>), consoleType);
-            RegisterOpenGeneric(services, assembly, typeof(IRomOrganizer<>), consoleType);
-            RegisterOpenGeneric(services, assembly, typeof(ILicenseOrganizer<>), consoleType);
-
-            // ConsoleManager<T> — use specific subclass if registered, otherwise generic base
-            var consoleManagerType = typeof(ConsoleManager<>).MakeGenericType(consoleType);
-
-            // Check for a console-specific manager (e.g. SwitchManager : ConsoleManager<SwitchConsole>)
-            var specificManager = assembly.GetTypes()
-                .FirstOrDefault(t => !t.IsAbstract && consoleManagerType.IsAssignableFrom(t)
-                                  && t != consoleManagerType);
-
-            if (specificManager is not null)
-            {
-                services.AddScoped(consoleManagerType, specificManager);
-                // Also register the specific manager by its own type so
-                // GetRequiredService<SwitchManager>() etc. works from actions.
-                services.AddScoped(specificManager);
-            }
-            else
-                services.AddScoped(consoleManagerType);
-        }
-
-        // Some TitleInfoProviders take GenericRepository<SomeDtoType> (e.g. SwitchJsonRomDTO).
-        // Those DTO types are NOT GamingConsole subtypes, so they need a separate scan.
-        RegisterDtoRepositories(services, assembly);
-    }
-
-    /// <summary>
-    /// Scans all concrete types in <paramref name="assembly"/> for constructor parameters of type
-    /// <c>GenericRepository&lt;T&gt;</c> and registers each discovered closed type as scoped.
-    /// This ensures DTO-backed repositories (e.g. GenericRepository&lt;SwitchJsonRomDTO&gt;) are
-    /// available without having to list them explicitly.
-    /// </summary>
-    private static void RegisterDtoRepositories(IServiceCollection services, Assembly assembly)
-    {
-        var genericRepoOpen = typeof(GenericRepository<>);
-        var alreadyRegistered = new HashSet<Type>();
-
-        foreach (var type in assembly.GetTypes().Where(t => !t.IsAbstract && !t.IsInterface))
-        {
-            foreach (var ctor in type.GetConstructors())
-            {
-                foreach (var param in ctor.GetParameters())
-                {
-                    var pt = param.ParameterType;
-                    if (pt.IsGenericType
-                        && pt.GetGenericTypeDefinition() == genericRepoOpen
-                        && alreadyRegistered.Add(pt))
-                    {
-                        services.AddScoped(pt);
-                    }
-                }
-            }
-        }
-    }
-
-    private static void RegisterOpenGeneric(
-        IServiceCollection services, Assembly assembly,
-        Type openInterface, Type consoleType)
-    {
-        var closedInterface = openInterface.MakeGenericType(consoleType);
-        foreach (var impl in assembly.GetTypes()
-            .Where(t => !t.IsAbstract && !t.IsInterface && closedInterface.IsAssignableFrom(t)))
-        {
-            services.AddScoped(closedInterface, impl);
-        }
     }
 
     // Restores the last position only if it is still on a connected screen (monitors change).

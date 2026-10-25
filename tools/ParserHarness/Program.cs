@@ -26,12 +26,10 @@ if (args.Length < 2)
 var configPath = Path.Combine(AppContext.BaseDirectory, "config.json");
 RomManagerConfiguration.Load(configPath);
 
-var asm = Assembly.Load("RomManagerShared");
 var services = new ServiceCollection();
 services.AddLogging();
-typeof(AvaloniaUI.App)
-    .GetMethod("RegisterConsoleServices", BindingFlags.NonPublic | BindingFlags.Static)!
-    .Invoke(null, [services, asm]);
+ConsoleModules.Load();
+ConsoleModules.Register(services);
 services.AddDbContext<AppDbContext>(_ => { }, ServiceLifetime.Scoped);
 services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<AppDbContext>());
 var provider = services.BuildServiceProvider();
@@ -41,8 +39,7 @@ var paths = args[0] == "all"
     : new Dictionary<string, string> { [args[0]] = args[1] };
 var max = args.Length > 2 ? int.Parse(args[2]) : 5;
 
-var consoleTypes = asm.GetTypes()
-    .Where(t => typeof(GamingConsole).IsAssignableFrom(t) && !t.IsAbstract && !t.IsInterface && t != typeof(GamingConsole));
+var consoleTypes = ConsoleModules.ConsoleTypes;
 
 // --library: run the real incremental scanner twice against a throwaway database.
 if (args.Contains("--library"))

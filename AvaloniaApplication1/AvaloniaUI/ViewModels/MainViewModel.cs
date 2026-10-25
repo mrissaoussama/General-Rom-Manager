@@ -49,9 +49,7 @@ public partial class MainViewModel : ViewModelBase
     private static Dictionary<Type, string> LoadConsolePaths()
     {
         var consolePaths = new Dictionary<Type, string>();
-        var consoleTypes = typeof(GamingConsole).Assembly.GetTypes()
-            .Where(t => typeof(GamingConsole).IsAssignableFrom(t) && !t.IsAbstract)
-            .ToDictionary(t => t.Name, StringComparer.OrdinalIgnoreCase);
+        var consoleTypes = ConsoleModules.ConsoleTypes.ToDictionary(t => t.Name, StringComparer.OrdinalIgnoreCase);
 
         try
         {

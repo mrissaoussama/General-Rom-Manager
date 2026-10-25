@@ -135,13 +135,7 @@ public sealed class SettingsWindow : Window
             "For each console, choose the folder that contains your ROM files.",
             fontSize: 11, muted: true));
 
-        var knownConsoles = new[]
-        {
-            "Switch", "ThreeDS", "DS", "GameBoy", "GameBoyAdvance",
-            "PS2", "PS3", "PS4", "PSP", "PSVita",
-            "SNES", "Wii", "WiiU", "N64", "SegaSaturn",
-            "OriginalXbox", "Xbox360"
-        };
+        var knownConsoles = ConsoleModules.Descriptors.Select(d => d.Id);
 
         foreach (var consoleName in knownConsoles)
         {

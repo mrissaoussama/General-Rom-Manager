@@ -189,7 +189,7 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
     {
         var baseRomProps = typeof(Rom).GetProperties().Select(p => p.Name).ToHashSet();
         var prefix = typeof(T).Name.Replace("Console", "");
-        return typeof(Rom).Assembly.GetTypes()
+        return ConsoleModules.AllTypes
             .Where(t => typeof(Rom).IsAssignableFrom(t) && t.Name.StartsWith(prefix) && !t.IsAbstract)
             .SelectMany(t => t.GetProperties()
                 .Where(p => !baseRomProps.Contains(p.Name) && p.GetCustomAttribute<UiPropertyAttribute>(true) is not null)

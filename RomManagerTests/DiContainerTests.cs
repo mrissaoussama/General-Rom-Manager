@@ -15,6 +15,7 @@ namespace RomManagerTests;
 /// without throwing. This acts as a regression guard for the type of crash
 /// described in bug: "Unable to resolve TitleInfoProviderManager – Switch console".
 /// </summary>
+[Collection("ConsoleModules")]
 public class DiContainerTests
 {
     // ── Container builder (mirrors App.axaml.cs RegisterConsoleServices) ─
@@ -27,7 +28,6 @@ public class DiContainerTests
         RomManagerConfiguration.Load("config.json");
 
         var services = new ServiceCollection();
-        var assembly = Assembly.Load("RomManagerShared");
 
         // EF Core (in-memory for tests)
         services.AddDbContext<AppDbContext>(
@@ -35,79 +35,9 @@ public class DiContainerTests
             ServiceLifetime.Scoped);
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<AppDbContext>());
 
-        RegisterConsoleServices(services, assembly);
+        ConsoleModules.Register(services);
 
         return services.BuildServiceProvider();
-    }
-
-    private static void RegisterConsoleServices(IServiceCollection services, Assembly assembly)
-    {
-        var gamingConsoleType = typeof(GamingConsole);
-        var consoleTypes = assembly.GetTypes()
-            .Where(t => gamingConsoleType.IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract)
-            .ToList();
-
-        foreach (var consoleType in consoleTypes)
-        {
-            services.AddScoped(typeof(GenericRepository<>).MakeGenericType(consoleType));
-            services.AddScoped(typeof(RomParserExecutor<>).MakeGenericType(consoleType));
-
-            // This was the missing registration that caused the runtime crash.
-            services.AddScoped(typeof(TitleInfoProviderManager<>).MakeGenericType(consoleType));
-
-            RegisterOpenGeneric(services, assembly, typeof(ITitleInfoProvider<>), consoleType);
-            RegisterOpenGeneric(services, assembly, typeof(IRomParser<>), consoleType);
-
-            var consoleManagerType = typeof(ConsoleManager<>).MakeGenericType(consoleType);
-            var specificManager = assembly.GetTypes()
-                .FirstOrDefault(t => !t.IsAbstract
-                                  && consoleManagerType.IsAssignableFrom(t)
-                                  && t != consoleManagerType);
-
-            if (specificManager is not null)
-                services.AddScoped(consoleManagerType, specificManager);
-            else
-                services.AddScoped(consoleManagerType);
-        }
-
-        // Register GenericRepository<T> for DTO types used by TitleInfoProviders
-        // (e.g. GenericRepository<SwitchJsonRomDTO> needed by SwitchJsonTitleInfoProvider)
-        RegisterDtoRepositories(services, assembly);
-    }
-
-    private static void RegisterDtoRepositories(IServiceCollection services, Assembly assembly)
-    {
-        var genericRepoOpen = typeof(GenericRepository<>);
-        var alreadyRegistered = new HashSet<Type>();
-
-        foreach (var type in assembly.GetTypes().Where(t => !t.IsAbstract && !t.IsInterface))
-        {
-            foreach (var ctor in type.GetConstructors())
-            {
-                foreach (var param in ctor.GetParameters())
-                {
-                    var pt = param.ParameterType;
-                    if (pt.IsGenericType
-                        && pt.GetGenericTypeDefinition() == genericRepoOpen
-                        && alreadyRegistered.Add(pt))
-                    {
-                        services.AddScoped(pt);
-                    }
-                }
-            }
-        }
-    }
-
-    private static void RegisterOpenGeneric(
-        IServiceCollection services, Assembly assembly,
-        Type openInterface, Type consoleType)
-    {
-        var closedInterface = openInterface.MakeGenericType(consoleType);
-        foreach (var impl in assembly.GetTypes()
-            .Where(t => !t.IsAbstract && !t.IsInterface && closedInterface.IsAssignableFrom(t)))
-        {
-            services.AddScoped(closedInterface, impl);
-        }
     }
 
     // ── Tests ─────────────────────────────────────────────────────────────
@@ -117,8 +47,7 @@ public class DiContainerTests
     {
         // Arrange
         var provider = BuildContainer();
-        var consoleTypes = Assembly.Load("RomManagerShared").GetTypes()
-            .Where(t => typeof(GamingConsole).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract)
+        var consoleTypes = ConsoleModules.ConsoleTypes
             .ToList();
 
         consoleTypes.Should().NotBeEmpty("at least one GamingConsole subtype must exist in RomManagerShared");
@@ -139,8 +68,7 @@ public class DiContainerTests
     {
         // Arrange
         var provider = BuildContainer();
-        var consoleTypes = Assembly.Load("RomManagerShared").GetTypes()
-            .Where(t => typeof(GamingConsole).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract)
+        var consoleTypes = ConsoleModules.ConsoleTypes
             .ToList();
 
         // Act & Assert
@@ -159,8 +87,7 @@ public class DiContainerTests
     public void AllRomParserExecutors_CanBeResolved()
     {
         var provider = BuildContainer();
-        var consoleTypes = Assembly.Load("RomManagerShared").GetTypes()
-            .Where(t => typeof(GamingConsole).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract)
+        var consoleTypes = ConsoleModules.ConsoleTypes
             .ToList();
 
         using var scope = provider.CreateScope();

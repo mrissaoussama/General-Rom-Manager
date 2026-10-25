@@ -31,7 +31,7 @@ public static class RomSnapshot
         var roms = new List<Rom>(entries.Count);
         foreach (var entry in entries)
         {
-            var type = Type.GetType(entry.Type);
+            var type = Type.GetType(entry.Type) ?? ConsoleModules.FindType(entry.Type.Split(',')[0]);
             if (type is null || !typeof(Rom).IsAssignableFrom(type))
                 type = typeof(Rom);
             if (entry.Data.Deserialize(type, Options) is Rom rom)

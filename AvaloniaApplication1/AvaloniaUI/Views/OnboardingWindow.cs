@@ -189,24 +189,7 @@ public sealed class OnboardingWindow : Window
             Margin = new Thickness(0, 0, 0, 10),
         });
 
-        var popularConsoles = new[]
-        {
-            ("Switch",       "Nintendo Switch"),
-            ("ThreeDS",      "Nintendo 3DS"),
-            ("DS",           "Nintendo DS"),
-            ("Wii",          "Nintendo Wii"),
-            ("WiiU",         "Nintendo Wii U"),
-            ("SNES",         "SNES"),
-            ("N64",          "Nintendo 64"),
-            ("GameBoy",      "Game Boy / GBC"),
-            ("GameBoyAdvance","Game Boy Advance"),
-            ("PS2",          "PlayStation 2"),
-            ("PS3",          "PlayStation 3"),
-            ("PS4",          "PlayStation 4"),
-            ("PSP",          "PSP"),
-            ("PSVita",       "PS Vita"),
-            ("Xbox360",      "Xbox 360"),
-        };
+        var popularConsoles = ConsoleModules.Descriptors.Select(d => (d.Id, d.DisplayName));
 
         foreach (var (key, label) in popularConsoles)
         {
