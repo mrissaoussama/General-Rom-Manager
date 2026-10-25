@@ -75,6 +75,24 @@ public sealed class LibraryScannerTests : IDisposable
     }
 
     [Fact]
+    public async Task ScanAsync_ReportsFilesThatProduceNoRoms()
+    {
+        var manager = new ConsoleManager<SwitchConsole>(new RomParserExecutor<SwitchConsole>([new EmptyParser()]));
+        File.WriteAllText(Path.Combine(_root, "junk.nsp"), "x");
+        var scanner = new LibraryScanner(_db);
+
+        (await scanner.ScanAsync(manager, "Switch", _root)).Should().BeEmpty();
+
+        scanner.Unrecognized.Should().ContainSingle().Which.Should().EndWith("junk.nsp");
+    }
+
+    private sealed class EmptyParser : IRomParser<SwitchConsole>
+    {
+        public List<string> Extensions { get; set; } = ["nsp"];
+        public Task<List<Rom>> ProcessFile(string path) => Task.FromResult<List<Rom>>([]);
+    }
+
+    [Fact]
     public async Task ScanAsync_FullRescan_ReparsesEverything()
     {
         File.WriteAllText(Path.Combine(_root, "A.nsp"), "a");

@@ -150,7 +150,11 @@ public partial class ConsoleViewModel<T> : ViewModelBase , IConsoleViewModel whe
             });
             var roms = await scanner.ScanAsync(manager, libraryKey, romPath, fullRescan, progress, ct);
             ShowRoms(roms);
-            StatusMessage = $"Loaded {Roms.Count} ROMs";
+            StatusMessage = scanner.Unrecognized.Count == 0
+                ? $"Loaded {Roms.Count} ROMs"
+                : $"Loaded {Roms.Count} ROMs · {scanner.Unrecognized.Count} file(s) not recognised (see log)";
+            if (scanner.Unrecognized.Count > 0)
+                FileUtils.Log($"[{ConsoleName}] Not recognised:{Environment.NewLine}  " + string.Join(Environment.NewLine + "  ", scanner.Unrecognized));
             EnsureWatcher(romPath, manager.RomParserExecutor.GetSupportedExtensions());
         }
         catch (OperationCanceledException)

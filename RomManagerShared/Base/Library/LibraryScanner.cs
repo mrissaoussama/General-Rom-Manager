@@ -16,6 +16,9 @@ public sealed class LibraryScanner(AppDbContext db)
     /// <summary>Files parsed concurrently. Kept low: most libraries live on HDDs or network shares.</summary>
     public int MaxParallelism { get; init; } = 4;
 
+    /// <summary>Files from the last <see cref="ScanAsync{T}"/> that matched an extension but produced no roms.</summary>
+    public IReadOnlyList<string> Unrecognized { get; private set; } = [];
+
     public async Task<List<Rom>> LoadCachedAsync(string console, CancellationToken ct = default)
     {
         var files = await db.LibraryFiles.AsNoTracking()
@@ -84,6 +87,7 @@ public sealed class LibraryScanner(AppDbContext db)
 
         var seen = new HashSet<string>(files, StringComparer.OrdinalIgnoreCase);
         var result = slots.SelectMany(r => r).ToList();
+        Unrecognized = [.. files.Where((_, i) => slots[i].Count == 0)];
         db.LibraryFiles.RemoveRange(cached.Values.Where(f => !seen.Contains(f.Path)));
         await db.SaveChangesAsync(ct);
         return result;
