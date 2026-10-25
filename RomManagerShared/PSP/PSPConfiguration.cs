@@ -6,6 +6,6 @@ public static class PSPConfiguration
 {
     public static string GetCachePath()
     {
-        return RomManagerConfiguration.BaseFolder + RomManagerConfiguration.Configuration.GetSection("PSP:CachePath").Value!;
+        return RomManagerConfiguration.GetPathOrDefault("PSP:CachePath", "Cache/PSP");
     }
 }

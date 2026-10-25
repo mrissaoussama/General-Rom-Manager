@@ -16,7 +16,7 @@ public static class ThreeDSConfiguration
 
     public static string GetTitleDBPath()
     {
-        return RomManagerConfiguration.BaseFolder + RomManagerConfiguration.Configuration.GetSection("ThreeDS:TitleDB:SavePath").Value!;
+        return RomManagerConfiguration.GetPathOrDefault("ThreeDS:TitleDB:SavePath", "Data/ThreeDS");
     }
 
     public static string GetTitleDBBaseUrl()

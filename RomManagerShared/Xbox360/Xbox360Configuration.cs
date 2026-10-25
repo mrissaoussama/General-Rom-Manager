@@ -6,11 +6,11 @@ public static class Xbox360Configuration
 {
     public static string GetXexToolPath()
     {
-        return RomManagerConfiguration.BaseFolder + RomManagerConfiguration.Configuration.GetSection("Xbox360:XexToolPath").Value!;
+        return RomManagerConfiguration.GetPathOrDefault("Xbox360:XexToolPath", "Tools/xextool.exe");
     }
 
     public static string GetThumbnailCachePath()
     {
-        return RomManagerConfiguration.BaseFolder + RomManagerConfiguration.Configuration.GetSection("Xbox360:ThumbnailCachePath").Value!;
+        return RomManagerConfiguration.GetPathOrDefault("Xbox360:ThumbnailCachePath", "Cache/Xbox360");
     }
 }

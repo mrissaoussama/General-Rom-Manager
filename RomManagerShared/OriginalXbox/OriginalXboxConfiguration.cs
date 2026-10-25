@@ -6,6 +6,6 @@ public static class OriginalXboxConfiguration
 {
     public static string GetThumbnailCachePath()
     {
-        return RomManagerConfiguration.BaseFolder + RomManagerConfiguration.Configuration.GetSection("OriginalXbox:ThumbnailCachePath").Value!;
+        return RomManagerConfiguration.GetPathOrDefault("OriginalXbox:ThumbnailCachePath", "Cache/OriginalXbox");
     }
 }

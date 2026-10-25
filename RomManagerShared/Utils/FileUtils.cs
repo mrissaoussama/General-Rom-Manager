@@ -33,6 +33,15 @@ public class FileUtils
     public static FileStream OpenRead(string path) =>
         new(path, FileMode.Open, FileAccess.Read, FileShare.Read);
 
+    /// <summary>Scratch folder under the cache (with trailing separator). Never the ROM folder.</summary>
+    public static string GetTempDirectory()
+    {
+        var cache = RomManagerConfiguration.GetCachePath();
+        var dir = Path.Combine(string.IsNullOrEmpty(cache) ? Path.GetTempPath() : cache, "Temp");
+        Directory.CreateDirectory(dir);
+        return dir + Path.DirectorySeparatorChar;
+    }
+
     public static long GetFileSize(string filePath)
     {
         if (File.Exists(filePath))

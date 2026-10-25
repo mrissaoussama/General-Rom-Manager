@@ -21,7 +21,7 @@ public class OriginalXboxISORomParser : IRomParser<OriginalXboxConsole>
         IsoDetailsResults? results = null;
         try
         {
-            IsoDetailsArgs args = new(path, Path.GetDirectoryName(path) + "\\", Xbox360Configuration.GetXexToolPath());
+            IsoDetailsArgs args = new(path, FileUtils.GetTempDirectory(), Xbox360Configuration.GetXexToolPath());
             DoWorkEventArgs workargs = new(args);
             IsoDetails isoDetails = new();
             results = isoDetails.IsoDetails_DoWork(workargs);

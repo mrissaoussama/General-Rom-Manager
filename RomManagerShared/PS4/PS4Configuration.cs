@@ -7,7 +7,7 @@ public static class PS4Configuration
 {
     public static string GetToolsPath()
     {
-        return RomManagerConfiguration.BaseFolder + RomManagerConfiguration.Configuration.GetSection("PS4:PS4ToolsPath").Value!;
+        return RomManagerConfiguration.GetPathOrDefault("PS4:PS4ToolsPath", "Tools/PS4");
     }
 }
 

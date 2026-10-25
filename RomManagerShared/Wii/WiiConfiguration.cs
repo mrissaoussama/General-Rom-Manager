@@ -6,7 +6,7 @@ public static class WiiConfiguration
 {
     public static string GetGameTDBPath()
     {
-        return RomManagerConfiguration.BaseFolder + RomManagerConfiguration.Configuration.GetSection("Wii:GameTDB:Path").Value!;
+        return RomManagerConfiguration.GetPathOrDefault("Wii:GameTDB:Path", "Data/Wii/wiitdb.xml");
     }
 
     public static string GetGameTDBUrl()
@@ -16,7 +16,7 @@ public static class WiiConfiguration
 
     public static string GetWadCommonKeyPath()
     {
-        return RomManagerConfiguration.BaseFolder + RomManagerConfiguration.Configuration.GetSection("Wii:Wad:CommonKeyPath").Value!;
+        return RomManagerConfiguration.GetPathOrDefault("Wii:Wad:CommonKeyPath", "Data/Wii/common-key.bin");
     }
 }
 

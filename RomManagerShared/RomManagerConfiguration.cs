@@ -54,6 +54,14 @@ public static class RomManagerConfiguration
         );
     }
 
+    /// <summary>Configured path under the base folder, or <paramref name="fallback"/> when the key is unset.</summary>
+    public static string GetPathOrDefault(string key, string fallback)
+    {
+        var value = Configuration?.GetSection(key).Value;
+        if (string.IsNullOrWhiteSpace(value)) value = fallback;
+        return Path.Combine(BaseFolder ?? string.Empty, value.TrimStart('\\', '/'));
+    }
+
     public static string GetGlobalPath(string key)
     {
         if (!ConfigurationLoaded) return string.Empty;
