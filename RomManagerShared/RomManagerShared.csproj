@@ -17,9 +17,6 @@
 		<None Update="PS4\PS4_Tools.dll">
 		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
-		<None Update="WiiU\Parsers\cdecrypt.exe">
-		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="DiscUtils" Version="0.16.13" />
