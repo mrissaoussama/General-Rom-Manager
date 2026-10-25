@@ -23,6 +23,25 @@ public class FileRenamerTests
     // ── GenerateFileName tests ────────────────────────────────────────────
 
     [Fact]
+    public void PreviewRename_ReportsNewNamesWithoutTouchingFiles()
+    {
+        var dir = Directory.CreateTempSubdirectory().FullName;
+        try
+        {
+            var path = Path.Combine(dir, "old.nsp");
+            File.WriteAllText(path, "x");
+            var rom = MakeRom(path, "0100", "New Name");
+
+            var result = FileRenamer.PreviewRename([rom], "{TitleName}").Should().ContainSingle().Subject;
+
+            Path.GetFileName(result.DestinationPath).Should().Be("New Name.nsp");
+            File.Exists(path).Should().BeTrue();
+            rom.Path.Should().Be(path);
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
+    [Fact]
     public void GenerateFileName_ReplacesTitleName()
     {
         var rom = MakeRom("C:/roms/game.nsp", "01001234", "Super Game");

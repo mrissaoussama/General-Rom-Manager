@@ -220,7 +220,7 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
     private async Task Rename(IReadOnlyList<RomViewModel> roms)
     {
         if (Operations is null || roms.Count == 0) return;
-        var dialog = new FormatNameWindow(roms[0].RomSource, GetColumnDescriptors()
+        var dialog = new FormatNameWindow([.. roms.Select(r => r.RomSource)], GetColumnDescriptors()
             .Where(d => d.UsesDictionaryLookup).Select(d => d.PropName), ConsoleName);
         await Shell.ShowDialogAsync(dialog);
         if (dialog.Result is not { } format) return;

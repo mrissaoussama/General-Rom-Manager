@@ -11,23 +11,51 @@ public sealed class FormatNameWindow : Window
 
     public string? Result { get; private set; }
 
-    public FormatNameWindow(Rom sample, IEnumerable<string> consoleProperties, string consoleName)
+    private const int PreviewLimit = 50;
+
+    public FormatNameWindow(IReadOnlyList<Rom> roms, IEnumerable<string> consoleProperties, string consoleName)
     {
-        Title = "Rename";
-        Width = 600;
+        Title = roms.Count == 1 ? "Rename" : $"Rename {roms.Count} ROMs";
+        Width = 760;
         SizeToContent = SizeToContent.Height;
         CanResize = false;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
 
-        string Preview(string fmt)
-        {
-            try { return FileRenamer.GenerateFileName([sample], fmt); }
-            catch { return "(invalid template)"; }
-        }
-
         var template = new TextBox { Text = Settings.Instance.RenameFormatString };
-        var preview = new TextBlock { Opacity = 0.75, TextWrapping = TextWrapping.Wrap, Text = "→ " + Preview(template.Text ?? "") };
-        template.TextChanged += (_, _) => preview.Text = "→ " + Preview(template.Text ?? "");
+        var rows = new ObservableCollection<string>();
+        var summary = new TextBlock { Opacity = 0.75 };
+        var ok = new Button { Content = "Rename", IsDefault = true };
+
+        // Dry run of the real renamer: shows the final names, including sanitising and de-duplication.
+        void Preview()
+        {
+            rows.Clear();
+            try
+            {
+                var results = FileRenamer.PreviewRename(roms.Take(PreviewLimit), template.Text ?? "");
+                foreach (var r in results)
+                    rows.Add(r.SourcePath == r.DestinationPath
+                        ? $"{Path.GetFileName(r.SourcePath)}   (unchanged)"
+                        : $"{Path.GetFileName(r.SourcePath)}  →  {Path.GetFileName(r.DestinationPath)}");
+                var changed = results.Count(r => r.SourcePath != r.DestinationPath);
+                summary.Text = $"{changed} of {results.Count} file(s) change" + (roms.Count > PreviewLimit ? $" (first {PreviewLimit} shown)" : "");
+                ok.IsEnabled = true;
+            }
+            catch (Exception ex)
+            {
+                summary.Text = $"Invalid template: {ex.Message}";
+                ok.IsEnabled = false;
+            }
+        }
+        template.TextChanged += (_, _) => Preview();
+
+        var previewList = new ListBox
+        {
+            ItemsSource = rows,
+            MaxHeight = 260,
+            FontFamily = new FontFamily("Cascadia Mono, Consolas, monospace"),
+            FontSize = 11,
+        };
 
         WrapPanel Chips(IEnumerable<string> placeholders)
         {
@@ -46,7 +74,6 @@ public sealed class FormatNameWindow : Window
             return wrap;
         }
 
-        var ok = new Button { Content = "Rename", IsDefault = true };
         var cancel = new Button { Content = "Cancel", IsCancel = true };
         ok.Click += (_, _) => { Result = template.Text; Close(); };
         cancel.Click += (_, _) => Close();
@@ -62,13 +89,15 @@ public sealed class FormatNameWindow : Window
             root.Children.Add(new TextBlock { Text = consoleName, Opacity = 0.7 });
             root.Children.Add(Chips(specific));
         }
-        root.Children.Add(preview);
+        root.Children.Add(summary);
+        root.Children.Add(previewList);
         root.Children.Add(new StackPanel
         {
             Orientation = Orientation.Horizontal, Spacing = 8, HorizontalAlignment = HorizontalAlignment.Right,
             Children = { cancel, ok },
         });
         Content = root;
+        Preview();
     }
 }
 

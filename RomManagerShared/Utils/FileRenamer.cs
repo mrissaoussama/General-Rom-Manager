@@ -46,6 +46,10 @@ public partial class FileRenamer
         CancellationToken ct = default)
         => Task.Run(() => RenameCore(romList, formatString, dryRun: false, logger, ct), ct);
 
+    /// <summary>What <see cref="RenameFilesAsync"/> would do, without touching any file.</summary>
+    public static IReadOnlyList<RenameResult> PreviewRename(IEnumerable<Rom> romList, string formatString)
+        => RenameCore(romList, formatString, dryRun: true, logger: null);
+
     // ── Core implementation ───────────────────────────────────────────────
 
     private static IReadOnlyList<RenameResult> RenameCore(
