@@ -91,3 +91,8 @@ public class Xbox360Console : GamingConsole
 {
     public Xbox360Console() { Name = "Xbox 360"; }
 }
+
+public class GameCubeConsole : GamingConsole
+{
+    public GameCubeConsole() { Name = "GameCube"; }
+}

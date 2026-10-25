@@ -164,10 +164,10 @@ game data, not Wii), gbc 367, nsp 97, pkg 56, cso 46, iso 33).
 - [ ] PS2: CSO/ZSO (block decompression), CHD (`libchdr` P/Invoke or a managed reader), UDF via
       LTRData.DiscUtils.
 - [ ] PS1: cue/bin, CHD → read `SYSTEM.CNF` from the ISO9660 track.
-- [ ] GameCube/Wii: ISO, CISO, RVZ/WIA (the disc header holds ID6 and title in the first 0x440
+- [x] GameCube/Wii: ISO, CISO done. Still open: RVZ/WIA (the disc header holds ID6 and title in the first 0x440
       bytes, even for RVZ). [P1, you have GameCube files]
 - [ ] NES (iNES header + No-Intro hash), Genesis/MD, Master System, PCE, Dreamcast GDI/CHD.
-- [ ] Wii U: replace `cdecrypt.exe` with an in-process TMD/TIK reader. Only decrypt `meta.xml`
+- [x] Wii U: TMD and WUD/WUX read without keys; cdecrypt is optional and no longer bundled (ADR 0002). Still open: in-process meta.xml decryption. Only decrypt `meta.xml`
       when the title key is available.
 - [ ] Switch: missing-update/DLC report (the backend exists in `SwitchManager.GetMissingUpdates`)
       using the downloaded `versions.json`. Today it logs "Switch version path not found" until the
@@ -215,7 +215,7 @@ game data, not Wii), gbc 367, nsp 97, pkg 56, cso 46, iso 33).
 - [ ] **Parser fixture tests**: small or homebrew files per format under `RomManagerTests/Fixtures`
       (generate truncated headers where real dumps can't be committed), plus a golden JSON of the
       expected `Rom`s.
-- [ ] Keep `tools/ParserHarness` for local smoke runs against a real library. Add `--json` output so
+- [x] Keep `tools/ParserHarness` for local smoke runs against a real library (`--snapshot`/`--compare` done). Add `--json` output so
       runs can be diffed before and after a change.
 - [ ] Scanner integration test: temp folder → scan → modify → rescan → assert the diff.
 - [ ] ViewModel tests for the filters, commands and empty states.

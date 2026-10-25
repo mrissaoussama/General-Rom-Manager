@@ -11,7 +11,7 @@ public sealed record ScanProgress(int Processed, int Total, int Parsed, string? 
 public sealed class LibraryScanner(AppDbContext db)
 {
     /// <summary>Bump when parser output changes so cached entries get re-parsed.</summary>
-    public const int ScanVersion = 2;
+    public const int ScanVersion = 3;
     private const int SaveBatchSize = 25;
 
     public async Task<List<Rom>> LoadCachedAsync(string console, CancellationToken ct = default)

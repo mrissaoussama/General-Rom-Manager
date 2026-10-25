@@ -1,5 +1,6 @@
 ﻿using RomManagerShared.Base;
 using RomManagerShared.Interfaces;
+using RomManagerShared.Utils;
 namespace RomManagerShared.Wii.Parsers;
 
 public class WiiWadRomParser : IRomParser<WiiConsole>
@@ -21,6 +22,9 @@ public class WiiWadRomParser : IRomParser<WiiConsole>
         };
         //wiiWadGame.Languages=[..wadInfo.GetChannelTitles(wadfile)];
         wiiWadGame.AddTitleName(wadInfo.GetChannelTitles(wadfile)[1]);
+        if (wiiWadGame.TitleID is { Length: 4 })
+            wiiWadGame.AddRegion(NintendoDiscHeader.RegionFromGameId(wiiWadGame.TitleID));
+        wiiWadGame.Path = path;
         List<Rom> list = [wiiWadGame];
         return Task.FromResult(list);
     }

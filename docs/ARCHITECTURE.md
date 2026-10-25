@@ -85,8 +85,9 @@ there is likely pending model drift. The scanned **library is not persisted**.
 | PS4 | pkg | OK (PS4_Tools) |
 | PSP | iso, pkg | OK (managed SFO + PKG readers) |
 | PS Vita | vpk, sfo | vpk ok |
-| Wii | wbfs, wad | OK |
-| Wii U | wux/wud, tmd, xml | Decrypted folders (code/meta) ok; tmd needs opt-in `WiiU:AllowCdecrypt`; wux not parsed |
+| Wii | wbfs, wad, iso, ciso | OK (region from game ID) |
+| GameCube | iso, gcm, ciso | OK |
+| Wii U | wux/wud, tmd, xml | TMD: ID/version without keys. WUD/WUX: product code + region (names via title DB). Decrypted folders: full metadata. cdecrypt optional, user-supplied |
 | OG Xbox | iso, xbe | OK; icons cached under Cache/OriginalXbox |
-| Xbox 360 | iso, xex | Needs `xextool.exe` (Xbox360:XexToolPath); skipped with a log line otherwise |
-| GameCube, PS1, NES, Genesis… | — | Not supported |
+| Xbox 360 | iso, xex | Title ID from XEX header; name/icon only with user-supplied `xextool.exe` |
+| PS1, NES, Genesis… | — | Not supported |

@@ -19,7 +19,7 @@ public class WiiWBFSRomParser : IRomParser<WiiConsole>
     {
         List<Rom> roms = [];        try
         {
-            using FileStream fs = new(path, FileMode.Open, FileAccess.Read);
+            using FileStream fs = FileUtils.OpenRead(path);
             using BinaryReader br = new(fs);
             // Read and process the WBFS file
             byte[] titleIDBytes = new byte[TitleIDLength];
@@ -39,8 +39,10 @@ public class WiiWBFSRomParser : IRomParser<WiiConsole>
             WiiGame wiiRom = new()
             {
                 TitleID = titleID.Trim(),
+                Path = path,
                 //Hash = md5HashBytes,
-            };            wiiRom.AddTitleName(titleName.Trim().TrimEnd('\0'));            roms.Add(wiiRom);
+            };            wiiRom.AddTitleName(titleName.Trim().TrimEnd('\0'));            wiiRom.AddRegion(NintendoDiscHeader.RegionFromGameId(wiiRom.TitleID));
+            roms.Add(wiiRom);
         }
         catch (Exception ex)
         {
