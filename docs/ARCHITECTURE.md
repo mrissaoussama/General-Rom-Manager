@@ -80,7 +80,7 @@ there is likely pending model drift. The scanned **library is not persisted**.
 | Switch | nsp, nsz, xci | NSP/NSZ: LibHac with ticket import (names from NACP; DLC names from titledb). Header scan is the fallback without keys. XCI untested |
 | 3DS | cia | OK; updates/DLC have no SMDH, titles come from title DB |
 | DS / GB / GBC / GBA / SNES / N64 / Saturn(mdf) | header | OK, raw header titles (DS falls back to file name for invalid headers) |
-| PS2 | iso, cso | OK via SYSTEM.CNF, ISO9660 + UDF. No CHD/ZSO |
+| PS2 | iso, cso, chd | OK via SYSTEM.CNF, ISO9660 + UDF (CHD via CHDSharp). No ZSO |
 | PS3 | PARAM.SFO folder, pkg | OK (managed PKG reader) |
 | PS4 | pkg | OK (PS4_Tools) |
 | PSP | iso, cso, pkg | OK (managed SFO + PKG readers) |
@@ -90,5 +90,5 @@ there is likely pending model drift. The scanned **library is not persisted**.
 | Wii U | wux/wud, tmd, xml | TMD: ID/version without keys. WUD/WUX: product code + region; with the disc key (sibling `.key` or `[32-hex]` in the file name) exact title IDs from the partition table. Names via title DB. Decrypted folders: full metadata. cdecrypt optional, user-supplied |
 | OG Xbox | iso, xbe | OK; icons cached under Cache/OriginalXbox |
 | Xbox 360 | iso, xex | Title ID from XEX header; name/icon only with user-supplied `xextool.exe` |
-| PS1 | cue, iso | Serial from SYSTEM.CNF (raw 2352 or 2048 sectors). No CHD/PBP |
+| PS1 | cue, iso, chd | Serial from SYSTEM.CNF (2048/2352/2448-byte frames). No PBP |
 | NES, Genesis… | — | Not supported |

@@ -33,9 +33,17 @@ public class FileUtils
     public static FileStream OpenRead(string path) =>
         new(path, FileMode.Open, FileAccess.Read, FileShare.Read);
 
-    /// <summary>Read-only ISO view of a disc image; transparently decompresses .cso.</summary>
+    /// <summary>
+    /// Read-only view of a disc image; transparently decompresses .cso and .chd.
+    /// CHD CD images keep their 2448-byte frames, so read them with <see cref="RawCdReader"/>.
+    /// </summary>
     public static Stream OpenDiscImage(string path)
     {
+        if (path.EndsWith(".chd", StringComparison.OrdinalIgnoreCase))
+        {
+            var error = CHDSharp.ChdFile.OpenAsStream(path, out var chd, CancellationToken.None);
+            return chd ?? throw new InvalidDataException($"CHD open failed: {error}");
+        }
         var file = OpenRead(path);
         if (!path.EndsWith(".cso", StringComparison.OrdinalIgnoreCase))
             return file;

@@ -7,6 +7,7 @@
     <GenerateRuntimeConfigurationFiles>True</GenerateRuntimeConfigurationFiles>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="CHDSharp" Version="1.5.2" />
     <PackageReference Include="Ryujinx.LibHac" Version="0.20.0" />
     <ProjectReference Include="..\SkyEditor.IO\SkyEditor.IO.csproj" />
   </ItemGroup>

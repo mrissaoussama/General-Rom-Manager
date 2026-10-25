@@ -22,7 +22,7 @@ public class PS2RomParser : IRomParser<PS2Console>
         if (!PS2Utils.IsPS2TitleIDFile(path))
             return Task.FromResult(list);
         string extension = Path.GetExtension(path).TrimStart('.').ToLowerInvariant();
-        bool isImage = extension is "iso" or "cso";
+        bool isImage = extension is "iso" or "cso" or "chd";
         if (!isImage)
         {
             var region = PS2Utils.GetRegionFile(path);
@@ -37,7 +37,22 @@ public class PS2RomParser : IRomParser<PS2Console>
             game.Path = path;
             list.Add(game);
         }
-        if (isImage)
+        if (extension == "chd")
+        {
+            // CHD frames aren't plain ISO sectors; read SYSTEM.CNF directly.
+            using var chd = FileUtils.OpenDiscImage(path);
+            var reader = new RawCdReader(chd);
+            var boot = reader.ReadBootExecutable();
+            var candidates = boot is not null && PS2Utils.GetRegionFile(boot) is not null ? [boot] : reader.RootFileNames();
+            foreach (var file in candidates)
+            {
+                if (PS2Utils.GetRegionFile(file) is not { } region) continue;
+                var game = new PS2Game { TitleID = file, IsFolderFormat = true, Path = path };
+                game.AddRegion(region);
+                list.Add(game);
+            }
+        }
+        else if (isImage)
         {
             using var isoStream = FileUtils.OpenDiscImage(path);
             using DiscFileSystem? disc = CDReader.Detect(isoStream) ? new CDReader(isoStream, true)

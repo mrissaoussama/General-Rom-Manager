@@ -62,6 +62,24 @@ public sealed class PS1DiscParserTests : IDisposable
             .Which.TitleID.Should().Be("SCES_012.37");
     }
 
+    // CHD stores CD frames as 2448 bytes (sector + subcode); cooked MODE1 data sits at offset 0.
+    [Theory]
+    [InlineData(2448, 0)]
+    [InlineData(2448, 24)]
+    [InlineData(2352, 16)]
+    public void RawCdReader_DetectsFrameLayouts(int frame, int offset)
+    {
+        var iso = BuildIso("BOOT2 = cdrom0:\\SLUS_217.55;1");
+        var image = new byte[iso.Length / 2048 * frame];
+        for (int i = 0; i < iso.Length / 2048; i++)
+            Array.Copy(iso, i * 2048, image, i * frame + offset, 2048);
+
+        var reader = new RomManagerShared.Utils.RawCdReader(new MemoryStream(image));
+
+        reader.ReadBootExecutable().Should().Be("SLUS_217.55");
+        reader.RootFileNames().Should().Contain("SLUS_004.99");
+    }
+
     [Fact]
     public async Task ProcessFile_CueWithMissingBin_ReturnsEmpty()
     {

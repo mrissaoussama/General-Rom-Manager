@@ -7,7 +7,7 @@ namespace RomManagerShared.PS1.Parsers;
 /// <summary>Reads the serial from SYSTEM.CNF. Cue sheets point at the data track; loose track bins are not indexed.</summary>
 public class PS1DiscParser : IRomParser<PS1Console>
 {
-    public List<string> Extensions { get; set; } = ["cue", "iso"];
+    public List<string> Extensions { get; set; } = ["cue", "iso", "chd"];
 
     public Task<List<Rom>> ProcessFile(string path)
     {
@@ -17,7 +17,7 @@ public class PS1DiscParser : IRomParser<PS1Console>
             if (image is null || !File.Exists(image))
                 return Task.FromResult<List<Rom>>([]);
 
-            using var fs = FileUtils.OpenRead(image);
+            using var fs = FileUtils.OpenDiscImage(image);
             var serial = new RawCdReader(fs).ReadBootExecutable();
             if (serial is null)
                 return Task.FromResult<List<Rom>>([]);
