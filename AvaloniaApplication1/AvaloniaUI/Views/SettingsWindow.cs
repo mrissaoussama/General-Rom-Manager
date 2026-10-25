@@ -123,8 +123,7 @@ public sealed class SettingsWindow : Window
         dbResetBtn.Click += (_, _) => { dbPathBox.Text = ""; settings.DatabasePath = null; };
         sp.Children.Add(MakeLabeledPathRow("Database / metadata", dbPathBox, "Browse…", async () =>
         {
-            var dlg = new OpenFolderDialog { Title = "Select database directory" };
-            var result = await dlg.ShowAsync(this);
+            var result = await Dialogs.PickFolderAsync(this, "Select database directory");
             if (result != null) dbPathBox.Text = result;
         }, extraButton: dbResetBtn));
 
@@ -159,8 +158,7 @@ public sealed class SettingsWindow : Window
             var capturedBox = pathBox;
             sp.Children.Add(MakeLabeledPathRow(capturedName, capturedBox, "Browse…", async () =>
             {
-                var dlg = new OpenFolderDialog { Title = $"Select {capturedName} ROM folder" };
-                var result = await dlg.ShowAsync(this);
+                var result = await Dialogs.PickFolderAsync(this, $"Select {capturedName} ROM folder");
                 if (result != null) capturedBox.Text = result;
             }));
         }
@@ -272,8 +270,7 @@ public sealed class SettingsWindow : Window
         pluginsDirBox.TextChanged += (_, _) => { settings.PluginsDirectory = pluginsDirBox.Text ?? "plugins"; };
         sp.Children.Add(MakeLabeledPathRow("Plugins directory", pluginsDirBox, "Browse…", async () =>
         {
-            var dlg = new OpenFolderDialog { Title = "Select plugins directory" };
-            var result = await dlg.ShowAsync(this);
+            var result = await Dialogs.PickFolderAsync(this, "Select plugins directory");
             if (result != null) pluginsDirBox.Text = result;
         }));
 
@@ -456,20 +453,14 @@ public sealed class SettingsWindow : Window
         var importBtn = new Button { Content = "📦 Import Plugin (.zip)…" };
         importBtn.Click += async (_, _) =>
         {
-            var dlg = new OpenFileDialog
-            {
-                Title = "Select Plugin ZIP",
-                AllowMultiple = false,
-                Filters = [new FileDialogFilter { Name = "Plugin zip", Extensions = ["zip"] }],
-            };
-            var result = await dlg.ShowAsync(this);
-            if (result is null || result.Length == 0) return;
+            var result = await Dialogs.PickFileAsync(this, "Select Plugin ZIP", "Plugin zip", "zip");
+            if (result is null) return;
 
             if (_plugins is null) { return; }
             try
             {
                 importBtn.IsEnabled = false;
-                var name = await _plugins.ImportZipAsync(result[0]);
+                var name = await _plugins.ImportZipAsync(result);
                 // Rebuild the plugins tab content
                 var newContent = BuildPluginsTab();
                 Close(); // simplest: close and re-open settings

@@ -222,8 +222,7 @@ public sealed class OnboardingWindow : Window
             var capturedBox = box;
             btn.Click += async (_, _) =>
             {
-                var dlg = new OpenFolderDialog { Title = $"Select {label} ROM folder" };
-                var result = await dlg.ShowAsync(this);
+                var result = await Dialogs.PickFolderAsync(this, $"Select {label} ROM folder");
                 if (result != null) capturedBox.Text = result;
             };
 

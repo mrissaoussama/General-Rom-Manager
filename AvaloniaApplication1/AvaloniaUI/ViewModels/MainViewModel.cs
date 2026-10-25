@@ -65,7 +65,6 @@ public partial class MainViewModel : ViewModelBase
     public ObservableCollection<IConsoleViewModel> ConsoleViewModels { get; } = new();
     public MainViewModel(IServiceProvider serviceProvider)
     {
-        RomTypeDiscovery.Initialize();
         _serviceProvider = serviceProvider;
         OperationService = new RomOperationService(Operations, serviceProvider);
         InitializeConsoles();
