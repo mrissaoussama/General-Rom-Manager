@@ -1,4 +1,5 @@
-﻿using RomManagerShared.Utils;
+﻿using System.Text;
+using RomManagerShared.Utils;
 namespace RomManagerShared.DS;
 
 public class DSMetadataReader
@@ -26,7 +27,7 @@ public class DSMetadataReader
         {
             ndsHeader = new byte[HEADER_LENGTH];
             fileStream.Read(ndsHeader, 0, HEADER_LENGTH);
-            string title = BinUtils.AsciiToString(ndsHeader, TITLE_OFFSET, TITLE_LENGTH);
+            string title = Encoding.Latin1.GetString(ndsHeader, TITLE_OFFSET, TITLE_LENGTH).Trim(); // Latin1 keeps invalid bytes visible to the printable check
             string gameCode = BinUtils.AsciiToString(ndsHeader, GAME_CODE_OFFSET, GAME_CODE_LENGTH);
             string makerCode = BinUtils.AsciiToString(ndsHeader, MAKER_CODE_OFFSET, MAKER_CODE_LENGTH);
             string unitCode = BinUtils.ByteToHex(ndsHeader[UNIT_CODE_OFFSET]);

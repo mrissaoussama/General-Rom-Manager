@@ -25,7 +25,7 @@ public class SNESRomParser : IRomParser<SNESConsole>
         SNESGame SNESrom = new();
         var metadatareader = new SNESMetadataReader();
         var metadata = metadatareader.GetMetadata(path);
-        SNESrom.AddTitleName(metadata.Name);
+        SNESrom.AddTitleName(metadata.Name.Trim());
         SNESrom.Version = metadata.VersionNumber.ToString();
         if (metadata.CountryCode == 0x1)
         {

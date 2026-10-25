@@ -28,8 +28,13 @@ public class GameBoyMetadataReader
             gbaHeader = new byte[HEADER_LENGTH];
             fileStream.Read(gbaHeader, 0, HEADER_LENGTH);
         }
-        bool isCgb = (gbaHeader[CGB_FLAG_OFFSET] & (1 << CGB_FLAG_BIT)) != 0;        string title = BinUtils.AsciiToString(gbaHeader, TITLE_OFFSET, TITLE_LENGTH);
+        bool isCgb = (gbaHeader[CGB_FLAG_OFFSET] & (1 << CGB_FLAG_BIT)) != 0;        
+        // CGB carts shrink the title to 11 bytes when a 4-char game code follows; older carts use all 16.
         string gameCode = BinUtils.AsciiToString(gbaHeader, GAME_CODE_OFFSET, GAME_CODE_LENGTH);
+        bool hasGameCode = isCgb && gameCode.Length == GAME_CODE_LENGTH && gameCode.All(c => char.IsAsciiLetterUpper(c) || char.IsAsciiDigit(c));
+        int titleLength = hasGameCode ? 11 : isCgb ? 15 : TITLE_LENGTH;
+        string title = BinUtils.AsciiToString(gbaHeader, TITLE_OFFSET, titleLength).TrimEnd('\0', ' ');
+        if (!hasGameCode) gameCode = string.Empty;
         string cgbFlag = isCgb ? "CGB" : "Non-CGB"; // Customize this as needed
         string cgbFlagcode = BinUtils.ByteToHex(gbaHeader[CGB_FLAG_OFFSET]);        string newLicenseeCode = BinUtils.AsciiToString(gbaHeader, NEW_LICENSEE_CODE_OFFSET, NEW_LICENSEE_CODE_LENGTH);
         string sgbFlag = BinUtils.ByteToHex(gbaHeader[SGB_FLAG_OFFSET]);
