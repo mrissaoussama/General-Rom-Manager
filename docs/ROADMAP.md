@@ -102,7 +102,7 @@ These were all reproduced against real files with `tools/ParserHarness`.
 
 ## Phase 3: Architecture (1–2 weeks)
 
-### 3.1 Persist the library and scan incrementally [P1] — done (`LibraryScanner`, `LibraryFile`, JSON snapshots); watcher still open
+### 3.1 Persist the library and scan incrementally [P1] — done (`LibraryScanner`, `LibraryFile`, JSON snapshots, `LibraryWatcher` debounced rescans)
 - New entities: `LibraryFile` (Path, Size, MTimeUtc, Console, ScanVersion, LastScanUtc, Error?)
   1→N `Rom`. Add an index on Path.
 - The scanner diffs the file system against `LibraryFile`: new or changed files are parsed, deleted

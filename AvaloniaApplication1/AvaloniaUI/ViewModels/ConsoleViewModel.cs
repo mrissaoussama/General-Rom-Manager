@@ -151,6 +151,7 @@ public partial class ConsoleViewModel<T> : ViewModelBase , IConsoleViewModel whe
             var roms = await scanner.ScanAsync(manager, libraryKey, romPath, fullRescan, progress, ct);
             ShowRoms(roms);
             StatusMessage = $"Loaded {Roms.Count} ROMs";
+            EnsureWatcher(romPath, manager.RomParserExecutor.GetSupportedExtensions());
         }
         catch (OperationCanceledException)
         {
@@ -168,6 +169,28 @@ public partial class ConsoleViewModel<T> : ViewModelBase , IConsoleViewModel whe
             ProgressPercent = 100;
             IsIndeterminate = false;
             IsLoading = false;
+        }
+    }
+
+    private LibraryWatcher? _watcher;
+
+    // Rescan (incrementally) when files change under the ROM folder.
+    private void EnsureWatcher(string romPath, IEnumerable<string> extensions)
+    {
+        if (_watcher?.Root == romPath) return;
+        _watcher?.Dispose();
+        _watcher = null;
+        try
+        {
+            _watcher = new LibraryWatcher(romPath, extensions);
+            _watcher.Changed += () => Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                if (!IsLoading) _ = LoadData();
+            });
+        }
+        catch (Exception ex)
+        {
+            FileUtils.Log($"[{ConsoleName}] Folder watcher unavailable: {ex.Message}");
         }
     }
 
