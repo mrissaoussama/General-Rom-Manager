@@ -38,6 +38,7 @@ public class ThreeDSCIAParser : IRomParser<ThreeDSConsole>
         game.TitleID = titleid;
         game.Version = rom.GetTitleVersion().ToString();
         game.MinimumFirmware = rom.GetSystemVersion().ToString();
+        game.Icon = IconCache.Save("3DS", titleid, rom.GetIconPng());
         return [game];
     }
 }

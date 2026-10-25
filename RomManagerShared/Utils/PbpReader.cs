@@ -44,7 +44,7 @@ public static class PbpReader
 /// <summary>Writes console artwork pulled out of rom files to Cache/Icons/&lt;console&gt;/ so the UI can show it.</summary>
 public static class IconCache
 {
-    public static string? Save(string console, string? key, byte[]? png)
+    public static string? Save(string console, string? key, byte[]? png, string extension = ".png")
     {
         if (png is not { Length: > 8 } || string.IsNullOrWhiteSpace(key)) return null;
         var cache = RomManagerConfiguration.GetCachePath();
@@ -54,7 +54,7 @@ public static class IconCache
             var dir = Path.Combine(cache, "Icons", console);
             Directory.CreateDirectory(dir);
             var safe = string.Concat(key.Split(Path.GetInvalidFileNameChars()));
-            var path = Path.Combine(dir, safe + ".png");
+            var path = Path.Combine(dir, safe + extension);
             if (!File.Exists(path) || new FileInfo(path).Length != png.Length)
                 File.WriteAllBytes(path, png);
             return path;

@@ -55,6 +55,8 @@ public class ThreeDsRom : IExtendedFileSystem, IDisposable
         return null;
     }
 
+    public byte[]? GetIconPng() => GetSmdh() is { Length: >= 0x36C0 } smdh ? RomManagerShared.ThreeDS.SmdhIcon.LargePng(smdh) : null;
+
     public string? GetShortDescription() => ReadSmdhString(0, 0x80);
     public string? GetLongDescription() => ReadSmdhString(0x80, 0x100);
     public string? GetPublisher() => ReadSmdhString(0x180, 0x80);
