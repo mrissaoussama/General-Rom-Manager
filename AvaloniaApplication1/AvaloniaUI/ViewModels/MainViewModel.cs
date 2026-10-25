@@ -170,7 +170,8 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private Task CheckForUpdates() => DownloadMissingDatabasesAsync(showPanel: true);
 
-    private async Task DownloadMissingDatabasesAsync(bool showPanel)
+    /// <summary>Queues downloads for missing DB files. Returns the number queued, or -1 if the check failed.</summary>
+    private async Task<int> DownloadMissingDatabasesAsync(bool showPanel)
     {
         StatusMessage = "Checking for missing database files…";
         DownloadMethodInfo[] missing;
@@ -181,13 +182,13 @@ public partial class MainViewModel : ViewModelBase
         catch (Exception ex)
         {
             StatusMessage = $"DB check failed: {ex.Message}";
-            return;
+            return -1;
         }
 
         if (missing.Length == 0)
         {
             StatusMessage = "All database files are present.";
-            return;
+            return 0;
         }
 
         if (showPanel) SelectedBottomTab = DownloadsTab;
@@ -201,6 +202,7 @@ public partial class MainViewModel : ViewModelBase
             }
         }
         StatusMessage = $"Queued {missing.Length} missing database download(s).";
+        return missing.Length;
     }
 
     [RelayCommand]
@@ -276,7 +278,8 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private async Task OpenSettings()
     {
-        var win = new SettingsWindow(_serviceProvider.GetService<PluginManager>(), ConsoleViewModels);
+        var win = new SettingsWindow(_serviceProvider.GetService<PluginManager>(), ConsoleViewModels,
+            () => DownloadMissingDatabasesAsync(showPanel: true));
         await Shell.ShowDialogAsync(win);
         // Paths may have changed.
         ReloadRomPaths();

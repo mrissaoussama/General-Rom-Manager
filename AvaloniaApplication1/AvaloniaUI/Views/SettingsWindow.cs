@@ -17,11 +17,15 @@ public sealed class SettingsWindow : Window
 {
     private readonly PluginManager? _plugins;
     private readonly IEnumerable<IConsoleViewModel>? _consoleViewModels;
+    // Supplied by MainViewModel: queues missing title DB downloads, returns count queued (-1 = check failed).
+    private readonly Func<Task<int>>? _downloadTitleDatabases;
 
-    public SettingsWindow(PluginManager? plugins = null, IEnumerable<IConsoleViewModel>? consoleViewModels = null)
+    public SettingsWindow(PluginManager? plugins = null, IEnumerable<IConsoleViewModel>? consoleViewModels = null,
+        Func<Task<int>>? downloadTitleDatabases = null)
     {
         _plugins = plugins;
         _consoleViewModels = consoleViewModels;
+        _downloadTitleDatabases = downloadTitleDatabases;
         Title = "Settings";
         Width = 680;
         Height = 480;
@@ -126,7 +130,7 @@ public sealed class SettingsWindow : Window
         {
             var result = await Dialogs.PickFolderAsync(this, "Select database directory");
             if (result != null) dbPathBox.Text = result;
-        }, extraButton: dbResetBtn));
+        }, extraButton: dbResetBtn, status: MakePathStatus(dbPathBox, emptyText: "Not set (default)")));
 
         // ── ROM Library Paths (per-console) ────────────────────────────────
         sp.Children.Add(MakeSeparator());
@@ -155,7 +159,7 @@ public sealed class SettingsWindow : Window
             {
                 var result = await Dialogs.PickFolderAsync(this, $"Select {capturedName} ROM folder");
                 if (result != null) capturedBox.Text = result;
-            }));
+            }, status: MakePathStatus(capturedBox)));
         }
 
         sp.Children.Add(MakeSeparator());
@@ -217,6 +221,54 @@ public sealed class SettingsWindow : Window
         };
         sp.Children.Add(autoDlCheck);
 
+        // Reuses MainViewModel's missing-resource check + download manager.
+        var dlStatus = MakeLabel("", fontSize: 11, muted: true);
+        dlStatus.VerticalAlignment = VerticalAlignment.Center;
+        var dlBtn = new Button { Content = "Download title databases", IsEnabled = _downloadTitleDatabases is not null };
+        ToolTip.SetTip(dlBtn, "Queue downloads for any missing title database files");
+        dlBtn.Click += async (_, _) =>
+        {
+            if (_downloadTitleDatabases is null) return;
+            dlBtn.IsEnabled = false;
+            dlStatus.Text = "Checking…";
+            try
+            {
+                var queued = await _downloadTitleDatabases();
+                dlStatus.Text = queued switch
+                {
+                    < 0 => "Check failed (see log)",
+                    0   => "All present",
+                    _   => $"Queued {queued} download(s)",
+                };
+            }
+            catch (Exception ex)
+            {
+                FileUtils.Log($"[SettingsWindow] Title DB download failed: {ex.Message}");
+                dlStatus.Text = "Check failed (see log)";
+            }
+            finally { dlBtn.IsEnabled = true; }
+        };
+        sp.Children.Add(new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 8,
+            Children = { dlBtn, dlStatus },
+        });
+
+        sp.Children.Add(MakeSeparator());
+
+        // ── Switch keys ───────────────────────────────────────────────────
+        sp.Children.Add(MakeLabel("Switch Keys", fontSize: 14, bold: true));
+        sp.Children.Add(MakeLabel(
+            $"Read from {RomManagerShared.Switch.SwitchKeyStatus.DefaultKeysDirectory}. Only counts are shown, never key values.",
+            fontSize: 11, muted: true));
+        var keysPanel = new StackPanel { Spacing = 2 };
+        sp.Children.Add(keysPanel);
+        var keysRefreshBtn = new Button { Content = "Refresh", Padding = new Thickness(6, 2) };
+        keysRefreshBtn.Click += async (_, _) => await RefreshKeyStatusAsync(keysPanel);
+        sp.Children.Add(keysRefreshBtn);
+        _ = RefreshKeyStatusAsync(keysPanel);
+
         sp.Children.Add(MakeSeparator());
 
         // ── URL / Path Overrides ──────────────────────────────────────────
@@ -253,7 +305,12 @@ public sealed class SettingsWindow : Window
             var val = string.IsNullOrWhiteSpace(switchPathBox.Text) ? null : switchPathBox.Text;
             settings.SwitchTitleDBPathOverride = val;
         };
-        sp.Children.Add(switchPathBox);
+        sp.Children.Add(new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 4,
+            Children = { switchPathBox, MakePathStatus(switchPathBox, emptyText: "Not set (default)") },
+        });
 
         sp.Children.Add(MakeSeparator());
 
@@ -267,7 +324,7 @@ public sealed class SettingsWindow : Window
         {
             var result = await Dialogs.PickFolderAsync(this, "Select plugins directory");
             if (result != null) pluginsDirBox.Text = result;
-        }));
+        }, status: MakePathStatus(pluginsDirBox)));
 
         return new ScrollViewer { Content = sp, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
     }
@@ -497,7 +554,7 @@ public sealed class SettingsWindow : Window
                 // Re-open settings so the plugin list refreshes
                 var ownerWindow = Owner as Window;
                 Close();
-                var fresh = new SettingsWindow(_plugins);
+                var fresh = new SettingsWindow(_plugins, _consoleViewModels, _downloadTitleDatabases);
                 if (ownerWindow is not null)
                     await fresh.ShowDialog(ownerWindow);
                 else
@@ -612,6 +669,102 @@ public sealed class SettingsWindow : Window
         return panel;
     }
 
+    // ── Path / key status ─────────────────────────────────────────────────
+
+    private static readonly IBrush OkBrush   = new SolidColorBrush(Color.FromRgb(0x2E, 0x9E, 0x44));
+    private static readonly IBrush BadBrush  = new SolidColorBrush(Color.FromRgb(0xD3, 0x3A, 0x2F));
+
+    private static void SetStatus(TextBlock tb, string text, IBrush brush)
+    {
+        tb.Text = text;
+        tb.Foreground = brush;
+    }
+
+    /// <summary>
+    /// Live "Found" / "Not found" / "Not set" indicator for a folder text box. Debounced, and the
+    /// existence check runs off the UI thread so slow network paths don't block typing.
+    /// </summary>
+    private TextBlock MakePathStatus(TextBox box, string emptyText = "Not set")
+    {
+        var status = new TextBlock { FontSize = 11, MinWidth = 70, VerticalAlignment = VerticalAlignment.Center };
+        var version = 0;
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
+
+        async Task CheckAsync()
+        {
+            var text = box.Text?.Trim() ?? "";
+            var my = ++version;
+            if (text.Length == 0) { SetStatus(status, emptyText, Brushes.Gray); return; }
+
+            var exists = await Task.Run(() =>
+            {
+                try { return Directory.Exists(ResolvePath(text)); }
+                catch { return false; }
+            });
+            if (my == version) // ignore stale results
+                SetStatus(status, exists ? "Found" : "Not found", exists ? OkBrush : BadBrush);
+        }
+
+        timer.Tick += (_, _) => { timer.Stop(); _ = CheckAsync(); };
+        box.TextChanged += (_, _) => { timer.Stop(); timer.Start(); };
+        Closed += (_, _) => timer.Stop();
+        _ = CheckAsync();
+        return status;
+    }
+
+    // Relative paths are resolved against the app base folder (as the rest of the app does).
+    private static string ResolvePath(string text)
+    {
+        var expanded = Environment.ExpandEnvironmentVariables(text);
+        if (System.IO.Path.IsPathRooted(expanded)) return expanded;
+        var baseDir = string.IsNullOrEmpty(RomManagerConfiguration.BaseFolder)
+            ? AppContext.BaseDirectory
+            : RomManagerConfiguration.BaseFolder;
+        return System.IO.Path.Combine(baseDir, expanded);
+    }
+
+    private static async Task RefreshKeyStatusAsync(StackPanel panel)
+    {
+        RomManagerShared.Switch.SwitchKeyStatus status;
+        try
+        {
+            status = await Task.Run(RomManagerShared.Switch.SwitchKeyStatus.ReadDefault);
+        }
+        catch (Exception ex)
+        {
+            FileUtils.Log($"[SettingsWindow] Key status check failed: {ex.GetType().Name}");
+            return;
+        }
+
+        panel.Children.Clear();
+
+        var prod = status.ProdKeys;
+        var prodLine = MakeLabel("");
+        if (!prod.Exists)
+            SetStatus(prodLine, "prod.keys: Not found (required for NSP/XCI)", BadBrush);
+        else if (prod.Error is not null)
+            SetStatus(prodLine, $"prod.keys: Found, could not be read ({prod.Error})", BadBrush);
+        else
+        {
+            var master = status.HighestMasterKey is { } mk
+                ? $", highest master_key_{mk:x2}" + (status.FirmwareHint is { } fw ? $" (firmware {fw}+)" : "")
+                : ", no master keys";
+            SetStatus(prodLine, $"prod.keys: Found, {prod.KeyCount} keys{master}",
+                prod.KeyCount > 0 ? OkBrush : BadBrush);
+        }
+        panel.Children.Add(prodLine);
+
+        var title = status.TitleKeys;
+        var titleLine = MakeLabel("");
+        if (!title.Exists)
+            SetStatus(titleLine, "title.keys: Not found (optional)", Brushes.Gray);
+        else if (title.Error is not null)
+            SetStatus(titleLine, $"title.keys: Found, could not be read ({title.Error})", BadBrush);
+        else
+            SetStatus(titleLine, $"title.keys: Found, {title.KeyCount} title keys", OkBrush);
+        panel.Children.Add(titleLine);
+    }
+
     // ── UI helpers ────────────────────────────────────────────────────────
 
     private static TextBlock MakeLabel(string text, double fontSize = 12, bool bold = false, bool muted = false)
@@ -648,7 +801,7 @@ public sealed class SettingsWindow : Window
     /// </summary>
     private static Control MakeLabeledPathRow(
         string label, TextBox box, string buttonLabel, Func<Task> browseAction,
-        Control? extraButton = null)
+        Control? extraButton = null, Control? status = null)
     {
         var btn = new Button { Content = buttonLabel, Margin = new Thickness(4, 0, 0, 0) };
         btn.Click += async (_, _) => await browseAction();
@@ -672,6 +825,8 @@ public sealed class SettingsWindow : Window
         sp.Children.Add(btn);
         if (extraButton is not null)
             sp.Children.Add(extraButton);
+        if (status is not null)
+            sp.Children.Add(status);
         return sp;
     }
 }
