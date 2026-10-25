@@ -13,6 +13,8 @@ public sealed class LibraryScanner(AppDbContext db)
     /// <summary>Bump when parser output changes so cached entries get re-parsed.</summary>
     public const int ScanVersion = 7;
     private const int SaveBatchSize = 25;
+    /// <summary>Files parsed concurrently. Kept low: most libraries live on HDDs or network shares.</summary>
+    public int MaxParallelism { get; init; } = 4;
 
     public async Task<List<Rom>> LoadCachedAsync(string console, CancellationToken ct = default)
     {
@@ -33,32 +35,41 @@ public sealed class LibraryScanner(AppDbContext db)
             .Where(f => f.Console == console)
             .ToDictionaryAsync(f => f.Path, StringComparer.OrdinalIgnoreCase, ct);
 
-        var result = new List<Rom>();
-        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        int processed = 0, parsed = 0;
-        foreach (var path in files)
+        // Per-file slots keep results in enumeration order.
+        var slots = new List<Rom>[files.Count];
+        var pending = new List<int>();
+        for (int i = 0; i < files.Count; i++)
+        {
+            cached.TryGetValue(files[i], out var entry);
+            if (!fullRescan && entry is not null && IsUnchanged(entry, new FileInfo(files[i])))
+                slots[i] = RomSnapshot.Deserialize(entry.RomsJson);
+            else
+                pending.Add(i);
+        }
+
+        int processed = files.Count - pending.Count, parsed = 0;
+        progress?.Report(new ScanProgress(processed, files.Count, parsed, null));
+        foreach (var batch in pending.Chunk(MaxParallelism))
         {
             ct.ThrowIfCancellationRequested();
-            seen.Add(path);
-            var info = new FileInfo(path);
-            cached.TryGetValue(path, out var entry);
+            progress?.Report(new ScanProgress(processed, files.Count, parsed, files[batch[0]]));
 
-            if (!fullRescan && entry is not null && IsUnchanged(entry, info))
+            // Parsing is I/O bound and parallel; enrichment and saving share the DbContext, so stay sequential.
+            var parsedBatch = await Task.WhenAll(batch.Select(i =>
+                Task.Run(() => manager.RomParserExecutor.ExecuteParsers(files[i]), ct)));
+            for (int b = 0; b < batch.Length; b++)
             {
-                result.AddRange(RomSnapshot.Deserialize(entry.RomsJson));
-            }
-            else
-            {
-                progress?.Report(new ScanProgress(processed, files.Count, parsed, path));
-                var roms = await Task.Run(() => manager.ParseFile(path), ct);
-                result.AddRange(roms);
+                var path = files[batch[b]];
+                var roms = await manager.EnrichAsync(parsedBatch[b]);
+                slots[batch[b]] = roms;
 
-                if (entry is null)
+                if (!cached.TryGetValue(path, out var entry))
                 {
                     entry = new LibraryFile { Console = console, Path = path };
                     db.LibraryFiles.Add(entry);
                     cached[path] = entry;
                 }
+                var info = new FileInfo(path);
                 entry.Size = info.Length;
                 entry.LastWriteUtc = info.LastWriteTimeUtc;
                 entry.ScanVersion = ScanVersion;
@@ -66,10 +77,13 @@ public sealed class LibraryScanner(AppDbContext db)
                 entry.RomsJson = RomSnapshot.Serialize(roms);
                 if (++parsed % SaveBatchSize == 0)
                     await db.SaveChangesAsync(ct);
+                processed++;
             }
-            progress?.Report(new ScanProgress(++processed, files.Count, parsed, null));
+            progress?.Report(new ScanProgress(processed, files.Count, parsed, null));
         }
 
+        var seen = new HashSet<string>(files, StringComparer.OrdinalIgnoreCase);
+        var result = slots.SelectMany(r => r).ToList();
         db.LibraryFiles.RemoveRange(cached.Values.Where(f => !seen.Contains(f.Path)));
         await db.SaveChangesAsync(ct);
         return result;

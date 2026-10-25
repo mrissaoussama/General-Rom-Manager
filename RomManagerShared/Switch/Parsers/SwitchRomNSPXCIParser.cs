@@ -47,12 +47,21 @@ public class SwitchRomNSPXCIParser : IRomParser<SwitchConsole>, IHasRequirements
     // ── Lazy keyset ───────────────────────────────────────────────────────
     private KeySet? _keyset;
     private bool _keysetInitAttempted;
+    private readonly object _keysetLock = new(); // files are parsed concurrently
 
     private KeySet? EnsureKeyset()
     {
-        if (_keysetInitAttempted) return _keyset;
-        _keysetInitAttempted = true;
+        lock (_keysetLock)
+        {
+            if (_keysetInitAttempted) return _keyset;
+            _keyset = LoadKeyset();
+            _keysetInitAttempted = true;
+            return _keyset;
+        }
+    }
 
+    private KeySet? LoadKeyset()
+    {
         var prodPath  = _prodKeysReq.EffectiveValue;
         var titlePath = _titleKeysReq.EffectiveValue;
 
@@ -64,17 +73,17 @@ public class SwitchRomNSPXCIParser : IRomParser<SwitchConsole>, IHasRequirements
 
         try
         {
-            _keyset = new KeySet();
-            ExternalKeyReader.ReadKeyFile(_keyset,
+            var keyset = new KeySet();
+            ExternalKeyReader.ReadKeyFile(keyset,
                 titleKeysFilename: File.Exists(titlePath) ? titlePath : null,
                 prodKeysFilename: prodPath);
+            return keyset;
         }
         catch (Exception ex)
         {
             FileUtils.Log($"[SwitchNSPXCI] Failed to load keys: {ex.Message}");
-            _keyset = null;
+            return null;
         }
-        return _keyset;
     }
 
     public SwitchRomNSPXCIParser()

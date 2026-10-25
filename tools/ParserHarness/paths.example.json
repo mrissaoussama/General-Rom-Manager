@@ -15,5 +15,7 @@
   "WiiUConsole": "Y:/roms/wiiu",
   "SegaSaturnConsole": "Y:/roms/saturn",
   "OriginalXboxConsole": "Y:/roms/xbox",
-  "Xbox360Console": "Y:/roms/Xbox360"
+  "Xbox360Console": "Y:/roms/Xbox360",
+  "GameCubeConsole": "Y:/roms/gamecube",
+  "PS1Console": "Y:/roms/ps1"
 }
