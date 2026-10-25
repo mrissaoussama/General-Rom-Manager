@@ -14,3 +14,17 @@ dotnet run --project tools/ParserHarness -- all tools/ParserHarness/paths.json 5
 - Some parsers still write to stdout (binary dumps); pipe through `tr -cd '\11\12\15\40-\176'` if the
   terminal chokes. Tracked in docs/ROADMAP.md phase 2.
 - Find test files fast with Everything: `es.exe -n 5 ext:nsp !$RECYCLE`.
+
+## Regression snapshots
+
+Real ROMs can't be committed, so parser regressions are caught locally:
+
+```sh
+# before a parser change
+dotnet run --project tools/ParserHarness -- all tools/ParserHarness/paths.json 20 --snapshot tools/ParserHarness/baseline.snapshot.json
+# after the change: lists NEW / CHANGED / MISSING files, exit code 2 on any difference
+dotnet run --project tools/ParserHarness -- all tools/ParserHarness/paths.json 20 --compare tools/ParserHarness/baseline.snapshot.json
+```
+
+Review each CHANGED entry; if the new output is correct, write a new baseline and bump
+`LibraryScanner.ScanVersion` so cached libraries get re-parsed.

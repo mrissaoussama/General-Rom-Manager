@@ -3,6 +3,7 @@
 //   ParserHarness <ConsoleTypeName> <directory> [maxFiles]
 //   ParserHarness all <paths.json> [maxFiles]      paths.json: { "PS4Console": "Y:\roms\PS4", ... }
 //   add --library to run the incremental scanner twice (temp DB) and compare timings
+//   add --snapshot <file> to save results, --compare <file> to diff against a saved snapshot (exit 2 on diff)
 using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json;
@@ -67,6 +68,15 @@ if (args.Contains("--library"))
     return 0;
 }
 
+string? OptionValue(string name)
+{
+    var i = Array.IndexOf(args, name);
+    return i >= 0 && i + 1 < args.Length ? args[i + 1] : null;
+}
+var snapshotPath = OptionValue("--snapshot");
+var comparePath = OptionValue("--compare");
+var results = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
 foreach (var ct in consoleTypes)
 {
     if (!paths.TryGetValue(ct.Name, out var dir)) continue;
@@ -104,10 +114,34 @@ foreach (var ct in consoleTypes)
             continue;
         }
         var added = romList.Skip(before).ToList();
+        results[f] = RomSnapshot.Serialize(added);
         Console.WriteLine($"   {sw.ElapsedMilliseconds,6}ms {Path.GetFileName(f)} -> {added.Count} rom(s)");
         foreach (var r in added.Take(3))
             Console.WriteLine($"          {r.GetType().Name}: {r}");
     }
 }
 Console.WriteLine($"Parser errors are logged to {RomManagerConfiguration.GetErrorLogPath()}");
+
+if (snapshotPath is not null)
+{
+    File.WriteAllText(snapshotPath, JsonSerializer.Serialize(results, new JsonSerializerOptions { WriteIndented = true }));
+    Console.WriteLine($"Snapshot written: {snapshotPath} ({results.Count} files)");
+}
+if (comparePath is not null)
+{
+    var baseline = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(comparePath))!;
+    int diffs = 0;
+    foreach (var (file, json) in results)
+    {
+        if (!baseline.TryGetValue(file, out var old)) { Console.WriteLine($"NEW     {file}"); diffs++; }
+        else if (old != json) { Console.WriteLine($"CHANGED {file}\n  was: {old}\n  now: {json}"); diffs++; }
+    }
+    foreach (var file in baseline.Keys.Where(k => !results.ContainsKey(k)))
+    {
+        Console.WriteLine($"MISSING {file}");
+        diffs++;
+    }
+    Console.WriteLine(diffs == 0 ? "Snapshot matches." : $"{diffs} difference(s).");
+    return diffs == 0 ? 0 : 2;
+}
 return 0;

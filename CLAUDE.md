@@ -74,7 +74,8 @@ dotnet run --project tools/ParserHarness -- PS4Console "Y:\roms\PS4" 5
   emulators). Always dispose streams.
 - Parsers must not write next to the ROM or into the base folder; extracted assets go under
   `RomManagerConfiguration.GetCachePath()`.
-- Don't add new external-process dependencies (Python, exe tools). We are removing them.
+- No external programs in the scan path and no binaries in the repo (ADR 0002). Optional tools are
+  user-supplied, default to `<BaseDirectory>/Tools/`, and run in `Cache/Temp`.
 - Namespaces don't always match folders (e.g. `GamingConsole` is in `RomManagerShared.Interfaces`
   but lives in `Base/`). Grep for the type before adding usings.
 
@@ -83,7 +84,9 @@ dotnet run --project tools/ParserHarness -- PS4Console "Y:\roms\PS4" 5
 1. `RomManagerShared/<Name>/`: `<Name>Console : GamingConsole`, `<Name>Game : Rom` (+ Update/DLC),
    `<Name>Manager : ConsoleManager<<Name>Console>` (optional), `Parsers/<X>Parser : IRomParser<<Name>Console>`.
 2. Add `Consoles.<Name>.RomPath` to `config.json`.
-3. Run `tools/ParserHarness` against real files and add a fixture-based test.
+3. Run `tools/ParserHarness` against real files (use `--snapshot`/`--compare` around parser changes)
+   and add a fixture-based test with a synthetic file.
+4. Bump `LibraryScanner.ScanVersion` whenever parser output changes.
 
 ## Git
 
