@@ -144,45 +144,6 @@ public class FileUtils
         // Format the number to 2 decimal places and append the appropriate suffix
         return $"{number:n2} {suffixes[counter]}";
     }
-    public static string CheckForPython()
-    {
-        ProcessStartInfo pycheck = new()
-        {
-            FileName = @"python.exe",
-            Arguments = "--version",
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            CreateNoWindow = true
-        };
-
-        using Process process = Process.Start(pycheck);
-        using StreamReader reader = process.StandardOutput;
-        string result = reader.ReadToEnd();
-        result = result.Replace("\r\n", "");
-        result = result.Replace("Python ", "");
-        return result;
-    }
-    public static bool IsPythonVersionValid(string version, string targetVersion,out string invalidReason)
-    {
-        invalidReason = string.Empty;
-        string[] currentParts = version.Split('.');
-        string[] targetParts = targetVersion.Split('.');
-
-        if (currentParts.Length >= 2 && targetParts.Length >= 2)
-        {
-            int currentMajor = int.Parse(currentParts[0]);
-            int currentMinor = int.Parse(currentParts[1]);
-
-            int targetMajor = int.Parse(targetParts[0]);
-            int targetMinor = int.Parse(targetParts[1]);
-
-            if (currentMajor > targetMajor || (currentMajor == targetMajor && currentMinor >= targetMinor))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
 
   
     /// <summary>
@@ -224,46 +185,6 @@ public class FileUtils
         return string.Equals(parentFolderName, nestedFolderName, StringComparison.OrdinalIgnoreCase);
     }
 
-    public static void InstallPythonPackages(string requirementsFilePath)
-    {
-        try
-        {
-            ProcessStartInfo pipInstall = new()
-            {
-                FileName = "pip", // Assuming pip is in the system PATH
-                Arguments = $"install -r \"{requirementsFilePath}\"",
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = true
-            };
-
-            using Process process = Process.Start(pipInstall);
-            process.WaitForExit(); // Wait for the process to finish
-
-            // Output the result
-            string output = process.StandardOutput.ReadToEnd();
-            string error = process.StandardError.ReadToEnd();
-
-            Console.WriteLine("Output:");
-            Console.WriteLine(output);
-            Console.WriteLine("Error:");
-            Console.WriteLine(error);
-
-            if (process.ExitCode == 0)
-            {
-                Console.WriteLine("Packages installed successfully.");
-            }
-            else
-            {
-                Console.WriteLine("Failed to install packages.");
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"An error occurred: {ex.Message}");
-        }
-    }
 
     public static bool DriveHasEnoughSpace(long fileSize, string destinationFolder)
     {
