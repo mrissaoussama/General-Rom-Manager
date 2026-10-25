@@ -1,10 +1,14 @@
 using System.Collections;
 using Avalonia.Media.Imaging;
+using RomManagerShared.Base;
+using RomManagerShared.Utils;
 
 namespace AvaloniaUI;
 
 public static class DynamicRomPropertyUI
 {
+    // ── Property discovery ────────────────────────────────────────────────
+
     public static IEnumerable<PropertyInfo> GetVisibleProperties(Type type)
     {
         return type.GetProperties()
@@ -12,86 +16,77 @@ public static class DynamicRomPropertyUI
             .OrderBy(p => p.GetCustomAttribute<UiPropertyAttribute>()?.Order ?? 999);
     }
 
-    public static Control CreateControlForProperty(PropertyInfo property, Rom rom)
+    // ── Main control factory ──────────────────────────────────────────────
+
+    /// <summary>
+    /// Creates the appropriate Avalonia control for a given ROM property.
+    /// Uses the <see cref="UiPropertyAttribute"/> to decide the rendering strategy.
+    /// Falls back to auto-detection when the attribute is absent.
+    /// </summary>
+    public static Control CreateControlForProperty(PropertyInfo property, object romInstance)
     {
-        var value = property.GetValue(rom);
-        var attr = property.GetCustomAttribute<UiPropertyAttribute>();
+        var attr   = property.GetCustomAttribute<UiPropertyAttribute>();
+        var value  = property.GetValue(romInstance);
+        var pType  = attr?.PropertyType ?? DeterminePropertyType(property.PropertyType);
 
-        switch (attr?.PropertyType)
+        return pType switch
         {
-            case UiPropertyType.Image:
-                if (value is string imagePath && !string.IsNullOrEmpty(imagePath))
-                    try
-                    {
-                        if (File.Exists(imagePath))
-                        {
-                            var image = new Image
-                            {
-                                Source = new Bitmap(imagePath),
-                                Width = 100,
-                                Height = 100
-                            };
-                            return image;
-                        }
-                    }
-                    catch
-                    {
-                    }
-
-                return new TextBlock { Text = "No image" };
-
-            case UiPropertyType.List:
-                if (value is IEnumerable<object> list)
-                    return new TextBlock
-                    {
-                        Text = string.Join(", ", list.Select(i => i.ToString()))
-                    };
-                return new TextBlock { Text = "Empty list" };
-
-            default:
-                return new TextBlock { Text = value?.ToString() ?? "N/A" };
-        }
+            UiPropertyType.Image    => CreateImageControl(value),
+            UiPropertyType.FileSize => new TextBlock { Text = FileUtils.FormatFileSize((long?)value ?? 0) },
+            UiPropertyType.List     => CreateListControl(value as IEnumerable),
+            UiPropertyType.Region   => new TextBlock { Text = FormatEnumerable(value) },
+            UiPropertyType.Language => new TextBlock { Text = FormatEnumerable(value) },
+            UiPropertyType.Boolean  => new CheckBox { IsChecked = value as bool?, IsEnabled = false },
+            _                       => new TextBlock { Text = value?.ToString() ?? "N/A" }
+        };
     }
 
+    // ── Private helpers ───────────────────────────────────────────────────
 
-    public static Control CreateControlForProperty(PropertyInfo prop, object romInstance)
+    private static Control CreateImageControl(object? value)
     {
-        var attr = prop.GetCustomAttribute<UiPropertyAttribute>();
-        var value = prop.GetValue(romInstance);
-        var propType = attr?.PropertyType ?? DeterminePropertyType(prop.PropertyType);
-
-        // Create appropriate control based on property type
-        switch (propType)
+        if (value is string imagePath && !string.IsNullOrEmpty(imagePath) && File.Exists(imagePath))
         {
-            case UiPropertyType.Text:
-                return new TextBox { Text = value?.ToString() };
-            case UiPropertyType.FileSize:
-                return new TextBlock { Text = FileUtils.FormatFileSize((long?)value ?? 0) };
-            // case UiPropertyType.List:
-            //     return CreateListControl(value as IEnumerable<>);
-            // Add cases for other types
-            default:
-                return new TextBlock { Text = value?.ToString() ?? "null" };
+            try
+            {
+                return new Image
+                {
+                    Source = new Bitmap(imagePath),
+                    Width  = 100,
+                    Height = 100
+                };
+            }
+            catch { /* fall through */ }
         }
+        return new TextBlock { Text = "No image" };
+    }
+
+    private static Control CreateListControl(IEnumerable? items)
+    {
+        if (items is null) return new TextBlock { Text = "—" };
+
+        var listBox = new ListBox { MaxHeight = 120 };
+        foreach (var item in items)
+            listBox.Items.Add(item?.ToString() ?? string.Empty);
+
+        return listBox.Items.Count == 0 ? new TextBlock { Text = "—" } : listBox;
+    }
+
+    private static string FormatEnumerable(object? value)
+    {
+        if (value is IEnumerable items and not string)
+            return string.Join(", ", items.Cast<object>().Select(i => i?.ToString() ?? "?"));
+        return value?.ToString() ?? "—";
     }
 
     private static UiPropertyType DeterminePropertyType(Type type)
     {
-        // Auto-detect appropriate UI type based on property type
-        if (type == typeof(string)) return UiPropertyType.Text;
-        if (type == typeof(int) || type == typeof(double)) return UiPropertyType.Number;
-        if (type == typeof(DateTime)) return UiPropertyType.Date;
-        // Add more type mappings
+        if (type == typeof(string))                return UiPropertyType.Text;
+        if (type == typeof(long) || type == typeof(long?)) return UiPropertyType.FileSize;
+        if (type == typeof(int)  || type == typeof(double)) return UiPropertyType.Number;
+        if (type == typeof(DateTime) || type == typeof(DateOnly)) return UiPropertyType.Date;
+        if (type == typeof(bool) || type == typeof(bool?)) return UiPropertyType.Boolean;
+        if (typeof(IEnumerable).IsAssignableFrom(type) && type != typeof(string)) return UiPropertyType.List;
         return UiPropertyType.Text;
-    }
-
-    private static Control CreateListControl(IEnumerable items)
-    {
-        // Create a control to display lists
-        var listBox = new ListBox();
-        if (items != null)
-            foreach (var item in items)
-                listBox.Items.Add(item.ToString());
-        return listBox;
     }
 }

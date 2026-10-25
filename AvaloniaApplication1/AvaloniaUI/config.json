@@ -8,6 +8,9 @@
     "Cache": "Cache"
   },
   "Consoles": {
+    "N64": {
+      "RomPath": "D:\\Roms\\N64"
+    },
     "PSVita": {
       "RomPath": "D:\\Roms\\PSVita",
       "LicensePath": "D:\\Roms\\PSVita\\Licenses",
@@ -31,7 +34,12 @@
       "RomPath": "D:\\Roms\\Switch",
       "TitleDB": {
         "Path": "Data\\Switch\\titledb",
-        "VersionsFile": "versions.json"
+        "TitleDBUrl": "https://raw.githubusercontent.com/blawar/titledb/master/",
+        "GlobalTitleDBUrl": "https://raw.githubusercontent.com/blawar/titledb/master/US.en.json",
+        "GlobalTitleDBFile": "US.en.json",
+        "VersionsUrl": "https://raw.githubusercontent.com/blawar/titledb/master/versions.json",
+        "VersionsFile": "versions.json",
+        "RegionFiles": [ "US.en.json", "EU.en.json", "JP.ja.json", "AU.en.json" ]
       }
     },
     "Xbox360": {

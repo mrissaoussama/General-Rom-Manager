@@ -1,15 +1,53 @@
-namespace AvaloniaUI.ViewModels;
+using System.Globalization;
+using System.Windows.Input;
+using Avalonia.Data.Converters;
 
-public partial class ConsoleViewModel : ViewModelBase
+namespace AvaloniaUI.ViewModels;
+public interface IConsoleViewModel 
+{
+    string ConsoleName { get; }
+    Task LoadData();
+    /// <summary>
+    /// Returns column descriptors so the View can build DataGrid columns without
+    /// a direct dependency on <see cref="DataGrid"/>.
+    /// PropName is either a direct ViewModel property (UsesDictionaryLookup=false)
+    /// or a key in <see cref="RomViewModel.PropertiesDictionary"/> (UsesDictionaryLookup=true).
+    /// </summary>
+    IReadOnlyList<(string PropName, string Header, bool UsesDictionaryLookup)> GetColumnDescriptors();
+    ObservableCollection<RomViewModel> Roms { get; }
+    RomViewModel SelectedRom { get; set; }
+    bool IsLoading { get; }
+    bool IsIndeterminate { get; }
+    double ProgressPercent { get; }
+    string StatusMessage { get; set; }
+
+    /// <summary>
+    /// Returns context-menu actions available for the given ROM selection.
+    /// Built-in actions come from the backend's <see cref="IHasContextMenuActions"/>;
+    /// plugin actions are added by the UI host.
+    /// </summary>
+    IEnumerable<IConsoleRomAction> GetContextActionsForSelection(IEnumerable<Rom> selectedRoms);
+
+    /// <summary>
+    /// Returns all requirements declared by this console's parsers and manager.
+    /// </summary>
+    IReadOnlyList<ConsoleRequirement> GetAllRequirements();
+
+    /// <summary>Non-optional requirements that are currently unmet.</summary>
+    IReadOnlyList<ConsoleRequirement> GetUnmetRequirements();
+}
+
+public partial class ConsoleViewModel<T> : ViewModelBase , IConsoleViewModel where T : GamingConsole
 {
     private readonly Type _consoleType;
     private readonly IServiceProvider _serviceProvider;
 
     [ObservableProperty] private ObservableCollection<RomViewModel> _roms = new();
-    [ObservableProperty] private bool _isLoading = false;
+    [ObservableProperty] private bool _isLoading;
+    [ObservableProperty] private bool _isIndeterminate = true;
+    [ObservableProperty] private double _progressPercent = 0;
     [ObservableProperty] private string _statusMessage = "Ready";
-    [ObservableProperty] private RomViewModel _selectedRom;
-
+    [ObservableProperty] private RomViewModel? _selectedRom;
     public string ConsoleName { get; }
 
     public ConsoleViewModel(string consoleName, Type consoleType, IServiceProvider serviceProvider)
@@ -17,213 +55,415 @@ public partial class ConsoleViewModel : ViewModelBase
         ConsoleName = consoleName;
         _consoleType = consoleType;
         _serviceProvider =serviceProvider;
-        
     }
 
-    [RelayCommand]
+    // ── IConsoleViewModel: context menu actions ───────────────────────────
+    public IEnumerable<IConsoleRomAction> GetContextActionsForSelection(IEnumerable<Rom> selectedRoms)
+    {
+        using var scope = _serviceProvider.CreateScope();
+        var manager = scope.ServiceProvider.GetService<ConsoleManager<T>>();
+
+        var backendActions = (manager as IHasContextMenuActions)?.GetContextMenuActions()
+                             ?? Enumerable.Empty<IConsoleRomAction>();
+
+        // Merge plugin actions (filtered to this console)
+        var pluginManager = scope.ServiceProvider.GetService<PluginManager>();
+        var pluginActions = pluginManager is null
+            ? Enumerable.Empty<IConsoleRomAction>()
+            : pluginManager.GetPluginsForConsole(ConsoleName)
+                .SelectMany(p => p.Options.Select((opt, i) =>
+                    (IConsoleRomAction)new PluginRomAction(p, i, opt)));
+
+        return backendActions
+            .Concat(pluginActions)
+            .Where(a => a.CanExecute(selectedRoms));
+    }
+
+    // ── IConsoleViewModel: requirements ───────────────────────────────────
+    public IReadOnlyList<ConsoleRequirement> GetAllRequirements()
+    {
+        try
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var manager = scope.ServiceProvider.GetService<ConsoleManager<T>>();
+            return manager?.GetAllRequirements() ?? [];
+        }
+        catch { return []; }
+    }
+
+    public IReadOnlyList<ConsoleRequirement> GetUnmetRequirements()
+        => GetAllRequirements().Where(r => !r.IsOptional && !r.IsMet).ToList();
+
+
+   [RelayCommand]
     public async Task LoadData()
     {
-        // Use reflection to invoke the generic method with the correct type
-        var method = typeof(ConsoleViewModel).GetMethod(nameof(LoadDataForConsole), 
-            BindingFlags.NonPublic | BindingFlags.Instance);
-        
-        var genericMethod = method.MakeGenericMethod(_consoleType);
-        await (Task)genericMethod.Invoke(this, null);
-    }
-    private static async Task ProcessRomFiles<T>(ConsoleManager<T> manager, string romDirectory) where T : GamingConsole
-    {
-        var supportedExtensions = manager.RomParserExecutor.GetSupportedExtensions();
-        var romFiles = FileUtils.GetFilesInDirectoryWithExtensions(romDirectory, supportedExtensions);
-
-        Console.WriteLine($"Found {romFiles.Count} ROM files");
-        foreach (var file in romFiles)
-        {
-            await manager.ProcessFile(file);
-        }
-
-        // If the TitleInfoProviderManager exists, enhance ROM title info.
-        if (manager.TitleInfoProviderManager != null)
-        {
-            // (Assuming that GetTitleInfo returns an enhanced Rom.)
-            for (int i = 0; i < manager.RomList.Count; i++)
-            {
-                manager.RomList[i] = await manager.TitleInfoProviderManager.GetTitleInfo(manager.RomList[i]);
-            }
-        }
-    }
-    private static async Task ProcessConsoleOperationsGeneric<T>(IServiceProvider services) where T : GamingConsole
-    {
-        // Resolve the concrete ConsoleManager<T> from DI.
-        var manager = services.GetRequiredService<ConsoleManager<T>>();
-
-        // Load any console-specific DLLs (using the type name).
-        LoadConsoleSpecificDlls(typeof(T).Name);
-
-        Console.WriteLine($"Setup: {manager.GetType()}");
-        await manager.Setup();
-
-
-    }
-    private static List<IBaseRomOrganizer> GetAvailableOrganizers<T>(IServiceProvider services) where T : GamingConsole
-    {
-        var organizers = new List<IBaseRomOrganizer>();
-
-        // Get console-specific organizers (generic)
-        var specificOrganizers = services.GetServices<IRomOrganizer<T>>();
-        organizers.AddRange(specificOrganizers);
-
-        // Get non-generic organizers
-        var genericOrganizers = services.GetServices<IRomOrganizer>();
-        organizers.AddRange(genericOrganizers);
-
-        return organizers;
-    }
-    private static void LoadConsoleSpecificDlls(string consoleType)
-    {
-        var consoleName = consoleType.Replace("Console", "");
-        var tools = RomManagerConfiguration.Configuration
-            .GetSection($"Consoles:{consoleName}:Tools")
-            .GetChildren()
-            .Select(t => t.Value)
-            .ToList();
-
-        foreach (var dll in tools)
-        {
-            var fullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, dll);
-            if (File.Exists(fullPath))
-            {
-                Assembly.LoadFrom(fullPath);
-                Console.WriteLine($"Loaded {Path.GetFileName(fullPath)}");
-            }
-            else
-            {
-                Console.WriteLine($"Tool not found: {fullPath}");
-            }
-        }
-    }
-    // This method will be called with the correct type parameter
-    private async Task LoadDataForConsole<T>() where T : GamingConsole
-    {
-        IsLoading = true;
-        StatusMessage = "Loading ROMs...";
-
         try
-        {  
+        {   
+       
+            IsLoading = true;
+            StatusMessage = "Loading ROMs...";
             using var scope = _serviceProvider.CreateScope();
 
             // Get the console manager directly from service provider
-            var manager = scope.ServiceProvider.GetRequiredService<ConsoleManager<T>>();
+            var _consoleManager = scope.ServiceProvider.GetRequiredService<ConsoleManager<T>>();
+
+            // Clear existing items
+            Roms.Clear();
             
-            // Clear existing ROM list
-            manager.RomList.Clear();
+ 
+                var managerType = typeof(ConsoleManager<>).MakeGenericType(_consoleType);
+                
+                // Setup console manager
+                await _consoleManager.Setup();
             
-            // Get ROM path from configuration
-            var romPath = RomManagerConfiguration.GetConsoleRomPath(ConsoleName);
-            
-            if (string.IsNullOrEmpty(romPath) || !Directory.Exists(romPath))
+            // Get ROM path — guard against missing config gracefully
+            if (!MainViewModel.RomPaths.TryGetValue(_consoleType, out string? romPath)
+                || string.IsNullOrEmpty(romPath)
+                || !Directory.Exists(romPath))
             {
-                StatusMessage = $"ROM path not found: {romPath}";
-                IsLoading = false;
+                StatusMessage = $"ROM path not configured or not found for {ConsoleName}";
                 return;
             }
-
-            // Get supported file extensions
-            var extensions = manager.RomParserExecutor.GetSupportedExtensions();
             
-            if (extensions.Count == 0)
-            {
-                StatusMessage = "No ROM parsers available for this console";
-                IsLoading = false;
-                return;
-            }
+            // Process ROM files
+            var supportedExtensions = _consoleManager.RomParserExecutor.GetSupportedExtensions();
+            var romFiles = FileUtils.GetFilesInDirectoryWithExtensions(romPath, supportedExtensions);
 
-            // Find all ROM files
-            var romFiles = FileUtils.GetFilesInDirectoryWithExtensions(romPath, extensions);
-            
-            // Process each file
+            int processedCount = 0;
+            int total = romFiles.Count;
+            IsIndeterminate = total == 0;
+            ProgressPercent = 0;
+
             foreach (var file in romFiles)
             {
-                await manager.ProcessFile(file);
+                await _consoleManager.ProcessFile(file);
+                processedCount++;
+                ProgressPercent = total > 0 ? (processedCount * 100.0 / total) : 0;
+                if (processedCount % 10 == 0 || processedCount == total)
+                {
+                    StatusMessage = $"Processing... ({processedCount}/{total})";
+                }
             }
             
-            // Update the view models
-            await Dispatcher.UIThread.InvokeAsync(() =>
+            // Convert to view models
+            foreach (var rom in _consoleManager.RomList)
             {
-                Roms.Clear();
-                foreach (var rom in manager.RomList)
-                {
-                    Roms.Add(new RomViewModel(rom));
-                }
-            });
-
+                Roms.Add(new RomViewModel(rom));
+            }
+            
             StatusMessage = $"Loaded {Roms.Count} ROMs";
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Error loading ROM data: {ex.Message}";
+            var msg = $"[{ConsoleName}] LoadData failed: {ex.Message}";
+            FileUtils.Log(msg + "\n" + ex.ToString());
+            StatusMessage = $"⚠️ Error: {ex.Message}";
         }
         finally
         {
+            ProgressPercent = 100;
+            IsIndeterminate = false;
             IsLoading = false;
         }
     }
 
-    public void InitializeDataGrid(DataGrid dataGrid)
+
+
+  
+    public IReadOnlyList<(string PropName, string Header, bool UsesDictionaryLookup)> GetColumnDescriptors()
     {
-        if (dataGrid == null) return;
-        
-        // Clear existing columns
-        dataGrid.Columns.Clear();
-        
-        // Get visible columns from settings
-        var settings = Settings.Instance;
-        var visibleColumns = settings.VisibleColumns.ContainsKey(ConsoleName) 
-            ? settings.VisibleColumns[ConsoleName] 
-            : new List<string> { "TitleID", "Title", "RomType", "Region", "Version" };
-        
-        // Add standard columns that all ROMs should have
-        dataGrid.Columns.Add(new DataGridTextColumn 
-        { 
-            Header = "Title ID", 
-            Binding = new Binding("TitleID"),
-            IsVisible = visibleColumns.Contains("TitleID")
-        });
-        
-        dataGrid.Columns.Add(new DataGridTextColumn 
-        { 
-            Header = "Title", 
-            Binding = new Binding("Title"),
-            IsVisible = visibleColumns.Contains("Title")
-        });
-        
-        dataGrid.Columns.Add(new DataGridTextColumn 
-        { 
-            Header = "Type", 
-            Binding = new Binding("RomType"),
-            IsVisible = visibleColumns.Contains("RomType")
-        });
-        
-        dataGrid.Columns.Add(new DataGridTextColumn 
-        { 
-            Header = "Region", 
-            Binding = new Binding("Region"),
-            IsVisible = visibleColumns.Contains("Region")
-        });
-        
-        dataGrid.Columns.Add(new DataGridTextColumn 
-        { 
-            Header = "Version", 
-            Binding = new Binding("Version"),
-            IsVisible = visibleColumns.Contains("Version")
-        });
-        
-        // Set up selection changed event
-        dataGrid.SelectionChanged += (s, e) =>
+        var result = new List<(string, string, bool)>
         {
-            if (dataGrid.SelectedItem is RomViewModel romViewModel)
-            {
-                SelectedRom = romViewModel;
-            }
+            // ── Core fields (bound directly on RomViewModel) ──────────────
+            ("TitleID",    "Title ID",     false),
+            ("Title",      "Title",        false),
+            ("RomType",    "Type",         false),
+            ("Region",     "Region",       false),
+            ("Version",    "Version",      false),
+            // ── Extended base fields (looked up in PropertiesDictionary) ───
+            ("FileName",       "File Name",      true),
+            ("Publisher",      "Publisher",       true),
+            ("Developer",      "Developer",       true),
+            ("Languages",      "Languages",       true),
+            ("Size",           "Size",             true),
+            ("Release Date",   "Release Date",    true),
+            ("Product Code",   "Product Code",    true),
+            ("Players",        "Players",         true),
+            ("Genres",         "Genres",           true),
+            ("Description",    "Description",     true),
+            ("Alt Titles",     "Alt Titles",       true),
+            ("Min Firmware",   "Min Firmware",    true),
+            ("Rating",         "Rating",          true),
+            ("Hashes",         "Hashes",          true),
+            ("IsDemo",         "Demo",            true),
+            ("File Path",      "File Path",       true),
         };
+
+        // ── Console-specific properties via reflected [UiProperty] ──────────
+        foreach (var prop in GetConsoleSpecificProperties())
+        {
+            var attr = (UiPropertyAttribute)prop.GetCustomAttributes(typeof(UiPropertyAttribute), true)[0];
+            if (!attr.Visible) continue;
+            var header = !string.IsNullOrEmpty(attr.DisplayName) ? attr.DisplayName : prop.Name;
+            result.Add((prop.Name, header, true));
+        }
+
+        return result;
+    }
+    
+
+        private List<PropertyInfo> GetBaseRomProperties()
+    {
+        // Get properties from the base Rom class with UiPropertyAttribute
+        return typeof(Rom).GetProperties()
+            .Where(p => p.GetCustomAttributes(typeof(UiPropertyAttribute), true).Length > 0)
+            .OrderBy(p => ((UiPropertyAttribute)p.GetCustomAttributes(typeof(UiPropertyAttribute), true)[0]).Order)
+            .ToList();
+    }
+    
+    private List<PropertyInfo> GetConsoleSpecificProperties()
+    {
+        var assembly = Assembly.Load("RomManagerShared");
+        var baseRomProps = typeof(Rom).GetProperties().Select(p => p.Name).ToHashSet();
+        var consoleName = _consoleType.Name.Replace("Console", "");
+        
+        // Find ROM types for this console (e.g., SwitchGame, SwitchUpdate, etc.)
+        var romTypes = assembly.GetTypes()
+            .Where(t => typeof(Rom).IsAssignableFrom(t) && 
+                        t.Name.StartsWith(consoleName) && 
+                        !t.IsAbstract)
+            .ToList();
+        
+        var consoleSpecificProps = new List<PropertyInfo>();
+        
+        foreach (var romType in romTypes)
+        {
+            // Get properties that aren't in base Rom class
+            var props = romType.GetProperties()
+                .Where(p => !baseRomProps.Contains(p.Name) && 
+                          p.GetCustomAttributes(typeof(UiPropertyAttribute), true).Length > 0)
+                .OrderBy(p => ((UiPropertyAttribute)p.GetCustomAttributes(typeof(UiPropertyAttribute), true)[0]).Order);
+                
+            consoleSpecificProps.AddRange(props);
+        }
+        
+        // Remove duplicates by name
+        return consoleSpecificProps
+            .GroupBy(p => p.Name)
+            .Select(g => g.First())
+            .ToList();
+    }
+    
+    private void AddColumnsToDataGrid(DataGrid dataGrid, List<PropertyInfo> properties, 
+        List<string> visibleColumns, string group)
+    {
+        foreach (var property in properties)
+        {
+            var attr = (UiPropertyAttribute)property.GetCustomAttributes(typeof(UiPropertyAttribute), true)[0];
+            if (!attr.Visible) continue;
+        
+            var displayName = !string.IsNullOrEmpty(attr.DisplayName) ? attr.DisplayName : property.Name;
+        
+            // Create column with proper indexer binding
+            var column = new DataGridTextColumn
+            {
+                Header = displayName,
+                Binding = new Binding($"PropertiesDictionary") 
+                { 
+                    Converter = new DictionaryItemConverter(),
+                    ConverterParameter = property.Name
+                },
+                IsVisible = visibleColumns.Contains(property.Name)
+            };
+        
+            // Store metadata for column management
+            column.Tag = $"{group}:{property.Name}";
+        
+            dataGrid.Columns.Add(column);
+        }
+    }
+    
+    private List<string> GetDefaultColumns()
+    {
+        // Default visible columns
+        return [
+            "TitleID",
+            "Title", 
+            "RomType",
+            "Region",
+            "Version"
+        ];
+    }
+private string GetDisplayName(PropertyInfo prop)
+{
+    var attr = prop.GetCustomAttribute<UiPropertyAttribute>();
+    return attr?.DisplayName ?? SplitCamelCase(prop.Name);
+}
+
+private string SplitCamelCase(string input)
+{
+    if (string.IsNullOrEmpty(input)) return input;
+    
+    var result = new System.Text.StringBuilder();
+    result.Append(input[0]);
+    
+    for (int i = 1; i < input.Length; i++)
+    {
+        if (char.IsUpper(input[i]) && !char.IsUpper(input[i-1]))
+            result.Append(' ');
+        
+        result.Append(input[i]);
+    }
+    
+    return result.ToString();
+}
+
+private Type GetRomTypeForConsole(Type consoleType)
+{
+    // Get the main Game type for this console
+    return RomTypeDiscovery.GetRomTypeForConsole(consoleType, typeof(Game));
+}
+}public static class RomTypeDiscovery
+{
+    private static Dictionary<Type, Dictionary<Type, Type>>? _consoleRomTypeMappings;
+
+    // Call this at startup to initialize type mappings
+    public static void Initialize()
+    {
+        _consoleRomTypeMappings = new Dictionary<Type, Dictionary<Type, Type>>();
+        LoadRomTypes();
+    }
+
+    // Load all ROM types and associate them with consoles
+    private static void LoadRomTypes()
+    {
+        // Get all console types for reference
+        var consoleTypes = typeof(GamingConsole).Assembly
+            .GetTypes()
+            .Where(t => typeof(GamingConsole).IsAssignableFrom(t) && !t.IsAbstract && !t.IsInterface)
+            .ToList();
+
+        // Find all ROM types
+        var baseRomTypes = new[] { typeof(Game), typeof(Update), typeof(DLC) };
+        var allAssemblies = AppDomain.CurrentDomain.GetAssemblies();
+        
+        foreach (var assembly in allAssemblies)
+        {
+            try
+            {
+                foreach (var type in assembly.GetTypes())
+                {
+                    // Skip abstract or interface types
+                    if (type.IsAbstract || type.IsInterface)
+                        continue;
+
+                    // Check if this is a ROM type that inherits from our base types
+                    foreach (var baseType in baseRomTypes)
+                    {
+                        if (baseType.IsAssignableFrom(type))
+                        {
+                            // Find which console this ROM type belongs to
+                            var consoleType = FindConsoleTypeForRomType(type, consoleTypes);
+                            if (consoleType != null)
+                            {
+                                // Add to our mappings
+                                if (!_consoleRomTypeMappings.ContainsKey(consoleType))
+                                    _consoleRomTypeMappings[consoleType] = new Dictionary<Type, Type>();
+                                
+                                _consoleRomTypeMappings[consoleType][baseType] = type;
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+            catch (ReflectionTypeLoadException)
+            {
+                // Skip assemblies that can't be loaded
+                continue;
+            }
+        }
+    }
+
+    private static Type FindConsoleTypeForRomType(Type romType, List<Type> consoleTypes)
+    {
+        // Method 1: Check for console-specific interface implementation
+        // E.g. ISwitchRom, IWiiRom, etc.
+        foreach (var consoleType in consoleTypes)
+        {
+            string consoleName = consoleType.Name.Replace("Console", "");
+            string interfaceName = $"I{consoleName}Rom";
+            
+            if (romType.GetInterfaces().Any(i => i.Name == interfaceName))
+                return consoleType;
+        }
+
+        // Method 2: Check by naming convention
+        string romTypeName = romType.Name;
+        foreach (var consoleType in consoleTypes)
+        {
+            string consoleName = consoleType.Name.Replace("Console", "");
+            if (romTypeName.StartsWith(consoleName))
+                return consoleType;
+        }
+
+        return null;
+    }
+
+    // Get ROM type for a specific console and base type
+    public static Type GetRomTypeForConsole(Type consoleType, Type baseRomType)
+    {
+        if (_consoleRomTypeMappings.TryGetValue(consoleType, out var mappings) && 
+            mappings.TryGetValue(baseRomType, out var romType))
+            return romType;
+            
+        return null;
+    }
+
+    // Get all ROM types for a console
+    public static Dictionary<Type, Type> GetAllRomTypesForConsole(Type consoleType)
+    {
+        return _consoleRomTypeMappings.TryGetValue(consoleType, out var mappings) 
+            ? mappings 
+            : new Dictionary<Type, Type>();
+    }
+}
+
+// ── Adapts an IPlugin option into an IConsoleRomAction for the context menu ───
+
+internal sealed class PluginRomAction(IPlugin plugin, int optionIndex, PluginOption option) : IConsoleRomAction
+{
+    public string Name => option.Name;
+    public string Description => option.Description ?? option.Name;
+    public string? IconKey => option.IconKey;
+    public string Category => "Plugins";
+    public bool SupportsBulk => true;
+
+    public bool CanExecute(IEnumerable<Rom> selectedRoms)
+        => option.CanExecutePredicate?.Invoke(selectedRoms) ?? true;
+
+    public async Task ExecuteAsync(IEnumerable<Rom> selectedRoms, IServiceProvider services,
+        CancellationToken cancellationToken = default)
+    {
+        var pm = services.GetRequiredService<PluginManager>();
+        await pm.ExecuteAsync(plugin.PluginName, optionIndex, selectedRoms.ToList());
+    }
+}
+
+public class DictionaryItemConverter : IValueConverter
+{
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is Dictionary<string, string> dict && parameter is string key)
+        {
+            return dict.TryGetValue(key, out var val) ? val?.ToString() ?? "" : "";
+        }
+        return "";
+    }
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        return value;
     }
 }

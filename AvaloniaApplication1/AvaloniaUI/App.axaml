@@ -12,5 +12,19 @@
     <Application.Styles>
         <FluentTheme />
         <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
+
+        <!-- Multilingual font fallback chain: Latin → Japanese → Korean → CJK → Arabic → fallback Unicode -->
+        <Style Selector="TextBlock">
+            <Setter Property="FontFamily"
+                    Value="Segoe UI, Yu Gothic UI, Malgun Gothic, Microsoft YaHei UI, Tahoma, Arial Unicode MS" />
+        </Style>
+        <Style Selector="TextBox">
+            <Setter Property="FontFamily"
+                    Value="Segoe UI, Yu Gothic UI, Malgun Gothic, Microsoft YaHei UI, Tahoma, Arial Unicode MS" />
+        </Style>
+        <Style Selector="DataGridCell TextBlock">
+            <Setter Property="FontFamily"
+                    Value="Segoe UI, Yu Gothic UI, Malgun Gothic, Microsoft YaHei UI, Tahoma, Arial Unicode MS" />
+        </Style>
     </Application.Styles>
 </Application>

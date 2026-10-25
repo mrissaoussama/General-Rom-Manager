@@ -8,42 +8,114 @@ public partial class RomViewModel : ViewModelBase
 {
     private readonly Rom _rom;
 
-    public string TitleID => _rom.TitleID;
-    public string Title => _rom.Titles?.FirstOrDefault()?.Value ?? "Unknown";
-    public string Region => _rom.Regions?.ToString() ?? "Unknown";
+    /// <summary>Exposes the underlying domain model for backend operations.</summary>
+    public Rom RomSource => _rom;
+
+    public string TitleID => _rom.TitleID ?? string.Empty;
+    public string Title   => _rom.Titles?.FirstOrDefault(t => !string.IsNullOrWhiteSpace(t.Value))?.Value ?? "Unknown";
+    public string Region  => _rom.Regions?.Any() == true ? string.Join(", ", _rom.Regions) : "Unknown";
     public string Version => _rom.Version ?? "N/A";
     public string RomType => DetermineRomType();
-    public string Path => _rom.Path;
+    public string Path => _rom.Path ?? string.Empty;
 
+    // ── Grouping support ──────────────────────────────────────────────────
+    /// <summary>0 = top-level or ungrouped, 1 = child of a group header.</summary>
+    public int GroupDepth { get; set; }
+    /// <summary>True if this row is the group header (parent).</summary>
+    public bool IsGroupHeader { get; set; }
+    /// <summary>Number of children under this group header.</summary>
+    public int ChildCount { get; set; }
+    public string GetPropertyValue(string key)
+    {
+        return Properties.FirstOrDefault(p => p.Key == key).Value ?? string.Empty;
+    }
     public ObservableCollection<KeyValuePair<string, string>> Properties { get; }
 
-    // Helper property to allow dynamic binding by key
-    public Dictionary<string, string> PropertiesDictionary =>
-        Properties.ToDictionary(kv => kv.Key, kv => kv.Value);
+    // Helper property to allow dynamic binding by key — cached lazily.
+    private Dictionary<string, string>? _propertiesDictionaryCache;
+    public Dictionary<string, string> PropertiesDictionary
+        => _propertiesDictionaryCache ??= BuildPropertiesDictionary();
 
+    private Dictionary<string, string> BuildPropertiesDictionary()
+    {
+        var dict = Properties.ToDictionary(kv => kv.Key, kv => kv.Value);
+
+        // Ensure all standard + extended properties always exist (prevents binding errors)
+        foreach (var prop in new[] { "TitleID", "Title", "RomType", "Region", "Version",
+                                      "FileName", "Publisher", "Developer", "Languages", "Genres",
+                                      "Size", "Release Date", "Product Code", "Players",
+                                      "Description", "Alt Titles", "Min Firmware", "Rating",
+                                      "Hashes", "IsDemo", "File Path" })
+        {
+            dict.TryAdd(prop, string.Empty);
+        }
+        return dict;
+    }
+    private Dictionary<string, object> InitializePropertiesDictionary()
+    {
+        var dict = new Dictionary<string, object>();
+        
+        // Get all properties with UiPropertyAttribute
+        foreach (var prop in _rom.GetType().GetProperties())
+        {
+            var value = prop.GetValue(_rom);
+            if (value != null)
+            {
+                dict[prop.Name] = value;
+            }
+        }
+        
+        return dict;
+    }
     public RomViewModel(Rom rom)
     {
         _rom = rom;
         Properties = [];
         LoadProperties();
+
+        // Add derived class-specific properties
+        AddDerivedClassProperties();
+    }
+
+    private void AddDerivedClassProperties()
+    {
+        // Get base Rom properties
+        var baseProps = typeof(Rom).GetProperties().Select(p => p.Name).ToHashSet();
+    
+        // Also exclude any properties we already added in LoadProperties
+        var alreadyAdded = Properties.Select(p => p.Key).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        // Get properties from the actual runtime type that aren't in base Rom
+        var derivedProps = _rom.GetType().GetProperties()
+            .Where(p => !baseProps.Contains(p.Name) && p.GetMethod?.IsPublic == true)
+            .ToList();
+    
+        // Add each unique property from the derived class (skip if key already exists)
+        foreach (var prop in derivedProps)
+        {
+            if (alreadyAdded.Contains(prop.Name)) continue;
+            var value = prop.GetValue(_rom)?.ToString() ?? "N/A";
+            AddProperty(prop.Name, value);
+        }
     }
 
     private void LoadProperties()
     {
-        AddProperty("Title ID", TitleID);
+        var standardProps = new[] { "TitleID", "Title", "Type", "Region", "Version" };
+        AddProperty("TitleID", TitleID);
         AddProperty("Title", Title);
         AddProperty("Type", RomType);
         AddProperty("Region", Region);
         AddProperty("Version", Version);
         AddProperty("File Path", Path);
+        // FileName (just the file/folder name, not full path)
+        AddProperty("FileName", string.IsNullOrEmpty(Path) ? "" : System.IO.Path.GetFileName(Path));
         if (_rom.Size.HasValue)
-            AddProperty("Size", FormatSize(_rom.Size.Value));
+            AddProperty("Size", FileUtils.FormatFileSize(_rom.Size.Value));
         if (_rom.ReleaseDate.HasValue)
             AddProperty("Release Date", _rom.ReleaseDate.Value.ToString("yyyy-MM-dd"));
-        if (!string.IsNullOrEmpty(_rom.Publisher))
-            AddProperty("Publisher", _rom.Publisher);
-        if (!string.IsNullOrEmpty(_rom.Developer))
-            AddProperty("Developer", _rom.Developer);
+        AddProperty("Publisher", _rom.Publisher ?? "");
+        AddProperty("Developer", _rom.Developer ?? "");
         if (_rom.Languages?.Any() == true)
             AddProperty("Languages", string.Join(", ", _rom.Languages));
         if (_rom.Genres?.Any() == true)
@@ -55,37 +127,37 @@ public partial class RomViewModel : ViewModelBase
         if (!string.IsNullOrEmpty(_rom.MinimumFirmware))
             AddProperty("Min Firmware", _rom.MinimumFirmware);
         if (_rom.Descriptions?.Any() == true)
-            AddProperty("Description", _rom.Descriptions.FirstOrDefault()?.Value);
+            AddProperty("Description", _rom.Descriptions.FirstOrDefault()?.Value ?? string.Empty);
+        // Alt Titles (all titles except the primary one)
+        if (_rom.Titles?.Count > 1)
+        {
+            var altTitles = _rom.Titles.Skip(1)
+                .Where(t => !string.IsNullOrWhiteSpace(t.Value))
+                .Select(t => $"{t.Value} [{t.Language}]");
+            AddProperty("Alt Titles", string.Join("; ", altTitles));
+        }
         if (_rom.Ratings?.Any() == true)
         {
             var rating = _rom.Ratings.FirstOrDefault();
-            AddProperty("Rating", $"{rating.Name} {rating.Age}+");
+            if (rating != null)
+                AddProperty("Rating", $"{rating.Name} {rating.Age}+");
         }
-
-        if (_rom is SwitchUpdate switchUpdate && !string.IsNullOrEmpty(switchUpdate.RelatedGameTitleName))
+        // Hashes
+        if (_rom.Hashes?.Any() == true)
+            AddProperty("Hashes", string.Join("; ", _rom.Hashes.Select(h => $"{h.Type}: {h.Value}")));
+        // IsDemo flag
+        if (_rom.IsDemo)
+            AddProperty("IsDemo", "Yes");
+        foreach (var key in standardProps)
         {
-            AddProperty("Related Game", switchUpdate.RelatedGameTitleName);
-            AddProperty("Related Game ID", switchUpdate.RelatedGameTitleID);
-        }
-        else if (_rom is SwitchDLC switchDLC && !string.IsNullOrEmpty(switchDLC.RelatedGameTitleName))
-        {
-            AddProperty("Related Game", switchDLC.RelatedGameTitleName);
-            AddProperty("Related Game ID", switchDLC.RelatedGameTitleID);
+            if (!Properties.Any(p => p.Key == key))
+                AddProperty(key, "");
         }
     }
 
     private void AddProperty(string key, string value)
     {
-        if (!string.IsNullOrEmpty(value)) Properties.Add(new KeyValuePair<string, string>(key, value));
-    }
-
-    private string FormatSize(long bytes)
-    {
-        string[] suffixes = ["B", "KB", "MB", "GB", "TB"];
-        int i;
-        double dblSByte = bytes;
-        for (i = 0; i < suffixes.Length && bytes >= 1024; i++, bytes /= 1024) dblSByte = bytes / 1024.0;
-        return $"{dblSByte:0.##} {suffixes[i]}";
+        Properties.Add(new KeyValuePair<string, string>(key, value ?? string.Empty));
     }
 
     [RelayCommand]
