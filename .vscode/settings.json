@@ -1,0 +1,18 @@
+{
+  // Tell the C# extension to use the top-level solution
+  "dotnet.defaultSolution": "RomManager.sln",
+  "omnisharp.defaultLaunchSolution": "RomManager.sln",
+
+  // Exclude Android and Browser projects from Roslyn/OmniSharp analysis
+  // (these require platform-specific workloads not installed in a normal dev box)
+  "omnisharp.projectFilesExcludePattern": [
+    "**/AvaloniaUI.Android/**",
+    "**/AvaloniaUI.Browser/**"
+  ],
+
+  // Exclude from file explorer noise
+  "files.exclude": {
+    "**/bin": true,
+    "**/obj": true
+  }
+}

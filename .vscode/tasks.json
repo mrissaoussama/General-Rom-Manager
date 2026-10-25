@@ -1,0 +1,41 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build",
+      "type": "shell",
+      "command": "dotnet build AvaloniaApplication1/AvaloniaUI.Desktop/AvaloniaUI.Desktop.csproj",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared"
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "run (Desktop)",
+      "type": "shell",
+      "command": "dotnet run --project AvaloniaApplication1/AvaloniaUI.Desktop/AvaloniaUI.Desktop.csproj",
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "build (full solution)",
+      "type": "shell",
+      "command": "dotnet build RomManager.sln",
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": "$msCompile"
+    }
+  ]
+}

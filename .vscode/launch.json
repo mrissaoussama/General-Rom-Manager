@@ -1,0 +1,16 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "RomManager (Desktop)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/AvaloniaApplication1/AvaloniaUI.Desktop/bin/Debug/net10.0/AvaloniaUI.Desktop.exe",
+      "args": [],
+      "cwd": "${workspaceFolder}/AvaloniaApplication1/AvaloniaUI.Desktop",
+      "stopAtEntry": false,
+      "console": "internalConsole"
+    }
+  ]
+}

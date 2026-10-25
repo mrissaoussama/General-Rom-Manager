@@ -361,3 +361,13 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# Local
+settings.json
+*.db
+tools/ParserHarness/paths.json
+output.txt
+es.exe
+*.DotSettings.user
+AvaloniaApplication1/AvaloniaUI.Desktop/*.txt
+AvaloniaApplication1/AvaloniaUI.Desktop/*.json
+!.vscode/settings.json
