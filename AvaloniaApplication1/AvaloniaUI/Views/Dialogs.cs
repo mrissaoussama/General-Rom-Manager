@@ -159,3 +159,52 @@ public sealed class PreviewWindow : Window
         Content = new DockPanel { Margin = new Thickness(16), Children = { header, buttons, list } };
     }
 }
+
+/// <summary>Asks which console a dropped folder holds, preselecting the detected one.</summary>
+public sealed class ChooseConsoleWindow : Window
+{
+    public ConsoleDescriptor? Result { get; private set; }
+
+    public ChooseConsoleWindow(string folder, IReadOnlyList<ConsoleDescriptor> consoles, ConsoleDescriptor? guess, string detail)
+    {
+        Title = "Add ROM folder";
+        Width = 520;
+        SizeToContent = SizeToContent.Height;
+        CanResize = false;
+        WindowStartupLocation = WindowStartupLocation.CenterOwner;
+
+        var combo = new ComboBox
+        {
+            ItemsSource = consoles.Select(c => c.DisplayName).ToList(),
+            SelectedIndex = guess is null ? -1 : consoles.ToList().FindIndex(c => c.ConsoleType == guess.ConsoleType),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+        };
+        var ok = new Button { Content = "Add", IsDefault = true };
+        var cancel = new Button { Content = "Cancel", IsCancel = true };
+        ok.Click += (_, _) =>
+        {
+            if (combo.SelectedIndex < 0) return;
+            Result = consoles[combo.SelectedIndex];
+            Close();
+        };
+        cancel.Click += (_, _) => Close();
+
+        Content = new StackPanel
+        {
+            Margin = new Thickness(16),
+            Spacing = 8,
+            Children =
+            {
+                new TextBlock { Text = folder, TextWrapping = TextWrapping.Wrap, FontWeight = FontWeight.SemiBold },
+                new TextBlock { Text = detail, TextWrapping = TextWrapping.Wrap, Opacity = 0.75 },
+                new TextBlock { Text = "Console" },
+                combo,
+                new StackPanel
+                {
+                    Orientation = Orientation.Horizontal, Spacing = 8, HorizontalAlignment = HorizontalAlignment.Right,
+                    Children = { cancel, ok },
+                },
+            },
+        };
+    }
+}

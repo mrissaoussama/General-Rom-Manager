@@ -225,6 +225,54 @@ public partial class MainViewModel : ViewModelBase
         Settings.RaiseCompactModeChanged();
     }
 
+    /// <summary>Adds a dropped folder as a console's ROM folder, guessing the console from its files.</summary>
+    public async Task AddLibraryFolderAsync(string folder)
+    {
+        var consoles = ConsoleModules.Descriptors;
+        Dictionary<Type, IReadOnlyCollection<string>> extensions = [];
+        using (var scope = _serviceProvider.CreateScope())
+            foreach (var d in consoles)
+                try
+                {
+                    var executor = scope.ServiceProvider.GetService(typeof(RomManagerShared.RomParserExecutor<>).MakeGenericType(d.ConsoleType));
+                    if (executor?.GetType().GetMethod("GetSupportedExtensions")?.Invoke(executor, null) is IEnumerable<string> exts)
+                        extensions[d.ConsoleType] = exts.ToList();
+                }
+                catch (Exception ex) { FileUtils.Log($"[AddFolder] {d.Id}: {ex.Message}"); }
+
+        IReadOnlyList<ConsoleDetector.Guess> guesses;
+        try { guesses = await Task.Run(() => ConsoleDetector.Rank(ConsoleDetector.SampleFiles(folder), extensions)); }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Cannot read {folder}: {ex.Message}";
+            return;
+        }
+
+        var best = guesses.FirstOrDefault();
+        var guess = best is null ? null : consoles.First(c => c.ConsoleType == best.Console);
+        var detail = guess is null
+            ? "No known ROM files found. Pick the console manually."
+            : $"Looks like {guess.DisplayName} ({best!.Files} matching file(s)).";
+        var dialog = new ChooseConsoleWindow(folder, consoles, guess, detail);
+        await Shell.ShowDialogAsync(dialog);
+        if (dialog.Result is not { } chosen) return;
+
+        if (Settings.Instance.ConsoleLibraryPaths.TryGetValue(chosen.Id, out var existing) && !string.IsNullOrEmpty(existing)
+            && !string.Equals(existing, folder, StringComparison.OrdinalIgnoreCase)
+            && !await Shell.ConfirmAsync("Replace folder", $"{chosen.DisplayName} already uses {existing}. Use {folder} instead?", "Replace"))
+            return;
+
+        Settings.Instance.ConsoleLibraryPaths[chosen.Id] = folder;
+        Settings.Instance.Save();
+        ReloadRomPaths();
+        await SyncConsolesAsync();
+        var page = ConsoleViewModels.FirstOrDefault(c => c.ConsoleName == chosen.Id);
+        if (page is null) return;
+        SelectedPage = page;
+        await page.LoadData();
+        RecalculateTotalRomCount();
+    }
+
     [RelayCommand]
     private async Task OpenSettings()
     {
