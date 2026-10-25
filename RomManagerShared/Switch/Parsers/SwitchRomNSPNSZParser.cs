@@ -1,26 +1,26 @@
 ﻿using RomManagerShared.Base;
 using RomManagerShared.Interfaces;
+using RomManagerShared.Utils;
 using System.Text;
 using System.Xml;namespace RomManagerShared.Switch.Parsers;
 
 public class SwitchRomNSPNSZParser : IRomParser<SwitchConsole>
 {
     public List<string> Extensions { get; set; }
-    List<Rom> RomList;
    private const int HeaderLength = 0xA00;    public SwitchRomNSPNSZParser()
     {
         Extensions = ["nsz", "nsp"];
-        RomList = [];
     }
     public async Task<List<Rom>> ProcessFile(string switchRomPath)
     {
         List<Rom> list = [];
         List<string> ExtensionsData = [];
-        using (FileStream fileStream = new(switchRomPath, FileMode.Open, FileAccess.Read))
+        using (FileStream fileStream = FileUtils.OpenRead(switchRomPath))
         {
             byte[] headerBytes = new byte[HeaderLength];
-            fileStream.Read(headerBytes, 0, HeaderLength);
-            string headerAsString = Encoding.UTF8.GetString(headerBytes);
+            fileStream.ReadAtLeast(headerBytes, HeaderLength, throwOnEndOfStream: false);
+            // Latin1 keeps a 1:1 byte/char mapping so offsets stay valid.
+            string headerAsString = Encoding.Latin1.GetString(headerBytes);
             string[] extensionsToFind = { ".tik", ".cert" };
             foreach (var extension in extensionsToFind)
             {
@@ -29,7 +29,8 @@ public class SwitchRomNSPNSZParser : IRomParser<SwitchConsole>
                 {
                     string extensionData = headerAsString.Substring(Math.Max(0, extensionIndex - 32), 32);
                     extensionData = extensionData[..^16];
-                    ExtensionsData.Add(extensionData.ToUpper());
+                    if (extensionData.All(char.IsAsciiHexDigit))
+                        ExtensionsData.Add(extensionData.ToUpper());
                     extensionIndex = headerAsString.IndexOf(extension, extensionIndex + 1, StringComparison.OrdinalIgnoreCase);
                 }
             }
@@ -75,5 +76,4 @@ public class SwitchRomNSPNSZParser : IRomParser<SwitchConsole>
 
                 list.Add(rom);
         }
-        RomList.AddRange(list);
         return list;    }}

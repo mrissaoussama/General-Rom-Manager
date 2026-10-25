@@ -77,201 +77,108 @@ public class SwitchRomNSPXCIParser : IRomParser<SwitchConsole>, IHasRequirements
         return _keyset;
     }
 
-    // ── Fields ────────────────────────────────────────────────────────────
-    List<Rom> RomList;
-    PartitionFileSystem? NSPPartitionFileSystem;
-    XciPartition? XCIPartitionFileSystem;
-    LocalStorage? localStorage;
-
     public SwitchRomNSPXCIParser()
     {
         Extensions = ["xci", "nsp"];
-        RomList = [];
     }
 
-    public async Task<List<Rom>> ProcessFile(string path)
+    public Task<List<Rom>> ProcessFile(string path)
     {
-        // Abort early if keys are unavailable
         var keyset = EnsureKeyset();
         if (keyset is null)
         {
             FileUtils.Log($"[SwitchNSPXCI] Skipping '{System.IO.Path.GetFileName(path)}' — no valid keyset.");
-            return [];
+            return Task.FromResult<List<Rom>>([]);
         }
 
         List<Rom> roms = [];
         try
         {
-            localStorage = new LocalStorage(path, FileAccess.Read);
-            await FillRomList(path, roms, keyset);
+            using var storage = new LocalStorage(path, FileAccess.Read);
+            using IFileSystem? fs = IsXCI(path) ? OpenXciSecure(storage, keyset) : OpenNsp(storage, keyset);
+            if (fs is not null)
+            {
+                AddApplications(SwitchFs.OpenNcaDirectory(keyset, fs), path, roms);
+                if (roms.Count == 0)
+                    AddIdsFromNcaHeaders(fs, keyset, path, roms);
+            }
         }
         catch (Exception ex)
         {
-            localStorage?.Dispose();
-            NSPPartitionFileSystem?.Dispose();
-            XCIPartitionFileSystem?.Dispose();
-            FileUtils.Log($"exception error {path} {ex.Message}");
+            FileUtils.Log($"[SwitchNSPXCI] {path}: {ex.Message}");
         }
-        if (RomList is null)
-        {
-            FileUtils.Log($"null error {path}");
-            RomList = [];
-        }
-        RemoveFileLock();
-        RomList.AddRange(roms);
-        return roms;
+        return Task.FromResult(roms);
     }
-    private Task FillRomList(string path, List<Rom> roms, KeySet keyset)
+
+    private static PartitionFileSystem OpenNsp(IStorage storage, KeySet keyset)
     {
-        IEnumerable<DirectoryEntryEx> entries = [];
-        SwitchFs switchFs;
-        if (IsNSP(path))
-        {
-            ParseNSP();
-            ImportTickets(NSPPartitionFileSystem!, keyset);
-            switchFs = SwitchFs.OpenNcaDirectory(keyset, NSPPartitionFileSystem!);
-            foreach (LibHac.Tools.Fs.Application app in switchFs.Applications.Values.OrderBy(x => x.Name))
-            {
-                if (app.Main != null)
-                {
-                    var gameMetaData = new SwitchGame();
-                    gameMetaData.AddTitleName(app.Main.Name);
-                    gameMetaData.TitleID = app.Main.Id.ToString("X16");
-                    gameMetaData.Size = app.Main.GetSize();
-                    gameMetaData.Version = app.Main.Version.Version.ToString();
-                    gameMetaData.MinimumFirmware = app.Main.Metadata?.MinimumSystemVersion?.Version.ToString();
-                    gameMetaData.Path = path;
-                    roms.Add(gameMetaData);
-                }
-                if (app.Patch != null)
-                {
-                    var updateMetaData = new SwitchUpdate
-                    {
-                        TitleID = app.Patch.Id.ToString("X16"),
-                        Size = app.Patch.GetSize(),
-                        Version = app.Patch.Version.Version.ToString()
-                    };
-                    updateMetaData.AddTitleName(app.Patch.Name);
-                    updateMetaData.MinimumFirmware = app.Patch.Metadata?.MinimumSystemVersion?.Version.ToString();
-                    updateMetaData.Path = path;
-                    roms.Add(updateMetaData);
-                }
-                if (app.AddOnContent.Count > 0)
-                {
-                    int dlcIndex = 0;
-                    foreach (var addOnContent in app.AddOnContent)
-                    {
-                        dlcIndex++;
-                        var dlcMetaData = new SwitchUpdate
-                        {
-                            TitleID = addOnContent.Id.ToString("X16"),
-                            Size = addOnContent.GetSize(),
-                            Version = addOnContent.Version.Version.ToString(),
-                            MinimumFirmware = addOnContent.Metadata?.MinimumSystemVersion?.Version.ToString(),
-                            Path = path
-                        };
-                        if (addOnContent.Name != null)
-                        {
-                            dlcMetaData.AddTitleName(addOnContent.Name);
-                        }
+        var pfs = new PartitionFileSystem();
+        pfs.Initialize(storage).ThrowIfFailure();
+        ImportTickets(pfs, keyset);
+        return pfs;
+    }
 
-                        roms.Add(dlcMetaData);
-                    }
-                }
-            }
+    private static XciPartition? OpenXciSecure(IStorage storage, KeySet keyset)
+    {
+        var xci = new Xci(keyset, storage);
+        return xci.HasPartition(XciPartitionType.Secure) ? xci.OpenPartition(XciPartitionType.Secure) : null;
+    }
+
+    private static void AddApplications(SwitchFs switchFs, string path, List<Rom> roms)
+    {
+        foreach (LibHac.Tools.Fs.Application app in switchFs.Applications.Values.OrderBy(x => x.Name))
+        {
+            if (app.Main != null)
+                roms.Add(Fill(new SwitchGame(), app.Main, path));
+            if (app.Patch != null)
+                roms.Add(Fill(new SwitchUpdate(), app.Patch, path));
+            foreach (var addOnContent in app.AddOnContent)
+                roms.Add(Fill(new SwitchDLC(), addOnContent, path));
         }
-        else
-        {
-            ParseXCI(keyset);
-            entries = XCIPartitionFileSystem!.EnumerateEntries();
-            foreach (var entry in entries)
-            {
-                if (entry.Name.EndsWith(".tik"))
-                {
-                    string titleid = entry.Name[..16];
-                    var romtype = SwitchUtils.GetRomMetadataClass(titleid);
-                    var rom = (Rom)Activator.CreateInstance(romtype);
-                    rom.TitleID = titleid.ToUpper();
-                    rom.Path = path;
-                    if (roms.FirstOrDefault(x => x.TitleID == rom.TitleID) is null)
-                        roms.Add(rom);
-                }
-            }
+    }
 
-        }
-        using FileStream file = new(path, FileMode.Open, FileAccess.Read);
-        string extension = System.IO.Path.GetExtension(path).ToLower();
-        if (extension is ".nsp" or ".pfs0" or ".xci")
-        {
-            IFileSystem pfs;
+    private static Rom Fill(Rom rom, Title title, string path)
+    {
+        rom.TitleID = title.Id.ToString("X16");
+        rom.Size = title.GetSize();
+        rom.Version = title.Version.Version.ToString();
+        rom.MinimumFirmware = title.Metadata?.MinimumSystemVersion?.Version.ToString();
+        rom.Path = path;
+        if (!string.IsNullOrEmpty(title.Name))
+            rom.AddTitleName(title.Name);
+        return rom;
+    }
 
-            if (extension == ".xci")
-            {
-                pfs = new Xci(keyset, file.AsStorage()).OpenPartition(XciPartitionType.Secure);
-            }
-            else
-            {
-                var pfsTemp = new PartitionFileSystem();
-                pfsTemp.Initialize(file.AsStorage()).ThrowIfFailure();
-                pfs = pfsTemp;
-            }
-            foreach (DirectoryEntryEx fileEntry in pfs.EnumerateEntries("/", "*.nca"))
+    // Fallback when metadata can't be decrypted: title IDs from NCA headers only (header key suffices).
+    private static void AddIdsFromNcaHeaders(IFileSystem fs, KeySet keyset, string path, List<Rom> roms)
+    {
+        foreach (DirectoryEntryEx entry in fs.EnumerateEntries("/", "*.nca"))
+        {
+            try
             {
                 using var ncaFile = new UniqueRef<IFile>();
-
-                pfs.OpenFile(ref ncaFile.Ref, fileEntry.FullPath.ToU8Span(), OpenMode.Read).ThrowIfFailure();
-
-                Nca nca = new(keyset, ncaFile.Get.AsStorage());
-                //   if (nca.Header.ContentType == NcaContentType.Meta)
-                {
-                    var hs = nca.VerifyHeaderSignature();
-                    var ncv = nca.VerifyNca();
-
-                    int dataIndex = Nca.GetSectionIndexFromType(NcaSectionType.Data, nca.Header.ContentType);
-                    var secv = nca.VerifySection(dataIndex);
-                    var vsm = nca.ValidateSectionMasterHash(dataIndex);
-                    var id = nca.Header.TitleId.ToString("X16");
-                   // Console.WriteLine($"{id} |headersig |ncaverify {ncv} section {secv} ||vsmh{vsm} ");
-                    var romtype = SwitchUtils.GetRomMetadataClass(id);
-                    var rom = (Rom)Activator.CreateInstance(romtype);
-                    rom.Path = path;
-                    rom.TitleID = id;
-                    if (roms.FirstOrDefault(x => x.TitleID == rom.TitleID) is null)
-                        roms.Add(rom);
-                }
+                fs.OpenFile(ref ncaFile.Ref, entry.FullPath.ToU8Span(), OpenMode.Read).ThrowIfFailure();
+                var id = new Nca(keyset, ncaFile.Get.AsStorage()).Header.TitleId.ToString("X16");
+                if (roms.Any(x => x.TitleID == id))
+                    continue;
+                var rom = (Rom)Activator.CreateInstance(SwitchUtils.GetRomMetadataClass(id))!;
+                rom.TitleID = id;
+                rom.Path = path;
+                roms.Add(rom);
+            }
+            catch (Exception ex)
+            {
+                FileUtils.Log($"[SwitchNSPXCI] {path} {entry.Name}: {ex.Message}");
             }
         }
-        return Task.CompletedTask;
+    }
 
-    }
-    private void ParseXCI(KeySet keyset)
-    {
-        var xci = new Xci(keyset, localStorage!);
-        if (xci.HasPartition(XciPartitionType.Secure))
-        {
-            XCIPartitionFileSystem = xci.OpenPartition(XciPartitionType.Secure);
-        }
-        XciPartition root = xci.OpenPartition(XciPartitionType.Root);
-        if (root == null)
-        {
-            return;
-        }
-    }
     private static bool IsXCI(string path)
     {
         string extension = System.IO.Path.GetExtension(path);
         return string.Equals(extension, ".xci", StringComparison.OrdinalIgnoreCase);
     }
-    private static bool IsNSP(string path)
-    {
-        string extension = System.IO.Path.GetExtension(path);
-        return string.Equals(extension, ".nsp", StringComparison.OrdinalIgnoreCase);
-    }
-    private void ParseNSP()
-    {
-        NSPPartitionFileSystem = new PartitionFileSystem();
-        NSPPartitionFileSystem.Initialize(localStorage!);
-    }
+
     // Titlekey-encrypted NSPs carry their key in a .tik; without it every NCA fails to open.
     private static void ImportTickets(IFileSystem fs, KeySet keyset)
     {
@@ -291,11 +198,5 @@ public class SwitchRomNSPXCIParser : IRomParser<SwitchConsole>, IHasRequirements
                 FileUtils.Log($"[SwitchNSPXCI] Bad ticket {entry.FullPath}: {ex.Message}");
             }
         }
-    }
-    public void RemoveFileLock()
-    {
-        localStorage?.Dispose();
-        NSPPartitionFileSystem?.Dispose();
-        XCIPartitionFileSystem?.Dispose();
     }
 }
