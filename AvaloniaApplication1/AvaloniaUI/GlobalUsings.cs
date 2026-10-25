@@ -22,6 +22,7 @@ global using CommunityToolkit.Mvvm.ComponentModel;
 global using CommunityToolkit.Mvvm.Input;
 global using Microsoft.Extensions.DependencyInjection;
 global using RomManagerShared.Base;
+global using RomManagerShared.Base.Library;
 global using RomManagerShared.Configuration;
 global using RomManagerShared.Interfaces;
 global using RomManagerShared.Utils;

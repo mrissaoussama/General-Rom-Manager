@@ -1604,7 +1604,7 @@ public class MainView : UserControl
             contextMenu.Items.Add(moveItem);
 
             var refreshMeta = new MenuItem { Header = "🔄 Refresh Metadata" };
-            refreshMeta.Click += (_, _) => { _ = console.LoadData(); };
+            refreshMeta.Click += (_, _) => { _ = console.Rescan(); };
             contextMenu.Items.Add(refreshMeta);
 
             // ── Delete ────────────────────────────────────────────────────

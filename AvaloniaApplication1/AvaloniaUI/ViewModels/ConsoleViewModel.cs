@@ -7,6 +7,8 @@ public interface IConsoleViewModel
 {
     string ConsoleName { get; }
     Task LoadData();
+    Task Rescan();
+    void CancelScan();
     /// <summary>
     /// Returns column descriptors so the View can build DataGrid columns without
     /// a direct dependency on <see cref="DataGrid"/>.
@@ -95,64 +97,62 @@ public partial class ConsoleViewModel<T> : ViewModelBase , IConsoleViewModel whe
         => GetAllRequirements().Where(r => !r.IsOptional && !r.IsMet).ToList();
 
 
-   [RelayCommand]
-    public async Task LoadData()
+    private CancellationTokenSource? _scanCts;
+
+    /// <summary>Shows the cached library, then scans for new or changed files.</summary>
+    [RelayCommand]
+    public Task LoadData() => LoadAsync(fullRescan: false);
+
+    /// <summary>Re-parses every file, ignoring the cache.</summary>
+    public Task Rescan() => LoadAsync(fullRescan: true);
+
+    public void CancelScan() => _scanCts?.Cancel();
+
+    private async Task LoadAsync(bool fullRescan)
     {
+        _scanCts?.Cancel();
+        using var cts = _scanCts = new CancellationTokenSource();
+        var ct = cts.Token;
+        var libraryKey = _consoleType.Name;
         try
-        {   
-       
+        {
             IsLoading = true;
-            StatusMessage = "Loading ROMs...";
+            IsIndeterminate = true;
+            StatusMessage = "Loading library...";
             using var scope = _serviceProvider.CreateScope();
+            var manager = scope.ServiceProvider.GetRequiredService<ConsoleManager<T>>();
+            var scanner = scope.ServiceProvider.GetRequiredService<LibraryScanner>();
 
-            // Get the console manager directly from service provider
-            var _consoleManager = scope.ServiceProvider.GetRequiredService<ConsoleManager<T>>();
+            var cached = await scanner.LoadCachedAsync(libraryKey, ct);
+            ShowRoms(cached);
 
-            // Clear existing items
-            Roms.Clear();
-            
- 
-                var managerType = typeof(ConsoleManager<>).MakeGenericType(_consoleType);
-                
-                // Setup console manager
-                await _consoleManager.Setup();
-            
-            // Get ROM path — guard against missing config gracefully
             if (!MainViewModel.RomPaths.TryGetValue(_consoleType, out string? romPath)
                 || string.IsNullOrEmpty(romPath)
                 || !Directory.Exists(romPath))
             {
-                StatusMessage = $"ROM path not configured or not found for {ConsoleName}";
+                StatusMessage = cached.Count > 0
+                    ? $"{cached.Count} ROMs (cached) — ROM folder not found"
+                    : $"ROM path not configured or not found for {ConsoleName}";
                 return;
             }
-            
-            // Process ROM files
-            var supportedExtensions = _consoleManager.RomParserExecutor.GetSupportedExtensions();
-            var romFiles = FileUtils.GetFilesInDirectoryWithExtensions(romPath, supportedExtensions);
 
-            int processedCount = 0;
-            int total = romFiles.Count;
-            IsIndeterminate = total == 0;
-            ProgressPercent = 0;
+            StatusMessage = cached.Count > 0 ? $"{cached.Count} ROMs — checking for changes..." : "Scanning...";
+            await manager.Setup();
 
-            foreach (var file in romFiles)
+            var progress = new Progress<ScanProgress>(p =>
             {
-                await _consoleManager.ProcessFile(file);
-                processedCount++;
-                ProgressPercent = total > 0 ? (processedCount * 100.0 / total) : 0;
-                if (processedCount % 10 == 0 || processedCount == total)
-                {
-                    StatusMessage = $"Processing... ({processedCount}/{total})";
-                }
-            }
-            
-            // Convert to view models
-            foreach (var rom in _consoleManager.RomList)
-            {
-                Roms.Add(new RomViewModel(rom));
-            }
-            
+                IsIndeterminate = p.Total == 0;
+                ProgressPercent = p.Total > 0 ? p.Processed * 100.0 / p.Total : 0;
+                if (p.CurrentFile is not null)
+                    StatusMessage = $"Scanning {p.Processed + 1}/{p.Total}: {Path.GetFileName(p.CurrentFile)}";
+            });
+            var roms = await scanner.ScanAsync(manager, libraryKey, romPath, fullRescan, progress, ct);
+            ShowRoms(roms);
             StatusMessage = $"Loaded {Roms.Count} ROMs";
+        }
+        catch (OperationCanceledException)
+        {
+            StatusMessage = "Scan cancelled";
         }
         catch (Exception ex)
         {
@@ -162,10 +162,16 @@ public partial class ConsoleViewModel<T> : ViewModelBase , IConsoleViewModel whe
         }
         finally
         {
+            if (_scanCts == cts) _scanCts = null;
             ProgressPercent = 100;
             IsIndeterminate = false;
             IsLoading = false;
         }
+    }
+
+    private void ShowRoms(IEnumerable<Rom> roms)
+    {
+        Roms = new ObservableCollection<RomViewModel>(roms.Select(r => new RomViewModel(r)));
     }
 
 

@@ -51,6 +51,7 @@ public partial class App : Application
                 // Shared utilities
                 services.AddScoped<RomHashRepository>();
                 services.AddScoped<NoIntroRomHashIdentifier>();
+                services.AddScoped<LibraryScanner>();
 
                 // Plugin manager — singleton so plugins stay loaded for the app lifetime
                 services.AddSingleton<PluginManager>();

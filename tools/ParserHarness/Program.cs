@@ -2,13 +2,16 @@
 // Usage:
 //   ParserHarness <ConsoleTypeName> <directory> [maxFiles]
 //   ParserHarness all <paths.json> [maxFiles]      paths.json: { "PS4Console": "Y:\roms\PS4", ... }
+//   add --library to run the incremental scanner twice (temp DB) and compare timings
 using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using RomManagerShared;
 using RomManagerShared.Base;
+using Microsoft.EntityFrameworkCore;
 using RomManagerShared.Base.Database;
+using RomManagerShared.Base.Library;
 using RomManagerShared.Configuration;
 using RomManagerShared.Interfaces;
 using RomManagerShared.Utils;
@@ -39,6 +42,30 @@ var max = args.Length > 2 ? int.Parse(args[2]) : 5;
 
 var consoleTypes = asm.GetTypes()
     .Where(t => typeof(GamingConsole).IsAssignableFrom(t) && !t.IsAbstract && !t.IsInterface && t != typeof(GamingConsole));
+
+// --library: run the real incremental scanner twice against a throwaway database.
+if (args.Contains("--library"))
+{
+    var dbPath = Path.Combine(Path.GetTempPath(), $"harness-{Guid.NewGuid():N}.db");
+    using var db = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseSqlite($"Data Source={dbPath}").Options);
+    db.Database.Migrate();
+    var scanner = new LibraryScanner(db);
+    var scan = typeof(LibraryScanner).GetMethod(nameof(LibraryScanner.ScanAsync))!;
+    foreach (var ct in consoleTypes.Where(t => paths.ContainsKey(t.Name)))
+    {
+        using var scope = provider.CreateScope();
+        var mgr = scope.ServiceProvider.GetRequiredService(typeof(ConsoleManager<>).MakeGenericType(ct));
+        foreach (var pass in new[] { "first", "second" })
+        {
+            var sw = Stopwatch.StartNew();
+            var task = (Task<List<Rom>>)scan.MakeGenericMethod(ct)
+                .Invoke(scanner, [mgr, ct.Name, paths[ct.Name], false, null, CancellationToken.None])!;
+            var roms = await task;
+            Console.WriteLine($"## {ct.Name} {pass} scan: {roms.Count} rom(s) in {sw.ElapsedMilliseconds}ms");
+        }
+    }
+    return 0;
+}
 
 foreach (var ct in consoleTypes)
 {
