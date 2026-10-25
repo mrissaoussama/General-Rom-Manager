@@ -1,6 +1,6 @@
 # ADR 0001 — Switch container parsing: keep LibHac (C#), switch to the `Ryujinx.LibHac` package
 
-- Status: proposed
+- Status: accepted (vendored tree kept at git tag `libhac-vendored`)
 - Date: 2026-10-25
 
 ## Context

@@ -22,7 +22,7 @@ dotnet run --project tools/ParserHarness -- PS4Console "Y:\roms\PS4" 5
 - `AvaloniaUI.Android` / `AvaloniaUI.Browser` target net9.0-* and are not maintained; only the
   Desktop head matters.
 - Don't add new warnings (Desktop head baseline is small; vendored code in `Utils/ISO2GOD`,
-  `Utils/AltoMultiThreadDownloadManager` and `LibHac` is noisy).
+  `Utils/AltoMultiThreadDownloadManager` is noisy).
 
 ## Layout
 
@@ -34,7 +34,6 @@ dotnet run --project tools/ParserHarness -- PS4Console "Y:\roms\PS4" 5
 | `RomManagerShared/Utils/` | File/hash/download utils, `PluginManager`, renamer, mover, duplicate detector; vendored ISO2GOD + Alto downloader |
 | `AvaloniaApplication1/AvaloniaUI/` | UI library: `App.axaml.cs` (DI composition root), ViewModels, code-built Views |
 | `AvaloniaApplication1/AvaloniaUI.Desktop/` | Desktop head (the only head that matters) |
-| `LibHac/` | Vendored LibHac 0.20.0 (Switch formats). Upstream GitHub repo is gone — see ADR 0001 |
 | `SkyEditor.IO/` | Vendored binary IO lib (netstandard2.0) used by 3DS code |
 | `RomManagerTests/` | xUnit tests (DB, DI resolution, renamer, mover, duplicates). No parser tests yet |
 | `SamplePlugin/` | Reference plugin implementation |

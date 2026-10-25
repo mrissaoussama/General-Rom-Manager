@@ -7,7 +7,7 @@
     <GenerateRuntimeConfigurationFiles>True</GenerateRuntimeConfigurationFiles>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\LibHac\LibHac.csproj" />
+    <PackageReference Include="Ryujinx.LibHac" Version="0.20.0" />
     <ProjectReference Include="..\SkyEditor.IO\SkyEditor.IO.csproj" />
   </ItemGroup>
 	<ItemGroup>

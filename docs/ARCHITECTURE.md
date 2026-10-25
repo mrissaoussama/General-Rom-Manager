@@ -5,7 +5,7 @@ State as of 2026-10-25. Target architecture and migration steps are in [ROADMAP.
 ## Projects
 
 ```
-AvaloniaUI.Desktop ──► AvaloniaUI ──► RomManagerShared ──► LibHac (vendored, Switch)
+AvaloniaUI.Desktop ──► AvaloniaUI ──► RomManagerShared ──► Ryujinx.LibHac (NuGet, Switch)
                                                        └─► SkyEditor.IO (vendored, 3DS)
 RomManagerTests ──► RomManagerShared
 SamplePlugin    ──► RomManagerShared
