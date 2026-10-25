@@ -37,10 +37,8 @@ public class PS4PKGParser : IRomParser<PS4Console>
             long value = Convert.ToInt64(t.Value);
             ps4rom.MinimumFirmware = PS4Utils.SystemFirmwareLongToString(value);
         }
-        if (ps4Pkg.Icon != null)
-        {
-            ps4rom.Icon = BinUtils.ByteArrayToPrefixedString(ps4Pkg.Icon);
-        }        if (ps4Pkg.Image != null)
+        // icon0.png; keyed by content ID (+ patch suffix) since game, patch and DLC share the title ID.
+        ps4rom.Icon = IconCache.Save("PS4", (ps4Pkg.Content_ID ?? ps4rom.TitleID) + (ps4rom is PS4Update ? "_patch" : ""), ps4Pkg.Icon);        if (ps4Pkg.Image != null)
         {
             ps4rom.Thumbnail = BinUtils.ByteArrayToPrefixedString(ps4Pkg.Image);
         }        if (ps4Pkg.Image2 != null)
