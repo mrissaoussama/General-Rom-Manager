@@ -310,9 +310,9 @@ internal class IsoDetails
             EnableRaisingEvents = false
         };
         process.StartInfo.FileName = args.PathXexTool;
-        if (!File.Exists(process.StartInfo.FileName))
+        if (isoDetailsResults is null || !File.Exists(process.StartInfo.FileName))
         {
-            return null;
+            return isoDetailsResults; // ID-only without xextool
         }
         process.StartInfo.WorkingDirectory = text2;
         process.StartInfo.Arguments = "-d . default.xex";
@@ -327,7 +327,7 @@ internal class IsoDetails
         }
         catch (Win32Exception)
         {
-            return null;
+            return isoDetailsResults;
         }
         if (File.Exists(text2 + isoDetailsResults.TitleID))
         {
@@ -417,13 +417,16 @@ internal class IsoDetails
         {
             EnableRaisingEvents = false
         };
+        // Header fields above need no tool; xextool only adds name and icon.
         process.StartInfo.FileName = Xbox360Configuration.GetXexToolPath();
-        if (!File.Exists(process.StartInfo.FileName))
+        if (isoDetailsResults is null || !File.Exists(process.StartInfo.FileName))
         {
-            return null;
+            return isoDetailsResults;
         }
-        process.StartInfo.WorkingDirectory = Path.GetDirectoryName(xexfilepath);
-        process.StartInfo.Arguments = "-d . default.xex";
+        var dumpDir = Path.Combine(FileUtils.GetTempDirectory(), Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dumpDir);
+        process.StartInfo.WorkingDirectory = dumpDir;
+        process.StartInfo.Arguments = $"-d . \"{xexfilepath}\"";
         process.StartInfo.UseShellExecute = false;
         process.StartInfo.RedirectStandardOutput = false;
         process.StartInfo.CreateNoWindow = true;
@@ -435,9 +438,9 @@ internal class IsoDetails
         }
         catch (Win32Exception)
         {
-            return null;
+            return isoDetailsResults;
         }
-        var titleidfile = Path.GetDirectoryName(xexfilepath) + "\\" + isoDetailsResults.TitleID;
+        var titleidfile = Path.Combine(dumpDir, isoDetailsResults.TitleID);
         if (File.Exists(titleidfile))
         {
             Xdbf xdbf = new(File.ReadAllBytes(titleidfile));
@@ -490,6 +493,7 @@ internal class IsoDetails
                 }
             }
         }
+        try { Directory.Delete(dumpDir, true); } catch { /* best-effort */ }
         return isoDetailsResults;
     }
 

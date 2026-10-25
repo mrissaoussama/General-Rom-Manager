@@ -12,11 +12,11 @@ public class Xbox360XEXRomParser : IRomParser<Xbox360Console>, IHasRequirements
     {
         Id = "xbox360.xextool",
         DisplayName = "xextool.exe",
-        Description = "Needed to read Xbox 360 XEX headers. Set Xbox360:XexToolPath in config.json.",
+        Description = "Optional: adds names and icons. Title IDs are read without it. Set Xbox360:XexToolPath.",
         Kind = RequirementKind.FilePath,
         DefaultValue = Xbox360Configuration.GetXexToolPath(),
+        IsOptional = true,
     };
-    private bool _missingToolLogged;
 
     public Xbox360XEXRomParser()
     {
@@ -29,13 +29,6 @@ public class Xbox360XEXRomParser : IRomParser<Xbox360Console>, IHasRequirements
     {
         List<Rom> list = [];
         IsoDetailsResults? results = null;
-        if (!_xexToolReq.IsMet)
-        {
-            if (!_missingToolLogged)
-                FileUtils.Log($"[Xbox360] xextool not found at '{_xexToolReq.EffectiveValue}', XEX files are skipped.");
-            _missingToolLogged = true;
-            return Task.FromResult(list);
-        }
         try
         {
 
@@ -44,7 +37,9 @@ public class Xbox360XEXRomParser : IRomParser<Xbox360Console>, IHasRequirements
             if (results is null)
                 return Task.FromResult(list);
             Xbox360Game Xbox360rom = new();
-            Xbox360rom.AddTitleName(results.Name.RemoveTrailingNullTerminators());
+            var name = results.Name?.RemoveTrailingNullTerminators();
+            // Without xextool there is no name; the game folder usually carries it.
+            Xbox360rom.AddTitleName(string.IsNullOrWhiteSpace(name) ? new DirectoryInfo(Path.GetDirectoryName(path)!).Name : name);
             Xbox360rom.TitleID = results.TitleID;
             if (results.Thumbnail != null)
             {
