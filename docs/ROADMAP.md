@@ -21,7 +21,7 @@ Legend: **[P0]** = data-safety or correctness, **[P1]** = high value, **[P2]** =
       `RomManager.sln.DotSettings.user`, `AvaloniaUI.Desktop/{err,out}.txt`, `AvaloniaUI.Desktop/US.en.json`.
 - [x] `.gitignore`: `settings.json`, `*.db`, `Logs/`, `Cache/`, `*.keys`, `.vscode/` (or commit a
       shared `.vscode` on purpose), `tools/ParserHarness/paths.json`.
-- [ ] Move to the `.slnx` format (`dotnet sln migrate`) and list only the live projects.
+- [x] Move to the `.slnx` format (`dotnet sln migrate`) and list only the live projects (Android/Browser heads left out; ParserHarness added).
 - [ ] Add `Directory.Build.props` at the root with the shared settings: `Nullable`,
       `LangVersion latest`, `TreatWarningsAsErrors` for new projects, and `AnalysisLevel latest`.
       Add `Directory.Packages.props` for central package management.

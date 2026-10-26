@@ -1,0 +1,14 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+  </Configurations>
+  <Folder Name="/tools/">
+    <Project Path="tools/ParserHarness/ParserHarness.csproj" />
+  </Folder>
+  <Project Path="AvaloniaApplication1/AvaloniaUI.Desktop/AvaloniaUI.Desktop.csproj" />
+  <Project Path="AvaloniaApplication1/AvaloniaUI/AvaloniaUI.csproj" />
+  <Project Path="RomManagerShared/RomManagerShared.csproj" />
+  <Project Path="RomManagerTests/RomManagerTests.csproj" />
+  <Project Path="SamplePlugin/SamplePlugin.csproj" />
+  <Project Path="SkyEditor.IO/SkyEditor.IO.csproj" />
+</Solution>

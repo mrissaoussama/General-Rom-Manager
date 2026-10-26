@@ -1,7 +1,7 @@
 {
   // Tell the C# extension to use the top-level solution
-  "dotnet.defaultSolution": "RomManager.sln",
-  "omnisharp.defaultLaunchSolution": "RomManager.sln",
+  "dotnet.defaultSolution": "RomManager.slnx",
+  "omnisharp.defaultLaunchSolution": "RomManager.slnx",
 
   // Exclude Android and Browser projects from Roslyn/OmniSharp analysis
   // (these require platform-specific workloads not installed in a normal dev box)

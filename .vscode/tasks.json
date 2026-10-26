@@ -29,7 +29,7 @@
     {
       "label": "build (full solution)",
       "type": "shell",
-      "command": "dotnet build RomManager.sln",
+      "command": "dotnet build RomManager.slnx",
       "group": "none",
       "presentation": {
         "reveal": "always",
