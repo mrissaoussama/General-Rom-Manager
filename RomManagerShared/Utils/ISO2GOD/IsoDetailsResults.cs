@@ -1,5 +1,3 @@
-using System.Drawing;
-
 namespace RomManagerShared.Utils.ISO2GOD;
 
 internal class IsoDetailsResults
@@ -26,15 +24,14 @@ internal class IsoDetailsResults
 
     public string DiscCount;
 
-    public Image Thumbnail;
-
-    public byte[] RawThumbnail;
+    /// <summary>PNG bytes, or null when the image has no thumbnail.</summary>
+    public byte[]? RawThumbnail;
 
     public IsoDetailsResults()
     {
     }
 
-    public IsoDetailsResults(string Name, string TitleID, string MediaID, string Platform, string ExType, string DiscNumber, string DiscCount, Image Thumbnail)
+    public IsoDetailsResults(string Name, string TitleID, string MediaID, string Platform, string ExType, string DiscNumber, string DiscCount)
     {
         Results = IsoDetailsResultsType.Completed;
         ConsolePlatform = IsoDetailsPlatform.Xbox360;
@@ -45,7 +42,6 @@ internal class IsoDetailsResults
         this.ExType = ExType;
         this.DiscNumber = DiscNumber;
         this.DiscCount = DiscCount;
-        this.Thumbnail = Thumbnail;
     }
 
     public IsoDetailsResults(string Name, string TitleID, string DiscNumber)

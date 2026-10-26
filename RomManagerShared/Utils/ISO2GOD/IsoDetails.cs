@@ -7,8 +7,6 @@ using RomManagerShared.Utils.ISO2GOD.Chilano.Xbox360.Xex;
 using RomManagerShared.Xbox360.Configuration;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.Text;
 
 namespace RomManagerShared.Utils.ISO2GOD;
@@ -104,22 +102,7 @@ internal class IsoDetails
                 {
                     XPR xPR = new(section.Data);
                     DDS dDS = xPR.ConvertToDDS(64, 64);
-                    Bitmap bitmap = new(64, 64);
-                    switch (xPR.Format)
-                    {
-                        case XPRFormat.ARGB:
-                            bitmap = (Bitmap)dDS.GetImage(DDSType.ARGB);
-                            break;
-                        case XPRFormat.DXT1:
-                            bitmap = (Bitmap)dDS.GetImage(DDSType.DXT1);
-                            break;
-                    }
-                    MemoryStream memoryStream = new();
-                    bitmap.Save(memoryStream, ImageFormat.Png);
-                    isoDetailsResults.Thumbnail = (Image)bitmap.Clone();
-                    isoDetailsResults.RawThumbnail = (byte[])memoryStream.ToArray().Clone();
-                    bitmap.Dispose();
-                    memoryStream.Dispose();
+                    isoDetailsResults.RawThumbnail = EncodeThumbnail(xPR.Format, dDS, 64);
 
                 }
                 catch (Exception ex2)
@@ -127,7 +110,7 @@ internal class IsoDetails
                     FileUtils.Log(ex2.Message);
                 }
             }
-            if (isoDetailsResults.Thumbnail == null)
+            if (isoDetailsResults.RawThumbnail == null)
             {
                 foreach (XbeSection section2 in xbeInfo.Sections)
                 {
@@ -139,26 +122,7 @@ internal class IsoDetails
                     {
                         XPR xPR2 = new(section2.Data);
                         DDS dDS2 = xPR2.ConvertToDDS(128, 128);
-                        Bitmap bitmap2 = new(128, 128);
-                        switch (xPR2.Format)
-                        {
-                            case XPRFormat.ARGB:
-                                bitmap2 = (Bitmap)dDS2.GetImage(DDSType.ARGB);
-                                break;
-                            case XPRFormat.DXT1:
-                                bitmap2 = (Bitmap)dDS2.GetImage(DDSType.DXT1);
-                                break;
-                        }
-                        Image image = new Bitmap(64, 64);
-                        Graphics graphics = Graphics.FromImage(image);
-                        graphics.DrawImage(bitmap2, 0, 0, 64, 64);
-                        MemoryStream memoryStream2 = new();
-                        image.Save(memoryStream2, ImageFormat.Png);
-                        isoDetailsResults.Thumbnail = (Image)image.Clone();
-                        isoDetailsResults.RawThumbnail = (byte[])memoryStream2.ToArray().Clone();
-                        memoryStream2.Dispose();
-                        bitmap2.Dispose();
-                        graphics.Dispose();
+                        isoDetailsResults.RawThumbnail = EncodeThumbnail(xPR2.Format, dDS2, 128);
 
                     }
                     catch (Exception ex3)
@@ -204,22 +168,7 @@ internal class IsoDetails
                 {
                     XPR xPR = new(section.Data);
                     DDS dDS = xPR.ConvertToDDS(64, 64);
-                    Bitmap bitmap = new(64, 64);
-                    switch (xPR.Format)
-                    {
-                        case XPRFormat.ARGB:
-                            bitmap = (Bitmap)dDS.GetImage(DDSType.ARGB);
-                            break;
-                        case XPRFormat.DXT1:
-                            bitmap = (Bitmap)dDS.GetImage(DDSType.DXT1);
-                            break;
-                    }
-                    MemoryStream memoryStream = new();
-                    bitmap.Save(memoryStream, ImageFormat.Png);
-                    isoDetailsResults.Thumbnail = (Image)bitmap.Clone();
-                    isoDetailsResults.RawThumbnail = (byte[])memoryStream.ToArray().Clone();
-                    bitmap.Dispose();
-                    memoryStream.Dispose();
+                    isoDetailsResults.RawThumbnail = EncodeThumbnail(xPR.Format, dDS, 64);
 
                 }
                 catch (Exception ex2)
@@ -227,7 +176,7 @@ internal class IsoDetails
                     FileUtils.Log(ex2.Message);
                 }
             }
-            if (isoDetailsResults.Thumbnail == null)
+            if (isoDetailsResults.RawThumbnail == null)
             {
                 foreach (XbeSection section2 in xbeInfo.Sections)
                 {
@@ -239,26 +188,7 @@ internal class IsoDetails
                     {
                         XPR xPR2 = new(section2.Data);
                         DDS dDS2 = xPR2.ConvertToDDS(128, 128);
-                        Bitmap bitmap2 = new(128, 128);
-                        switch (xPR2.Format)
-                        {
-                            case XPRFormat.ARGB:
-                                bitmap2 = (Bitmap)dDS2.GetImage(DDSType.ARGB);
-                                break;
-                            case XPRFormat.DXT1:
-                                bitmap2 = (Bitmap)dDS2.GetImage(DDSType.DXT1);
-                                break;
-                        }
-                        Image image = new Bitmap(64, 64);
-                        Graphics graphics = Graphics.FromImage(image);
-                        graphics.DrawImage(bitmap2, 0, 0, 64, 64);
-                        MemoryStream memoryStream2 = new();
-                        image.Save(memoryStream2, ImageFormat.Png);
-                        isoDetailsResults.Thumbnail = (Image)image.Clone();
-                        isoDetailsResults.RawThumbnail = (byte[])memoryStream2.ToArray().Clone();
-                        memoryStream2.Dispose();
-                        bitmap2.Dispose();
-                        graphics.Dispose();
+                        isoDetailsResults.RawThumbnail = EncodeThumbnail(xPR2.Format, dDS2, 128);
 
                     }
                     catch (Exception ex3)
@@ -302,7 +232,7 @@ internal class IsoDetails
             if (xexInfo.Header.ContainsKey(XexInfoFields.ExecutionInfo))
             {
                 XexExecutionInfo xexExecutionInfo = (XexExecutionInfo)xexInfo.Header[XexInfoFields.ExecutionInfo];
-                isoDetailsResults = new IsoDetailsResults("", DataConversion.BytesToHexString(xexExecutionInfo.TitleID), DataConversion.BytesToHexString(xexExecutionInfo.MediaID), xexExecutionInfo.Platform.ToString(), xexExecutionInfo.ExecutableType.ToString(), xexExecutionInfo.DiscNumber.ToString(), xexExecutionInfo.DiscCount.ToString(), null);
+                isoDetailsResults = new IsoDetailsResults("", DataConversion.BytesToHexString(xexExecutionInfo.TitleID), DataConversion.BytesToHexString(xexExecutionInfo.MediaID), xexExecutionInfo.Platform.ToString(), xexExecutionInfo.ExecutableType.ToString(), xexExecutionInfo.DiscNumber.ToString(), xexExecutionInfo.DiscCount.ToString());
             }
         }
         Process process = new()
@@ -335,22 +265,14 @@ internal class IsoDetails
             try
             {
                 byte[] resource = xdbf.GetResource(XdbfResource.Thumb, XdbfResourceType.TitleInfo);
-                MemoryStream stream = new(resource);
-                Image image = Image.FromStream(stream);
-                isoDetailsResults.Thumbnail = (Image)image.Clone();
-                isoDetailsResults.RawThumbnail = (byte[])resource.Clone();
-                image.Dispose();
+                isoDetailsResults.RawThumbnail = resource;
             }
             catch (Exception)
             {
                 try
                 {
                     byte[] resource2 = xdbf.GetResource(XdbfResource.Thumb, XdbfResourceType.Achievement);
-                    MemoryStream stream2 = new(resource2);
-                    Image image2 = Image.FromStream(stream2);
-                    isoDetailsResults.Thumbnail = (Image)image2.Clone();
-                    isoDetailsResults.RawThumbnail = (byte[])resource2.Clone();
-                    image2.Dispose();
+                    isoDetailsResults.RawThumbnail = resource2;
                 }
                 catch (Exception ex)
                 {
@@ -410,7 +332,7 @@ internal class IsoDetails
             if (xexInfo.Header.ContainsKey(XexInfoFields.ExecutionInfo))
             {
                 XexExecutionInfo xexExecutionInfo = (XexExecutionInfo)xexInfo.Header[XexInfoFields.ExecutionInfo];
-                isoDetailsResults = new IsoDetailsResults("", DataConversion.BytesToHexString(xexExecutionInfo.TitleID), DataConversion.BytesToHexString(xexExecutionInfo.MediaID), xexExecutionInfo.Platform.ToString(), xexExecutionInfo.ExecutableType.ToString(), xexExecutionInfo.DiscNumber.ToString(), xexExecutionInfo.DiscCount.ToString(), null);
+                isoDetailsResults = new IsoDetailsResults("", DataConversion.BytesToHexString(xexExecutionInfo.TitleID), DataConversion.BytesToHexString(xexExecutionInfo.MediaID), xexExecutionInfo.Platform.ToString(), xexExecutionInfo.ExecutableType.ToString(), xexExecutionInfo.DiscNumber.ToString(), xexExecutionInfo.DiscCount.ToString());
             }
         }
         Process process = new()
@@ -447,22 +369,14 @@ internal class IsoDetails
             try
             {
                 byte[] resource = xdbf.GetResource(XdbfResource.Thumb, XdbfResourceType.TitleInfo);
-                MemoryStream stream = new(resource);
-                Image image = Image.FromStream(stream);
-                isoDetailsResults.Thumbnail = (Image)image.Clone();
-                isoDetailsResults.RawThumbnail = (byte[])resource.Clone();
-                image.Dispose();
+                isoDetailsResults.RawThumbnail = resource;
             }
             catch (Exception)
             {
                 try
                 {
                     byte[] resource2 = xdbf.GetResource(XdbfResource.Thumb, XdbfResourceType.Achievement);
-                    MemoryStream stream2 = new(resource2);
-                    Image image2 = Image.FromStream(stream2);
-                    isoDetailsResults.Thumbnail = (Image)image2.Clone();
-                    isoDetailsResults.RawThumbnail = (byte[])resource2.Clone();
-                    image2.Dispose();
+                    isoDetailsResults.RawThumbnail = resource2;
                 }
                 catch (Exception ex)
                 {
@@ -497,4 +411,12 @@ internal class IsoDetails
         return isoDetailsResults;
     }
 
+
+    // XPR images are square; anything other than ARGB/DXT1 has no thumbnail.
+    private static byte[]? EncodeThumbnail(XPRFormat format, DDS dds, int size) => format switch
+    {
+        XPRFormat.ARGB => PngWriter.Encode(dds.GetRgba(DDSType.ARGB), size, size),
+        XPRFormat.DXT1 => PngWriter.Encode(dds.GetRgba(DDSType.DXT1), size, size),
+        _ => null,
+    };
 }

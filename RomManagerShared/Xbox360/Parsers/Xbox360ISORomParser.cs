@@ -4,7 +4,6 @@ using RomManagerShared.Utils;
 using RomManagerShared.Utils.ISO2GOD;
 using RomManagerShared.Xbox360.Configuration;
 using System.ComponentModel;
-using System.Drawing;
 namespace RomManagerShared.Xbox360.Parsers;
 
 public class Xbox360ISORomParser : IRomParser<Xbox360Console>
@@ -30,9 +29,9 @@ public class Xbox360ISORomParser : IRomParser<Xbox360Console>
             Xbox360Game Xbox360rom = new();
             Xbox360rom.AddTitleName(results.Name.RemoveTrailingNullTerminators());
             Xbox360rom.TitleID = results.TitleID;
-            if (results.Thumbnail != null)
+            if (results.RawThumbnail != null)
             {
-                Xbox360rom.AddImage(SaveImageToPath(results.Thumbnail, results.TitleID));
+                Xbox360rom.AddImage(SaveImageToPath(results.RawThumbnail, results.TitleID));
             }
             Xbox360rom.Size = FileUtils.GetFileSize(path);
             Xbox360rom.Path = path;
@@ -45,13 +44,13 @@ public class Xbox360ISORomParser : IRomParser<Xbox360Console>
         return Task.FromResult(list);
 
     }
-    public static string SaveImageToPath(Image thumbnail, string titleid)
+    public static string SaveImageToPath(byte[] png, string titleid)
     {
         var xbox360cache = Xbox360Configuration.GetThumbnailCachePath();
         var titleidfolder = Path.Combine(xbox360cache, titleid);
         Directory.CreateDirectory(titleidfolder);
-        var imagefilepath = Path.Combine(titleidfolder, "Thumbnail.jpg");
-        thumbnail.Save(imagefilepath);
+        var imagefilepath = Path.Combine(titleidfolder, "Thumbnail.png");
+        File.WriteAllBytes(imagefilepath, png);
         return imagefilepath;
     }
 }

@@ -1,6 +1,3 @@
-using System.Drawing;
-using System.Drawing.Imaging;
-
 namespace RomManagerShared.Utils.ISO2GOD.Chilano.Xbox360.Iso;
 
 public class GDFStats
@@ -12,8 +9,6 @@ public class GDFStats
         DirTable = 4294901760u,
         Gdf = 4278255360u
     }
-
-    private Bitmap Bmp;
 
     public uint SectorSize;
 
@@ -42,26 +37,11 @@ public class GDFStats
         SectorSize = volDesc.SectorSize;
         MaxSectors = volDesc.VolumeSectors;
         MaxBytes = volDesc.VolumeSize;
-        Bmp = new Bitmap((int)MaxSectors / 2048, 2048);
-        for (int i = 0; i < Bmp.Width; i++)
-        {
-            for (int j = 0; j < Bmp.Height; j++)
-            {
-                Bmp.SetPixel(i, j, Color.Black);
-            }
-        }
     }
 
+    // The original tool drew a sector map here; RomManager only needs the counters.
     public void SetPixel(uint Sector, GDFSectorStatus Status)
     {
-        int num = (int)Math.Floor(Sector / (double)Bmp.Width);
-        int x = (int)Sector - (Bmp.Width * num);
-        Bmp.SetPixel(x, num, Color.FromArgb((int)Status));
-    }
-
-    public void SaveSectorBitmap(FileStream File)
-    {
-        Bmp.Save(File, ImageFormat.Png);
     }
 
     public override string ToString()

@@ -3,7 +3,6 @@ using RomManagerShared.Interfaces;
 using RomManagerShared.Utils;
 using RomManagerShared.Utils.ISO2GOD;
 using RomManagerShared.Xbox360.Configuration;
-using System.Drawing;
 namespace RomManagerShared.Xbox360.Parsers;
 
 public class Xbox360XEXRomParser : IRomParser<Xbox360Console>, IHasRequirements
@@ -41,9 +40,9 @@ public class Xbox360XEXRomParser : IRomParser<Xbox360Console>, IHasRequirements
             // Without xextool there is no name; the game folder usually carries it.
             Xbox360rom.AddTitleName(string.IsNullOrWhiteSpace(name) ? new DirectoryInfo(Path.GetDirectoryName(path)!).Name : name);
             Xbox360rom.TitleID = results.TitleID;
-            if (results.Thumbnail != null)
+            if (results.RawThumbnail != null)
             {
-                Xbox360rom.AddImage(SaveImageToPath(results.Thumbnail, results.TitleID));
+                Xbox360rom.AddImage(SaveImageToPath(results.RawThumbnail, results.TitleID));
             }
             Xbox360rom.Size = FileUtils.GetFileSize(path);
             Xbox360rom.Path = path;
@@ -57,13 +56,13 @@ public class Xbox360XEXRomParser : IRomParser<Xbox360Console>, IHasRequirements
         return Task.FromResult(list);
 
     }
-    public static string SaveImageToPath(Image thumbnail, string titleid)
+    public static string SaveImageToPath(byte[] png, string titleid)
     {
         var xbox360cache = Xbox360Configuration.GetThumbnailCachePath();
         var titleidfolder = Path.Combine(xbox360cache, titleid);
         Directory.CreateDirectory(titleidfolder);
-        var imagefilepath = Path.Combine(titleidfolder, "Thumbnail.jpg");
-        thumbnail.Save(imagefilepath);
+        var imagefilepath = Path.Combine(titleidfolder, "Thumbnail.png");
+        File.WriteAllBytes(imagefilepath, png);
         return imagefilepath;
     }
 }

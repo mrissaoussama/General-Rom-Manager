@@ -33,8 +33,6 @@
 		<PackageReference Include="Microsoft.Extensions.Hosting" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
 		<PackageReference Include="SkyEditor.Utilities.AsyncFor" />
-		<!-- System.Drawing.Common required by Xbox/ISO2GOD parsers; Windows-only -->
-		<PackageReference Include="System.Drawing.Common" />
 		<PackageReference Include="System.IO.Hashing" />
 	</ItemGroup>
 	<ItemGroup>

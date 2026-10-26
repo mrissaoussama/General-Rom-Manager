@@ -1,5 +1,4 @@
 using RomManagerShared.Utils.ISO2GOD.Chilano.Xbox360.IO;
-using System.Drawing;
 
 namespace RomManagerShared.Utils.ISO2GOD.Chilano.Xbox360.Graphics;
 
@@ -79,38 +78,36 @@ public class DDS
         }
     }
 
-    public Image GetImage(DDSType Type)
+    /// <summary>Decodes the top mip level to RGBA8 (row-major, 4 bytes per pixel).</summary>
+    public byte[] GetRgba(DDSType Type)
     {
-        Image image = new Bitmap(Header.Width, Header.Height);
+        var rgba = new byte[Header.Width * Header.Height * 4];
         switch (Type)
         {
             case DDSType.DXT1:
-                blockDecompressImageDXT1((ulong)Header.Width, (ulong)Header.Height, Data, image);
+                blockDecompressImageDXT1((ulong)Header.Width, (ulong)Header.Height, Data, rgba);
                 break;
             case DDSType.ARGB:
-                rgbaDecompressImage(image);
+                rgbaDecompressImage(rgba);
                 break;
         }
-        return image;
+        return rgba;
     }
 
-    private void rgbaDecompressImage(Image img)
+    // Source pixels are stored B, G, R, A.
+    private void rgbaDecompressImage(byte[] rgba)
     {
-        int width = Header.Width;
-        int height = Header.Height;
-        int num = 0;
-        for (int i = 0; i < height; i++)
+        int pixels = Header.Width * Header.Height;
+        for (int i = 0, num = 0; i < pixels; i++, num += 4)
         {
-            for (int j = 0; j < width; j++)
-            {
-                Color color = Color.FromArgb(Data[num + 3], Data[num + 2], Data[num + 1], Data[num]);
-                ((Bitmap)img).SetPixel(j, i, color);
-                num += 4;
-            }
+            rgba[num] = Data[num + 2];
+            rgba[num + 1] = Data[num + 1];
+            rgba[num + 2] = Data[num];
+            rgba[num + 3] = Data[num + 3];
         }
     }
 
-    private void blockDecompressImageDXT1(ulong width, ulong height, byte[] data, Image img)
+    private static void blockDecompressImageDXT1(ulong width, ulong height, byte[] data, byte[] rgba)
     {
         ulong num = (width + 3) / 4uL;
         ulong num2 = (height + 3) / 4uL;
@@ -122,12 +119,12 @@ public class DDS
                 byte[] array = new byte[8];
                 Array.Copy(data, num3, array, 0L, 8L);
                 num3 += 8;
-                decompressBlockDXT1(num5 * 4, num4 * 4, width, array, img);
+                decompressBlockDXT1(num5 * 4, num4 * 4, width, height, array, rgba);
             }
         }
     }
 
-    private void decompressBlockDXT1(ulong x, ulong y, ulong width, byte[] blockStorage, Image img)
+    private static void decompressBlockDXT1(ulong x, ulong y, ulong width, ulong height, byte[] blockStorage, byte[] rgba)
     {
         ushort num = BitConverter.ToUInt16(blockStorage, 0);
         ushort num2 = BitConverter.ToUInt16(blockStorage, 2);
@@ -148,7 +145,7 @@ public class DDS
         {
             for (int j = 0; j < 4; j++)
             {
-                Color color = default;
+                (byte R, byte G, byte B, byte A) color = default;
                 byte b7 = (byte)((num4 >> (2 * ((4 * i) + j))) & 3);
                 if (num > num2)
                 {
@@ -186,16 +183,14 @@ public class DDS
                             break;
                     }
                 }
-                if ((ulong)((long)x + j) < width)
+                if ((ulong)((long)x + j) < width && (ulong)((long)y + i) < height)
                 {
-                    ((Bitmap)img).SetPixel((int)x + j, (int)y + i, color);
+                    var o = ((((int)y + i) * (int)width) + (int)x + j) * 4;
+                    (rgba[o], rgba[o + 1], rgba[o + 2], rgba[o + 3]) = color;
                 }
             }
         }
     }
 
-    private static Color PackRGBA(byte r, byte g, byte b, byte a)
-    {
-        return Color.FromArgb(a, r, g, b);
-    }
+    private static (byte R, byte G, byte B, byte A) PackRGBA(byte r, byte g, byte b, byte a) => (r, g, b, a);
 }
