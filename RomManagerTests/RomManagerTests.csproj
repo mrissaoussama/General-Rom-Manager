@@ -21,6 +21,8 @@
   <ItemGroup>
     <ProjectReference Include="..\RomManagerShared\RomManagerShared.csproj" />
     <ProjectReference Include="..\AvaloniaApplication1\AvaloniaUI\AvaloniaUI.csproj" />
+    <!-- Built so PluginManagerTests can load the real sample plugin; not referenced at compile time. -->
+    <ProjectReference Include="..\SamplePlugin\SamplePlugin.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>

@@ -84,6 +84,8 @@ public sealed record PluginEntry(IPlugin Plugin, WeakReference<AssemblyLoadConte
 public sealed class PluginManager : IAsyncDisposable
 {
     private readonly List<PluginEntry> _entries = [];
+    private readonly HashSet<string> _loadedPaths = new(StringComparer.OrdinalIgnoreCase);
+    private PluginApprovalStore? _approvals;
     private readonly IServiceProvider _rootServices;
     private readonly ILoggerFactory _loggerFactory;
     private readonly ILogger<PluginManager> _logger;
@@ -93,6 +95,19 @@ public sealed class PluginManager : IAsyncDisposable
     /// the shell (e.g. open a flyout / dialog containing the plugin's Avalonia control).
     /// </summary>
     public Func<object, string, Task>? ShowPluginUICallback { get; set; }
+
+    /// <summary>
+    /// Asks the user to approve a plugin that is new, changed, or asks for different permissions.
+    /// Only consulted when loading with <c>askForApproval</c>; otherwise unapproved plugins are skipped.
+    /// </summary>
+    public Func<PluginApprovalRequest, Task<bool>>? ApprovalCallback { get; set; }
+
+    public PluginApprovalStore Approvals
+    {
+        get => _approvals ??= new PluginApprovalStore(Path.Combine(
+            RomManagerShared.Configuration.RomManagerConfiguration.GetGlobalPath("Plugins"), "approvals.json"));
+        set => _approvals = value;
+    }
 
     /// <summary>Returns a snapshot of currently loaded plugins.</summary>
     public IReadOnlyList<IPlugin> Plugins => _entries.Select(e => e.Plugin).ToList();
@@ -109,9 +124,11 @@ public sealed class PluginManager : IAsyncDisposable
     /// <summary>
     /// Scans <paramref name="pluginDirectory"/> for DLL files and loads any class
     /// decorated with <see cref="PluginAttribute"/> that implements <see cref="IPlugin"/>.
-    /// Each DLL is loaded into an isolated <see cref="AssemblyLoadContext"/>.
+    /// Each DLL is loaded into an isolated <see cref="AssemblyLoadContext"/>. Sub-folders are scanned too
+    /// (imported zips extract into <c>Plugins/&lt;name&gt;/</c>); DLLs already loaded are skipped.
     /// </summary>
-    public async Task LoadPluginsAsync(string pluginDirectory, IReadOnlyList<Rom>? selectedRoms = null)
+    public async Task LoadPluginsAsync(string pluginDirectory, IReadOnlyList<Rom>? selectedRoms = null,
+        bool askForApproval = false)
     {
         if (!Directory.Exists(pluginDirectory))
         {
@@ -121,15 +138,16 @@ public sealed class PluginManager : IAsyncDisposable
             return;
         }
 
-        var dlls = Directory.EnumerateFiles(pluginDirectory, "*.dll", SearchOption.TopDirectoryOnly);
+        var dlls = Directory.EnumerateFiles(pluginDirectory, "*.dll", SearchOption.AllDirectories);
 
         foreach (var dll in dlls)
         {
-            await TryLoadPluginDllAsync(dll, selectedRoms ?? []);
+            if (_loadedPaths.Contains(Path.GetFullPath(dll))) continue;
+            await TryLoadPluginDllAsync(dll, selectedRoms ?? [], askForApproval);
         }
     }
 
-    private async Task TryLoadPluginDllAsync(string dllPath, IReadOnlyList<Rom> selectedRoms)
+    private async Task TryLoadPluginDllAsync(string dllPath, IReadOnlyList<Rom> selectedRoms, bool askForApproval)
     {
         var loadContext = new PluginLoadContext(dllPath);
         try
@@ -151,10 +169,27 @@ public sealed class PluginManager : IAsyncDisposable
                 return;
             }
 
+            var apiVersion = assembly.GetCustomAttribute<PluginApiVersionAttribute>()?.Version;
+            if (apiVersion != PluginApi.Version)
+            {
+                _logger.LogWarning("Skipped plugin {DLL}: built for plugin API {Found}, this app loads {Expected}. Add [assembly: PluginApiVersion({Expected})] and rebuild.",
+                    Path.GetFileName(dllPath), apiVersion?.ToString() ?? "(none)", PluginApi.Version, PluginApi.Version);
+                loadContext.Unload();
+                return;
+            }
+
+            var sha256 = PluginApprovalRequest.HashFile(dllPath);
+            int loaded = 0;
             foreach (var type in pluginTypes)
             {
-                await TryInstantiateAndInitAsync(type, loadContext, dllPath, selectedRoms);
+                var attr = type.GetCustomAttribute<PluginAttribute>()!;
+                var request = new PluginApprovalRequest(attr.Name, attr.Version, attr.Author, attr.Description,
+                    attr.Permissions, dllPath, sha256);
+                if (!await IsApprovedAsync(request, askForApproval)) continue;
+                if (await TryInstantiateAndInitAsync(type, loadContext, dllPath, selectedRoms)) loaded++;
             }
+            if (loaded == 0) loadContext.Unload();
+            else _loadedPaths.Add(Path.GetFullPath(dllPath));
         }
         catch (Exception ex)
         {
@@ -163,7 +198,20 @@ public sealed class PluginManager : IAsyncDisposable
         }
     }
 
-    private async Task TryInstantiateAndInitAsync(
+    private async Task<bool> IsApprovedAsync(PluginApprovalRequest request, bool askForApproval)
+    {
+        if (Approvals.IsApproved(request)) return true;
+        if (askForApproval && ApprovalCallback is not null && await ApprovalCallback(request))
+        {
+            Approvals.Approve(request);
+            return true;
+        }
+        _logger.LogWarning("Plugin {Name} {Version} is not approved; approve it from Settings → Plugins → Reload.",
+            request.Name, request.Version);
+        return false;
+    }
+
+    private async Task<bool> TryInstantiateAndInitAsync(
         Type type,
         PluginLoadContext loadContext,
         string dllPath,
@@ -173,6 +221,14 @@ public sealed class PluginManager : IAsyncDisposable
         {
             var attr = type.GetCustomAttribute<PluginAttribute>()!;
             var plugin = (IPlugin)Activator.CreateInstance(type)!;
+            var undeclared = plugin.RequiredPermissions.Except(attr.Permissions).ToList();
+            if (undeclared.Count > 0)
+            {
+                _logger.LogWarning("Plugin {Name} asks for {Permissions} at runtime but does not declare them in [Plugin(Permissions = ...)]; not loaded.",
+                    attr.Name, string.Join(", ", undeclared));
+                await plugin.DisposeAsync();
+                return false;
+            }
 
             // Build a plugin-scoped data directory
             var pluginDataDir = Path.Combine(
@@ -197,10 +253,12 @@ public sealed class PluginManager : IAsyncDisposable
 
             _entries.Add(new PluginEntry(plugin, new WeakReference<AssemblyLoadContext>(loadContext)));
             _logger.LogInformation("Loaded plugin: {Name} v{Version}", plugin.PluginName, plugin.PluginVersion);
+            return true;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to initialise plugin type: {Type}", type.FullName);
+            return false;
         }
     }
 
@@ -240,7 +298,7 @@ public sealed class PluginManager : IAsyncDisposable
     /// The archive is extracted to <c>plugins/&lt;zipNameWithoutExtension&gt;/</c> and 
     /// then loaded immediately.
     /// </summary>
-    public async Task<string> ImportZipAsync(string zipPath)
+    public async Task<string> ImportZipAsync(string zipPath, bool askForApproval = true)
     {
         if (!File.Exists(zipPath))
             throw new FileNotFoundException($"Plugin zip not found: {zipPath}");
@@ -258,7 +316,7 @@ public sealed class PluginManager : IAsyncDisposable
         _logger.LogInformation("Imported plugin '{Name}' from {Zip}", pluginName, zipPath);
 
         // Load newly extracted DLLs
-        await LoadPluginsAsync(destDir);
+        await LoadPluginsAsync(destDir, askForApproval: askForApproval);
 
         return pluginName;
     }

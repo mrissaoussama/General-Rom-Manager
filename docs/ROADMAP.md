@@ -150,11 +150,14 @@ These were all reproduced against real files with `tools/ParserHarness`.
   stored per `LibraryFile`).
 - [x] Removed the unused EF-backed `NoIntroRomHashIdentifier` and its tables (migration `RemoveNoIntroTables`).
 
-### 3.6 Plugins [P2]
-- `PluginPermission` is only declared, not enforced. At minimum, show a consent dialog at import
-  listing the permissions, and keep the list of plugins the user approved.
-- Version the `IPlugin` contract (`[assembly: PluginApiVersion(1)]`) and refuse plugins built for a
-  different version.
+### 3.6 Plugins [P2] — done
+- [x] Consent before any plugin code runs: permissions are declared on `[Plugin(Permissions = ...)]`
+  and shown in an "Allow plugin?" dialog on import/reload; approvals are pinned to the DLL's SHA-256
+  and permission set (`Plugins/approvals.json`). Runtime `RequiredPermissions` may not exceed the
+  declaration. Permissions are still not sandboxed (plugins run with the user's rights).
+- [x] `[assembly: PluginApiVersion(1)]` required; other versions are refused.
+- [x] Fixed: imported plugins (in sub-folders) were not loaded on restart, and Reload loaded
+  plugins twice.
 
 ## Phase 4: Format coverage (ongoing, by value to your library)
 

@@ -17,12 +17,34 @@ public sealed class PluginAttribute : Attribute
     public string Version { get; }
     public string? Description { get; init; }
     public string? Author { get; init; }
+    /// <summary>
+    /// Permissions shown to the user before any plugin code runs. <see cref="IPlugin.RequiredPermissions"/>
+    /// may not ask for more than this.
+    /// </summary>
+    public PluginPermission[] Permissions { get; init; } = [];
 
     public PluginAttribute(string name, string version = "1.0.0")
     {
         Name = name;
         Version = version;
     }
+}
+
+/// <summary>The plugin contract version this build of RomManager loads.</summary>
+public static class PluginApi
+{
+    public const int Version = 1;
+}
+
+/// <summary>
+/// Declares which <see cref="PluginApi.Version"/> a plugin assembly was built against:
+/// <c>[assembly: PluginApiVersion(PluginApi.Version)]</c>. Assemblies without it, or built for
+/// another version, are not loaded.
+/// </summary>
+[AttributeUsage(AttributeTargets.Assembly)]
+public sealed class PluginApiVersionAttribute(int version) : Attribute
+{
+    public int Version { get; } = version;
 }
 
 // ──────────────────────────────────────────────────────────────────────────────

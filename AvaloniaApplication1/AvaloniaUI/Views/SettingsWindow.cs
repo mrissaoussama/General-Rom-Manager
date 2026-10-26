@@ -550,7 +550,7 @@ public sealed class SettingsWindow : Window
             {
                 reloadBtn.IsEnabled = false;
                 var dir = RomManagerShared.Configuration.RomManagerConfiguration.GetGlobalPath("Plugins");
-                await _plugins.LoadPluginsAsync(dir);
+                await _plugins.LoadPluginsAsync(dir, askForApproval: true);
                 // Re-open settings so the plugin list refreshes
                 var ownerWindow = Owner as Window;
                 Close();

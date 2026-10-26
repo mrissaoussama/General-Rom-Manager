@@ -4,6 +4,8 @@ using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using RomManagerShared.Base;
 
+[assembly: PluginApiVersion(PluginApi.Version)]
+
 namespace SamplePlugin;
 
 /// <summary>
@@ -19,7 +21,8 @@ namespace SamplePlugin;
 /// </summary>
 [Plugin("GameMetadataFetcher", "1.0.0",
     Description = "Fetches game metadata from the RAWG API",
-    Author = "RomManager Sample")]
+    Author = "RomManager Sample",
+    Permissions = [PluginPermission.Network, PluginPermission.FileSystem])]
 public sealed class GameMetadataPlugin : IPlugin
 {
     // ── IPlugin identity ──────────────────────────────────────────────────
