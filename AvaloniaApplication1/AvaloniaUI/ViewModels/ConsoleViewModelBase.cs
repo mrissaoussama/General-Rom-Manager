@@ -31,6 +31,14 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
         "These files have a matching extension but no parser could read them (wrong console, corrupt, encrypted or missing keys).",
         Unrecognized, "Close", showCancel: false));
 
+    /// <summary>True for consoles whose manager can report missing updates (shows the "Missing updates" button).</summary>
+    [ObservableProperty] private bool _canCheckUpdates;
+
+    [RelayCommand]
+    private Task CheckMissingUpdates() => CheckMissingUpdatesAsync();
+
+    protected virtual Task CheckMissingUpdatesAsync() => Task.CompletedTask;
+
     public string ConsoleName { get; }
     public int RomCount => Roms.Count;
     public bool ShowEmptyState => !IsLoading && Roms.Count == 0;

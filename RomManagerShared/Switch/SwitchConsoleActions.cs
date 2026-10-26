@@ -4,27 +4,6 @@ using RomManagerShared.Utils;
 
 namespace RomManagerShared.Switch;
 
-// ── Check for Missing Updates ────────────────────────────────────────────────
-
-internal sealed class SwitchCheckMissingUpdatesAction : ConsoleRomActionBase
-{
-    public override string Name => "Check Missing Updates";
-    public override string Description => "Queries the online version database and reports any missing updates for selected games.";
-    public override string Category => "Updates";
-    public override string? IconKey => "icon_update";
-    public override bool SupportsBulk => true;
-
-    public override bool CanExecute(IEnumerable<Rom> selectedRoms)
-        => selectedRoms.OfType<SwitchGame>().Any();
-
-    public override async Task ExecuteAsync(IEnumerable<Rom> selectedRoms, IServiceProvider services,
-        CancellationToken cancellationToken = default)
-    {
-        var manager = services.GetRequiredService<SwitchManager>();
-        await manager.GetMissingUpdates();
-    }
-}
-
 // ── Group By Title ID ────────────────────────────────────────────────────────
 
 internal sealed class SwitchGroupByTitleAction : ConsoleRomActionBase

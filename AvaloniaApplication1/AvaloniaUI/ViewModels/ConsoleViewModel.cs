@@ -33,6 +33,46 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
     {
         _serviceProvider = serviceProvider;
         RefreshRequirements();
+        using var scope = serviceProvider.CreateScope();
+        CanCheckUpdates = scope.ServiceProvider.GetService<ConsoleManager<T>>() is IMissingUpdateReporter;
+    }
+
+    protected override async Task CheckMissingUpdatesAsync()
+    {
+        using var scope = _serviceProvider.CreateScope();
+        if (scope.ServiceProvider.GetService<ConsoleManager<T>>() is not IMissingUpdateReporter reporter) return;
+        try
+        {
+            if (!reporter.HasVersionDatabase)
+            {
+                if (!await Shell.ConfirmAsync("Missing updates",
+                        "The version database has not been downloaded yet. Download it now?", "Download"))
+                    return;
+                StatusMessage = "Downloading version database...";
+                await reporter.DownloadVersionDatabaseAsync();
+                if (!reporter.HasVersionDatabase)
+                {
+                    StatusMessage = "Version database download failed (see log)";
+                    return;
+                }
+            }
+
+            StatusMessage = "Checking for missing updates...";
+            var library = Roms.Select(r => r.RomSource).ToList();
+            var missing = await Task.Run(() => reporter.FindMissingUpdates(library));
+            StatusMessage = missing.Count == 0 ? "All games are up to date" : $"{missing.Count} game(s) have newer updates";
+            var summary = missing.Count == 0
+                ? "Every game in the library has its latest update."
+                : $"{missing.Count} game(s) have a newer update than the newest one in the library (installed → latest).";
+            await Shell.ShowDialogAsync(new PreviewWindow("Missing updates", summary,
+                missing.Select(m => $"{m.Title}  [{m.Game.TitleID}]  v{m.InstalledVersion} → v{m.LatestVersion}"),
+                "Close", showCancel: false));
+        }
+        catch (Exception ex)
+        {
+            FileUtils.Log($"[{ConsoleName}] Missing update check failed: {ex}");
+            StatusMessage = $"Missing update check failed: {ex.Message}";
+        }
     }
 
     public override IEnumerable<IConsoleRomAction> GetContextActionsForSelection(IEnumerable<Rom> selectedRoms)
