@@ -91,7 +91,7 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:ConsoleViewModelBase">
-                        <Button Classes="tile"
+                        <Button Classes="tile" AutomationProperties.Name="{Binding ConsoleName}"
                                 Command="{Binding $parent[ItemsControl].((vm:DashboardViewModel)DataContext).OpenCommand}"
                                 CommandParameter="{Binding}">
                             <StackPanel Spacing="4">

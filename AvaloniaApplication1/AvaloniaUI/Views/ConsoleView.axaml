@@ -81,7 +81,8 @@
                             <DataTemplate x:DataType="vm:RomViewModel">
                                 <Button Classes="card"
                                         Command="{Binding $parent[views:ConsoleView].((vm:ConsoleViewModelBase)DataContext).SelectRomCommand}"
-                                        CommandParameter="{Binding}" ToolTip.Tip="{Binding Path}">
+                                        CommandParameter="{Binding}" ToolTip.Tip="{Binding Path}"
+                                        AutomationProperties.Name="{Binding Title}">
                                     <DockPanel>
                                         <StackPanel DockPanel.Dock="Bottom" Margin="0,6,0,0">
                                             <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" FontWeight="SemiBold" />
@@ -91,7 +92,7 @@
                                             <Panel>
                                                 <TextBlock Text="{Binding Initials}" Classes="initials"
                                                            IsVisible="{Binding Cover, Converter={x:Static ObjectConverters.IsNull}}" />
-                                                <Image Source="{Binding Cover}" Stretch="Uniform" />
+                                                <Image Source="{Binding Cover}" Stretch="Uniform" AutomationProperties.Name="Cover" />
                                             </Panel>
                                         </Border>
                                     </DockPanel>

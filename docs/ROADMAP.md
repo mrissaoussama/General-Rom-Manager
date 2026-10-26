@@ -218,7 +218,7 @@ game data, not Wii), gbc 367, nsp 97, pkg 56, cso 46, iso 33).
 - [x] Keyboard: Ctrl+F search, F5 scan all, Ctrl+D dashboard, Ctrl+L log, Del delete (confirmed),
       F2 rename, Enter properties, Shift+F5 full rescan.
 - [x] Accessibility: real `Menu` control, no emoji in menu labels.
-- [ ] Set `AutomationProperties.Name` on icon-only buttons.
+- [x] Set `AutomationProperties.Name` on buttons without text (rom cards, console tiles).
 
 ## Phase 6: Testing and release
 
