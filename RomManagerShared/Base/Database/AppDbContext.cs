@@ -99,7 +99,6 @@ public partial class AppDbContext : DbContext, IUnitOfWork
         ConfigureNintendoModels(modelBuilder);
         ConfigureSonyModels(modelBuilder);
         ConfigureMicrosoftModels(modelBuilder);
-        ConfigureNoIntroModels(modelBuilder);
 
         base.OnModelCreating(modelBuilder);
     }
@@ -108,7 +107,6 @@ public partial class AppDbContext : DbContext, IUnitOfWork
     partial void ConfigureNintendoModels(ModelBuilder modelBuilder);
     partial void ConfigureSonyModels(ModelBuilder modelBuilder);
     partial void ConfigureMicrosoftModels(ModelBuilder modelBuilder);
-    partial void ConfigureNoIntroModels(ModelBuilder modelBuilder);
 
     // ── IUnitOfWork ───────────────────────────────────────────────────────
 

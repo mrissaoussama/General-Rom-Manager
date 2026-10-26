@@ -37,10 +37,7 @@ namespace RomManagerShared.Organizers
                 return;
             }
 
-            // Determine the folder name based on the ROM's TitleID or Titles
-            string folderName = romList.OfType<NoIntroGame>().Any()
-                ? firstRom.Titles?.FirstOrDefault()?.Value ?? firstRom.TitleID ?? "Unknown"
-                : firstRom.TitleID ?? "Unknown";
+            string folderName = firstRom.TitleID ?? "Unknown";
 
             // Clean the folder name to remove invalid characters
             string cleanedFolderName = RomUtils.GetCleanName(folderName);

@@ -2,7 +2,6 @@
   "GlobalPaths": {
     "BaseDirectory": "D:\\RomManager",
     "Plugins": "Plugins",
-    "NoIntroDB": "NoIntro",
     "Dats": "Data/DAT",
     "Database": "Data\\roms.db",
     "ErrorLogs": "Logs\\errors.log",

@@ -148,7 +148,7 @@ These were all reproduced against real files with `tools/ParserHarness`.
 - [x] DAT folder status + "Open folder" on the dashboard.
 - [x] Trigger a rescan of cartridge consoles when DATs change (`IHasDataFingerprint` on DAT providers,
   stored per `LibraryFile`).
-- [ ] The legacy EF-backed `NoIntroRomHashIdentifier` is unused and can go with a migration.
+- [x] Removed the unused EF-backed `NoIntroRomHashIdentifier` and its tables (migration `RemoveNoIntroTables`).
 
 ### 3.6 Plugins [P2]
 - `PluginPermission` is only declared, not enforced. At minimum, show a consent dialog at import

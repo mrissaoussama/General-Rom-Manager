@@ -101,11 +101,6 @@ public static class RomManagerConfiguration
         return GetGlobalPath("Plugins");
     }
 
-    public static string GetNoIntroPath()
-    {
-        return GetGlobalPath("NoIntroDB");
-    }
-
     public static string GetCachePath()
     {
         return GetGlobalPath("Cache");

@@ -50,7 +50,6 @@ public partial class App : Application
 
                 // Shared utilities
                 services.AddScoped<RomHashRepository>();
-                services.AddScoped<NoIntroRomHashIdentifier>();
                 services.AddScoped<LibraryScanner>();
                 services.AddSingleton(_ =>
                 {
