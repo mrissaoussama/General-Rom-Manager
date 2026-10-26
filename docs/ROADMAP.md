@@ -146,8 +146,9 @@ These were all reproduced against real files with `tools/ParserHarness`.
   No-Intro title, regions, serial and verified hashes. DATs go in `Data/DAT` (`GlobalPaths:Dats`).
 - [ ] Redump DATs for discs (hash the whole image; slow, so opt-in).
 - [x] DAT folder status + "Open folder" on the dashboard.
-- [ ] Trigger a rescan of cartridge consoles when DATs change. The legacy
-  EF-backed `NoIntroRomHashIdentifier` is unused and can go with a migration.
+- [x] Trigger a rescan of cartridge consoles when DATs change (`IHasDataFingerprint` on DAT providers,
+  stored per `LibraryFile`).
+- [ ] The legacy EF-backed `NoIntroRomHashIdentifier` is unused and can go with a migration.
 
 ### 3.6 Plugins [P2]
 - `PluginPermission` is only declared, not enforced. At minimum, show a consent dialog at import

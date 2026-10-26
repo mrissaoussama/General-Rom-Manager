@@ -84,8 +84,8 @@ public sealed partial class DashboardViewModel : ViewModelBase
                     .Count(f => f.EndsWith(".dat", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".xml", StringComparison.OrdinalIgnoreCase))
                 : 0;
             DatSummary = count == 0
-                ? "No DAT files. Add No-Intro DATs to name cartridge ROMs by hash, then run a full rescan."
-                : $"{count} DAT file(s). Run a full rescan after adding new ones.";
+                ? "No DAT files. Add No-Intro DATs to name cartridge ROMs by hash; the next scan applies them."
+                : $"{count} DAT file(s). Added or changed DATs are applied on the next scan.";
         }
         catch (Exception ex) { DatSummary = $"Cannot read DAT folder: {ex.Message}"; }
     }

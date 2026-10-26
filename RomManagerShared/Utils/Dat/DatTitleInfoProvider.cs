@@ -6,10 +6,10 @@ namespace RomManagerShared.Utils.Dat;
 
 /// <summary>
 /// Names cartridge roms by hashing them against DATs in <see cref="DatIndex.DatDirectory"/>.
-/// Subclasses pick their DAT files and how to strip copier headers. Adding DATs needs a full rescan
-/// for already-cached files.
+/// Subclasses pick their DAT files and how to strip copier headers. Adding or changing DATs changes
+/// <see cref="DataFingerprint"/>, so the next scan re-parses this console's cached files.
 /// </summary>
-public abstract class DatTitleInfoProvider<T> : ITitleInfoProvider<T> where T : GamingConsole
+public abstract class DatTitleInfoProvider<T> : ITitleInfoProvider<T>, IHasDataFingerprint where T : GamingConsole
 {
     /// <summary>Larger files are skipped (cartridge dumps are well below this).</summary>
     protected virtual long MaxSize => 128L * 1024 * 1024;
@@ -23,6 +23,8 @@ public abstract class DatTitleInfoProvider<T> : ITitleInfoProvider<T> where T : 
     protected virtual IEnumerable<ReadOnlyMemory<byte>> Payloads(byte[] data) => [data];
 
     protected virtual DatIndex? GetIndex() => DatIndex.ForConsole(MatchesDat);
+
+    public string DataFingerprint => DatIndex.Fingerprint(MatchesDat);
 
     /// <summary>libretro-thumbnails system folder (e.g. "Nintendo - Game Boy"); null disables box art URLs.</summary>
     protected virtual string? LibretroSystem(Rom rom) => null;

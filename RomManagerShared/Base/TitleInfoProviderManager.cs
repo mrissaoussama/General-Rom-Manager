@@ -1,4 +1,4 @@
-﻿using RomManagerShared.Interfaces;
+using RomManagerShared.Interfaces;
 using RomManagerShared.Utils;
 
 namespace RomManagerShared.Base;
@@ -19,6 +19,10 @@ public class TitleInfoProviderManager<T> where T : GamingConsole
         await Task.CompletedTask;
     }
     public IEnumerable<ITitleInfoProvider<T>> TitleInfoProviders { get; set; }
+
+    /// <summary>Combined <see cref="IHasDataFingerprint"/> of the providers; empty when none depend on data files.</summary>
+    public string DataFingerprint => string.Join("|", TitleInfoProviders.OfType<IHasDataFingerprint>()
+        .Select(p => p.DataFingerprint).Where(f => f.Length > 0));
     public async Task<Rom> GetTitleInfo(Rom rom)
     {
         // Providers either mutate in place or return a new (possibly re-typed) instance; keep whichever comes back.

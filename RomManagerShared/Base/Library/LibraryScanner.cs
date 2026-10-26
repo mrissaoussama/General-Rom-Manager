@@ -33,6 +33,7 @@ public sealed class LibraryScanner(AppDbContext db)
         where T : GamingConsole
     {
         var extensions = manager.RomParserExecutor.GetSupportedExtensions();
+        var fingerprint = manager.TitleInfoProviderManager?.DataFingerprint ?? "";
         var files = await Task.Run(() => FileUtils.GetFilesInDirectoryWithExtensions(root, extensions), ct);
         var cached = await db.LibraryFiles
             .Where(f => f.Console == console)
@@ -44,7 +45,7 @@ public sealed class LibraryScanner(AppDbContext db)
         for (int i = 0; i < files.Count; i++)
         {
             cached.TryGetValue(files[i], out var entry);
-            if (!fullRescan && entry is not null && IsUnchanged(entry, new FileInfo(files[i])))
+            if (!fullRescan && entry is not null && IsUnchanged(entry, new FileInfo(files[i]), fingerprint))
                 slots[i] = RomSnapshot.Deserialize(entry.RomsJson);
             else
                 pending.Add(i);
@@ -77,6 +78,7 @@ public sealed class LibraryScanner(AppDbContext db)
                 entry.LastWriteUtc = info.LastWriteTimeUtc;
                 entry.ScanVersion = ScanVersion;
                 entry.ScannedUtc = DateTime.UtcNow;
+                entry.DataFingerprint = fingerprint.Length > 0 ? fingerprint : null;
                 entry.RomsJson = RomSnapshot.Serialize(roms);
                 if (++parsed % SaveBatchSize == 0)
                     await db.SaveChangesAsync(ct);
@@ -93,8 +95,9 @@ public sealed class LibraryScanner(AppDbContext db)
         return result;
     }
 
-    private static bool IsUnchanged(LibraryFile entry, FileInfo info) =>
+    private static bool IsUnchanged(LibraryFile entry, FileInfo info, string fingerprint) =>
         entry.ScanVersion == ScanVersion
+        && (entry.DataFingerprint ?? "") == fingerprint
         && entry.Size == info.Length
         && entry.LastWriteUtc == info.LastWriteTimeUtc;
 }

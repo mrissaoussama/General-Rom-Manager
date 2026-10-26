@@ -31,6 +31,9 @@ namespace RomManagerShared.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("DataFingerprint")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("LastWriteUtc")
                         .HasColumnType("TEXT");
 

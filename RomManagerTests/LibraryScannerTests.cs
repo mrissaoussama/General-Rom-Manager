@@ -92,6 +92,32 @@ public sealed class LibraryScannerTests : IDisposable
         public Task<List<Rom>> ProcessFile(string path) => Task.FromResult<List<Rom>>([]);
     }
 
+    private sealed class FingerprintProvider : ITitleInfoProvider<SwitchConsole>, IHasDataFingerprint
+    {
+        public string Source { get; set; } = "test";
+        public string DataFingerprint { get; set; } = "";
+        public Task LoadTitleDatabaseAsync() => Task.CompletedTask;
+        public Task<Rom> GetTitleInfo(Rom rom) => Task.FromResult(rom);
+    }
+
+    [Fact]
+    public async Task ScanAsync_ReparsesCachedFilesWhenProviderDataChanges()
+    {
+        File.WriteAllText(Path.Combine(_root, "A.nsp"), "a");
+        var provider = new FingerprintProvider();
+        var manager = new ConsoleManager<SwitchConsole>(new RomParserExecutor<SwitchConsole>([_parser]),
+            new TitleInfoProviderManager<SwitchConsole>([provider]));
+        var scanner = new LibraryScanner(_db);
+        await scanner.ScanAsync(manager, "Switch", _root);
+
+        provider.DataFingerprint = "dat-v1"; // e.g. a DAT was added
+        await scanner.ScanAsync(manager, "Switch", _root);
+        _parser.Calls.Should().Be(2);
+
+        await scanner.ScanAsync(manager, "Switch", _root);
+        _parser.Calls.Should().Be(2);
+    }
+
     [Fact]
     public async Task ScanAsync_FullRescan_ReparsesEverything()
     {

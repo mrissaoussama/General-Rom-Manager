@@ -1,4 +1,6 @@
 using System.Collections.Concurrent;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
 using RomManagerShared.Base;
@@ -99,15 +101,28 @@ public sealed partial class DatIndex
     /// <summary>Index of every DAT whose file name passes <paramref name="match"/>; cached until the files change.</summary>
     public static DatIndex? ForConsole(Func<string, bool> match)
     {
+        var files = MatchingFiles(match);
+        return files.Count == 0 ? null : Cache.GetOrAdd(Key(files), _ => Load(files));
+    }
+
+    /// <summary>Changes when a matching DAT is added, removed or rewritten; empty when there are none.</summary>
+    public static string Fingerprint(Func<string, bool> match)
+    {
+        var files = MatchingFiles(match);
+        return files.Count == 0 ? "" : Convert.ToHexString(SHA1.HashData(Encoding.UTF8.GetBytes(Key(files))));
+    }
+
+    private static List<string> MatchingFiles(Func<string, bool> match)
+    {
         var dir = DatDirectory;
-        if (!Directory.Exists(dir)) return null;
-        var files = Directory.EnumerateFiles(dir, "*.dat", SearchOption.AllDirectories)
+        if (!Directory.Exists(dir)) return [];
+        return Directory.EnumerateFiles(dir, "*.dat", SearchOption.AllDirectories)
             .Concat(Directory.EnumerateFiles(dir, "*.xml", SearchOption.AllDirectories))
             .Where(f => match(Path.GetFileName(f)))
             .Order(StringComparer.OrdinalIgnoreCase)
             .ToList();
-        if (files.Count == 0) return null;
-        var key = string.Join("|", files.Select(f => $"{f}:{File.GetLastWriteTimeUtc(f).Ticks}"));
-        return Cache.GetOrAdd(key, _ => Load(files));
     }
+
+    private static string Key(List<string> files) =>
+        string.Join("|", files.Select(f => $"{f}:{new FileInfo(f).Length}:{File.GetLastWriteTimeUtc(f).Ticks}"));
 }

@@ -10,6 +10,8 @@ public class LibraryFile
     public DateTime LastWriteUtc { get; set; }
     public int ScanVersion { get; set; }
     public DateTime ScannedUtc { get; set; }
+    /// <summary><see cref="TitleInfoProviderManager{T}.DataFingerprint"/> at parse time (null = none).</summary>
+    public string? DataFingerprint { get; set; }
     /// <summary>Polymorphic JSON from <see cref="RomSnapshot"/>.</summary>
     public string RomsJson { get; set; } = "[]";
 }
