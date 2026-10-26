@@ -114,6 +114,7 @@ public class FileUtils
     {
         // Keep an in-memory ring-buffer of the last 500 messages for the LogWindow.
         var entry = $"[{DateTime.Now:HH:mm:ss}] {logText}";
+        ParseDiagnostics.Add(logText);
         lock (_recentLogs)
         {
             _recentLogs.Add(entry);

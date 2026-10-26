@@ -83,7 +83,38 @@ public sealed class LibraryScannerTests : IDisposable
 
         (await scanner.ScanAsync(manager, "Switch", _root, ct: TestContext.Current.CancellationToken)).Should().BeEmpty();
 
-        scanner.Unrecognized.Should().ContainSingle().Which.Should().EndWith("junk.nsp");
+        var junk = scanner.Unrecognized.Should().ContainSingle().Which;
+        junk.Path.Should().EndWith("junk.nsp");
+        junk.Reason.Should().Be("No parser recognised the file");
+    }
+
+    private sealed class FailingParser : IRomParser<SwitchConsole>
+    {
+        public int Calls;
+        public List<string> Extensions { get; set; } = ["nsp"];
+        public Task<List<Rom>> ProcessFile(string path)
+        {
+            Calls++;
+            throw new InvalidDataException("Missing NCA title key");
+        }
+    }
+
+    [Fact]
+    public async Task ScanAsync_KeepsTheLoggedReasonForUnrecognisedFiles()
+    {
+        var parser = new FailingParser();
+        var manager = new ConsoleManager<SwitchConsole>(new RomParserExecutor<SwitchConsole>([parser]));
+        File.WriteAllText(Path.Combine(_root, "locked.nsp"), "x");
+        var scanner = new LibraryScanner(_db);
+        var ct = TestContext.Current.CancellationToken;
+
+        await scanner.ScanAsync(manager, "Switch", _root, ct: ct);
+        scanner.Unrecognized.Should().ContainSingle().Which.Reason.Should().Contain("Missing NCA title key");
+
+        // The reason survives a rescan that serves the file from the cache.
+        await scanner.ScanAsync(manager, "Switch", _root, ct: ct);
+        parser.Calls.Should().Be(1);
+        scanner.Unrecognized.Should().ContainSingle().Which.Reason.Should().Contain("Missing NCA title key");
     }
 
     private sealed class EmptyParser : IRomParser<SwitchConsole>

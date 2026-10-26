@@ -211,7 +211,7 @@ game data, not Wii), gbc 367, nsp 97, pkg 56, cso 46, iso 33).
 - [x] Filters: has/no update, duplicates (same title ID, type and version).
 - [x] Filters: language, format.
 - [x] Per-file scan progress with cancel; unrecognised files listed from a button on the console page.
-- [ ] Per-file failure reasons (needs `ParseResult` diagnostics, 3.2).
+- [x] Per-file failure reasons: `ParseDiagnostics` captures what the parsers log per file; stored in `LibraryFile.Error` and shown in the "Not recognised" list.
 - [x] Drag-and-drop a folder onto the window to add it as a ROM root (`ConsoleDetector` ranks consoles by extension).
 - [x] Rename shows an old → new preview (dry run of the real renamer).
 - [x] Move preview (dry run of `RomMover`).

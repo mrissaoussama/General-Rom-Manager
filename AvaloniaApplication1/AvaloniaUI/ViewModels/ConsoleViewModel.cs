@@ -147,7 +147,7 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
             Unrecognized = scanner.Unrecognized;
             LastScanned = DateTime.Now;
             if (scanner.Unrecognized.Count > 0)
-                FileUtils.Log($"[{ConsoleName}] Not recognised:{Environment.NewLine}  " + string.Join(Environment.NewLine + "  ", scanner.Unrecognized));
+                FileUtils.Log($"[{ConsoleName}] Not recognised:{Environment.NewLine}  " + string.Join(Environment.NewLine + "  ", scanner.Unrecognized.Select(u => $"{u.Path}: {u.Reason}")));
             EnsureWatcher(romPath, manager.RomParserExecutor.GetSupportedExtensions());
         }
         catch (OperationCanceledException)

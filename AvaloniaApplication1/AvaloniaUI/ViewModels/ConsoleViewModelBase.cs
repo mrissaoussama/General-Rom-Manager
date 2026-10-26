@@ -22,7 +22,7 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
     /// <summary>Files from the last scan that matched an extension but parsed to nothing.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(UnrecognizedText))]
-    private IReadOnlyList<string> _unrecognized = [];
+    private IReadOnlyList<UnrecognizedFile> _unrecognized = [];
 
     public string? UnrecognizedText => Unrecognized.Count == 0 ? null : $"{Unrecognized.Count} file(s) not recognised";
 
@@ -40,8 +40,8 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
 
     [RelayCommand]
     private Task ShowUnrecognized() => Shell.ShowDialogAsync(new PreviewWindow("Not recognised",
-        "These files have a matching extension but no parser could read them (wrong console, corrupt, encrypted or missing keys).",
-        Unrecognized, "Close", showCancel: false));
+        "These files have a matching extension but no parser could read them (wrong console, corrupt, encrypted or missing keys). The reason is what the parsers logged.",
+        Unrecognized.Select(u => $"{u.Path}  —  {u.Reason}"), "Close", showCancel: false));
 
     /// <summary>True for consoles whose manager can report missing updates (shows the "Missing updates" button).</summary>
     [ObservableProperty] private bool _canCheckUpdates;
