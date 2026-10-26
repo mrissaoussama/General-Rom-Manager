@@ -194,7 +194,8 @@ game data, not Wii), gbc 367, nsp 97, pkg 56, cso 46, iso 33).
       offers "Scan now". There should be no bare "Ready" over an empty grid.
 - [x] **Dashboard / home**: totals (ROMs, games, updates, DLC, unnamed, size) and a tile per console
       with scan status and missing requirements.
-- [ ] Dashboard: missing updates, duplicates, last scan time, errors linking to the log.
+- [x] Dashboard: duplicates and not-recognised totals, last scan time per console, "Open log".
+- [ ] Dashboard: missing updates total (the Switch page has the report; needs a cached versions.json parse).
 - [x] **Navigation**: a left sidebar with consoles (count + scan indicator) instead of tabs.
 - [x] "All consoles" view with a console column (shown when 2+ consoles).
 - [ ] Console icons in the sidebar.
@@ -226,7 +227,7 @@ game data, not Wii), gbc 367, nsp 97, pkg 56, cso 46, iso 33).
       expected `Rom`s.
 - [x] Keep `tools/ParserHarness` for local smoke runs against a real library (`--snapshot`/`--compare` done). Add `--json` output so
       runs can be diffed before and after a change.
-- [ ] Scanner integration test: temp folder → scan → modify → rescan → assert the diff.
+- [x] Scanner integration test: temp folder → scan → modify → rescan → assert the diff (`LibraryScannerTests`).
 - [ ] ViewModel tests for the filters, commands and empty states.
 - [ ] Release: `dotnet publish -r win-x64/linux-x64/osx-arm64` self-contained, single-file. Add
       Velopack for installers and auto-update, and keep the version in `Directory.Build.props`.

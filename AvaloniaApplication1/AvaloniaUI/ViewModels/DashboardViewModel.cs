@@ -16,6 +16,8 @@ public sealed partial class DashboardViewModel : ViewModelBase
     [ObservableProperty] private int _dlcs;
     [ObservableProperty] private int _unidentified;
     [ObservableProperty] private string _totalSize = "0 B";
+    [ObservableProperty] private int _duplicates;
+    [ObservableProperty] private int _notRecognised;
 
     public bool HasConsoles => Consoles.Count > 0;
 
@@ -36,7 +38,8 @@ public sealed partial class DashboardViewModel : ViewModelBase
 
     private void OnConsoleChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(ConsoleViewModelBase.RomCount) or nameof(ConsoleViewModelBase.Roms))
+        if (e.PropertyName is nameof(ConsoleViewModelBase.RomCount) or nameof(ConsoleViewModelBase.Roms)
+            or nameof(ConsoleViewModelBase.DuplicateCount) or nameof(ConsoleViewModelBase.Unrecognized))
             ScheduleRecalculate();
     }
 
@@ -58,6 +61,8 @@ public sealed partial class DashboardViewModel : ViewModelBase
         Dlcs = roms.Count(r => r.RomSource is DLC);
         Unidentified = roms.Count(r => r.Title == "Unknown" || string.IsNullOrEmpty(r.TitleID));
         TotalSize = FileUtils.FormatFileSize(roms.Sum(r => r.RomSource.Size ?? 0));
+        Duplicates = Consoles.Sum(c => c.DuplicateCount);
+        NotRecognised = Consoles.Sum(c => c.Unrecognized.Count);
     }
 
     [RelayCommand]

@@ -26,6 +26,18 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
 
     public string? UnrecognizedText => Unrecognized.Count == 0 ? null : $"{Unrecognized.Count} file(s) not recognised";
 
+    /// <summary>When the last scan of this console finished (this session).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(LastScanText))]
+    private DateTime? _lastScanned;
+
+    public string LastScanText => LastScanned is not { } t ? "Not scanned yet"
+        : t.Date == DateTime.Today ? $"Scanned at {t:t}" : $"Scanned {t:g}";
+
+    /// <summary>Files sharing title ID, type and version with another file.</summary>
+    public int DuplicateCount => _duplicates.Count;
+    public bool HasDuplicates => _duplicates.Count > 0;
+
     [RelayCommand]
     private Task ShowUnrecognized() => Shell.ShowDialogAsync(new PreviewWindow("Not recognised",
         "These files have a matching extension but no parser could read them (wrong console, corrupt, encrypted or missing keys).",
@@ -149,6 +161,8 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
             .GroupBy(r => (r.TitleID, r.RomType, r.Version))
             .Where(g => g.Count() > 1)
             .SelectMany(g => g)];
+        OnPropertyChanged(nameof(DuplicateCount));
+        OnPropertyChanged(nameof(HasDuplicates));
     }
 
     private bool Matches(RomViewModel r)
