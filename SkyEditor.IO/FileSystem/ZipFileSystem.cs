@@ -69,7 +69,7 @@ namespace SkyEditor.IO.FileSystem
         private IEnumerable<string> EnumerateDirectories(string path, bool topDirectoryOnly)
         {
             var files = EnumerateFiles(path, "*", topDirectoryOnly);
-            return files.Select(f => FixDirectory(Path.GetDirectoryName(f))).Distinct();
+            return files.Select(f => FixDirectory(Path.GetDirectoryName(f) ?? "")).Distinct();
         }
 
         public string[] GetDirectories(string path, bool topDirectoryOnly)
@@ -87,7 +87,7 @@ namespace SkyEditor.IO.FileSystem
 
             using var stream = file.Open();
             var buffer = new byte[file.Length];
-            stream.Read(buffer, 0, buffer.Length);
+            stream.ReadExactly(buffer);
             return buffer;
         }
 

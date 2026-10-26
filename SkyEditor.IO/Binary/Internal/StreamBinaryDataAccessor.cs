@@ -53,7 +53,7 @@ namespace SkyEditor.IO.Binary.Internal
 
                 byte[] buffer = new byte[length];
                 SourceStream.Seek(index, SeekOrigin.Begin);
-                SourceStream.Read(buffer, 0, length);
+                SourceStream.ReadAtLeast(buffer, length, throwOnEndOfStream: false);
                 return buffer;
             }
             finally
@@ -80,7 +80,7 @@ namespace SkyEditor.IO.Binary.Internal
 
                 byte[] buffer = new byte[length];
                 SourceStream.Seek(index, SeekOrigin.Begin);
-                await SourceStream.ReadAsync(buffer, 0, length);
+                await SourceStream.ReadAtLeastAsync(buffer, length, throwOnEndOfStream: false);
                 return buffer;
             }
             finally
@@ -186,7 +186,7 @@ namespace SkyEditor.IO.Binary.Internal
 
                 byte[] buffer = new byte[length];
                 // No need to seek, reading from current position
-                SourceStream.Read(buffer, 0, length);
+                SourceStream.ReadAtLeast(buffer, length, throwOnEndOfStream: false);
                 return buffer;
             }
             finally
@@ -207,7 +207,7 @@ namespace SkyEditor.IO.Binary.Internal
 
                 byte[] buffer = new byte[length];
                 // No need to seek, reading from current position
-                await SourceStream.ReadAsync(buffer, 0, length);
+                await SourceStream.ReadAtLeastAsync(buffer, length, throwOnEndOfStream: false);
                 return buffer;
             }
             finally

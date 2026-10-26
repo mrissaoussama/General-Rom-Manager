@@ -29,7 +29,6 @@
     <PackageVersion Include="Ryujinx.LibHac" Version="0.20.0" />
     <PackageVersion Include="SkyEditor.Utilities.AsyncFor" Version="5.0.0" />
     <PackageVersion Include="System.IO.Hashing" Version="10.0.13" />
-    <PackageVersion Include="System.Memory" Version="4.5.5" />
     <PackageVersion Include="xunit.v3" Version="4.0.2" />
   </ItemGroup>
 </Project>
