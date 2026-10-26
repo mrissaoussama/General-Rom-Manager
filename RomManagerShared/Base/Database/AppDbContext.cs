@@ -47,7 +47,6 @@ public partial class AppDbContext : DbContext, IUnitOfWork
         catch { /* best-effort; SQLite will emit a clearer error if path is unavailable */ }
 
         options.UseSqlite($"Data Source={dbPath}");
-        options.UseLazyLoadingProxies();
     }
 
     public static string GetDbPath()

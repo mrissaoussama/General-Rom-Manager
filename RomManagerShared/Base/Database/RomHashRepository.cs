@@ -74,7 +74,7 @@ public class RomHashRepository
     // Method to get a collection of RomHashes by Rom ID
     public IEnumerable<RomHash> GetRomHashesByRomId(int romId)
     {
-        return _context.Roms.First(rh => rh.Id == romId).Hashes;
+        return _context.Roms.Include(r => r.Hashes).First(r => r.Id == romId).Hashes ?? [];
     }
 
     // Method to get a collection of RomHashes by Title ID

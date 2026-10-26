@@ -27,14 +27,12 @@
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.Json" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" />
 		<PackageReference Include="Microsoft.Extensions.Hosting" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
 		<PackageReference Include="SkyEditor.Utilities.AsyncFor" />
-		<PackageReference Include="Syroot.BinaryData" />
 		<!-- System.Drawing.Common required by Xbox/ISO2GOD parsers; Windows-only -->
 		<PackageReference Include="System.Drawing.Common" />
 		<PackageReference Include="System.IO.Hashing" />
