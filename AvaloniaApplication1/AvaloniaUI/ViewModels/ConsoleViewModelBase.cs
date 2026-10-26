@@ -133,6 +133,10 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
     [ObservableProperty] private IReadOnlyList<string> _regionOptions = [AnyOption];
     [ObservableProperty] private string _typeFilter = AnyOption;
     [ObservableProperty] private string _regionFilter = AnyOption;
+    [ObservableProperty] private IReadOnlyList<string> _languageOptions = [AnyOption];
+    [ObservableProperty] private string _languageFilter = AnyOption;
+    [ObservableProperty] private IReadOnlyList<string> _formatOptions = [AnyOption];
+    [ObservableProperty] private string _formatFilter = AnyOption;
     /// <summary>Only rows whose title is missing or just the file name (unidentified).</summary>
     [ObservableProperty] private bool _unnamedOnly;
     public const string HasUpdate = "Has update", NoUpdate = "No update";
@@ -146,7 +150,7 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
     private HashSet<RomViewModel> _duplicates = [];
 
     public bool IsFiltered => SearchText.Length > 0 || TypeFilter != AnyOption || RegionFilter != AnyOption || UnnamedOnly
-        || UpdateFilter != AnyOption || DuplicatesOnly;
+        || UpdateFilter != AnyOption || DuplicatesOnly || LanguageFilter != AnyOption || FormatFilter != AnyOption;
 
     // Switch-style 16-char IDs share the first 13 chars across game/update/DLC; other consoles reuse the ID.
     private static string BaseKey(RomViewModel r) =>
@@ -169,6 +173,8 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
     {
         if (TypeFilter != AnyOption && r.RomType != TypeFilter) return false;
         if (RegionFilter != AnyOption && !r.Region.Split(", ").Contains(RegionFilter)) return false;
+        if (LanguageFilter != AnyOption && !r.LanguageNames.Contains(LanguageFilter)) return false;
+        if (FormatFilter != AnyOption && r.Format != FormatFilter) return false;
         if (UnnamedOnly && !IsUnnamed(r)) return false;
         if (UpdateFilter != AnyOption && (r.RomType != "Game" || _withUpdate.Contains(r) != (UpdateFilter == HasUpdate))) return false;
         if (DuplicatesOnly && !_duplicates.Contains(r)) return false;
@@ -185,6 +191,8 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
 
     partial void OnTypeFilterChanged(string value) => RefreshFilter();
     partial void OnRegionFilterChanged(string value) => RefreshFilter();
+    partial void OnLanguageFilterChanged(string value) => RefreshFilter();
+    partial void OnFormatFilterChanged(string value) => RefreshFilter();
     partial void OnUnnamedOnlyChanged(bool value) => RefreshFilter();
     partial void OnUpdateFilterChanged(string value) => RefreshFilter();
     partial void OnDuplicatesOnlyChanged(bool value) => RefreshFilter();
@@ -201,6 +209,8 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
         SearchText = "";
         TypeFilter = AnyOption;
         RegionFilter = AnyOption;
+        LanguageFilter = AnyOption;
+        FormatFilter = AnyOption;
         UnnamedOnly = false;
         UpdateFilter = AnyOption;
         DuplicatesOnly = false;
@@ -208,10 +218,19 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
 
     private void UpdateRegionOptions()
     {
-        var regions = Roms.SelectMany(r => r.Region.Split(", ")).Distinct().Order().ToList();
-        if (!RegionOptions.Skip(1).SequenceEqual(regions))
-            RegionOptions = [AnyOption, .. regions];
+        RegionOptions = Options(RegionOptions, Roms.SelectMany(r => r.Region.Split(", ")));
         if (!RegionOptions.Contains(RegionFilter)) RegionFilter = AnyOption;
+        LanguageOptions = Options(LanguageOptions, Roms.SelectMany(r => r.LanguageNames));
+        if (!LanguageOptions.Contains(LanguageFilter)) LanguageFilter = AnyOption;
+        FormatOptions = Options(FormatOptions, Roms.Select(r => r.Format).Where(f => f.Length > 0));
+        if (!FormatOptions.Contains(FormatFilter)) FormatFilter = AnyOption;
+    }
+
+    // Keeps the current list instance when nothing changed so the ComboBox selection is not reset.
+    private static IReadOnlyList<string> Options(IReadOnlyList<string> current, IEnumerable<string> values)
+    {
+        var sorted = values.Distinct().Order().ToList();
+        return current.Skip(1).SequenceEqual(sorted) ? current : [AnyOption, .. sorted];
     }
 
     // Updates/DLC share the game's base title ID prefix (Switch-style IDs); group them under the game's name.

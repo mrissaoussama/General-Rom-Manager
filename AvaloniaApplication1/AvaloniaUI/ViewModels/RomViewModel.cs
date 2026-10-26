@@ -17,6 +17,12 @@ public partial class RomViewModel : ViewModelBase
     public string Version => _rom.Version ?? "N/A";
     public string RomType => DetermineRomType();
     public string Path => _rom.Path ?? string.Empty;
+    /// <summary>File extension in upper case without the dot (e.g. "NSP"), or "" when there is none.</summary>
+    public string Format => System.IO.Path.GetExtension(Path).TrimStart('.').ToUpperInvariant();
+    /// <summary>Known languages from the rom and its titles; "Unknown" is left out.</summary>
+    public IReadOnlyList<string> LanguageNames => (_rom.Languages ?? [])
+        .Concat(_rom.Titles?.Select(t => t.Language) ?? [])
+        .Where(l => l != Language.Unknown).Distinct().Select(l => l.ToString()).ToList();
 
     /// <summary>Group header text when the list is grouped by game.</summary>
     public string GroupKey { get; set; } = "";

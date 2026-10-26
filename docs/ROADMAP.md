@@ -208,7 +208,7 @@ game data, not Wii), gbc 367, nsp 97, pkg 56, cso 46, iso 33).
 - [ ] Test the card view with 5k+ rows; release cover bitmaps for cards scrolled far away.
 - [x] **Filters**: type, region, unnamed only, text search (title, TitleID, path).
 - [x] Filters: has/no update, duplicates (same title ID, type and version).
-- [ ] Filters: language, format.
+- [x] Filters: language, format.
 - [x] Per-file scan progress with cancel; unrecognised files listed from a button on the console page.
 - [ ] Per-file failure reasons (needs `ParseResult` diagnostics, 3.2).
 - [x] Drag-and-drop a folder onto the window to add it as a ROM root (`ConsoleDetector` ranks consoles by extension).
@@ -229,7 +229,8 @@ game data, not Wii), gbc 367, nsp 97, pkg 56, cso 46, iso 33).
 - [x] Keep `tools/ParserHarness` for local smoke runs against a real library (`--snapshot`/`--compare` done). Add `--json` output so
       runs can be diffed before and after a change.
 - [x] Scanner integration test: temp folder → scan → modify → rescan → assert the diff (`LibraryScannerTests`).
-- [ ] ViewModel tests for the filters, commands and empty states.
+- [x] ViewModel tests for the filters (`ConsoleViewModelFilterTests`; tests reference AvaloniaUI).
+- [ ] ViewModel tests for commands and empty states.
 - [ ] Release: `dotnet publish -r win-x64/linux-x64/osx-arm64` self-contained, single-file. Add
       Velopack for installers and auto-update, and keep the version in `Directory.Build.props`.
 - [ ] Update `README.md`: features, supported formats matrix (from ARCHITECTURE.md), keys setup,
