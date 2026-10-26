@@ -22,9 +22,10 @@ Legend: **[P0]** = data-safety or correctness, **[P1]** = high value, **[P2]** =
 - [x] `.gitignore`: `settings.json`, `*.db`, `Logs/`, `Cache/`, `*.keys`, `.vscode/` (or commit a
       shared `.vscode` on purpose), `tools/ParserHarness/paths.json`.
 - [x] Move to the `.slnx` format (`dotnet sln migrate`) and list only the live projects (Android/Browser heads left out; ParserHarness added).
-- [ ] Add `Directory.Build.props` at the root with the shared settings: `Nullable`,
-      `LangVersion latest`, `TreatWarningsAsErrors` for new projects, and `AnalysisLevel latest`.
-      Add `Directory.Packages.props` for central package management.
+- [x] Root `Directory.Build.props` with the shared settings (`Nullable`, `LangVersion latest`) and
+      `Directory.Packages.props` for central package management (Android/Browser heads opt out).
+- [ ] `TreatWarningsAsErrors` for new projects and `AnalysisLevel latest` (needs the Shared warning
+      backlog handled first).
 - [x] CI: a GitHub Actions workflow on windows-latest that builds Desktop and runs the tests.
 
 ## Phase 1: Dependencies and frameworks (1–2 days)

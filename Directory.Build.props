@@ -1,5 +1,8 @@
 <Project>
   <PropertyGroup>
+    <!-- Shared defaults; a project can still override them (SkyEditor.IO pins LangVersion 8). -->
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
     <!-- Suppress NU1202 for legacy transitive packages (e.g. Microsoft.NETCore.Platforms 1.1.0
          pulled in by DiscUtils) that declare only netstandard1.0 but are runtime metadata only
          and work fine on net10.0 via compatibility. -->
@@ -7,8 +10,8 @@
   </PropertyGroup>
 
   <!-- Override the old transitive Microsoft.NETCore.Platforms 1.1.0 with a version
-       that supports modern TFMs, fixing NU1202 warnings at the source. -->
-  <ItemGroup>
-    <PackageReference Include="Microsoft.NETCore.Platforms" Version="7.0.4" />
+       that supports modern TFMs, fixing NU1202 warnings at the source. Version in Directory.Packages.props. -->
+  <ItemGroup Condition="'$(ManagePackageVersionsCentrally)' == 'true'">
+    <PackageReference Include="Microsoft.NETCore.Platforms" />
   </ItemGroup>
 </Project>
