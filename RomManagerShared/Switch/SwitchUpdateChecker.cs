@@ -29,10 +29,19 @@ public static class SwitchUpdateChecker
         return latest;
     }
 
+    private sealed record VersionCache(string Key, Dictionary<string, uint> Latest);
+    private static VersionCache? _cache; // replaced atomically; readers never see a torn value
+
+    /// <summary>Parses <paramref name="path"/>, reusing the last result while the file is unchanged.</summary>
     public static Dictionary<string, uint> LoadLatestVersions(string path)
     {
+        var info = new FileInfo(path);
+        var key = $"{info.FullName}|{info.Length}|{info.LastWriteTimeUtc.Ticks}";
+        if (_cache is { } c && c.Key == key) return c.Latest;
         using var stream = FileUtils.OpenRead(path);
-        return ParseLatestVersions(stream);
+        var latest = ParseLatestVersions(stream);
+        _cache = new VersionCache(key, latest);
+        return latest;
     }
 
     /// <summary>

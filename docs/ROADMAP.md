@@ -199,7 +199,7 @@ game data, not Wii), gbc 367, nsp 97, pkg 56, cso 46, iso 33).
 - [x] **Dashboard / home**: totals (ROMs, games, updates, DLC, unnamed, size) and a tile per console
       with scan status and missing requirements.
 - [x] Dashboard: duplicates and not-recognised totals, last scan time per console, "Open log".
-- [ ] Dashboard: missing updates total (the Switch page has the report; needs a cached versions.json parse).
+- [x] Dashboard: missing updates total (consoles with a version database; versions.json parse cached by mtime).
 - [x] **Navigation**: a left sidebar with consoles (count + scan indicator) instead of tabs.
 - [x] "All consoles" view with a console column (shown when 2+ consoles).
 - [x] Console icons in the sidebar (manufacturer-coloured badges from `ConsoleDescriptor`).

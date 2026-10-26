@@ -51,6 +51,9 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
 
     protected virtual Task CheckMissingUpdatesAsync() => Task.CompletedTask;
 
+    /// <summary>Games with a newer update than the library has; null when unsupported or no version database.</summary>
+    public virtual Task<int?> CountMissingUpdatesAsync() => Task.FromResult<int?>(null);
+
     /// <summary>Stable console id (settings keys, plugin matching).</summary>
     public string ConsoleName { get; }
     /// <summary>Name shown in the UI; defaults to <see cref="ConsoleName"/>.</summary>

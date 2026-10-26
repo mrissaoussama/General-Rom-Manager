@@ -37,6 +37,24 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
         CanCheckUpdates = scope.ServiceProvider.GetService<ConsoleManager<T>>() is IMissingUpdateReporter;
     }
 
+    public override async Task<int?> CountMissingUpdatesAsync()
+    {
+        if (!CanCheckUpdates || Roms.Count == 0) return null;
+        try
+        {
+            using var scope = _serviceProvider.CreateScope();
+            if (scope.ServiceProvider.GetService<ConsoleManager<T>>() is not IMissingUpdateReporter { HasVersionDatabase: true } reporter)
+                return null;
+            var library = Roms.Select(r => r.RomSource).ToList();
+            return await Task.Run(() => reporter.FindMissingUpdates(library).Count);
+        }
+        catch (Exception ex)
+        {
+            FileUtils.Log($"[{ConsoleName}] Missing update count failed: {ex.Message}");
+            return null;
+        }
+    }
+
     protected override async Task CheckMissingUpdatesAsync()
     {
         using var scope = _serviceProvider.CreateScope();

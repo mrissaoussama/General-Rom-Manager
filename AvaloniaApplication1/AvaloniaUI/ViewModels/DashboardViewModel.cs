@@ -18,6 +18,12 @@ public sealed partial class DashboardViewModel : ViewModelBase
     [ObservableProperty] private string _totalSize = "0 B";
     [ObservableProperty] private int _duplicates;
     [ObservableProperty] private int _notRecognised;
+    /// <summary>Null until a console with a version database reports a count.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasMissingUpdates))]
+    private int? _missingUpdates;
+    public bool HasMissingUpdates => MissingUpdates is not null;
+    private int _missingUpdatesRun;
 
     public bool HasConsoles => Consoles.Count > 0;
 
@@ -63,6 +69,18 @@ public sealed partial class DashboardViewModel : ViewModelBase
         TotalSize = FileUtils.FormatFileSize(roms.Sum(r => r.RomSource.Size ?? 0));
         Duplicates = Consoles.Sum(c => c.DuplicateCount);
         NotRecognised = Consoles.Sum(c => c.Unrecognized.Count);
+        _ = CountMissingUpdatesAsync();
+    }
+
+    // Runs after each recalculation; a newer run discards the result of an older one.
+    private async Task CountMissingUpdatesAsync()
+    {
+        var run = ++_missingUpdatesRun;
+        int? total = null;
+        foreach (var console in Consoles.ToList())
+            if (await console.CountMissingUpdatesAsync() is { } n)
+                total = (total ?? 0) + n;
+        if (run == _missingUpdatesRun) MissingUpdates = total;
     }
 
     [RelayCommand]

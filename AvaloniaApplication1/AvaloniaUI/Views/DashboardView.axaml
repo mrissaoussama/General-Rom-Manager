@@ -51,6 +51,13 @@
                         <TextBlock Classes="stat-label" Text="Duplicates" />
                     </StackPanel>
                 </Border>
+                <Border Classes="stat" IsVisible="{Binding HasMissingUpdates}"
+                        ToolTip.Tip="Games with a newer update than the newest one in the library (consoles with a version database)">
+                    <StackPanel>
+                        <TextBlock Classes="stat-value" Text="{Binding MissingUpdates, StringFormat='{}{0:N0}'}" />
+                        <TextBlock Classes="stat-label" Text="Missing updates" />
+                    </StackPanel>
+                </Border>
                 <Border Classes="stat" ToolTip.Tip="Files with a ROM extension that no parser could read">
                     <StackPanel>
                         <TextBlock Classes="stat-value" Text="{Binding NotRecognised, StringFormat='{}{0:N0}'}" />
