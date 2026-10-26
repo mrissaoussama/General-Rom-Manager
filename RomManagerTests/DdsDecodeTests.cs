@@ -1,4 +1,4 @@
-using FluentAssertions;
+using AwesomeAssertions;
 using RomManagerShared.Utils.ISO2GOD.Chilano.Xbox360.Graphics;
 
 namespace RomManagerTests;

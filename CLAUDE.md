@@ -13,7 +13,7 @@ Docs: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [docs/ROADMAP.md](docs/ROA
 ```sh
 dotnet build AvaloniaApplication1/AvaloniaUI.Desktop/AvaloniaUI.Desktop.csproj
 dotnet run   --project AvaloniaApplication1/AvaloniaUI.Desktop
-dotnet test  RomManagerTests/RomManagerTests.csproj
+dotnet test --project RomManagerTests/RomManagerTests.csproj
 # Parser smoke test against real ROM files (see tools/ParserHarness/README.md)
 dotnet run --project tools/ParserHarness -- PS4Console "Y:\roms\PS4" 5
 ```

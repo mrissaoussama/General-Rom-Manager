@@ -1,7 +1,7 @@
 using System.Buffers.Binary;
 using System.IO.Compression;
 using DiscUtils.Iso9660;
-using FluentAssertions;
+using AwesomeAssertions;
 using RomManagerShared.PSP.Parsers;
 using RomManagerShared.Utils;
 

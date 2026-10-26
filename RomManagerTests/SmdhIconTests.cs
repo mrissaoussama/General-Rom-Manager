@@ -1,5 +1,5 @@
 using System.Buffers.Binary;
-using FluentAssertions;
+using AwesomeAssertions;
 using RomManagerShared.ThreeDS;
 
 namespace RomManagerTests;

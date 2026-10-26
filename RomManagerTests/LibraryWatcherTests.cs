@@ -1,4 +1,4 @@
-using FluentAssertions;
+using AwesomeAssertions;
 using RomManagerShared.Base.Library;
 
 namespace RomManagerTests;
@@ -24,7 +24,7 @@ public sealed class LibraryWatcherTests : IDisposable
             File.WriteAllText(Path.Combine(_root, $"{i}.nsp"), "x");
 
         (await WaitAsync(fired)).Should().BeTrue();
-        await Task.Delay(600);
+        await Task.Delay(600, TestContext.Current.CancellationToken);
         count.Should().Be(1);
     }
 

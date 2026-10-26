@@ -1,6 +1,6 @@
 using System.Buffers.Binary;
 using System.Text;
-using FluentAssertions;
+using AwesomeAssertions;
 using RomManagerShared.Base;
 using RomManagerShared.GameCube;
 using RomManagerShared.GameCube.Parsers;

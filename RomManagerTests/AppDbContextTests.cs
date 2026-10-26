@@ -1,4 +1,4 @@
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.EntityFrameworkCore;
 using RomManagerShared.Base;
 using RomManagerShared.Base.Database;
@@ -38,10 +38,10 @@ public class AppDbContextTests
         };
 
         ctx.Roms.Add(game);
-        await ctx.SaveChangesAsync();
+        await ctx.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var loaded = await ctx.Roms
-            .FirstOrDefaultAsync(r => r.TitleID == "01004D300C5AE000");
+            .FirstOrDefaultAsync(r => r.TitleID == "01004D300C5AE000", TestContext.Current.CancellationToken);
 
         loaded.Should().NotBeNull();
         loaded.Should().BeOfType<Game>();
@@ -58,8 +58,8 @@ public class AppDbContextTests
             new DLC    { TitleID = "GAME01DLC" }
         );
 
-        await ctx.SaveChangesAsync();
-        var allRoms = await ctx.Roms.ToListAsync();
+        await ctx.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var allRoms = await ctx.Roms.ToListAsync(TestContext.Current.CancellationToken);
         allRoms.Should().HaveCount(3);
         allRoms.OfType<Game>().Should()  .HaveCount(1);
         allRoms.OfType<Update>().Should().HaveCount(1);
@@ -72,7 +72,7 @@ public class AppDbContextTests
         await using var ctx = CreateInMemory(nameof(SaveChangesAsync_PersistsData));
 
         ctx.Roms.Add(new Game { TitleID = "UNIQUE001" });
-        int rows = await ctx.SaveChangesAsync();
+        int rows = await ctx.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         rows.Should().BeGreaterThan(0);
     }
@@ -86,7 +86,7 @@ public class AppDbContextTests
         IUnitOfWork uow = ctx;
 
         ctx.Roms.Add(new Game { TitleID = "UOW001" });
-        int changes = await uow.SaveChangesAsync();
+        int changes = await uow.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         changes.Should().BeGreaterThan(0);
     }
@@ -100,9 +100,9 @@ public class AppDbContextTests
 
         ctx.Roms.Add(new Game   { TitleID = "POLY_GAME" });
         ctx.Roms.Add(new Update { TitleID = "POLY_UPDATE" });
-        await ctx.SaveChangesAsync();
+        await ctx.SaveChangesAsync(TestContext.Current.CancellationToken);
 
-        var games = await ctx.Roms.OfType<Game>().ToListAsync();
+        var games = await ctx.Roms.OfType<Game>().ToListAsync(TestContext.Current.CancellationToken);
         games.Should().HaveCount(1);
         games[0].TitleID.Should().Be("POLY_GAME");
     }

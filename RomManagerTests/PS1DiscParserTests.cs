@@ -1,6 +1,6 @@
 using System.Text;
 using DiscUtils.Iso9660;
-using FluentAssertions;
+using AwesomeAssertions;
 using RomManagerShared.Base;
 using RomManagerShared.PS1.Parsers;
 

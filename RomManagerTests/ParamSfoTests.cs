@@ -1,5 +1,5 @@
 using DiscUtils.Iso9660;
-using FluentAssertions;
+using AwesomeAssertions;
 using RomManagerShared.Base;
 using RomManagerShared.PSP;
 using RomManagerShared.PSP.Parsers;

@@ -1,7 +1,7 @@
 using System.IO.Hashing;
 using System.Security.Cryptography;
 using System.Text;
-using FluentAssertions;
+using AwesomeAssertions;
 using RomManagerShared.Base;
 using RomManagerShared.GameGear;
 using RomManagerShared.GameGear.Parsers;

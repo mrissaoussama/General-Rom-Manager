@@ -1,5 +1,5 @@
 using AvaloniaUI.ViewModels;
-using FluentAssertions;
+using AwesomeAssertions;
 using RomManagerShared.Base;
 using RomManagerShared.Interfaces;
 using RomManagerShared.Utils;

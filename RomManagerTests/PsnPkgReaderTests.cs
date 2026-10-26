@@ -1,7 +1,7 @@
 using System.Buffers.Binary;
 using System.Security.Cryptography;
 using System.Text;
-using FluentAssertions;
+using AwesomeAssertions;
 using RomManagerShared.Utils.PKGUtils;
 
 namespace RomManagerTests;

@@ -16,7 +16,7 @@ jobs:
       - name: Build desktop app
         run: dotnet build AvaloniaApplication1/AvaloniaUI.Desktop/AvaloniaUI.Desktop.csproj -c Release
       - name: Test
-        run: dotnet test RomManagerTests/RomManagerTests.csproj -c Release --logger trx
+        run: dotnet test --project RomManagerTests/RomManagerTests.csproj -c Release
       - name: Check for pending EF model changes
         run: |
           dotnet tool restore

@@ -1,4 +1,4 @@
-using FluentAssertions;
+using AwesomeAssertions;
 using RomManagerShared.Utils;
 
 namespace RomManagerTests;

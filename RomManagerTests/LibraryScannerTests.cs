@@ -1,4 +1,4 @@
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using RomManagerShared;
@@ -55,22 +55,22 @@ public sealed class LibraryScannerTests : IDisposable
         File.WriteAllText(b, "b");
         var scanner = new LibraryScanner(_db);
 
-        (await scanner.ScanAsync(_manager, "Switch", _root)).Should().HaveCount(2);
+        (await scanner.ScanAsync(_manager, "Switch", _root, ct: TestContext.Current.CancellationToken)).Should().HaveCount(2);
         _parser.Calls.Should().Be(2);
 
         // Unchanged: served from cache.
-        (await scanner.ScanAsync(_manager, "Switch", _root)).Should().HaveCount(2);
+        (await scanner.ScanAsync(_manager, "Switch", _root, ct: TestContext.Current.CancellationToken)).Should().HaveCount(2);
         _parser.Calls.Should().Be(2);
 
         // Modified file is re-parsed, deleted file is dropped.
         File.WriteAllText(a, "changed");
         File.Delete(b);
-        var roms = await scanner.ScanAsync(_manager, "Switch", _root);
+        var roms = await scanner.ScanAsync(_manager, "Switch", _root, ct: TestContext.Current.CancellationToken);
         _parser.Calls.Should().Be(3);
         roms.Should().ContainSingle().Which.TitleID.Should().Be("A");
         _db.LibraryFiles.Count().Should().Be(1);
 
-        var cached = await scanner.LoadCachedAsync("Switch");
+        var cached = await scanner.LoadCachedAsync("Switch", TestContext.Current.CancellationToken);
         cached.Should().ContainSingle().Which.Titles![0].Value.Should().Be("Title 3");
     }
 
@@ -81,7 +81,7 @@ public sealed class LibraryScannerTests : IDisposable
         File.WriteAllText(Path.Combine(_root, "junk.nsp"), "x");
         var scanner = new LibraryScanner(_db);
 
-        (await scanner.ScanAsync(manager, "Switch", _root)).Should().BeEmpty();
+        (await scanner.ScanAsync(manager, "Switch", _root, ct: TestContext.Current.CancellationToken)).Should().BeEmpty();
 
         scanner.Unrecognized.Should().ContainSingle().Which.Should().EndWith("junk.nsp");
     }
@@ -108,13 +108,13 @@ public sealed class LibraryScannerTests : IDisposable
         var manager = new ConsoleManager<SwitchConsole>(new RomParserExecutor<SwitchConsole>([_parser]),
             new TitleInfoProviderManager<SwitchConsole>([provider]));
         var scanner = new LibraryScanner(_db);
-        await scanner.ScanAsync(manager, "Switch", _root);
+        await scanner.ScanAsync(manager, "Switch", _root, ct: TestContext.Current.CancellationToken);
 
         provider.DataFingerprint = "dat-v1"; // e.g. a DAT was added
-        await scanner.ScanAsync(manager, "Switch", _root);
+        await scanner.ScanAsync(manager, "Switch", _root, ct: TestContext.Current.CancellationToken);
         _parser.Calls.Should().Be(2);
 
-        await scanner.ScanAsync(manager, "Switch", _root);
+        await scanner.ScanAsync(manager, "Switch", _root, ct: TestContext.Current.CancellationToken);
         _parser.Calls.Should().Be(2);
     }
 
@@ -123,9 +123,9 @@ public sealed class LibraryScannerTests : IDisposable
     {
         File.WriteAllText(Path.Combine(_root, "A.nsp"), "a");
         var scanner = new LibraryScanner(_db);
-        await scanner.ScanAsync(_manager, "Switch", _root);
+        await scanner.ScanAsync(_manager, "Switch", _root, ct: TestContext.Current.CancellationToken);
 
-        await scanner.ScanAsync(_manager, "Switch", _root, fullRescan: true);
+        await scanner.ScanAsync(_manager, "Switch", _root, fullRescan: true, ct: TestContext.Current.CancellationToken);
 
         _parser.Calls.Should().Be(2);
     }

@@ -1,6 +1,6 @@
 using System.Buffers.Binary;
 using System.Text;
-using FluentAssertions;
+using AwesomeAssertions;
 using RomManagerShared.DS;
 
 namespace RomManagerTests;

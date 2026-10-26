@@ -1,6 +1,6 @@
 using System.Buffers.Binary;
 using System.Text;
-using FluentAssertions;
+using AwesomeAssertions;
 using RomManagerShared.Base;
 using RomManagerShared.DS.Parsers;
 using RomManagerShared.GameBoy.Parsers;
