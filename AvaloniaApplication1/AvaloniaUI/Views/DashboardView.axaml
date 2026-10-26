@@ -91,11 +91,11 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:ConsoleViewModelBase">
-                        <Button Classes="tile" AutomationProperties.Name="{Binding ConsoleName}"
+                        <Button Classes="tile" AutomationProperties.Name="{Binding DisplayName}"
                                 Command="{Binding $parent[ItemsControl].((vm:DashboardViewModel)DataContext).OpenCommand}"
                                 CommandParameter="{Binding}">
                             <StackPanel Spacing="4">
-                                <TextBlock Text="{Binding ConsoleName}" Classes="h3" />
+                                <TextBlock Text="{Binding DisplayName}" Classes="h3" />
                                 <TextBlock Text="{Binding RomCount, StringFormat='{}{0:N0} ROMs'}" />
                                 <TextBlock Text="{Binding StatusMessage}" Classes="muted" TextTrimming="CharacterEllipsis" />
                                 <TextBlock Text="{Binding LastScanText}" Classes="muted" />

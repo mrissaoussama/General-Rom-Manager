@@ -6,7 +6,10 @@ using RomManagerShared.Utils;
 
 namespace RomManagerShared.Base;
 
-public sealed record ConsoleDescriptor(Type ConsoleType, string Id, string DisplayName);
+/// <param name="Id">Stable key derived from the type name (config sections, settings, library cache).</param>
+/// <param name="Manufacturer">Used to colour the console badge; empty when unknown.</param>
+/// <param name="Badge">Two to four characters shown as the console's icon.</param>
+public sealed record ConsoleDescriptor(Type ConsoleType, string Id, string DisplayName, string Manufacturer = "", string Badge = "");
 
 /// <summary>
 /// Optional hook for a console assembly (ADR 0003). Parsers, providers, managers and organizers are
@@ -67,15 +70,20 @@ public static class ConsoleModules
         [.. AllTypes.Where(t => typeof(IConsoleModule).IsAssignableFrom(t) && !t.IsAbstract && t.GetConstructor(Type.EmptyTypes) is not null)
             .Select(t => (IConsoleModule)Activator.CreateInstance(t)!)];
 
-    private static readonly Dictionary<string, string> KnownNames = new()
+    // Display data for the built-in consoles; module consoles describe themselves through IConsoleModule.
+    private static readonly Dictionary<string, (string Name, string Maker, string Badge)> Known = new()
     {
-        ["Switch"] = "Nintendo Switch", ["ThreeDS"] = "Nintendo 3DS", ["DS"] = "Nintendo DS", ["Wii"] = "Nintendo Wii",
-        ["WiiU"] = "Nintendo Wii U", ["GameCube"] = "GameCube", ["N64"] = "Nintendo 64", ["NES"] = "NES", ["SNES"] = "SNES",
-        ["GameBoy"] = "Game Boy / GBC", ["GameBoyAdvance"] = "Game Boy Advance", ["PS1"] = "PlayStation", ["PS2"] = "PlayStation 2",
-        ["PS3"] = "PlayStation 3", ["PS4"] = "PlayStation 4", ["PSP"] = "PSP", ["PSVita"] = "PS Vita", ["Xbox360"] = "Xbox 360",
-        ["OriginalXbox"] = "Xbox", ["SegaSaturn"] = "Sega Saturn", ["Genesis"] = "Mega Drive / Genesis",
-        ["MasterSystem"] = "Master System", ["GameGear"] = "Game Gear", ["PCEngine"] = "PC Engine / TurboGrafx-16",
-        ["Dreamcast"] = "Dreamcast",
+        ["Switch"] = ("Nintendo Switch", "Nintendo", "NSW"), ["ThreeDS"] = ("Nintendo 3DS", "Nintendo", "3DS"),
+        ["DS"] = ("Nintendo DS", "Nintendo", "NDS"), ["Wii"] = ("Nintendo Wii", "Nintendo", "Wii"),
+        ["WiiU"] = ("Nintendo Wii U", "Nintendo", "WiiU"), ["GameCube"] = ("GameCube", "Nintendo", "GC"),
+        ["N64"] = ("Nintendo 64", "Nintendo", "N64"), ["NES"] = ("NES", "Nintendo", "NES"), ["SNES"] = ("SNES", "Nintendo", "SNES"),
+        ["GameBoy"] = ("Game Boy / GBC", "Nintendo", "GB"), ["GameBoyAdvance"] = ("Game Boy Advance", "Nintendo", "GBA"),
+        ["PS1"] = ("PlayStation", "Sony", "PS1"), ["PS2"] = ("PlayStation 2", "Sony", "PS2"), ["PS3"] = ("PlayStation 3", "Sony", "PS3"),
+        ["PS4"] = ("PlayStation 4", "Sony", "PS4"), ["PSP"] = ("PSP", "Sony", "PSP"), ["PSVita"] = ("PS Vita", "Sony", "Vita"),
+        ["Xbox360"] = ("Xbox 360", "Microsoft", "360"), ["OriginalXbox"] = ("Xbox", "Microsoft", "XB"),
+        ["SegaSaturn"] = ("Sega Saturn", "Sega", "SAT"), ["Genesis"] = ("Mega Drive / Genesis", "Sega", "MD"),
+        ["MasterSystem"] = ("Master System", "Sega", "SMS"), ["GameGear"] = ("Game Gear", "Sega", "GG"),
+        ["PCEngine"] = ("PC Engine / TurboGrafx-16", "NEC", "PCE"), ["Dreamcast"] = ("Dreamcast", "Sega", "DC"),
     };
 
     public static ConsoleDescriptor Describe(Type consoleType)
@@ -83,7 +91,9 @@ public static class ConsoleModules
         var module = Modules.FirstOrDefault(m => m.Descriptor.ConsoleType == consoleType);
         if (module is not null) return module.Descriptor;
         var id = consoleType.Name.Replace("Console", "");
-        return new ConsoleDescriptor(consoleType, id, KnownNames.GetValueOrDefault(id, id));
+        return Known.TryGetValue(id, out var k)
+            ? new ConsoleDescriptor(consoleType, id, k.Name, k.Maker, k.Badge)
+            : new ConsoleDescriptor(consoleType, id, id, "", id.Length <= 4 ? id : id[..3]);
     }
 
     /// <summary>Every console, sorted by display name.</summary>

@@ -134,9 +134,8 @@ These were all reproduced against real files with `tools/ParserHarness`.
 - `MainViewModel.RomPaths` (static) → `ILibraryRootsService`.
 
 ### 3.4 Domain cleanup [P2]
-- Give `GamingConsole` content: a descriptor record (Id, DisplayName, Manufacturer, Generation,
-  Extensions, Icon), registered as data, so the UI stops deriving names from type names
-  (`_consoleType.Name.Replace("Console","")`).
+- [x] `ConsoleDescriptor` carries Id, DisplayName, Manufacturer and Badge; the shell builds console
+  pages from it and shows DisplayName everywhere (Id stays the settings/cache key).
 - Align namespaces with folders.
 - Narrow `Rom`: platform-specific fields move to the subclasses.
 - Replace the reflection `CopyNonNullProperties` merge with an explicit `Merge(Rom other)`.
@@ -200,7 +199,7 @@ game data, not Wii), gbc 367, nsp 97, pkg 56, cso 46, iso 33).
 - [ ] Dashboard: missing updates total (the Switch page has the report; needs a cached versions.json parse).
 - [x] **Navigation**: a left sidebar with consoles (count + scan indicator) instead of tabs.
 - [x] "All consoles" view with a console column (shown when 2+ consoles).
-- [ ] Console icons in the sidebar.
+- [x] Console icons in the sidebar (manufacturer-coloured badges from `ConsoleDescriptor`).
 - [x] Box art in the details panel: `ImageCache` downloads URLs once into `Cache/Images`.
 - [x] **Cards toggle** (`ItemsRepeater` + `UniformGridLayout`, covers load lazily per realized card).
 - [x] Embedded covers: Switch control-NCA icon, PS4 icon0.png, 3DS SMDH (CIA), DS banner, PSP ICON0.

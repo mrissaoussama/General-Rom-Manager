@@ -53,10 +53,16 @@
                         <TextBlock Text="Dashboard" FontWeight="SemiBold" />
                     </DataTemplate>
                     <DataTemplate DataType="vm:ConsoleViewModelBase">
-                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
-                            <TextBlock Text="{Binding ConsoleName}" />
-                            <TextBlock Grid.Column="1" Text="{Binding RomCount}" Opacity="0.6" />
-                            <ProgressBar Grid.Row="1" Grid.ColumnSpan="2" IsIndeterminate="True"
+                        <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto">
+                            <Border Background="{Binding BadgeBrush}" CornerRadius="3" Width="34" Height="18" Margin="0,0,8,0"
+                                    VerticalAlignment="Center" IsVisible="{Binding Badge, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                                <TextBlock Text="{Binding Badge}" Foreground="White" FontSize="10" FontWeight="SemiBold"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <TextBlock Grid.Column="1" Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis"
+                                       VerticalAlignment="Center" ToolTip.Tip="{Binding DisplayName}" />
+                            <TextBlock Grid.Column="2" Text="{Binding RomCount}" Opacity="0.6" VerticalAlignment="Center" />
+                            <ProgressBar Grid.Row="1" Grid.ColumnSpan="3" IsIndeterminate="True"
                                          Height="2" MinHeight="2" Margin="0,3,0,0" IsVisible="{Binding IsLoading}" />
                         </Grid>
                     </DataTemplate>

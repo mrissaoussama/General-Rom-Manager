@@ -14,6 +14,7 @@ public sealed partial class LibraryViewModel : ConsoleViewModelBase
     {
         _consoles = consoles;
         _scanAll = scanAll;
+        Describe(new ConsoleDescriptor(typeof(GamingConsole), "All", "All consoles", "", "ALL"));
         foreach (var c in consoles) c.PropertyChanged += OnConsoleChanged;
         consoles.CollectionChanged += (_, e) =>
         {

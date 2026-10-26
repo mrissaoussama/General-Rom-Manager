@@ -114,7 +114,9 @@ public partial class MainViewModel : ViewModelBase
     private ConsoleViewModelBase CreateConsole(Type consoleType)
     {
         var vmType = typeof(ConsoleViewModel<>).MakeGenericType(consoleType);
-        var vm = (ConsoleViewModelBase)Activator.CreateInstance(vmType, consoleType.Name.Replace("Console", ""), _serviceProvider)!;
+        var descriptor = ConsoleModules.Describe(consoleType);
+        var vm = (ConsoleViewModelBase)Activator.CreateInstance(vmType, descriptor.Id, _serviceProvider)!;
+        vm.Describe(descriptor);
         vm.Operations = OperationService;
         vm.OperationQueued += () => SelectedBottomTab = OperationsTab;
         vm.PropertyChanged += (_, e) =>

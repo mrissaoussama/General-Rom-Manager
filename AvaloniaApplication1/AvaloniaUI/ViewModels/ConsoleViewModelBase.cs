@@ -51,7 +51,31 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
 
     protected virtual Task CheckMissingUpdatesAsync() => Task.CompletedTask;
 
+    /// <summary>Stable console id (settings keys, plugin matching).</summary>
     public string ConsoleName { get; }
+    /// <summary>Name shown in the UI; defaults to <see cref="ConsoleName"/>.</summary>
+    public string DisplayName { get; private set; } = "";
+    public string Badge { get; private set; } = "";
+    public string Manufacturer { get; private set; } = "";
+    public IBrush BadgeBrush => ManufacturerBrush(Manufacturer);
+
+    /// <summary>Applies the console's display data (set once by the shell after construction).</summary>
+    public void Describe(ConsoleDescriptor descriptor)
+    {
+        DisplayName = descriptor.DisplayName;
+        Badge = descriptor.Badge;
+        Manufacturer = descriptor.Manufacturer;
+    }
+
+    private static IBrush ManufacturerBrush(string manufacturer) => manufacturer switch
+    {
+        "Nintendo" => new SolidColorBrush(Color.FromRgb(0xC6, 0x28, 0x28)),
+        "Sony" => new SolidColorBrush(Color.FromRgb(0x1F, 0x4E, 0xA8)),
+        "Microsoft" => new SolidColorBrush(Color.FromRgb(0x2E, 0x7D, 0x32)),
+        "Sega" => new SolidColorBrush(Color.FromRgb(0x15, 0x65, 0xC0)),
+        "NEC" => new SolidColorBrush(Color.FromRgb(0xEF, 0x6C, 0x00)),
+        _ => new SolidColorBrush(Color.FromRgb(0x61, 0x61, 0x61)),
+    };
     public int RomCount => Roms.Count;
     public bool ShowEmptyState => !IsLoading && Roms.Count == 0;
 
@@ -63,6 +87,7 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
     protected ConsoleViewModelBase(string consoleName, ImageCache? images)
     {
         ConsoleName = consoleName;
+        DisplayName = consoleName;
         _images = images;
         _romsView = CreateView(_roms);
         _roms.CollectionChanged += OnRomsCollectionChanged;

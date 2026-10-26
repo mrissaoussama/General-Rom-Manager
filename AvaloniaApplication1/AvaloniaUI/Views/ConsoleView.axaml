@@ -12,7 +12,7 @@
 
         <!-- Header: name + actions + filter -->
         <DockPanel DockPanel.Dock="Top" Margin="10,8,10,4" LastChildFill="False">
-            <TextBlock DockPanel.Dock="Left" Text="{Binding ConsoleName}" Classes="h2" VerticalAlignment="Center" />
+            <TextBlock DockPanel.Dock="Left" Text="{Binding DisplayName}" Classes="h2" VerticalAlignment="Center" />
             <TextBlock DockPanel.Dock="Left" Text="{Binding RomCount, StringFormat='{}{0:N0} ROMs'}"
                        Classes="muted" VerticalAlignment="Center" Margin="10,0,0,0" />
 
@@ -108,7 +108,7 @@
 
                 <StackPanel Spacing="8" HorizontalAlignment="Center" VerticalAlignment="Center"
                             IsVisible="{Binding ShowEmptyState}">
-                    <TextBlock Text="{Binding ConsoleName, StringFormat='No {0} ROMs yet'}" Classes="h3" HorizontalAlignment="Center" />
+                    <TextBlock Text="{Binding DisplayName, StringFormat='No {0} ROMs yet'}" Classes="h3" HorizontalAlignment="Center" />
                     <TextBlock Text="Choose the folder that holds your ROMs in Settings, then scan it." Classes="muted" />
                     <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
                         <Button Content="Open Settings…"
