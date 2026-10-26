@@ -365,6 +365,8 @@ FodyWeavers.xsd
 settings.json
 *.db
 tools/ParserHarness/paths.json
+[Cc]ache/
+*.keys
 output.txt
 es.exe
 *.DotSettings.user

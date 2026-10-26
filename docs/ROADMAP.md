@@ -19,7 +19,7 @@ Legend: **[P0]** = data-safety or correctness, **[P1]** = high value, **[P2]** =
       `net10.0-android` / `net10.0-browser`; if not, delete them.
 - [x] Delete junk from the repo root (zip removed; local logs/tools git-ignored): `RomManager.zip`, `hs_err_pid5052.log`, `output.txt`, `es.exe`,
       `RomManager.sln.DotSettings.user`, `AvaloniaUI.Desktop/{err,out}.txt`, `AvaloniaUI.Desktop/US.en.json`.
-- [ ] `.gitignore`: `settings.json`, `*.db`, `Logs/`, `Cache/`, `*.keys`, `.vscode/` (or commit a
+- [x] `.gitignore`: `settings.json`, `*.db`, `Logs/`, `Cache/`, `*.keys`, `.vscode/` (or commit a
       shared `.vscode` on purpose), `tools/ParserHarness/paths.json`.
 - [ ] Move to the `.slnx` format (`dotnet sln migrate`) and list only the live projects.
 - [ ] Add `Directory.Build.props` at the root with the shared settings: `Nullable`,
@@ -52,7 +52,7 @@ Legend: **[P0]** = data-safety or correctness, **[P1]** = high value, **[P2]** =
       known high-severity advisories (NU1903, e.g. GHSA-cvvh-rhrc-wg4q). Set `PrivateAssets="all"`
       on the Design reference in `RomManagerShared.csproj` (it is design-time only) and bump to
       10.0.x. Confirm with `dotnet nuget why <proj> System.Security.Cryptography.Xml`.
-- [ ] Fix the existing warnings: move `OpenFolderDialog`/`OpenFileDialog` to
+- [x] Fix the existing warnings (the UI projects build clean): move `OpenFolderDialog`/`OpenFileDialog` to
       `TopLevel.StorageProvider`, and fix the nullability warnings in `ConsoleViewModel.cs:371-427`.
 - [ ] Remove `Microsoft.NETCore.Platforms` from the root `Directory.Build.props` once DiscUtils is
       replaced (it only existed to work around DiscUtils' old transitive dependencies).
@@ -175,9 +175,9 @@ game data, not Wii), gbc 367, nsp 97, pkg 56, cso 46, iso 33).
 - [x] Dreamcast GDI and GD-ROM CHD (IP.BIN). Still open: CDI.
 - [x] Wii U: TMD and WUD/WUX read without keys; cdecrypt is optional and no longer bundled (ADR 0002). Still open: in-process meta.xml decryption. Only decrypt `meta.xml`
       when the title key is available.
-- [ ] Switch: missing-update/DLC report (the backend exists in `SwitchManager.GetMissingUpdates`)
-      using the downloaded `versions.json`. Today it logs "Switch version path not found" until the
-      title DB is downloaded, so prompt for the download instead.
+- [x] Switch: missing-update report ("Missing updates" on the console page, `SwitchUpdateChecker`,
+      numeric version compare against `versions.json`; prompts to download it when absent). Still
+      open: missing-DLC report (needs the titledb DLC list).
 
 ## Phase 5: UI and UX (1–2 weeks, can overlap phase 4)
 
