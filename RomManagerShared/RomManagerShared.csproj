@@ -20,7 +20,8 @@
 		</None>
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="DiscUtils" />
+		<PackageReference Include="LTRData.DiscUtils.Iso9660" />
+		<PackageReference Include="LTRData.DiscUtils.Udf" />
 		<PackageReference Include="HtmlAgilityPack" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Design">
 			<PrivateAssets>all</PrivateAssets>
