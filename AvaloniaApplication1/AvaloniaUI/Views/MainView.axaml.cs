@@ -29,7 +29,7 @@ public partial class MainView : UserControl
             .OfType<string>()
             .Select(p => Directory.Exists(p) ? p : Path.GetDirectoryName(p))
             .OfType<string>()
-            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Distinct(FileUtils.PathComparer)
             .ToList();
         try
         {

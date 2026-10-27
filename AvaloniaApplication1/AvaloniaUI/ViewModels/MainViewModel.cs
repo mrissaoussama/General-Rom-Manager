@@ -299,7 +299,7 @@ public partial class MainViewModel : ViewModelBase
         if (await Dialogs.ChooseConsoleAsync(folder, consoles, guess, detail) is not { } chosen) return;
 
         var existing = _roots.GetRoots(chosen.ConsoleType);
-        if (existing.Contains(folder, StringComparer.OrdinalIgnoreCase))
+        if (existing.Contains(folder, FileUtils.PathComparer))
         {
             StatusMessage = $"{folder} is already a {chosen.DisplayName} folder";
             return;

@@ -428,7 +428,7 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
 
         void RemoveRows(string path)
         {
-            foreach (var row in Roms.Where(r => string.Equals(r.Path, path, StringComparison.OrdinalIgnoreCase)).ToList())
+            foreach (var row in Roms.Where(r => string.Equals(r.Path, path, FileUtils.PathComparison)).ToList())
                 RemoveRow(row);
         }
 
