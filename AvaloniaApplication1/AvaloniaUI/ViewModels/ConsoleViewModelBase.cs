@@ -374,16 +374,26 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
     [RelayCommand]
     private async Task Delete(IReadOnlyList<RomViewModel> roms)
     {
-        if (roms.Count == 0) return;
-        var plural = roms.Count == 1 ? "" : "s";
-        if (!await Shell.ConfirmAsync("Delete", $"Delete {roms.Count} ROM file{plural} from disk? This cannot be undone.", "Delete"))
+        // One file can hold several roms (e.g. an NSP with a game and its update); delete per file.
+        var paths = roms.Select(r => r.Path).Where(p => p.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        var folders = paths.Where(Directory.Exists).ToList();
+        var files = paths.Except(folders).ToList();
+        if (files.Count == 0)
+        {
+            StatusMessage = folders.Count > 0 ? "Folder ROMs are not deleted from here; remove the folder in your file manager." : "Nothing to delete";
             return;
-        foreach (var r in roms.ToList())
+        }
+        var plural = files.Count == 1 ? "" : "s";
+        var skipped = folders.Count == 0 ? "" : $" {folders.Count} folder ROM(s) in the selection are skipped.";
+        if (!await Shell.ConfirmAsync("Delete", $"Delete {files.Count} file{plural} from disk? This cannot be undone.{skipped}", "Delete"))
+            return;
+        foreach (var path in files)
         {
             try
             {
-                if (File.Exists(r.Path)) File.Delete(r.Path);
-                RemoveRow(r);
+                if (File.Exists(path)) File.Delete(path);
+                foreach (var row in Roms.Where(r => string.Equals(r.Path, path, StringComparison.OrdinalIgnoreCase)).ToList())
+                    RemoveRow(row);
             }
             catch (Exception ex) { StatusMessage = $"Delete failed: {ex.Message}"; }
         }
