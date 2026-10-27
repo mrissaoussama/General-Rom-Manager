@@ -85,6 +85,8 @@ public sealed class PluginManager : IAsyncDisposable
 {
     private readonly List<PluginEntry> _entries = [];
     private readonly HashSet<string> _loadedPaths = new(StringComparer.OrdinalIgnoreCase);
+    // Startup loads plugins in the background while Settings can import or reload; one load at a time.
+    private readonly SemaphoreSlim _loadGate = new(1, 1);
     private PluginApprovalStore? _approvals;
     private readonly IServiceProvider _rootServices;
     private readonly ILoggerFactory _loggerFactory;
@@ -110,7 +112,10 @@ public sealed class PluginManager : IAsyncDisposable
     }
 
     /// <summary>Returns a snapshot of currently loaded plugins.</summary>
-    public IReadOnlyList<IPlugin> Plugins => _entries.Select(e => e.Plugin).ToList();
+    public IReadOnlyList<IPlugin> Plugins
+    {
+        get { lock (_entries) return _entries.Select(e => e.Plugin).ToList(); }
+    }
 
     public PluginManager(IServiceProvider rootServices, ILoggerFactory loggerFactory)
     {
@@ -138,12 +143,20 @@ public sealed class PluginManager : IAsyncDisposable
             return;
         }
 
-        var dlls = Directory.EnumerateFiles(pluginDirectory, "*.dll", SearchOption.AllDirectories);
+        var dlls = Directory.EnumerateFiles(pluginDirectory, "*.dll", SearchOption.AllDirectories).ToList();
 
-        foreach (var dll in dlls)
+        await _loadGate.WaitAsync();
+        try
         {
-            if (_loadedPaths.Contains(Path.GetFullPath(dll))) continue;
-            await TryLoadPluginDllAsync(dll, selectedRoms ?? [], askForApproval);
+            foreach (var dll in dlls)
+            {
+                if (_loadedPaths.Contains(Path.GetFullPath(dll))) continue;
+                await TryLoadPluginDllAsync(dll, selectedRoms ?? [], askForApproval);
+            }
+        }
+        finally
+        {
+            _loadGate.Release();
         }
     }
 
@@ -251,7 +264,7 @@ public sealed class PluginManager : IAsyncDisposable
 
             await plugin.InitializeAsync(context);
 
-            _entries.Add(new PluginEntry(plugin, new WeakReference<AssemblyLoadContext>(loadContext)));
+            lock (_entries) _entries.Add(new PluginEntry(plugin, new WeakReference<AssemblyLoadContext>(loadContext)));
             _logger.LogInformation("Loaded plugin: {Name} v{Version}", plugin.PluginName, plugin.PluginVersion);
             return true;
         }
@@ -270,7 +283,9 @@ public sealed class PluginManager : IAsyncDisposable
     /// </summary>
     public async Task ExecuteAsync(string pluginName, int optionIndex, IReadOnlyList<Rom>? selectedRoms = null)
     {
-        var entry = _entries.FirstOrDefault(e => e.Plugin.PluginName == pluginName)
+        PluginEntry? found;
+        lock (_entries) found = _entries.FirstOrDefault(e => e.Plugin.PluginName == pluginName);
+        var entry = found
             ?? throw new InvalidOperationException($"Plugin '{pluginName}' is not loaded.");
 
         var pluginLogger = _loggerFactory.CreateLogger(entry.Plugin.GetType().FullName ?? pluginName);
@@ -323,8 +338,7 @@ public sealed class PluginManager : IAsyncDisposable
 
     /// <summary>Returns plugins that apply to a given console name.</summary>
     public IEnumerable<IPlugin> GetPluginsForConsole(string consoleName)
-        => _entries
-            .Select(e => e.Plugin)
+        => Plugins
             .Where(p => p.SupportedConsoles.Count == 0
                      || p.SupportedConsoles.Contains(consoleName, StringComparer.OrdinalIgnoreCase));
 
@@ -332,7 +346,13 @@ public sealed class PluginManager : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        foreach (var entry in _entries)
+        List<PluginEntry> entries;
+        lock (_entries)
+        {
+            entries = [.. _entries];
+            _entries.Clear();
+        }
+        foreach (var entry in entries)
         {
             try { await entry.Plugin.DisposeAsync(); }
             catch { /* best-effort */ }
@@ -340,8 +360,6 @@ public sealed class PluginManager : IAsyncDisposable
             if (entry.LoadContext.TryGetTarget(out var ctx))
                 ctx.Unload();
         }
-
-        _entries.Clear();
     }
 }
 

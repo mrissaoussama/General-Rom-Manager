@@ -119,12 +119,16 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
         catch { return []; }
     }
 
+    // A new scan cancels the running one and waits for it to stop, so two scans never write the same rows.
+    private readonly SemaphoreSlim _scanGate = new(1, 1);
+
     protected override async Task LoadAsync(bool fullRescan)
     {
         ScanCts?.Cancel();
         using var cts = ScanCts = new CancellationTokenSource();
         var ct = cts.Token;
         var libraryKey = _consoleType.Name;
+        await _scanGate.WaitAsync();
         try
         {
             IsLoading = true;
@@ -179,6 +183,7 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
         }
         finally
         {
+            _scanGate.Release();
             if (ScanCts == cts) ScanCts = null;
             ProgressPercent = 100;
             IsIndeterminate = false;
