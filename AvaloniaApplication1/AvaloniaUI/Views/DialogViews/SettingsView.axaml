@@ -48,7 +48,7 @@
                         <TextBlock Classes="heading" Text="Database" />
                         <StackPanel Orientation="Horizontal" Spacing="4">
                             <TextBlock Classes="label" Text="Database folder" />
-                            <TextBox Text="{Binding DatabasePath.Value}" Width="320" Watermark="config.json default"
+                            <TextBox Text="{Binding DatabasePath.Value}" Width="320" PlaceholderText="config.json default"
                                      AutomationProperties.Name="Database folder" />
                             <Button Content="Browse…" Command="{Binding BrowseDatabaseCommand}" />
                             <TextBlock Classes="status" Text="{Binding DatabasePath.Status.Text}" Foreground="{Binding DatabasePath.Status.Brush}" />
@@ -69,7 +69,7 @@
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Spacing="4">
                                             <TextBlock Classes="label" />
-                                            <TextBox Text="{Binding ExtraFolders}" Width="320" Watermark="More folders, separated by ';'" />
+                                            <TextBox Text="{Binding ExtraFolders}" Width="320" PlaceholderText="More folders, separated by ';'" />
                                             <Button Content="Add…" CommandParameter="{Binding}"
                                                     Command="{Binding #Root.((vm:SettingsViewModel)DataContext).AddRomFolderCommand}" />
                                         </StackPanel>
@@ -85,10 +85,10 @@
                                 <DataTemplate x:DataType="vm:ConsoleSettingsRow">
                                     <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,2">
                                         <TextBlock Classes="label" Text="{Binding DisplayName}" />
-                                        <TextBox Text="{Binding EmulatorPath}" Width="320" Watermark="Program" />
+                                        <TextBox Text="{Binding EmulatorPath}" Width="320" PlaceholderText="Program" />
                                         <Button Content="Browse…" CommandParameter="{Binding}"
                                                 Command="{Binding #Root.((vm:SettingsViewModel)DataContext).BrowseEmulatorCommand}" />
-                                        <TextBox Text="{Binding EmulatorArguments}" Width="140" Watermark="Arguments" />
+                                        <TextBox Text="{Binding EmulatorArguments}" Width="140" PlaceholderText="Arguments" />
                                     </StackPanel>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
@@ -97,7 +97,7 @@
                         <TextBlock Classes="heading" Text="Scanning" />
                         <StackPanel Orientation="Horizontal" Spacing="4">
                             <TextBlock Classes="label" Text="Rescan every (hours)" />
-                            <TextBox Text="{Binding RescanIntervalHours}" Width="60" Watermark="off"
+                            <TextBox Text="{Binding RescanIntervalHours}" Width="60" PlaceholderText="off"
                                      AutomationProperties.Name="Rescan interval in hours" />
                             <TextBlock Classes="hint" VerticalAlignment="Center" Text="Catches changes the folder watchers miss (drives plugged in later, edits from other machines)." />
                         </StackPanel>
@@ -107,8 +107,8 @@
                                 <DataTemplate x:DataType="vm:ConsoleSettingsRow">
                                     <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,2">
                                         <TextBlock Classes="label" Text="{Binding DisplayName}" />
-                                        <TextBox Text="{Binding Parallelism}" Width="60" Watermark="auto" />
-                                        <TextBox Text="{Binding ExcludedFolders}" Width="320" Watermark="Folders to skip" />
+                                        <TextBox Text="{Binding Parallelism}" Width="60" PlaceholderText="auto" />
+                                        <TextBox Text="{Binding ExcludedFolders}" Width="320" PlaceholderText="Folders to skip" />
                                     </StackPanel>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
@@ -121,7 +121,7 @@
                                 <DataTemplate x:DataType="vm:ToolPathRow">
                                     <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,2">
                                         <TextBlock Classes="label" Text="{Binding Tool.DisplayName}" />
-                                        <TextBox Text="{Binding Path}" Width="320" Watermark="{Binding Placeholder}" />
+                                        <TextBox Text="{Binding Path}" Width="320" PlaceholderText="{Binding Placeholder}" />
                                         <Button Content="Browse…" CommandParameter="{Binding}"
                                                 Command="{Binding #Root.((vm:SettingsViewModel)DataContext).BrowseToolCommand}" />
                                     </StackPanel>
@@ -132,7 +132,7 @@
                         <TextBlock Classes="heading" Text="File organiser" />
                         <StackPanel Orientation="Horizontal" Spacing="4">
                             <TextBlock Classes="label" Text="1G1R region priority" />
-                            <TextBox Text="{Binding RegionPriority}" Width="320" Watermark="USA, World, Europe, Japan" />
+                            <TextBox Text="{Binding RegionPriority}" Width="320" PlaceholderText="USA, World, Europe, Japan" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Spacing="4">
                             <TextBlock Classes="label" Text="Rename template" />
@@ -188,15 +188,15 @@
                         <TextBlock Classes="hint" Text="Leave blank to use the defaults from config.json." />
                         <StackPanel Orientation="Horizontal" Spacing="4">
                             <TextBlock Classes="label" Text="Switch TitleDB URL" />
-                            <TextBox Text="{Binding SwitchTitleDbUrl}" Width="420" Watermark="https://raw.githubusercontent.com/blawar/titledb/master/" />
+                            <TextBox Text="{Binding SwitchTitleDbUrl}" Width="420" PlaceholderText="https://raw.githubusercontent.com/blawar/titledb/master/" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Spacing="4">
                             <TextBlock Classes="label" Text="Switch versions URL" />
-                            <TextBox Text="{Binding SwitchVersionsUrl}" Width="420" Watermark="https://raw.githubusercontent.com/blawar/titledb/master/versions.json" />
+                            <TextBox Text="{Binding SwitchVersionsUrl}" Width="420" PlaceholderText="https://raw.githubusercontent.com/blawar/titledb/master/versions.json" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Spacing="4">
                             <TextBlock Classes="label" Text="Switch TitleDB folder" />
-                            <TextBox Text="{Binding SwitchTitleDbPath.Value}" Width="320" Watermark="titledb" />
+                            <TextBox Text="{Binding SwitchTitleDbPath.Value}" Width="320" PlaceholderText="titledb" />
                             <TextBlock Classes="status" Text="{Binding SwitchTitleDbPath.Status.Text}" Foreground="{Binding SwitchTitleDbPath.Status.Brush}" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Spacing="4">

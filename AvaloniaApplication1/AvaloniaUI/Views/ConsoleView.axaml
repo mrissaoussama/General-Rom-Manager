@@ -25,7 +25,7 @@
                        Classes="muted" VerticalAlignment="Center" Margin="10,0,0,0" />
 
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6">
-                <TextBox x:Name="SearchBox" Width="220" Watermark="Filter (Ctrl+F)" Text="{Binding SearchText}" />
+                <TextBox x:Name="SearchBox" Width="220" PlaceholderText="Filter (Ctrl+F)" Text="{Binding SearchText}" />
                 <ToggleButton Content="Cards" IsChecked="{Binding IsCardView}" ToolTip.Tip="Show covers instead of the table" />
                 <ToggleButton Content="Group" IsChecked="{Binding IsGrouped}" IsEnabled="{Binding !IsCardView}"
                               ToolTip.Tip="Group updates and DLC under their game" />
