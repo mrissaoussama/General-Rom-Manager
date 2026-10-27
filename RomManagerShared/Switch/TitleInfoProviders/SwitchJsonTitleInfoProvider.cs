@@ -100,9 +100,9 @@ public class SwitchJsonTitleInfoProvider : TitleInfoProvider<SwitchConsole>, ICa
         if (TitlesDatabase is not null)
             return;
         TitlesDatabase = [];
-        if (Source == null)
+        if (string.IsNullOrEmpty(Source))
         {
-            return;
+            return; // no TitleDB folder configured
         }
         if (!Directory.Exists(Source))
         {

@@ -27,6 +27,9 @@ public sealed partial class DashboardViewModel : ViewModelBase
 
     public bool HasConsoles => Consoles.Count > 0;
 
+    // Sidebar entry name for screen readers.
+    public override string ToString() => "Dashboard";
+
     public DashboardViewModel(ObservableCollection<ConsoleViewModelBase> consoles, Action<ConsoleViewModelBase> open)
     {
         Consoles = consoles;

@@ -89,6 +89,9 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
     public string Manufacturer { get; private set; } = "";
     public IBrush BadgeBrush => ManufacturerBrush(Manufacturer);
 
+    // List items (sidebar) are announced by screen readers through ToString.
+    public override string ToString() => DisplayName;
+
     /// <summary>Applies the console's display data (set once by the shell after construction).</summary>
     public void Describe(ConsoleDescriptor descriptor)
     {
