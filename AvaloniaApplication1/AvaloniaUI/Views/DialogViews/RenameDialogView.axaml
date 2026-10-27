@@ -16,7 +16,7 @@
     </UserControl.Resources>
     <StackPanel Spacing="8">
         <TextBlock Text="Template" FontWeight="SemiBold" />
-        <TextBox Text="{Binding Template}" CaretIndex="{Binding CaretIndex}" AutomationProperties.Name="Template" />
+        <TextBox Text="{Binding Template}" CaretIndex="{Binding CaretIndex, Mode=TwoWay}" AutomationProperties.Name="Template" />
         <TextBlock Text="General" Opacity="0.7" />
         <ItemsControl ItemsSource="{Binding General}" ItemsPanel="{StaticResource Wrap}" ItemTemplate="{StaticResource Chip}" />
         <TextBlock Text="{Binding ConsoleName}" Opacity="0.7" IsVisible="{Binding HasConsolePlaceholders}" />

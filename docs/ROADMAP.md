@@ -108,7 +108,8 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
 ## Phase G: Testing and release
 
 - [ ] Golden JSON for parser fixtures; `tools/ParserHarness --json`.
-- [ ] Headless UI tests (Avalonia.Headless) for the console page and dashboard.
+- [x] Headless UI tests (Avalonia.Headless, `HeadlessUiTests`): dialogs clicked with a real pointer, the
+      dashboard, and the console page's grid.
 - [ ] Velopack installers and auto-update; macOS `.app` bundle; code signing.
 
 ---
