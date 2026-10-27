@@ -19,9 +19,9 @@ public class SwitchRomNSPXCIParser : IRomParser<SwitchConsole>, IHasRequirements
 
     // ── Requirements ──────────────────────────────────────────────────────
     private static readonly string DefaultProdKeys =
-        Environment.ExpandEnvironmentVariables(@"%USERPROFILE%\.switch\prod.keys");
+        System.IO.Path.Combine(SwitchKeyStatus.DefaultKeysDirectory, "prod.keys");
     private static readonly string DefaultTitleKeys =
-        Environment.ExpandEnvironmentVariables(@"%USERPROFILE%\.switch\title.keys");
+        System.IO.Path.Combine(SwitchKeyStatus.DefaultKeysDirectory, "title.keys");
 
     private readonly ConsoleRequirement _prodKeysReq = new()
     {

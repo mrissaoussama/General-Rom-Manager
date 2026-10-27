@@ -1,17 +1,19 @@
 # Architecture
 
-State as of 2026-10-25. Target architecture and migration steps are in [ROADMAP.md](ROADMAP.md).
+State as of 2026-10-27. Target architecture and migration steps are in [ROADMAP.md](ROADMAP.md).
 
 ## Projects
 
 ```
-AvaloniaUI.Desktop ──► AvaloniaUI ──► RomManagerShared ──► Ryujinx.LibHac (NuGet, Switch)
-                                                       └─► SkyEditor.IO (vendored, 3DS)
-RomManagerTests ──► RomManagerShared
+AvaloniaUI.Desktop ──► AvaloniaUI ──► RomManagerShared ──► Ryujinx.LibHac, LTRData.DiscUtils, CHDSharp (NuGet)
+                                                       └─► SkyEditor.IO (vendored, net10.0; 3DS)
+RomManagerTests ──► RomManagerShared, AvaloniaUI (view-model tests), SamplePlugin (built, loaded at runtime)
 SamplePlugin    ──► RomManagerShared
+tools/ParserHarness ──► RomManagerShared
 ```
 
-Unmaintained: `AvaloniaUI.Android`, `AvaloniaUI.Browser` (net9.0-*).
+Solution: `RomManager.slnx`. Package versions: `Directory.Packages.props`. Unmaintained and not in the
+solution: `AvaloniaUI.Android`, `AvaloniaUI.Browser` (net9.0-*).
 
 ## Domain model (`RomManagerShared/Base`)
 
@@ -25,55 +27,62 @@ Unmaintained: `AvaloniaUI.Android`, `AvaloniaUI.Browser` (net9.0-*).
 ## Pipeline
 
 ```
-ConsoleViewModel<T>.LoadData
-  └─ ConsoleManager<T>.Setup()            TitleInfoProviderManager<T>.Setup → each provider loads its DB
-  └─ FileUtils.GetFilesInDirectoryWithExtensions(romPath, parser extensions)   (recursive)
-  └─ foreach file: ConsoleManager<T>.ProcessFile
-        └─ RomParserExecutor<T>.ExecuteParsers(file)
-              every parser whose Extensions contains ext → List<Rom>; merged by TitleID
-        └─ RomList.AddRange
-  └─ RomViewModel per Rom → DataGrid
+ConsoleViewModel<T>.LoadAsync
+  └─ LibraryScanner.LoadCachedAsync           rows from LibraryFile.RomsJson (instant)
+  └─ ConsoleManager<T>.Setup()                title info providers load their databases
+  └─ LibraryScanner.ScanAsync
+        files under the ROM folder matching parser extensions
+        unchanged (size, mtime, ScanVersion, DataFingerprint) → cached roms
+        changed/new → parallel batches (MaxParallelism 4):
+            ParseDiagnostics.CaptureAsync(RomParserExecutor<T>.ExecuteParsers(file))
+            → ConsoleManager<T>.EnrichAsync (title providers, DAT matching)  sequential
+            → LibraryFile { RomsJson, Error } saved in batches
+        deleted → LibraryFile removed
+  └─ RomViewModel per Rom → DataGrid / cards; LibraryWatcher triggers debounced rescans
 ```
 
-Title enrichment (`TitleInfoProviderManager<T>.GetTitleInfo`) runs providers in sequence; each either
-mutates the rom or returns a new one that is merged back.
+`RomParserExecutor<T>` runs every parser whose extensions match and merges results by TitleID; roms
+with no TitleID are dropped. Files that parse to nothing are reported with what the parsers logged.
 
 ## Composition (`AvaloniaUI/App.axaml.cs`)
 
-Generic Host + MS DI. `RegisterConsoleServices` reflects over `RomManagerShared` and registers open
-generics closed over every console type, all **scoped**. `AppDbContext` is scoped, configured in
-`OnConfiguring` (SQLite path from config, lazy-loading proxies). `PluginManager` is a singleton.
-`MainViewModel` gets one long-lived scope; `ConsoleViewModel` creates a new scope per load/action.
+Generic Host + MS DI. `ConsoleModules.Register` (ADR 0003) reflects over `RomManagerShared` and
+`Modules/*.dll` and registers, per console type, parsers, title info providers, organizers and the
+console manager, all **scoped**. `ConsoleModules.Describe` gives each console its display name,
+manufacturer and badge. `AppDbContext` is scoped; migrations run at startup. `PluginManager` is a
+singleton. Console view models create a scope per load or action.
 
 ## Persistence
 
-`AppDbContext` (split into partials per vendor: Nintendo, Sony, Microsoft, NoIntro) holds title-database
-DTOs and hashes. Single migration `20240225212403_InitialCreate` — the model has changed since, so
-there is likely pending model drift. The scanned **library is not persisted**.
+SQLite via EF Core (no lazy loading). `LibraryFiles` holds one row per scanned file (path, size, mtime,
+scan version, data fingerprint, error, roms as polymorphic JSON from `RomSnapshot`). Title-database
+DTOs and hashes have their own tables. `MigrationTests` and CI check for pending model changes.
 
 ## Cross-cutting
 
 | Concern | Implementation | Notes |
 |---|---|---|
-| Logging | static `FileUtils.Log` + `FileUtils.Logger` bridged to MEL | Parsers swallow exceptions and log; also many stray `Console.WriteLine` |
-| Config | static `RomManagerConfiguration` (config.json) + `Settings.Instance` (settings.json) | Two sources, static access |
-| Operations | `OperationQueue` / `QueuedOperation` with cancel + undo, `RomOperationService` | |
+| Logging | static `FileUtils.Log` + `FileUtils.Logger` bridged to MEL | `ParseDiagnostics` captures per-file messages during a scan |
+| Config | static `RomManagerConfiguration` (config.json) + `Settings.Instance` (settings.json) | Two sources, static access (ROADMAP 3.3) |
+| Operations | `OperationQueue` / `QueuedOperation` with cancel + undo, `RomOperationService` | Rename/move have dry-run previews |
 | Requirements | `IHasRequirements` → `ConsoleRequirement` (keys, dirs, DB files) | Surfaced in UI/onboarding |
-| Context actions | `IHasContextMenuActions`, `IConsoleRomAction`, `UniversalRomActions` (dupes, rename, hash) | |
-| Plugins | `PluginManager`: collectible `AssemblyLoadContext`, `[Plugin]`, `IPlugin`, declared `PluginPermission`s, zip import | Permissions are declarative only (not enforced) |
-| Downloads | `FileDownloader`, vendored Alto multi-thread downloader | |
-| External tools | Python `PSN_get_pkg_info.py` (+ runtime `pip install`), `WiiU/Parsers/cdecrypt.exe` | To be removed |
+| Context actions | `IHasContextMenuActions`, `IConsoleRomAction`, `UniversalRomActions` | |
+| Missing updates | `IMissingUpdateReporter` (Switch: `SwitchUpdateChecker` + versions.json) | Console page report + dashboard total |
+| Plugins | `PluginManager`: collectible `AssemblyLoadContext`, `[Plugin(Permissions = ...)]`, `PluginApiVersion`, approvals pinned to SHA-256 | Permissions are approved, not sandboxed |
+| Downloads | `FileDownloader` (`[ResourceDownload]` methods) | |
+| External tools | Optional, user-supplied (cdecrypt, xextool) under `<BaseDirectory>/Tools` | ADR 0002: no binaries in the repo |
 
 ## UI (`AvaloniaApplication1/AvaloniaUI`)
 
-- `MainView.axaml.cs` (~1,900 lines) builds the whole shell in C#: menu buttons, tabs per console,
-  DataGrid, details pane, bottom panel (log/downloads/operations), context menus, rename dialog.
-- Other windows (`SettingsWindow`, `OnboardingWindow`, `DownloadManagerWindow`, `LogWindow`) are also
-  code-built.
-- ViewModels use CommunityToolkit.Mvvm source generators. Grid columns come from
-  `IConsoleViewModel.GetColumnDescriptors()`.
+- AXAML views with compiled bindings: `MainView` (menu, sidebar with console badges, bottom panel),
+  `DashboardView`, `ConsoleView` (table or cards, filters, context menu), `RomDetailsView`.
+  `ViewLocator` maps view models to views and caches them.
+- `ConsoleViewModelBase` holds page state (filters, grouping, selection, commands); `ConsoleViewModel<T>`
+  adds scanning; `LibraryViewModel` is the all-consoles view.
+- Dialogs are small code-built windows behind `Utils/Shell.cs` (`SettingsWindow`, `OnboardingWindow`,
+  `PreviewWindow`, `PropertiesWindow`).
 
-## Console support matrix (tested against real files, 2026-10-25, after phase 2 fixes)
+## Console support matrix (real-file runs 2026-10-25; later formats covered by fixture tests)
 
 | Console | Formats | Status |
 |---|---|---|

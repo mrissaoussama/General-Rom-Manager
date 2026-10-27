@@ -236,10 +236,12 @@ game data, not Wii), gbc 367, nsp 97, pkg 56, cso 46, iso 33).
 - [x] Scanner integration test: temp folder → scan → modify → rescan → assert the diff (`LibraryScannerTests`).
 - [x] ViewModel tests for the filters (`ConsoleViewModelFilterTests`; tests reference AvaloniaUI).
 - [ ] ViewModel tests for commands and empty states.
-- [ ] Release: `dotnet publish -r win-x64/linux-x64/osx-arm64` self-contained, single-file. Add
-      Velopack for installers and auto-update, and keep the version in `Directory.Build.props`.
-- [ ] Update `README.md`: features, supported formats matrix (from ARCHITECTURE.md), keys setup,
-      screenshots.
+- [x] Release: `dotnet publish -r <rid>` gives a self-contained single-file `RomManager`; a `v*` tag
+      builds win-x64/linux-x64/osx-arm64 archives (`.github/workflows/release.yml`). Version in
+      `Directory.Build.props`, overridden from the tag.
+- [ ] Velopack installers and auto-update.
+- [x] Update `README.md`: features, supported formats, install, keys/title DB/DAT setup.
+- [ ] README screenshots.
 
 ---
 
