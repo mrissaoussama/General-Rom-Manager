@@ -1,4 +1,4 @@
-using Avalonia.Collections;
+﻿using Avalonia.Collections;
 
 
 namespace AvaloniaUI.ViewModels;
@@ -590,11 +590,31 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
     public static IReadOnlyList<ConversionTool> AvailableConversions(IReadOnlyList<RomViewModel> roms) =>
         [.. ConversionTools.All.Where(t => roms.Any(r => t.Accepts(r.Path)) && File.Exists(Settings.Instance.ToolPath(t)))];
 
-    /// <summary>Queues a conversion of the selected files (originals are kept).</summary>
-    public void Convert(ConversionTool tool, IReadOnlyList<RomViewModel> roms)
+    /// <summary>
+    /// Queues a conversion of the selected files (originals are kept). The program is pinned to its SHA-256 on first
+    /// use; if it changed since, the user confirms before it runs.
+    /// </summary>
+    public async Task ConvertAsync(ConversionTool tool, IReadOnlyList<RomViewModel> roms)
     {
         if (Operations is null) return;
-        Track(Operations.EnqueueConvert([.. roms.Select(r => r.RomSource)], tool, Settings.Instance.ToolPath(tool)), roms);
+        var exe = Settings.Instance.ToolPath(tool);
+        try
+        {
+            if (ToolPins.Default is { } pins && File.Exists(exe))
+            {
+                if (pins.Check(exe) == ToolPinStatus.Changed
+                    && !await Dialogs.ConfirmAsync(Strings.Console_ToolChangedTitle, string.Format(Strings.Console_ToolChanged, tool.DisplayName, exe), Strings.Console_RunAnyway))
+                    return;
+                pins.Pin(exe);
+            }
+        }
+        catch (Exception ex)
+        {
+            AppLog.Warn($"[Convert] {exe}: cannot check the program: {ex.Message}");
+            StatusMessage = string.Format(Strings.Console_Error, ex.Message);
+            return;
+        }
+        Track(Operations.EnqueueConvert([.. roms.Select(r => r.RomSource)], tool, exe), roms);
     }
 
     /// <summary>Starts the emulator configured for the rom's console (Settings → Emulators).</summary>

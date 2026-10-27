@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using RomManagerShared.Configuration;
 
 namespace RomManagerShared.Utils;
@@ -11,6 +11,31 @@ public sealed record ConversionTool(string Id, string DisplayName, string Execut
     string OutputExtension, string Arguments)
 {
     public bool Accepts(string path) => FileMagic.HasExtension(path, InputExtensions);
+
+    /// <summary>
+    /// The program's arguments, one list item each. <see cref="Arguments"/> is split on spaces (double quotes group
+    /// words) before the paths go in, so a path with spaces or quotes stays one argument.
+    /// </summary>
+    public IReadOnlyList<string> BuildArguments(string input, string output, string outdir) =>
+        [.. Tokenize(Arguments).Select(t => t.Replace("{in}", input).Replace("{out}", output).Replace("{outdir}", outdir))];
+
+    private static IEnumerable<string> Tokenize(string template)
+    {
+        var current = new System.Text.StringBuilder();
+        bool quoted = false, any = false;
+        foreach (var c in template)
+        {
+            if (c == '"') { quoted = !quoted; any = true; }
+            else if (char.IsWhiteSpace(c) && !quoted)
+            {
+                if (any) yield return current.ToString();
+                current.Clear();
+                any = false;
+            }
+            else { current.Append(c); any = true; }
+        }
+        if (any) yield return current.ToString();
+    }
 
     /// <summary><paramref name="configured"/> when set, else <c>&lt;BaseDirectory&gt;/Tools/&lt;exe&gt;</c>.</summary>
     public string ResolvePath(string? configured) =>
@@ -52,8 +77,7 @@ public static class ToolConverter
         try
         {
             var output = Path.Combine(temp, Path.GetFileName(final));
-            var args = tool.Arguments.Replace("{in}", input).Replace("{out}", output).Replace("{outdir}", temp);
-            var psi = new ProcessStartInfo(exePath, args)
+            var psi = new ProcessStartInfo(exePath)
             {
                 WorkingDirectory = temp,
                 UseShellExecute = false,
@@ -61,6 +85,7 @@ public static class ToolConverter
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
             };
+            foreach (var arg in tool.BuildArguments(input, output, temp)) psi.ArgumentList.Add(arg);
             using var process = Process.Start(psi) ?? throw new InvalidOperationException($"{tool.DisplayName} did not start");
             var log = new Queue<string>();
             void Keep(string? line)

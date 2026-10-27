@@ -1,4 +1,4 @@
-using AwesomeAssertions;
+﻿using AwesomeAssertions;
 using RomManagerShared.Utils;
 
 namespace RomManagerTests;
@@ -68,5 +68,31 @@ public sealed class ToolConverterTests : IDisposable
     {
         ConversionTools.Find("chdman-cd")!.Accepts("x.CUE").Should().BeTrue();
         ConversionTools.Find("dolphin-rvz")!.Accepts("x.rvz").Should().BeFalse();
+    }
+
+    [Fact]
+    public void BuildArguments_KeepsEachPathOneArgument_EvenWithQuotesAndSpaces()
+    {
+        var tool = ConversionTools.Find("chdman-cd")!;
+        var evil = "/roms/My \"Game\" -o /etc/passwd.cue";
+
+        var args = tool.BuildArguments(evil, "/tmp/out.chd", "/tmp");
+
+        args.Should().Equal("createcd", "-i", evil, "-o", "/tmp/out.chd");
+    }
+
+    [Fact]
+    public void ToolPins_PinOnFirstUse_AndNoticeAChangedProgram()
+    {
+        var exe = Path.Combine(_dir, "tool.bin");
+        File.WriteAllText(exe, "v1");
+        var pins = new ToolPins(Path.Combine(_dir, "pins.json"));
+
+        pins.Check(exe).Should().Be(ToolPinStatus.New);
+        pins.Pin(exe);
+        pins.Check(exe).Should().Be(ToolPinStatus.Unchanged);
+
+        File.WriteAllText(exe, "v2");
+        new ToolPins(Path.Combine(_dir, "pins.json")).Check(exe).Should().Be(ToolPinStatus.Changed);
     }
 }

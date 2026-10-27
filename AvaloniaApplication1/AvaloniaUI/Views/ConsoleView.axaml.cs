@@ -1,4 +1,4 @@
-using System.Windows.Input;
+﻿using System.Windows.Input;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
@@ -230,7 +230,7 @@ public partial class ConsoleView : UserControl
             {
                 var item = new MenuItem { Header = tool.DisplayName };
                 ToolTip.SetTip(item, string.Format(Strings.ConsoleView_KeepsTheOriginalWritesNextToIt, tool.OutputExtension));
-                item.Click += (_, _) => vm.Convert(tool, sel);
+                item.Click += async (_, _) => await vm.ConvertAsync(tool, sel);
                 convert.Items.Add(item);
             }
             _menu.Items.Add(convert);

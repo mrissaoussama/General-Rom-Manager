@@ -336,6 +336,13 @@
   <data name="Dialogs_InvalidTemplate" xml:space="preserve"><value>Invalid template: {0}</value></data>
   <data name="Dialogs_OfFileSChange" xml:space="preserve"><value>{0} of {1} file(s) change</value></data>
   <data name="Dialogs_Unchanged" xml:space="preserve"><value>{0}   (unchanged)</value></data>
+  <data name="Console_ToolChangedTitle" xml:space="preserve"><value>Program changed</value></data>
+  <data name="Console_ToolChanged" xml:space="preserve"><value>{0} at
+{1}
+is not the program that ran before (its contents changed). This is expected after you update it; otherwise something replaced it.
+
+Run it anyway? It will be trusted from now on.</value></data>
+  <data name="Console_RunAnyway" xml:space="preserve"><value>Run anyway</value></data>
   <data name="Dialogs_NotRenamed" xml:space="preserve"><value>{0}   (not renamed: {1})</value></data>
   <data name="Main_LooksLikeMatchingFileS" xml:space="preserve"><value>Looks like {0} ({1} matching file(s)).</value></data>
   <data name="Main_NoKnownROMFilesFoundPickTheConsoleManually" xml:space="preserve"><value>No known ROM files found. Pick the console manually.</value></data>
