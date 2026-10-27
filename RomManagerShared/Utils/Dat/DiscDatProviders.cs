@@ -129,5 +129,5 @@ public static class DiscHashing
     public static bool? UserOverride { get; set; }
 
     public static bool Enabled => UserOverride
-        ?? (bool.TryParse(RomManagerConfiguration.Configuration.GetSection("Dats:HashDiscImages").Value, out var v) && v);
+        ?? RomManagerConfiguration.Options.Dats.HashDiscImages;
 }

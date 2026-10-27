@@ -26,11 +26,6 @@
           "AU.en.json"
         ]
       }
-    },
-    "WiiU": {
-      "TitleDB": {
-        "Path": "Data\\WiiU\\titledb.xml"
-      }
     }
   }
 }

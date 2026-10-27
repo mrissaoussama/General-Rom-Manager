@@ -1,129 +1,93 @@
-﻿using Microsoft.Extensions.Configuration;
-using System;
-using System.IO;
+﻿using System.Collections.Concurrent;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Primitives;
 
 namespace RomManagerShared.Configuration;
 
+/// <summary>
+/// Loads config.json and config.local.json and exposes them as <see cref="AppOptions"/>. The app also registers
+/// them as <c>IOptionsMonitor&lt;AppOptions&gt;</c>; this static accessor serves code that is not built by DI
+/// (parsers' static helpers, modules' configuration classes). Edits to the files are picked up while running,
+/// except <see cref="GlobalPathsOptions.BaseDirectory"/>, which is fixed at start (the database lives there).
+/// </summary>
 public static class RomManagerConfiguration
 {
-    #region Properties
+    private static AppOptions? _options;
+    private static readonly ConcurrentDictionary<(string, Type), object> _consoleOptions = new();
+
     public static IConfigurationRoot Configuration { get; private set; } = new ConfigurationBuilder().Build();
     public static bool ConfigurationLoaded { get; private set; }
     public static string BaseFolder { get; private set; } = "";
-    #endregion
 
-    #region Initialization
+    /// <summary>Current options (rebound when the files change).</summary>
+    public static AppOptions Options => _options ??= Configuration.Get<AppOptions>() ?? new AppOptions();
+
     public static void Load(string jsonConfigPath)
     {
-        if (string.IsNullOrEmpty(jsonConfigPath))
-            throw new ArgumentNullException(nameof(jsonConfigPath));
+        ArgumentException.ThrowIfNullOrEmpty(jsonConfigPath);
 
-        // Use the assembly directory so the config is found regardless of the
-        // working directory (e.g. when running via 'dotnet run' from repo root).
-        var basePath = AppContext.BaseDirectory;
-
-        var builder = new ConfigurationBuilder()
-            .SetBasePath(basePath)
-            .AddJsonFile(jsonConfigPath, optional: true)
+        // The app folder, so the config is found whatever the working directory ('dotnet run' from the repo root).
+        Configuration = new ConfigurationBuilder()
+            .SetBasePath(AppContext.BaseDirectory)
+            .AddJsonFile(jsonConfigPath, optional: true, reloadOnChange: true)
             // Personal overrides (base folder, ROM folders) that stay out of git and releases.
-            .AddJsonFile(Path.ChangeExtension(jsonConfigPath, ".local.json"), optional: true);
+            .AddJsonFile(Path.ChangeExtension(jsonConfigPath, ".local.json"), optional: true, reloadOnChange: true)
+            .Build();
+        Reset();
+        ChangeToken.OnChange(Configuration.GetReloadToken, Reset);
 
-        Configuration = builder.Build();
         BaseFolder = GetBaseFolderPath();
-
-        if (!string.IsNullOrEmpty(BaseFolder))
-        {
-            try { Directory.CreateDirectory(BaseFolder); }
-            catch { /* best-effort; if AppData is inaccessible, later operations will surface a meaningful error */ }
-        }
+        try { Directory.CreateDirectory(BaseFolder); }
+        catch { /* best-effort; if AppData is inaccessible, later operations will surface a meaningful error */ }
 
         ConfigurationLoaded = true;
     }
-    #endregion
 
-    #region Path Configuration
+    private static void Reset()
+    {
+        _options = null;
+        _consoleOptions.Clear();
+    }
+
+    /// <summary>
+    /// A console module's section <c>Consoles:&lt;consoleId&gt;</c> bound to <typeparamref name="T"/>; defaults
+    /// (the property initialisers of <typeparamref name="T"/>) fill whatever the files leave out.
+    /// </summary>
+    public static T ForConsole<T>(string consoleId) where T : class, new() =>
+        (T)_consoleOptions.GetOrAdd((consoleId, typeof(T)),
+            key => Configuration.GetSection($"Consoles:{key.Item1}").Get<T>() ?? new T());
+
     public static string GetBaseFolderPath()
     {
-        // Honour the explicit BaseDirectory in config so users can point to any writable drive.
-        // Falls back to %AppData%\GeneralRomManager only when config is absent or the key is missing.
-        var configured = Configuration?.GetSection("GlobalPaths")["BaseDirectory"];
-        if (!string.IsNullOrWhiteSpace(configured))
-            return Environment.ExpandEnvironmentVariables(configured);
-
-        return Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "GeneralRomManager"
-        );
+        // Honour the explicit BaseDirectory so users can point to any writable drive.
+        var configured = Options.GlobalPaths.BaseDirectory;
+        return !string.IsNullOrWhiteSpace(configured)
+            ? Environment.ExpandEnvironmentVariables(configured)
+            : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "GeneralRomManager");
     }
 
-    /// <summary>Configured path under the base folder, or <paramref name="fallback"/> when the key is unset.</summary>
-    public static string GetPathOrDefault(string key, string fallback)
+    /// <summary><paramref name="relative"/> under the base folder (absolute paths stay as they are).</summary>
+    public static string UnderBase(string relative) =>
+        Path.IsPathFullyQualified(relative) ? relative : Path.Combine(BaseFolder, relative.TrimStart('\\', '/'));
+
+    /// <summary>Base-relative <paramref name="value"/>, or <paramref name="fallback"/> when it is empty.</summary>
+    public static string UnderBase(string? value, string fallback) =>
+        UnderBase(string.IsNullOrWhiteSpace(value) ? fallback : value);
+
+    // Empty until Load: callers skip writing (icons, logs) rather than write next to the working directory.
+    public static string GetSqliteDBPath() => Loaded(Options.GlobalPaths.Database);
+    public static string GetErrorLogPath() => Loaded(Options.GlobalPaths.ErrorLogs);
+    public static string GetPluginsPath() => Loaded(Options.GlobalPaths.Plugins);
+    public static string GetCachePath() => Loaded(Options.GlobalPaths.Cache);
+    private static string Loaded(string relative) => ConfigurationLoaded ? UnderBase(relative) : string.Empty;
+
+    public static string GetDatsPath() => UnderBase(Options.GlobalPaths.Dats);
+    public static string GetModulesPath() => UnderBase(Options.GlobalPaths.Modules);
+
+    /// <summary>ROM folder for a console from <c>Consoles:&lt;id&gt;:RomPath</c> (settings.json wins in the app).</summary>
+    public static string? GetConsoleRomPath(string consoleId)
     {
-        var value = Configuration?.GetSection(key).Value;
-        if (string.IsNullOrWhiteSpace(value)) value = fallback;
-        return Path.Combine(BaseFolder ?? string.Empty, value.TrimStart('\\', '/'));
+        var path = Configuration.GetSection($"Consoles:{consoleId}")["RomPath"];
+        return string.IsNullOrWhiteSpace(path) ? null : path;
     }
-
-    public static string GetGlobalPath(string key)
-    {
-        if (!ConfigurationLoaded) return string.Empty;
-        var value = Configuration?.GetSection("GlobalPaths")[key];
-        if (value is null) return string.Empty;
-        return Path.Combine(BaseFolder, value);
-    }
-
-    public static string GetConsoleRomPath(string consoleName)
-    {
-        if (!ConfigurationLoaded) return string.Empty;
-        return Configuration?.GetSection($"Consoles:{consoleName}:RomPath")?.Value ?? string.Empty;
-    }
-
-    public static string GetConsoleToolPath(string consoleName, string toolName)
-    {
-        if (!ConfigurationLoaded) return string.Empty;
-        var value = Configuration?.GetSection($"Consoles:{consoleName}:Tools:{toolName}")?.Value;
-        if (value is null) return string.Empty;
-        return Path.Combine(BaseFolder, value);
-    }
-    #endregion
-
-    #region Specific Path Accessors
-    public static string GetSqliteDBPath()
-    {
-        return GetGlobalPath("Database");
-    }
-
-    public static string GetErrorLogPath()
-    {
-        return GetGlobalPath("ErrorLogs");
-    }
-
-    public static string GetPluginsPath()
-    {
-        return GetGlobalPath("Plugins");
-    }
-
-    public static string GetCachePath()
-    {
-        return GetGlobalPath("Cache");
-    }
-    #endregion
-
-    #region Console-Specific Configuration
-    public static string GetTitleDBPath(string consoleName)
-    {
-        if (!ConfigurationLoaded) return string.Empty;
-        var value = Configuration?.GetSection($"Consoles:{consoleName}:TitleDB:Path")?.Value;
-        if (value is null) return string.Empty;
-        return Path.Combine(BaseFolder, value);
-    }
-
-    public static string GetTitleDBVersionsFile(string consoleName)
-    {
-        var dbPath = GetTitleDBPath(consoleName);
-        if (string.IsNullOrEmpty(dbPath)) return string.Empty;
-        var value = Configuration?.GetSection($"Consoles:{consoleName}:TitleDB:VersionsFile")?.Value;
-        return value is null ? string.Empty : Path.Combine(dbPath, value);
-    }
-    #endregion
 }

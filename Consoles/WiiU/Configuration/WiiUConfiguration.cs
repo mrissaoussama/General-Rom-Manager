@@ -1,29 +1,21 @@
-﻿using RomManagerShared.Configuration;
+using RomManagerShared.Configuration;
 
 namespace RomManagerShared.WiiU.Configuration;
 
-public static class WiiUConfiguration
+/// <summary><c>Consoles:WiiU</c> in config.json.</summary>
+public sealed class WiiUConfigSection
 {
-    public static string GetTitleDBPath()
-    {
-        return RomManagerConfiguration.GetPathOrDefault("WiiU:TitleDB:Path", "Data/WiiU/titledb.xml");
-    }
-
     /// <summary>User-supplied cdecrypt; not shipped with the app.</summary>
-    public static string GetCdecryptPath()
-    {
-        return RomManagerConfiguration.GetPathOrDefault("WiiU:CdecryptPath", "Tools/cdecrypt.exe");
-    }
-
+    public string CdecryptPath { get; set; } = "Tools/cdecrypt.exe";
     /// <summary>Opt-in: cdecrypt extracts into the ROM folder.</summary>
-    public static bool AllowCdecrypt()
-    {
-        return bool.TryParse(RomManagerConfiguration.Configuration?.GetSection("WiiU:AllowCdecrypt").Value, out var v) && v;
-    }
-
-    public static string GetTitleDBUrl()
-    {
-        return  RomManagerConfiguration.Configuration.GetSection("WiiU:TitleDB:TitleDBUrl").Value!;
-    }
+    public bool AllowCdecrypt { get; set; }
 }
 
+public static class WiiUConfiguration
+{
+    private static WiiUConfigSection Section => RomManagerConfiguration.ForConsole<WiiUConfigSection>("WiiU");
+
+    public static string GetCdecryptPath() => RomManagerConfiguration.UnderBase(Section.CdecryptPath);
+
+    public static bool AllowCdecrypt() => Section.AllowCdecrypt;
+}

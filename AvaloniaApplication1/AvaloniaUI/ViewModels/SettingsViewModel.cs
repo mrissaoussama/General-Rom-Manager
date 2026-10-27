@@ -227,7 +227,7 @@ public sealed partial class SettingsViewModel : DialogViewModel
         OnPropertyChanged(nameof(HasPlugins));
     }
 
-    private static string PluginsFolder() => RomManagerConfiguration.GetGlobalPath("Plugins");
+    private static string PluginsFolder() => RomManagerConfiguration.GetPluginsPath();
 
     [RelayCommand]
     private async Task ImportPlugin()

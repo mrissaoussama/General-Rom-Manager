@@ -23,8 +23,11 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
       (unused rom/title-DB tables dropped), and modules reach the app only through interfaces
       (`[ConsoleInfo]`, `IFolderLayout`, `IDownloadableResources`, `IConsoleOptions`). Removing a module DLL
       leaves the app working (`MissingModuleTests`; checked with the real app).
-- [ ] Fold config.json into an options model (`IOptionsMonitor<AppOptions>`); `RomManagerConfiguration` is
-      still a static facade read everywhere.
+- [x] config.json is an options model: `AppOptions` (also `IOptionsMonitor<AppOptions>`) and typed per-module
+      `Consoles:<Id>` sections with defaults. No string-key reads left; fixed keys the modules read but config.json
+      never had (3DS title DB URL/region files, Wii GameTDB URL, Switch title DB path read from the wrong section),
+      the Wii GameTDB zip, and a download that unpacked a zip while it was still open. Dead configuration
+      (PS4/PSP/PS Vita, Wii U titledb.xml) removed.
 - [x] **[P1]** Removed dead code: the PS4 Store scraper (`PS4PKGUpdateAndDLCChecker`, its HtmlAgilityPack use),
       the never-implemented `IRomMissingContentChecker` (PS4, 3DS stubs that only log "not implemented") and
       `RomMissingUpdates`/`RomMissingDLCs`. `PROJECT_ANALYSIS.md` is stale: delete it.

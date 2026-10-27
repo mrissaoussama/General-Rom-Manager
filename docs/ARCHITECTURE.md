@@ -65,7 +65,7 @@ DTOs and hashes have their own tables. `MigrationTests` and CI check for pending
 | Concern | Implementation | Notes |
 |---|---|---|
 | Logging | `AppLog` over `ILoggerFactory` (the host's in the app); `LogFileProvider` → `LogSink` (file, log panel) | `ParseDiagnostics` captures per-file messages during a scan; `FileUtils.Log` stays as a shim for plugins |
-| Config | static `RomManagerConfiguration` (config.json) + `Settings.Instance` (settings.json) | Two sources, static access (ROADMAP 3.3) |
+| Config | `AppOptions` + per-module `Consoles:<Id>` sections (config.json, reloading) + `Settings.Instance` (settings.json) | Static accessor kept for non-DI code; `IOptionsMonitor<AppOptions>` in DI |
 | Operations | `OperationQueue` / `QueuedOperation` with cancel + undo, `RomOperationService` | Rename/move have dry-run previews |
 | Requirements | `IHasRequirements` → `ConsoleRequirement` (keys, dirs, DB files) | Surfaced in UI/onboarding |
 | Context actions | `IHasContextMenuActions`, `IConsoleRomAction`, `UniversalRomActions` | |

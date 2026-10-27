@@ -1,4 +1,4 @@
-﻿using RomManagerShared.Base;
+using RomManagerShared.Base;
 using RomManagerShared.Interfaces;
 using RomManagerShared.WiiU.Parsers;
 using RomManagerShared.Utils;
@@ -16,10 +16,6 @@ RomParserExecutor<WiiUConsole> romParserExecutor)
         TitleInfoProviderManager = titleInfoProviderManager;
         RomList = [];
         GroupedRomList = [];
-        var titlesPath = WiiUConfiguration.GetTitleDBPath();
-        if (titlesPath == null)
-            AppLog.Warn("WiiU titles path not found");
-      
     }
     public override async Task Setup()
     {

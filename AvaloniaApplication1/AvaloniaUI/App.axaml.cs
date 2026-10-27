@@ -42,6 +42,9 @@ public partial class App : Application
             })
             .ConfigureServices((hostContext, services) =>
             {
+                // config.json as IOptionsMonitor<AppOptions> (reloads with the files)
+                services.Configure<AppOptions>(RomManagerConfiguration.Configuration);
+
                 // Register all console-related services
                 ConsoleModules.Register(services);
 
@@ -91,7 +94,7 @@ public partial class App : Application
         {
             try
             {
-                var pluginDir = RomManagerConfiguration.GetGlobalPath("Plugins");
+                var pluginDir = RomManagerConfiguration.GetPluginsPath();
                 var pluginManager = _host.Services.GetRequiredService<PluginManager>();
                 // Forward UI requests from plugins onto the Avalonia UI thread
                 pluginManager.ShowPluginUICallback = async (control, title) =>

@@ -113,7 +113,7 @@ public sealed partial class DatIndex
 
     /// <summary>Folder holding user DATs (config key <c>GlobalPaths:Dats</c>, default Data/DAT).</summary>
     public static string DatDirectory =>
-        Path.GetFullPath(Configuration.RomManagerConfiguration.GetPathOrDefault("GlobalPaths:Dats", "Data/DAT"));
+        Path.GetFullPath(Configuration.RomManagerConfiguration.GetDatsPath());
 
     /// <summary>Index of every DAT whose file name passes <paramref name="match"/>; cached until the files change.</summary>
     public static DatIndex? ForConsole(Func<string, bool> match)

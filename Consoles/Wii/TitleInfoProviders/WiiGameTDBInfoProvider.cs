@@ -1,4 +1,5 @@
-﻿using RomManagerShared.Base;
+using System.IO.Compression;
+using RomManagerShared.Base;
 using RomManagerShared.Interfaces;
 using RomManagerShared.Utils;
 using RomManagerShared.Wii.Configuration;
@@ -31,11 +32,7 @@ public class WiiGameTDBInfoProvider : ITitleInfoProvider<WiiConsole>
         try
         {
             if (!File.Exists(Source))
-            {
-                var gameTDBPath = WiiConfiguration.GetGameTDBPath();
-                var gameTDBUrl = WiiConfiguration.GetGameTDBUrl();
-                await FileDownloader.StartFileDownload(gameTDBUrl, gameTDBPath);
-            }
+                await DownloadAsync(WiiConfiguration.GetGameTDBUrl(), Source);
             TitleList = [];
             XmlDocument xmlDoc = new();
             xmlDoc.Load(Source);
@@ -54,6 +51,26 @@ public class WiiGameTDBInfoProvider : ITitleInfoProvider<WiiConsole>
             AppLog.Warn($"Error loading Wii XML title database: {ex.Message}");
         }
     }
+    /// <summary>Downloads GameTDB's database to <paramref name="target"/>; a zip download is unpacked (its XML file).</summary>
+    private static async Task DownloadAsync(string url, string target)
+    {
+        if (!url.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+        {
+            await FileDownloader.StartFileDownload(url, target);
+            return;
+        }
+        var zip = target + ".zip";
+        await FileDownloader.StartFileDownload(url, zip);
+        try
+        {
+            using var archive = ZipFile.OpenRead(zip);
+            var entry = archive.Entries.FirstOrDefault(e => e.FullName.EndsWith(".xml", StringComparison.OrdinalIgnoreCase))
+                ?? throw new InvalidDataException($"{url} holds no XML file");
+            entry.ExtractToFile(target, overwrite: true);
+        }
+        finally { File.Delete(zip); }
+    }
+
     public async Task<Rom> GetTitleInfo(Rom rom)
     {
         try

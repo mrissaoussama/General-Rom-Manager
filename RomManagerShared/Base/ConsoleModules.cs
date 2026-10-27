@@ -39,7 +39,7 @@ public static class ConsoleModules
 
     /// <summary>Extra modules the user adds (config <c>GlobalPaths:Modules</c>, default <c>&lt;data folder&gt;/Consoles</c>).</summary>
     public static string ModulesDirectory =>
-        Configuration.RomManagerConfiguration.GetPathOrDefault("GlobalPaths:Modules", "Consoles");
+        Configuration.RomManagerConfiguration.GetModulesPath();
 
     /// <summary>
     /// Loads console modules (assemblies that define a <see cref="GamingConsole"/>) from the app's and the user's

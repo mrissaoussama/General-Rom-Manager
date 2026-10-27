@@ -33,9 +33,9 @@ public class FileDownloader
             using var response = await _sharedClient.GetAsync(fileUrl, HttpCompletionOption.ResponseHeadersRead);
             response.EnsureSuccessStatusCode();
 
-            using var stream = await response.Content.ReadAsStreamAsync();
-            using var file   = File.Create(localFileName);
-            await stream.CopyToAsync(file);
+            await using (var stream = await response.Content.ReadAsStreamAsync())
+            await using (var file = File.Create(localFileName))
+                await stream.CopyToAsync(file);
 
             if (extractPath is not null && localFileName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
             {

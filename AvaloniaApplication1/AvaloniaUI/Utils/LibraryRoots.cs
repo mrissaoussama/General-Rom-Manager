@@ -13,7 +13,7 @@ public sealed class LibraryRoots : ILibraryRoots
         var roots = new List<string>();
         if (Settings.Instance.ConsoleLibraryPaths.TryGetValue(id, out var primary) && !string.IsNullOrWhiteSpace(primary))
             roots.Add(primary);
-        else if (ConfiguredPath(id) is { } configured)
+        else if (RomManagerConfiguration.GetConsoleRomPath(id) is { } configured)
             roots.Add(configured);
         if (Settings.Instance.ConsoleExtraLibraryPaths.TryGetValue(id, out var extra))
             roots.AddRange(extra.Where(p => !string.IsNullOrWhiteSpace(p)));
@@ -22,13 +22,4 @@ public sealed class LibraryRoots : ILibraryRoots
 
     public IReadOnlyList<Type> ConfiguredConsoles() => [.. ConsoleModules.ConsoleTypes.Where(t => GetRoots(t).Count > 0)];
 
-    private static string? ConfiguredPath(string id)
-    {
-        try
-        {
-            var path = RomManagerConfiguration.Configuration?.GetSection("Consoles").GetSection(id)["RomPath"];
-            return string.IsNullOrWhiteSpace(path) ? null : path;
-        }
-        catch { return null; } // config missing/malformed
-    }
 }

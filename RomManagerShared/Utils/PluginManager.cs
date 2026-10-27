@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using RomManagerShared.Base;
 using System.IO.Compression;
@@ -178,7 +178,7 @@ public sealed class PluginManager : IAsyncDisposable
     public PluginApprovalStore Approvals
     {
         get => _approvals ??= new PluginApprovalStore(Path.Combine(
-            RomManagerShared.Configuration.RomManagerConfiguration.GetGlobalPath("Plugins"), "approvals.json"));
+            RomManagerShared.Configuration.RomManagerConfiguration.GetPluginsPath(), "approvals.json"));
         set => _approvals = value;
     }
 
@@ -436,7 +436,7 @@ public sealed class PluginManager : IAsyncDisposable
         if (!File.Exists(zipPath))
             throw new FileNotFoundException($"Plugin zip not found: {zipPath}");
 
-        var pluginsDir = RomManagerShared.Configuration.RomManagerConfiguration.GetGlobalPath("Plugins");
+        var pluginsDir = RomManagerShared.Configuration.RomManagerConfiguration.GetPluginsPath();
         var pluginName = Path.GetFileNameWithoutExtension(zipPath);
         var destDir    = Path.Combine(pluginsDir, pluginName);
 

@@ -16,7 +16,8 @@ public sealed record ConversionTool(string Id, string DisplayName, string Execut
     public string ResolvePath(string? configured) =>
         !string.IsNullOrWhiteSpace(configured)
             ? configured
-            : RomManagerConfiguration.GetPathOrDefault($"Tools:{Id}", Path.Combine("Tools", Executable + (OperatingSystem.IsWindows() ? ".exe" : "")));
+            : RomManagerConfiguration.UnderBase(RomManagerConfiguration.Options.Tools.GetValueOrDefault(Id),
+                Path.Combine("Tools", Executable + (OperatingSystem.IsWindows() ? ".exe" : "")));
 }
 
 /// <summary>Known conversions. Originals are kept; the output is written next to the input.</summary>
