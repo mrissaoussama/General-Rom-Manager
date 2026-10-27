@@ -17,6 +17,16 @@ internal static class Shell
     public static Task<string?> PickFolderAsync(string title) =>
         MainWindow is { } owner ? Dialogs.PickFolderAsync(owner, title) : Task.FromResult<string?>(null);
 
+    /// <summary>Asks for a CSV or JSON path and writes the rows there; returns the path or null when cancelled.</summary>
+    public static async Task<string?> ExportAsync(string suggestedName, IReadOnlyList<RomManagerShared.Utils.ExportRow> rows)
+    {
+        if (MainWindow is not { } owner) return null;
+        var path = await Dialogs.SaveFileAsync(owner, "Export", suggestedName, ("CSV", "csv"), ("JSON", "json"));
+        if (path is null) return null;
+        await Task.Run(() => RomManagerShared.Utils.LibraryExporter.Export(rows, path));
+        return path;
+    }
+
     public static async Task<bool> ConfirmAsync(string title, string message, string confirmText = "OK")
     {
         if (MainWindow is not { } owner) return false;

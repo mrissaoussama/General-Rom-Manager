@@ -160,6 +160,18 @@ public partial class MainViewModel : ViewModelBase
     private void ShowDashboard() => SelectedPage = Dashboard;
 
     [RelayCommand]
+    private async Task ExportLibrary()
+    {
+        var rows = ConsoleViewModels.SelectMany(c => c.Roms.Select(r => ExportRow.From(c.ConsoleName, r.RomSource))).ToList();
+        try
+        {
+            if (await Shell.ExportAsync("RomManager library.csv", rows) is { } path)
+                StatusMessage = $"Exported {rows.Count:N0} rows to {path}";
+        }
+        catch (Exception ex) { StatusMessage = $"Export failed: {ex.Message}"; }
+    }
+
+    [RelayCommand]
     private void ShowLog() => SelectedBottomTab = LogTab;
 
     [RelayCommand]

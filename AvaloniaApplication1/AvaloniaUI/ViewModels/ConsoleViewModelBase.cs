@@ -399,6 +399,20 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
         }
     }
 
+    /// <summary>Exports the rows that pass the current filters.</summary>
+    [RelayCommand]
+    private async Task ExportShown()
+    {
+        var rows = RomsView.Cast<RomViewModel>()
+            .Select(r => ExportRow.From(r.Console.Length > 0 ? r.Console : ConsoleName, r.RomSource)).ToList();
+        try
+        {
+            if (await Shell.ExportAsync($"{ConsoleName}.csv", rows) is { } path)
+                StatusMessage = $"Exported {rows.Count:N0} rows to {path}";
+        }
+        catch (Exception ex) { StatusMessage = $"Export failed: {ex.Message}"; }
+    }
+
     [RelayCommand]
     private Task ViewProperties(IReadOnlyList<RomViewModel> roms) =>
         roms.FirstOrDefault() is { } r ? Shell.ShowDialogAsync(new PropertiesWindow(r)) : Task.CompletedTask;
