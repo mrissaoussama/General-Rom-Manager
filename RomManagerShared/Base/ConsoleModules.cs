@@ -72,29 +72,13 @@ public static class ConsoleModules
         [.. AllTypes.Where(t => typeof(IConsoleModule).IsAssignableFrom(t) && !t.IsAbstract && t.GetConstructor(Type.EmptyTypes) is not null)
             .Select(t => (IConsoleModule)Activator.CreateInstance(t)!)];
 
-    // Display data for the built-in consoles; module consoles describe themselves through IConsoleModule.
-    private static readonly Dictionary<string, (string Name, string Maker, string Badge)> Known = new()
-    {
-        ["Switch"] = ("Nintendo Switch", "Nintendo", "NSW"), ["ThreeDS"] = ("Nintendo 3DS", "Nintendo", "3DS"),
-        ["DS"] = ("Nintendo DS", "Nintendo", "NDS"), ["Wii"] = ("Nintendo Wii", "Nintendo", "Wii"),
-        ["WiiU"] = ("Nintendo Wii U", "Nintendo", "WiiU"), ["GameCube"] = ("GameCube", "Nintendo", "GC"),
-        ["N64"] = ("Nintendo 64", "Nintendo", "N64"), ["NES"] = ("NES", "Nintendo", "NES"), ["SNES"] = ("SNES", "Nintendo", "SNES"),
-        ["GameBoy"] = ("Game Boy / GBC", "Nintendo", "GB"), ["GameBoyAdvance"] = ("Game Boy Advance", "Nintendo", "GBA"),
-        ["PS1"] = ("PlayStation", "Sony", "PS1"), ["PS2"] = ("PlayStation 2", "Sony", "PS2"), ["PS3"] = ("PlayStation 3", "Sony", "PS3"),
-        ["PS4"] = ("PlayStation 4", "Sony", "PS4"), ["PSP"] = ("PSP", "Sony", "PSP"), ["PSVita"] = ("PS Vita", "Sony", "Vita"),
-        ["Xbox360"] = ("Xbox 360", "Microsoft", "360"), ["OriginalXbox"] = ("Xbox", "Microsoft", "XB"),
-        ["SegaSaturn"] = ("Sega Saturn", "Sega", "SAT"), ["Genesis"] = ("Mega Drive / Genesis", "Sega", "MD"),
-        ["MasterSystem"] = ("Master System", "Sega", "SMS"), ["GameGear"] = ("Game Gear", "Sega", "GG"),
-        ["PCEngine"] = ("PC Engine / TurboGrafx-16", "NEC", "PCE"), ["Dreamcast"] = ("Dreamcast", "Sega", "DC"),
-    };
-
     public static ConsoleDescriptor Describe(Type consoleType)
     {
         var module = Modules.FirstOrDefault(m => m.Descriptor.ConsoleType == consoleType);
         if (module is not null) return module.Descriptor;
         var id = consoleType.Name.Replace("Console", "");
-        return Known.TryGetValue(id, out var k)
-            ? new ConsoleDescriptor(consoleType, id, k.Name, k.Maker, k.Badge)
+        return consoleType.GetCustomAttribute<ConsoleInfoAttribute>() is { } info
+            ? new ConsoleDescriptor(consoleType, id, info.DisplayName, info.Manufacturer, info.Badge)
             : new ConsoleDescriptor(consoleType, id, id, "", id.Length <= 4 ? id : id[..3]);
     }
 

@@ -43,18 +43,18 @@ public sealed class DiscDatTests : IDisposable
     [Fact]
     public void FirstCueFile_ReadsQuotedAndBareNames()
     {
-        DiscDatTitleInfoProvider<RomManagerShared.Interfaces.PS1Console>.FirstCueFile(
+        DiscDatTitleInfoProvider<RomManagerShared.PS1.PS1Console>.FirstCueFile(
             ["REM test", "FILE \"Game (Track 1).bin\" BINARY", "  TRACK 01 MODE2/2352", "FILE \"Game (Track 2).bin\" BINARY"])
             .Should().Be("Game (Track 1).bin");
-        DiscDatTitleInfoProvider<RomManagerShared.Interfaces.PS1Console>.FirstCueFile(["FILE game.bin BINARY"]).Should().Be("game.bin");
+        DiscDatTitleInfoProvider<RomManagerShared.PS1.PS1Console>.FirstCueFile(["FILE game.bin BINARY"]).Should().Be("game.bin");
     }
 
     [Fact]
     public void FirstGdiFile_ReadsTrackOne()
     {
-        DiscDatTitleInfoProvider<RomManagerShared.Interfaces.DreamcastConsole>.FirstGdiFile(
+        DiscDatTitleInfoProvider<RomManagerShared.Dreamcast.DreamcastConsole>.FirstGdiFile(
             ["3", "1 0 4 2352 \"Crazy Taxi (Track 1).bin\" 0", "2 756 0 2352 track02.raw 0"]).Should().Be("Crazy Taxi (Track 1).bin");
-        DiscDatTitleInfoProvider<RomManagerShared.Interfaces.DreamcastConsole>.FirstGdiFile(["2", "1 0 4 2352 track01.bin 0"]).Should().Be("track01.bin");
+        DiscDatTitleInfoProvider<RomManagerShared.Dreamcast.DreamcastConsole>.FirstGdiFile(["2", "1 0 4 2352 track01.bin 0"]).Should().Be("track01.bin");
     }
 
     [Fact]

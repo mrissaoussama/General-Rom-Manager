@@ -8,6 +8,8 @@ using RomManagerShared.Base.Library;
 using RomManagerShared.Interfaces;
 using RomManagerShared.PSP;
 
+using RomManagerShared.Switch;
+
 namespace RomManagerTests;
 
 public sealed class LibraryScannerTests : IDisposable

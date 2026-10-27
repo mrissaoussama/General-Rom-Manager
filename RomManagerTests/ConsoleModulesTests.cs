@@ -4,6 +4,10 @@ using RomManagerShared.Base;
 using RomManagerShared.Base.Library;
 using RomManagerShared.Interfaces;
 
+using RomManagerShared.NES;
+using RomManagerShared.Switch;
+using RomManagerShared.ThreeDS;
+
 namespace RomManagerTests;
 
 // A console defined outside RomManagerShared, the way a Modules/*.dll would.

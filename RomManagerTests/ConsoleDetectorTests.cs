@@ -2,6 +2,11 @@ using AwesomeAssertions;
 using RomManagerShared.Base;
 using RomManagerShared.Interfaces;
 
+using RomManagerShared.PS1;
+using RomManagerShared.PS2;
+using RomManagerShared.PSP;
+using RomManagerShared.Switch;
+
 namespace RomManagerTests;
 
 public class ConsoleDetectorTests

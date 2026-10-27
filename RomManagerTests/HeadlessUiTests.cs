@@ -1,3 +1,5 @@
+using RomManagerShared.GameBoy;
+using RomManagerShared.NES;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
@@ -16,6 +18,7 @@ using RomManagerShared.Base.Library;
 using RomManagerShared.Interfaces;
 
 [assembly: AssemblyFixture(typeof(RomManagerTests.HeadlessSession))]
+
 
 namespace RomManagerTests;
 

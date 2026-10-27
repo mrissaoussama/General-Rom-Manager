@@ -3,6 +3,8 @@ using RomManagerShared;
 using RomManagerShared.Base;
 using RomManagerShared.Interfaces;
 
+using RomManagerShared.Switch;
+
 namespace RomManagerTests;
 
 public class ConsoleManagerTests

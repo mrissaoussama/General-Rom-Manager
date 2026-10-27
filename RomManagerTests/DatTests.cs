@@ -105,7 +105,7 @@ public sealed class DatTests : IDisposable
     [Fact]
     public void LibretroBoxartUrl_EscapesNameAndReplacesReservedChars()
     {
-        var url = DatTitleInfoProvider<RomManagerShared.Interfaces.NESConsole>.LibretroBoxartUrl(
+        var url = DatTitleInfoProvider<RomManagerShared.NES.NESConsole>.LibretroBoxartUrl(
             "Nintendo - Nintendo Entertainment System", "Legend of Zelda, The: Test? (USA)");
 
         url.Should().StartWith("https://thumbnails.libretro.com/Nintendo%20-%20Nintendo%20Entertainment%20System/Named_Boxarts/");

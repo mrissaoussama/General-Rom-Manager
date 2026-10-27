@@ -19,7 +19,7 @@ public class OnboardingViewModelTests
         OnboardingViewModel.ShouldShow(new Settings(), new Roots()).Should().BeTrue();
         OnboardingViewModel.ShouldShow(new Settings { OnboardingCompleted = true }, new Roots()).Should().BeFalse();
         // Folders already in config.json count as configured.
-        OnboardingViewModel.ShouldShow(new Settings(), new Roots(typeof(RomManagerShared.Interfaces.NESConsole))).Should().BeFalse();
+        OnboardingViewModel.ShouldShow(new Settings(), new Roots(typeof(RomManagerShared.NES.NESConsole))).Should().BeFalse();
     }
 
     [Fact]
