@@ -49,20 +49,23 @@ public sealed class LibraryScanner(AppDbContext db)
         var parallelism = present.Count == 0 ? ScanOptions.DefaultParallelism : present.Min(p => p.Options.MaxParallelism);
         var files = await Task.Run(() => present
             .SelectMany(p => FileUtils.GetFilesInDirectoryWithExtensions(p.Root, extensions).Where(f => !p.Options.IsExcluded(p.Root, f)))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Distinct(FileUtils.PathComparer)
             .ToList(), ct);
-        var cached = await db.LibraryFiles
-            .Where(f => f.Console == console)
-            .ToDictionaryAsync(f => f.Path, StringComparer.OrdinalIgnoreCase, ct);
+        // Keyed the way the OS compares paths: on Linux, a.nsp and A.nsp are two files.
+        var cached = new Dictionary<string, LibraryFile>(FileUtils.PathComparer);
+        foreach (var f in await db.LibraryFiles.Where(f => f.Console == console).ToListAsync(ct))
+            if (!cached.TryAdd(f.Path, f)) db.LibraryFiles.Remove(f); // a duplicate row from an older build
+
 
         // Per-file slots keep results in enumeration order.
         var slots = new List<Rom>[files.Count];
         var errors = new string?[files.Count];
+        var gone = new bool[files.Count];
         var pending = new List<int>();
         for (int i = 0; i < files.Count; i++)
         {
             cached.TryGetValue(files[i], out var entry);
-            if (!fullRescan && entry is not null && IsUnchanged(entry, new FileInfo(files[i]), fingerprint))
+            if (!fullRescan && entry is not null && IsUnchanged(entry, files[i], fingerprint))
             {
                 slots[i] = RomSnapshot.Deserialize(entry.RomsJson);
                 errors[i] = entry.Error;
@@ -84,6 +87,15 @@ public sealed class LibraryScanner(AppDbContext db)
             for (int b = 0; b < batch.Length; b++)
             {
                 var path = files[batch[b]];
+                // Deleted or moved since the folder was listed (e.g. a copy in progress): the next scan sees it.
+                var info = new FileInfo(path);
+                if (!info.Exists)
+                {
+                    slots[batch[b]] = [];
+                    gone[batch[b]] = true;
+                    processed++;
+                    continue;
+                }
                 var roms = await manager.EnrichAsync(parsedBatch[b].Roms, ct);
                 slots[batch[b]] = roms;
                 errors[batch[b]] = roms.Count == 0 ? parsedBatch[b].UnidentifiedReason : null;
@@ -94,7 +106,6 @@ public sealed class LibraryScanner(AppDbContext db)
                     db.LibraryFiles.Add(entry);
                     cached[path] = entry;
                 }
-                var info = new FileInfo(path);
                 entry.Size = info.Length;
                 entry.LastWriteUtc = info.LastWriteTimeUtc;
                 entry.ScanVersion = ScanVersion;
@@ -109,28 +120,32 @@ public sealed class LibraryScanner(AppDbContext db)
             progress?.Report(new ScanProgress(processed, files.Count, parsed, null));
         }
 
-        var seen = new HashSet<string>(files, StringComparer.OrdinalIgnoreCase);
+        var seen = new HashSet<string>(files.Where((_, i) => !gone[i]), FileUtils.PathComparer);
         var result = slots.SelectMany(r => r).ToList();
 
         // A folder that is offline (unplugged drive, share down) keeps its cached rows until it is back.
         var offline = roots.Where(r => !Directory.Exists(r))
             .Select(r => Path.TrimEndingDirectorySeparator(Path.GetFullPath(r)) + Path.DirectorySeparatorChar).ToList();
-        bool UnderOffline(string path) => offline.Any(o => path.StartsWith(o, StringComparison.OrdinalIgnoreCase));
+        bool UnderOffline(string path) => offline.Any(o => path.StartsWith(o, FileUtils.PathComparison));
         foreach (var kept in cached.Values.Where(f => !seen.Contains(f.Path) && UnderOffline(f.Path)))
         {
             seen.Add(kept.Path);
             result.AddRange(RomSnapshot.Deserialize(kept.RomsJson));
         }
-        Unrecognized = [.. files.Select((f, i) => (f, i)).Where(x => slots[x.i].Count == 0)
+        Unrecognized = [.. files.Select((f, i) => (f, i)).Where(x => slots[x.i].Count == 0 && seen.Contains(x.f))
             .Select(x => new UnrecognizedFile(x.f, errors[x.i] ?? "No parser recognised the file"))];
         db.LibraryFiles.RemoveRange(cached.Values.Where(f => !seen.Contains(f.Path)));
         await db.SaveChangesAsync(ct);
         return result;
     }
 
-    private static bool IsUnchanged(LibraryFile entry, FileInfo info, string fingerprint) =>
-        entry.ScanVersion == ScanVersion
-        && (entry.DataFingerprint ?? "") == fingerprint
-        && entry.Size == info.Length
-        && entry.LastWriteUtc == info.LastWriteTimeUtc;
+    private static bool IsUnchanged(LibraryFile entry, string path, string fingerprint)
+    {
+        var info = new FileInfo(path);
+        return info.Exists
+            && entry.ScanVersion == ScanVersion
+            && (entry.DataFingerprint ?? "") == fingerprint
+            && entry.Size == info.Length
+            && entry.LastWriteUtc == info.LastWriteTimeUtc;
+    }
 }

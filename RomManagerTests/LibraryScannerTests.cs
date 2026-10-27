@@ -79,6 +79,31 @@ public sealed class LibraryScannerTests : IDisposable
         finally { Directory.Delete(second, true); }
     }
 
+    private sealed class DeletingParser(string victim) : IRomParser<SwitchConsole>
+    {
+        public List<string> Extensions { get; set; } = ["nsp"];
+        public Task<List<Rom>> ProcessFile(string path)
+        {
+            if (path == victim) File.Delete(path); // e.g. moved away while the scan runs
+            return Task.FromResult<List<Rom>>([new Game { TitleID = Path.GetFileNameWithoutExtension(path), Path = path }]);
+        }
+    }
+
+    [Fact]
+    public async Task ScanAsync_AFileThatDisappearsMidScanIsSkipped()
+    {
+        var a = Path.Combine(_root, "A.nsp");
+        var b = Path.Combine(_root, "B.nsp");
+        File.WriteAllText(a, "a");
+        File.WriteAllText(b, "b");
+        var manager = new ConsoleManager<SwitchConsole>(new RomParserExecutor<SwitchConsole>([new DeletingParser(b)]));
+
+        var roms = await new LibraryScanner(_db).ScanAsync(manager, "Switch", _root, ct: TestContext.Current.CancellationToken);
+
+        roms.Should().ContainSingle().Which.TitleID.Should().Be("A");
+        _db.LibraryFiles.Select(f => f.Path).Should().Equal(a);
+    }
+
     [Fact]
     public async Task ScanAsync_SkipsExcludedFolders()
     {

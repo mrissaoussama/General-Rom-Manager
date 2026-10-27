@@ -13,6 +13,11 @@ public class FileUtils
     {
         ExcludedFolders = ["ErrorFiles"];
     }
+    /// <summary>How the OS compares paths: case-sensitive on Linux, not on Windows and (by default) macOS.</summary>
+    public static StringComparer PathComparer { get; } = OperatingSystem.IsLinux() ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
+
+    public static StringComparison PathComparison { get; } = OperatingSystem.IsLinux() ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
+
     /// <summary>Read-only, shared open. Use for all ROM access.</summary>
     public static FileStream OpenRead(string path) =>
         new(path, FileMode.Open, FileAccess.Read, FileShare.Read);
