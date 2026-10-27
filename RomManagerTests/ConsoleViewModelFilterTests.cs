@@ -17,6 +17,10 @@ public class ConsoleViewModelFilterTests
         public override IReadOnlyList<ConsoleRequirement> GetAllRequirements() => [];
     }
 
+    // Portable absolute paths: backslash is not a separator on Linux/macOS.
+    private static readonly string Root = Path.Combine(Path.GetTempPath(), "roms");
+    private static string Rom(string file) => Path.Combine(Root, file);
+
     private static Game Game(string id, string title, string path, Region region = Region.Unknown, params Language[] languages)
     {
         var game = new Game { TitleID = id, Path = path, Regions = region == Region.Unknown ? null : [region] };
@@ -32,11 +36,11 @@ public class ConsoleViewModelFilterTests
     {
         var vm = new TestConsoleViewModel();
         vm.Show(
-            Game("A", "Alpha", @"C:\roms\0100 alpha.nsp", Region.USA, Language.English),
-            Game("B", "Beta", @"C:\roms\0101 beta.xci", Region.Japan, Language.Japanese, Language.English),
-            Game("C", "Gamma", @"C:\roms\0102 gamma.NSP", Region.Europe, Language.French),
-            Game("C", "Gamma copy", @"C:\roms\0102 gamma (1).nsp", Region.Europe),
-            Game("", "delta", @"C:\roms\delta.nsz"));
+            Game("A", "Alpha", Rom("0100 alpha.nsp"), Region.USA, Language.English),
+            Game("B", "Beta", Rom("0101 beta.xci"), Region.Japan, Language.Japanese, Language.English),
+            Game("C", "Gamma", Rom("0102 gamma.NSP"), Region.Europe, Language.French),
+            Game("C", "Gamma copy", Rom("0102 gamma (1).nsp"), Region.Europe),
+            Game("", "delta", Rom("delta.nsz")));
         return vm;
     }
 
@@ -91,7 +95,7 @@ public class ConsoleViewModelFilterTests
         var vm = Library();
         vm.FormatFilter = "XCI";
 
-        vm.Show(Game("A", "Alpha", @"C:\roms\alpha.nsp"));
+        vm.Show(Game("A", "Alpha", Rom("alpha.nsp")));
 
         vm.FormatFilter.Should().Be("All");
         Shown(vm).Should().Equal("Alpha");

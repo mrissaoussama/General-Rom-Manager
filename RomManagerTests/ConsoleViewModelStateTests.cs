@@ -21,7 +21,7 @@ public class ConsoleViewModelStateTests
     private static T Named<T>(T rom, string id, string title, long size = 0) where T : Rom
     {
         rom.TitleID = id;
-        rom.Path = $@"C:\roms\{title}.nsp";
+        rom.Path = Path.Combine(Path.GetTempPath(), "roms", $"{title}.nsp");
         rom.Size = size;
         rom.AddTitleName(title);
         return rom;

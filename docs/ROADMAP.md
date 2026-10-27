@@ -15,12 +15,12 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
       (the whole solution now builds with zero warnings).
 - [ ] Remove `SkyEditor.Utilities.AsyncFor` (old netstandard package used by the vendored 3DS toolkit for
       `ProgressReportToken` and parallel loops). Replace with plain loops and a small progress type.
-- [ ] Align `Avalonia.Controls.ItemsRepeater` (11.1.5) and `Avalonia.Controls.DataGrid` with Avalonia.
+- [x] `ItemsRepeater` 11.1.5 and `DataGrid` 11.3.13 are the newest 11.x releases (next step is Avalonia 12).
 - [ ] Decide on the Android/Browser heads: delete them (recommended; unmaintained since net9) or
       retarget and add them to the solution.
-- [ ] Dependabot for NuGet and GitHub Actions.
-- [ ] Code coverage in CI (`Microsoft.Testing.Extensions.CodeCoverage`), reported on PRs.
-- [ ] CI builds on ubuntu-latest and macos-latest as well (the release workflow already publishes there).
+- [x] Dependabot for NuGet (grouped) and GitHub Actions.
+- [x] Code coverage in CI (`Microsoft.Testing.Extensions.CodeCoverage`, Cobertura artifact; ~43% lines).
+- [x] CI builds and tests on windows, ubuntu and macos (test paths made portable).
 - [ ] Avalonia 12 (after phase D's dialog work).
 
 ## Phase B: Architecture
