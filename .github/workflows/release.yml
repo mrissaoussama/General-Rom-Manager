@@ -1,0 +1,46 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    strategy:
+      matrix:
+        include:
+          - rid: win-x64
+            os: windows-latest
+          - rid: linux-x64
+            os: ubuntu-latest
+          - rid: osx-arm64
+            os: macos-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Test
+        if: matrix.rid == 'win-x64'
+        run: dotnet test --project RomManagerTests/RomManagerTests.csproj -c Release
+      - name: Publish
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          dotnet publish AvaloniaApplication1/AvaloniaUI.Desktop/AvaloniaUI.Desktop.csproj \
+            -c Release -r ${{ matrix.rid }} -p:Version="$version" -o "publish/RomManager-$version-${{ matrix.rid }}"
+      - name: Archive
+        shell: bash
+        run: |
+          cd publish
+          dir=$(ls)
+          if [[ "${{ matrix.rid }}" == win-* ]]; then 7z a "$dir.zip" "$dir" > /dev/null; else tar czf "$dir.tar.gz" "$dir"; fi
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            publish/*.zip
+            publish/*.tar.gz
