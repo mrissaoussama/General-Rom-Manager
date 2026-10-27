@@ -23,8 +23,9 @@ dotnet run --project tools/ParserHarness -- PS4Console "Y:\roms\PS4" 5
   items carry no `Version`. Solution file: `RomManager.slnx`.
 - `AvaloniaUI.Android` / `AvaloniaUI.Browser` target net9.0-* and are not maintained; only the
   Desktop head matters.
-- Don't add new warnings (Desktop head baseline is small; vendored code in `Utils/ISO2GOD`,
-  is marked `#nullable disable warnings`).
+- Warnings are errors in every project except `RomManagerShared` (backlog, ROADMAP phase A). Don't
+  add new ones there either. Vendored code in `Utils/ISO2GOD` and `3DS/Ctr` is marked
+  `#nullable disable warnings`.
 
 ## Layout
 
@@ -33,11 +34,11 @@ dotnet run --project tools/ParserHarness -- PS4Console "Y:\roms\PS4" 5
 | `RomManagerShared/` | Core library: domain model, parsers, title-info providers, EF Core, utils |
 | `RomManagerShared/Base/` | `Rom`/`Game`/`Update`/`DLC`, `ConsoleManager<T>`, `RomParserExecutor<T>`, `OperationQueue`, actions |
 | `RomManagerShared/<Console>/` | One folder per console: `Parsers/`, `TitleInfoProviders/`, `*Manager.cs`, `*Rom.cs` |
-| `RomManagerShared/Utils/` | File/hash/download utils, `PluginManager`, renamer, mover, duplicate detector; vendored ISO2GOD + Alto downloader |
+| `RomManagerShared/Utils/` | File/hash/download utils, `PluginManager`, renamer, mover, duplicate detector, DAT matching (`Utils/Dat`); vendored ISO2GOD |
 | `AvaloniaApplication1/AvaloniaUI/` | UI library: `App.axaml.cs` (DI composition root), ViewModels, AXAML Views (`MainView` shell, `DashboardView`, `ConsoleView`, `RomDetailsView`); `ViewLocator` maps VM → view |
 | `AvaloniaApplication1/AvaloniaUI.Desktop/` | Desktop head (the only head that matters) |
-| `SkyEditor.IO/` | Vendored binary IO lib (netstandard2.0) used by 3DS code |
-| `RomManagerTests/` | xUnit tests (DB, DI resolution, renamer, mover, duplicates). No parser tests yet |
+| `SkyEditor.IO/` | Vendored binary IO lib (net10.0) used by 3DS code |
+| `RomManagerTests/` | xunit v3 + AwesomeAssertions: parsers (synthetic fixtures), scanner, DB, DI, view models, plugins |
 | `SamplePlugin/` | Reference plugin implementation |
 | `tools/ParserHarness/` | Console app that runs every console's parsers on real files |
 
@@ -48,12 +49,13 @@ dotnet run --project tools/ParserHarness -- PS4Console "Y:\roms\PS4" 5
    `IUpdateVersionProvider<T>`, `IRomOrganizer<T>`, `RomParserExecutor<T>`,
    `TitleInfoProviderManager<T>`, and `ConsoleManager<T>` (or its subclass, e.g. `SwitchManager`).
    **New implementations are picked up automatically — no manual registration.**
-2. `ConsoleViewModel<T>.LoadData` → `ConsoleManager<T>.Setup()` (loads title DBs) → enumerates
-   files under the configured ROM path matching parser extensions → `ProcessFile` per file.
+2. `ConsoleViewModel<T>.LoadData` → `LibraryScanner.LoadCachedAsync` (instant) →
+   `ConsoleManager<T>.Setup()` (loads title DBs) → `LibraryScanner.ScanAsync`: unchanged files come from
+   the `LibraryFiles` table, new/changed ones are parsed in parallel and enriched.
 3. `RomParserExecutor<T>` runs every parser whose `Extensions` contains the file extension and merges
    results by `TitleID` (`RomUtils.CopyNonNullProperties`).
-4. Results live only in memory (`ConsoleManager.RomList`). The library is **not** persisted yet
-   (ROADMAP phase 2).
+4. Results are stored per file in `LibraryFiles` (JSON snapshot + parse error). What parsers log while
+   parsing a file becomes its "not recognised" reason (`ParseDiagnostics`).
 
 ## Configuration
 
