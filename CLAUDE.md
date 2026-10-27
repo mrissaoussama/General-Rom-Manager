@@ -21,8 +21,7 @@ dotnet run --project tools/ParserHarness -- PS4Console "Y:\roms\PS4" 5
 - SDK pinned in `global.json` (10.0.103, rollForward latestFeature).
 - Package versions live in `Directory.Packages.props` (central package management); `PackageReference`
   items carry no `Version`. Solution file: `RomManager.slnx`.
-- `AvaloniaUI.Android` / `AvaloniaUI.Browser` target net9.0-* and are not maintained; only the
-  Desktop head matters.
+- Desktop is the only head (Android/Browser heads were removed; see git history).
 - Warnings are errors in every project (the solution builds with zero warnings). Vendored code in
   `Utils/ISO2GOD` and `3DS/Ctr` is marked `#nullable disable warnings`.
 

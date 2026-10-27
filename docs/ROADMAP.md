@@ -16,8 +16,7 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
 - [x] Removed `SkyEditor.Utilities.AsyncFor`: plain loops in the vendored 3DS toolkit; the unused
       `ThreeDsRom.ExtractFiles` (its only `ProgressReportToken` user) is gone.
 - [x] `ItemsRepeater` 11.1.5 and `DataGrid` 11.3.13 are the newest 11.x releases (next step is Avalonia 12).
-- [ ] Decide on the Android/Browser heads: delete them (recommended; unmaintained since net9) or
-      retarget and add them to the solution.
+- [x] Android/Browser heads deleted (unmaintained since net9; recoverable from git history).
 - [x] Dependabot for NuGet (grouped) and GitHub Actions.
 - [x] Code coverage in CI (`Microsoft.Testing.Extensions.CodeCoverage`, Cobertura artifact; ~43% lines).
 - [x] CI builds and tests on windows, ubuntu and macos (test paths made portable).

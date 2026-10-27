@@ -12,8 +12,8 @@ SamplePlugin    ──► RomManagerShared
 tools/ParserHarness ──► RomManagerShared
 ```
 
-Solution: `RomManager.slnx`. Package versions: `Directory.Packages.props`. Unmaintained and not in the
-solution: `AvaloniaUI.Android`, `AvaloniaUI.Browser` (net9.0-*).
+Solution: `RomManager.slnx`. Package versions: `Directory.Packages.props`. The desktop head is the only one
+(the unmaintained Android and Browser heads were removed; they are in git history).
 
 ## Domain model (`RomManagerShared/Base`)
 
