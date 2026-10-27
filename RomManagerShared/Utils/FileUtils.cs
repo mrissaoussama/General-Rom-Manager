@@ -220,167 +220,21 @@ public class FileUtils
         return drive.AvailableFreeSpace > fileSize;
     }
 
-    public static void MoveDirectoryContents(string sourceDir, string destDir)
-    {
-        // Create all subdirectories first with conflict resolution
-        foreach (string dir in Directory.GetDirectories(sourceDir, "*", SearchOption.AllDirectories))
-        {
-            string targetDir = dir.Replace(sourceDir, destDir);
-            Directory.CreateDirectory(targetDir);
-        }
-
-        // Move all files with conflict resolution
-        foreach (string file in Directory.GetFiles(sourceDir, "*.*", SearchOption.AllDirectories))
-        {
-            string destFile = file.Replace(sourceDir, destDir);
-
-            // Handle file conflicts
-            if (File.Exists(destFile))
-            {
-                string fileName = Path.GetFileNameWithoutExtension(destFile);
-                string extension = Path.GetExtension(destFile);
-                int counter = 1;
-
-                do
-                {
-                    string newFileName = $"{fileName} ({counter++}){extension}";
-                    destFile = Path.Combine(Path.GetDirectoryName(destFile), newFileName);
-                } while (File.Exists(destFile));
-            }
-
-            File.Move(file, destFile);
-        }
-
-        // Delete source directory after verification
-        if (Directory.GetFiles(sourceDir).Length == 0 &&
-            Directory.GetDirectories(sourceDir).Length == 0)
-        {
-            Directory.Delete(sourceDir, true);
-        }
-        else
-        {
-            
-            Log($"directory {sourceDir} not empty");
-        }
-    }
-
-    public static void MoveDirectoryCrossPlatform(string sourceDir, string destDir)
-    {
-        if (!Directory.Exists(sourceDir))
-            throw new DirectoryNotFoundException($"Source directory not found: {sourceDir}");
-
-        // Check if source and destination directories are equal
-        if (AreDirectoriesEqual(sourceDir, destDir))
-        {
-            return;
-        }
-
-        // If the destination directory exists, rename it
-        if (Directory.Exists(destDir))
-        {
-            destDir = GetUniqueDirectoryName(destDir);
-        }
-
-        // Check if we're moving across drives
-        var sourceDrive = Path.GetPathRoot(Path.GetFullPath(sourceDir));
-        var destDrive = Path.GetPathRoot(Path.GetFullPath(destDir));
-
-        if (string.Equals(sourceDrive, destDrive, StringComparison.OrdinalIgnoreCase))
-        {
-            // Same drive - use native move
-            Directory.Move(sourceDir, destDir);
-        }
-        else
-        {
-            // Cross-drive - copy and delete
-            CopyDirectory(sourceDir, destDir);
-            Directory.Delete(sourceDir, true);
-        }
-    }
-
-    /// <summary>
-    /// Checks if two directories are equal by comparing their full paths.
-    /// </summary>
-    private static bool AreDirectoriesEqual(string dir1, string dir2)
-    {
-        return string.Equals(
-            Path.GetFullPath(dir1).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
-            Path.GetFullPath(dir2).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
-            StringComparison.OrdinalIgnoreCase
-        );
-    }
-
-    /// <summary>
-    /// Checks if two files are equal.
-    /// </summary>
-
+    /// <summary>Byte-for-byte comparison (lengths first).</summary>
     public static bool AreFilesEqual(string file1, string file2)
     {
-        if (!File.Exists(file1) || !File.Exists(file2))
+        if (!File.Exists(file1) || !File.Exists(file2)) return false;
+        if (new FileInfo(file1).Length != new FileInfo(file2).Length) return false;
+        using var fs1 = OpenRead(file1);
+        using var fs2 = OpenRead(file2);
+        var b1 = new byte[81920];
+        var b2 = new byte[81920];
+        int read;
+        while ((read = fs1.Read(b1, 0, b1.Length)) > 0)
         {
-            return false;
+            fs2.ReadExactly(b2, 0, read);
+            if (!b1.AsSpan(0, read).SequenceEqual(b2.AsSpan(0, read))) return false;
         }
-        FileInfo fileInfo1 = new(file1);
-        FileInfo fileInfo2 = new(file2);
-        if (fileInfo1.Length != fileInfo2.Length)
-        {
-            return false;
-        }
-        using FileStream fs1 = File.OpenRead(file1);
-        using FileStream fs2 = File.OpenRead(file2);
-        int fileByte1;
-        int fileByte2;
-        do
-        {
-            fileByte1 = fs1.ReadByte();
-            fileByte2 = fs2.ReadByte();
-            if (fileByte1 != fileByte2)
-            {
-                return false;
-            }
-        } while (fileByte1 != -1);
         return true;
-    }
-
-    /// <summary>
-    /// Generates a unique directory name by appending (2), (3), etc., until a unique name is found.
-    /// </summary>
-    private static string GetUniqueDirectoryName(string destDir)
-    {
-        string newDestDir = destDir;
-        int counter = 2;
-
-        while (Directory.Exists(newDestDir))
-        {
-            newDestDir = $"{destDir} ({counter})";
-            counter++;
-        }
-
-        return newDestDir;
-    }
-
-    /// <summary>
-    /// Recursively copies a directory from source to destination.
-    /// </summary>
-    private static void CopyDirectory(string sourceDir, string destDir)
-    {
-        if (!Directory.Exists(destDir))
-        {
-            Directory.CreateDirectory(destDir);
-        }
-
-        foreach (var file in Directory.GetFiles(sourceDir))
-        {
-            string fileName = Path.GetFileName(file);
-            string destFile = Path.Combine(destDir, fileName);
-            File.Copy(file, destFile, true); // Overwrite if file already exists
-        }
-
-        foreach (var dir in Directory.GetDirectories(sourceDir))
-        {
-            string dirName = Path.GetFileName(dir);
-            string destSubDir = Path.Combine(destDir, dirName);
-            CopyDirectory(dir, destSubDir);
-        }
     }
 }
