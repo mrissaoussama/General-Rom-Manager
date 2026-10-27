@@ -28,9 +28,59 @@ public partial class ConsoleView : UserControl
         this.FindControl<Button>("ColumnsButton")!.Click += (s, _) => ShowColumnsFlyout((Control)s!);
         _grid.KeyDown += OnGridKeyDown;
         // Cards are virtualized; free covers of recycled cards so large libraries keep memory flat.
-        this.FindControl<ItemsRepeater>("Cards")!.ElementClearing += (_, e) =>
+        _cards = this.FindControl<ItemsRepeater>("Cards")!;
+        _cards.ElementClearing += (_, e) =>
             (e.Element.DataContext as RomViewModel)?.ReleaseCover();
+        _cards.AddHandler(KeyDownEvent, OnCardsKeyDown, RoutingStrategies.Tunnel);
     }
+
+    private readonly ItemsRepeater _cards;
+
+    // Arrow keys, Home/End and PageUp/PageDown move focus between cards; Delete/F2/Enter act on the focused card.
+    private void OnCardsKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (Vm is not { } vm || TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement() is not Control focused) return;
+        var card = focused.FindAncestorOfType<Button>(includeSelf: true);
+        if (card?.DataContext is not RomViewModel rom) return;
+        var index = _cards.GetElementIndex(card);
+        if (index < 0) return;
+
+        ICommand? command = e.Key switch
+        {
+            Key.Delete => vm.DeleteCommand,
+            Key.F2 => vm.RenameCommand,
+            Key.Enter when e.KeyModifiers == KeyModifiers.Alt => vm.ViewPropertiesCommand,
+            _ => null,
+        };
+        if (command is not null)
+        {
+            command.Execute(new List<RomViewModel> { rom });
+            e.Handled = true;
+            return;
+        }
+
+        var count = _cards.ItemsSourceView?.Count ?? 0;
+        var target = CardNavigation.Target(index, count, CardColumns(), RowsPerPage(card), e.Key);
+        if (target is not { } t || t == index) return;
+        if (_cards.GetOrCreateElement(t) is Control next)
+        {
+            next.BringIntoView();
+            next.Focus(NavigationMethod.Directional);
+            e.Handled = true;
+        }
+    }
+
+    // Columns of the uniform grid: realized cards sharing the first realized card's row.
+    private int CardColumns()
+    {
+        var realized = _cards.Children.Where(c => c.IsVisible && _cards.GetElementIndex(c) >= 0).ToList();
+        if (realized.Count == 0) return 1;
+        var top = realized.Min(c => c.Bounds.Y);
+        return Math.Max(1, realized.Count(c => Math.Abs(c.Bounds.Y - top) < 1));
+    }
+
+    private int RowsPerPage(Control card) =>
+        _cards.Parent is ScrollViewer sv && card.Bounds.Height > 0 ? Math.Max(1, (int)(sv.Viewport.Height / card.Bounds.Height)) : 1;
 
     public void FocusSearch()
     {

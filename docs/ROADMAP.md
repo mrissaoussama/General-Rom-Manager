@@ -84,7 +84,8 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
       shown, "Revoke approval".
 - [x] Unrecognised files: "Move to folder…" from the list (preview, keeps sub-folders, rescans after).
 - [ ] Profile the card view with 5k+ rows on a real library.
-- [ ] Keyboard navigation in the card view.
+- [x] Keyboard navigation in the card view: arrows, Home/End, PageUp/PageDown (`CardNavigation`); Delete,
+      F2 and Alt+Enter act on the focused card.
 - [ ] README screenshots.
 - [ ] Localisation (resx) once strings are in AXAML.
 

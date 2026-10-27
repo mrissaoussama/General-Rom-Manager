@@ -154,4 +154,35 @@ public sealed class HeadlessUiTests
         var grid = Find<DataGrid>(window);
         grid.ItemsSource.Cast<object>().Should().HaveCount(2);
     });
+
+    [Fact]
+    public Task CardView_ArrowKeysMoveFocusBetweenCards() => Ui(() =>
+    {
+        var vm = new TestConsoleViewModel { IsCardView = true };
+        var roms = Enumerable.Range(0, 12).Select(i =>
+        {
+            var g = new Game { Path = Path.Combine(Path.GetTempPath(), $"{i:D2}.nes"), TitleID = $"{i:D2}" };
+            g.AddTitleName($"Game {i:D2}");
+            return (Rom)g;
+        }).ToArray();
+        vm.Show(roms);
+        var window = new Window { Width = 800, Height = 900, Content = vm };
+        window.Show();
+        window.UpdateLayout();
+
+        var cards = Find<ItemsRepeater>(window);
+        var first = (Button)cards.GetOrCreateElement(0);
+        first.Focus();
+        string Focused() => ((RomViewModel)((Control)window.FocusManager!.GetFocusedElement()!).DataContext!).TitleID;
+
+        window.KeyPress(Key.Right, RawInputModifiers.None, PhysicalKey.ArrowRight, null);
+        Focused().Should().Be("01");
+
+        var columns = cards.Children.Count(c => c.IsVisible && Math.Abs(c.Bounds.Y - first.Bounds.Y) < 1);
+        window.KeyPress(Key.Down, RawInputModifiers.None, PhysicalKey.ArrowDown, null);
+        Focused().Should().Be($"{1 + columns:D2}");
+
+        window.KeyPress(Key.End, RawInputModifiers.None, PhysicalKey.End, null);
+        Focused().Should().Be("11");
+    });
 }
