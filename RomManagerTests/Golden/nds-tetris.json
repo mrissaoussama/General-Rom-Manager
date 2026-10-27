@@ -1,6 +1,6 @@
 [
   {
-    "Type": "RomManagerShared.DS.DSGame, RomManagerShared",
+    "Type": "RomManagerShared.DS.DSGame, RomManager.Consoles.DS",
     "Data": {
       "Id": 0,
       "TitleID": "ATRP",

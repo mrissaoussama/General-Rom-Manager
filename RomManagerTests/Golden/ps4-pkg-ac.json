@@ -1,6 +1,6 @@
 [
   {
-    "Type": "RomManagerShared.PS4.PS4DLC, RomManagerShared",
+    "Type": "RomManagerShared.PS4.PS4DLC, RomManager.Consoles.PS4",
     "Data": {
       "MinimumGameUpdate": "",
       "Id": 0,

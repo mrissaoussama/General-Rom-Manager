@@ -130,7 +130,7 @@ public class Rom
         Descriptions ??= [];
         Descriptions.Add(new RomDescription(description, Language));
     }
-    internal void AddRating(Rating r)
+    public void AddRating(Rating r)
     {
         Ratings ??= [];
         Ratings.Add(r);

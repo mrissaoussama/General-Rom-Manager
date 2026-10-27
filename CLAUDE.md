@@ -22,17 +22,17 @@ dotnet run --project tools/ParserHarness -- PS4Console "Y:\roms\PS4" 5
   items carry no `Version`. Solution file: `RomManager.slnx`.
 - Desktop is the only head (Android/Browser heads were removed; see git history).
 - Warnings are errors in every project (the solution builds with zero warnings). Vendored code in
-  `Utils/ISO2GOD` and `ThreeDS/Ctr` is marked `#nullable disable warnings`.
+  `Consoles/Xbox/ISO2GOD` and `Consoles/ThreeDS/Ctr` is marked `#nullable disable warnings`.
 
 ## Layout
 
 | Path | What |
 |---|---|
 | `RomManager.Abstractions/` | Plugin contract (`IPlugin`, `IPluginContext`) and rom model (`Rom`, `Game`, enums); namespaces `RomManagerShared.Base`/`.Utils`, forwarded from RomManagerShared |
-| `RomManagerShared/` | Core library: parsers, title-info providers, EF Core, utils |
+| `RomManagerShared/` | Core library: scanning, library DB (EF Core), operations, DAT matching, plugins, utils. No console code |
+| `Consoles/<Name>/` | One module assembly per console (`RomManager.Consoles.<Name>`): `<Name>Console` with `[ConsoleInfo]`, parsers, title-info providers, manager, options. Copied to `<app>/Consoles/`; removing a DLL removes that console |
 | `RomManagerShared/Base/` | `ConsoleManager<T>`, `OperationQueue`, library scanner, actions |
-| `RomManagerShared/<Console>/` | One folder per console: `Parsers/`, `TitleInfoProviders/`, `*Manager.cs`, `*Rom.cs` |
-| `RomManagerShared/Utils/` | File/hash/download utils, `PluginManager`, renamer, mover, duplicate detector, DAT matching (`Utils/Dat`); vendored ISO2GOD |
+| `RomManagerShared/Utils/` | File/hash/download utils, `PluginManager`, renamer, mover, duplicate detector, DAT matching (`Utils/Dat`) |
 | `AvaloniaApplication1/AvaloniaUI/` | UI library: `App.axaml.cs` (DI composition root), ViewModels, AXAML Views (`MainView` shell, `DashboardView`, `ConsoleView`, `RomDetailsView`); `ViewLocator` maps VM → view |
 | `AvaloniaApplication1/AvaloniaUI.Desktop/` | Desktop head (the only head that matters) |
 | `SkyEditor.IO/` | Vendored binary IO lib (net10.0) used by 3DS code |
@@ -42,7 +42,7 @@ dotnet run --project tools/ParserHarness -- PS4Console "Y:\roms\PS4" 5
 
 ## How the pipeline works (short)
 
-1. `ConsoleModules.Register` (ADR 0003) reflects over `RomManagerShared` plus any `Modules/*.dll` and, for every `GamingConsole`
+1. `ConsoleModules.Load` (ADR 0003) loads `Consoles/*.dll`; `ConsoleModules.Register` reflects over them and, for every `GamingConsole`
    subtype `T`, registers (scoped): all `IRomParser<T>`, `ITitleInfoProvider<T>`,
    `IUpdateVersionProvider<T>`, `IRomOrganizer<T>`, `RomParserExecutor<T>`,
    `TitleInfoProviderManager<T>`, and `ConsoleManager<T>` (or its subclass, e.g. `SwitchManager`).
@@ -82,13 +82,16 @@ dotnet run --project tools/ParserHarness -- PS4Console "Y:\roms\PS4" 5
   `RomManagerConfiguration.GetCachePath()`.
 - No external programs in the scan path and no binaries in the repo (ADR 0002). Optional tools are
   user-supplied, default to `<BaseDirectory>/Tools/`, and run in `Cache/Temp`.
-- Namespaces match folders in RomManagerShared (`NamespaceTests` enforces it; vendored `ThreeDS/Ctr` keeps
+- Namespaces match folders in RomManagerShared (`NamespaceTests` enforces it; vendored `Consoles/ThreeDS/Ctr` keeps
   `DotNet3dsToolkit`). Persisted rom types are stored by full name: don't rename their namespaces.
 
 ## Adding a console
 
-1. `RomManagerShared/<Name>/`: `<Name>Console : GamingConsole`, `<Name>Game : Rom` (+ Update/DLC),
-   `<Name>Manager : ConsoleManager<<Name>Console>` (optional), `Parsers/<X>Parser : IRomParser<<Name>Console>`.
+1. New project `Consoles/<Name>/RomManager.Consoles.<Name>.csproj` (just `<Project Sdk="Microsoft.NET.Sdk" />`;
+   `Consoles/Directory.Build.props` adds the core reference) with `<Name>Console : GamingConsole` + `[ConsoleInfo]`,
+   `<Name>Game : Rom` (+ Update/DLC), optional `<Name>Manager`, `Parsers/<X>Parser : IRomParser<<Name>Console>`.
+   Add it to `RomManager.slnx`; the desktop head, tests and harness pick it up by glob. A module must not use
+   another module's types: move shared code to core.
 2. Point the console at a folder (Settings, or `Consoles.<Name>.RomPath` in `config.local.json`).
 3. Run `tools/ParserHarness` against real files (use `--snapshot`/`--compare` around parser changes)
    and add a fixture-based test with a synthetic file.

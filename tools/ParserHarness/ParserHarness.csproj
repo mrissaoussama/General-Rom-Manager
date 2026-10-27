@@ -8,5 +8,7 @@
   <ItemGroup>
     <!-- References the UI lib only to reuse App.RegisterConsoleServices (the real DI wiring). -->
     <ProjectReference Include="..\..\AvaloniaApplication1\AvaloniaUI\AvaloniaUI.csproj" />
+    <!-- Every console module, copied next to the harness and loaded from there. -->
+    <ProjectReference Include="..\..\Consoles\*\*.csproj" />
   </ItemGroup>
 </Project>

@@ -34,7 +34,8 @@ RomManagerConfiguration.Load(configPath);
 
 var services = new ServiceCollection();
 services.AddLogging();
-ConsoleModules.Load();
+// Console modules are referenced by the harness, so they sit next to it.
+ConsoleModules.Load("RomManager.Consoles.*.dll", AppContext.BaseDirectory);
 ConsoleModules.Register(services);
 services.AddDbContext<AppDbContext>(_ => { }, ServiceLifetime.Scoped);
 services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<AppDbContext>());

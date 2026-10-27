@@ -22,46 +22,64 @@ public interface IConsoleModule
 }
 
 /// <summary>
-/// Finds consoles in <c>RomManagerShared</c> plus any <c>Modules/*.dll</c>, and registers their services.
+/// Finds consoles in the console module assemblies (<c>Consoles/*.dll</c>) and registers their services.
 /// Module assemblies load into the default context so they share <see cref="Rom"/>, EF and DI types.
 /// </summary>
 public static class ConsoleModules
 {
-    // The built-in consoles plus the rom model (which lives in RomManager.Abstractions).
+    // The core library and the rom model (RomManager.Abstractions); consoles come from module assemblies.
     private static readonly Assembly[] CoreAssemblies = [typeof(GamingConsole).Assembly, typeof(Rom).Assembly];
+    private static List<Assembly> _loaded = [];
     private static List<Assembly> _assemblies = [.. CoreAssemblies];
 
     public static IReadOnlyList<Assembly> Assemblies => _assemblies;
 
-    /// <summary>Folder scanned for module DLLs (config <c>GlobalPaths:Modules</c>, default Modules).</summary>
-    public static string ModulesDirectory =>
-        Configuration.RomManagerConfiguration.GetPathOrDefault("GlobalPaths:Modules", "Modules");
+    /// <summary>Console modules shipped with the app: <c>&lt;app folder&gt;/Consoles</c>.</summary>
+    public static string AppModulesDirectory => Path.Combine(AppContext.BaseDirectory, "Consoles");
 
-    /// <summary>Loads module DLLs from <paramref name="directory"/>; failures are logged and skipped.</summary>
-    public static IReadOnlyList<Assembly> Load(string? directory = null)
+    /// <summary>Extra modules the user adds (config <c>GlobalPaths:Modules</c>, default <c>&lt;data folder&gt;/Consoles</c>).</summary>
+    public static string ModulesDirectory =>
+        Configuration.RomManagerConfiguration.GetPathOrDefault("GlobalPaths:Modules", "Consoles");
+
+    /// <summary>
+    /// Loads console modules (assemblies that define a <see cref="GamingConsole"/>) from the app's and the user's
+    /// Consoles folders, or from <paramref name="directories"/>. A module that fails to load is logged and skipped;
+    /// the app works with whatever consoles remain.
+    /// </summary>
+    public static IReadOnlyList<Assembly> Load(params string[] directories) => Load("*.dll", directories);
+
+    public static IReadOnlyList<Assembly> Load(string pattern, params string[] directories)
     {
-        var list = new List<Assembly>(CoreAssemblies);
-        directory ??= ModulesDirectory;
-        if (Directory.Exists(directory))
+        if (directories.Length == 0) directories = [AppModulesDirectory, ModulesDirectory];
+        var loaded = new List<Assembly>();
+        foreach (var directory in directories.Distinct(FileUtils.PathComparer).Where(Directory.Exists))
         {
-            foreach (var dll in Directory.EnumerateFiles(directory, "*.dll"))
+            foreach (var dll in Directory.EnumerateFiles(directory, pattern))
             {
                 try
                 {
                     var asm = Assembly.LoadFrom(dll);
-                    if (SafeTypes(asm).Any(t => typeof(GamingConsole).IsAssignableFrom(t)))
-                        list.Add(asm);
+                    if (!loaded.Contains(asm) && SafeTypes(asm).Any(t => typeof(GamingConsole).IsAssignableFrom(t) && t != typeof(GamingConsole)))
+                        loaded.Add(asm);
                 }
                 catch (Exception ex) { AppLog.Warn($"[Modules] {Path.GetFileName(dll)}: {ex.Message}"); }
             }
         }
-        _assemblies = list;
-        return list;
+        _loaded = loaded;
+        _assemblies = [.. CoreAssemblies, .. loaded];
+        return _assemblies;
     }
 
-    /// <summary>Includes extra assemblies (tests, harness) without touching the file system.</summary>
+    /// <summary>Replaces the loaded modules (tests: simulate a module DLL that is missing).</summary>
+    internal static void SetLoadedModules(IEnumerable<Assembly> modules)
+    {
+        _loaded = [.. modules];
+        _assemblies = [.. CoreAssemblies, .. _loaded];
+    }
+
+    /// <summary>The loaded modules plus extra assemblies (tests, harness) without touching the file system.</summary>
     public static void Use(params Assembly[] assemblies) =>
-        _assemblies = [.. CoreAssemblies.Concat(assemblies).Distinct()];
+        _assemblies = [.. CoreAssemblies.Concat(_loaded).Concat(assemblies).Distinct()];
 
     public static IEnumerable<Type> AllTypes => _assemblies.SelectMany(SafeTypes);
 
@@ -86,8 +104,24 @@ public static class ConsoleModules
     public static IReadOnlyList<ConsoleDescriptor> Descriptors =>
         [.. ConsoleTypes.Select(Describe).OrderBy(d => d.DisplayName, StringComparer.OrdinalIgnoreCase)];
 
-    /// <summary>Resolves a type by full name across loaded modules (used for cached rom snapshots).</summary>
-    public static Type? FindType(string fullName) => AllTypes.FirstOrDefault(t => t.FullName == fullName);
+    private static (List<Assembly> For, Dictionary<string, Type> Map)? _types;
+
+    /// <summary>
+    /// Resolves a type by full name across the core and the loaded modules only (used for cached rom snapshots):
+    /// a module that is not loaded contributes nothing, whatever its DLL name.
+    /// </summary>
+    public static Type? FindType(string fullName)
+    {
+        var current = _assemblies;
+        if (_types is not { } t || !ReferenceEquals(t.For, current))
+        {
+            var map = new Dictionary<string, Type>(StringComparer.Ordinal);
+            foreach (var type in current.SelectMany(SafeTypes))
+                if (type.FullName is { } name) map.TryAdd(name, type);
+            _types = t = (current, map);
+        }
+        return t.Map.GetValueOrDefault(fullName);
+    }
 
     public static void Register(IServiceCollection services)
     {

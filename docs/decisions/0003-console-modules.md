@@ -1,6 +1,6 @@
 # ADR 0003 — Console modules and metadata providers
 
-- Status: accepted (step 1 done: `RomManagerShared/Base/ConsoleModules.cs`; project splits pending)
+- Status: accepted; done 2026-10-28 (every console is a module assembly, see "Outcome")
 - Date: 2026-10-25
 
 ## Context
@@ -51,3 +51,22 @@ Questions: should each console be its own DLL? Should title databases be plugins
   integrations, custom rename schemes, exporters (EmulationStation gamelist, LaunchBox), cover
   downloaders.
 - Keep in core: parsing, scanning, the library cache, hashing/No-Intro, rename/move/dedupe.
+
+## Outcome (2026-10-28)
+
+Went further than step 2: every console is its own assembly under `Consoles/<Name>/`
+(`RomManager.Consoles.<Name>`; Xbox 360 and the original Xbox share `RomManager.Consoles.Xbox` with ISO2GOD).
+The desktop head copies them into `<app>/Consoles/`; `ConsoleModules.Load` reads that folder and the user's
+`<data>/Consoles`. Removing a DLL removes that console and nothing else (`MissingModuleTests`; checked with the
+real app). What made it possible:
+
+- The EF model holds only core tables (library files, hashes); console title databases live in memory/JSON.
+- Console code no longer reaches into core through hard-coded types: `[ConsoleInfo]` for display data,
+  `IFolderLayout` for folder roms, `IDownloadableResources` for title-database files, `IConsoleOptions` for
+  Settings (Switch title-DB sources and key status, PS4 online updates).
+- Helpers two consoles shared moved to core (Nintendo logo, TMR SEGA header, PlayStation serial regions).
+- Cached rows resolve types by full name among loaded modules: rows written before the split still load, and
+  rows of a removed module read as plain roms.
+
+Third-party libraries the modules use (LibHac, DiscUtils, CHDSharp, HtmlAgilityPack, SkyEditor.IO) stay
+dependencies of the core assembly so module folders hold only the module DLLs.

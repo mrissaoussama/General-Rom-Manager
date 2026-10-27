@@ -1,6 +1,6 @@
 [
   {
-    "Type": "RomManagerShared.Nintendo64.Nintendo64Game, RomManagerShared",
+    "Type": "RomManagerShared.Nintendo64.Nintendo64Game, RomManager.Consoles.Nintendo64",
     "Data": {
       "Id": 0,
       "TitleID": "KT",

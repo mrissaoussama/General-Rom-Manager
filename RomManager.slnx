@@ -2,6 +2,32 @@
   <Configurations>
     <Platform Name="Any CPU" />
   </Configurations>
+  <Folder Name="/Consoles/">
+    <Project Path="Consoles/DS/RomManager.Consoles.DS.csproj" />
+    <Project Path="Consoles/Dreamcast/RomManager.Consoles.Dreamcast.csproj" />
+    <Project Path="Consoles/GameBoy/RomManager.Consoles.GameBoy.csproj" />
+    <Project Path="Consoles/GameBoyAdvance/RomManager.Consoles.GameBoyAdvance.csproj" />
+    <Project Path="Consoles/GameCube/RomManager.Consoles.GameCube.csproj" />
+    <Project Path="Consoles/GameGear/RomManager.Consoles.GameGear.csproj" />
+    <Project Path="Consoles/Genesis/RomManager.Consoles.Genesis.csproj" />
+    <Project Path="Consoles/MasterSystem/RomManager.Consoles.MasterSystem.csproj" />
+    <Project Path="Consoles/NES/RomManager.Consoles.NES.csproj" />
+    <Project Path="Consoles/Nintendo64/RomManager.Consoles.Nintendo64.csproj" />
+    <Project Path="Consoles/PCEngine/RomManager.Consoles.PCEngine.csproj" />
+    <Project Path="Consoles/PS1/RomManager.Consoles.PS1.csproj" />
+    <Project Path="Consoles/PS2/RomManager.Consoles.PS2.csproj" />
+    <Project Path="Consoles/PS3/RomManager.Consoles.PS3.csproj" />
+    <Project Path="Consoles/PS4/RomManager.Consoles.PS4.csproj" />
+    <Project Path="Consoles/PSP/RomManager.Consoles.PSP.csproj" />
+    <Project Path="Consoles/PSVita/RomManager.Consoles.PSVita.csproj" />
+    <Project Path="Consoles/SNES/RomManager.Consoles.SNES.csproj" />
+    <Project Path="Consoles/SegaSaturn/RomManager.Consoles.SegaSaturn.csproj" />
+    <Project Path="Consoles/Switch/RomManager.Consoles.Switch.csproj" />
+    <Project Path="Consoles/ThreeDS/RomManager.Consoles.ThreeDS.csproj" />
+    <Project Path="Consoles/Wii/RomManager.Consoles.Wii.csproj" />
+    <Project Path="Consoles/WiiU/RomManager.Consoles.WiiU.csproj" />
+    <Project Path="Consoles/Xbox/RomManager.Consoles.Xbox.csproj" />
+  </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/ParserHarness/ParserHarness.csproj" />
   </Folder>

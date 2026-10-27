@@ -1,15 +1,17 @@
 # Architecture
 
-State as of 2026-10-27. Target architecture and migration steps are in [ROADMAP.md](ROADMAP.md).
+State as of 2026-10-28. Target architecture and migration steps are in [ROADMAP.md](ROADMAP.md).
 
 ## Projects
 
 ```
-AvaloniaUI.Desktop ──► AvaloniaUI ──► RomManagerShared ──► Ryujinx.LibHac, LTRData.DiscUtils, CHDSharp (NuGet)
-                                                       └─► SkyEditor.IO (vendored, net10.0; 3DS)
-RomManagerTests ──► RomManagerShared, AvaloniaUI (view-model tests), SamplePlugin (built, loaded at runtime)
-SamplePlugin    ──► RomManagerShared
-tools/ParserHarness ──► RomManagerShared
+AvaloniaUI.Desktop ──► AvaloniaUI ──► RomManagerShared ──► RomManager.Abstractions (plugin contract, rom model)
+        │                                          ├─► Ryujinx.LibHac, LTRData.DiscUtils, CHDSharp, HtmlAgilityPack (NuGet)
+        │                                          └─► SkyEditor.IO (vendored, net10.0; used by the 3DS module)
+        └ builds and copies (no reference) ──► Consoles/RomManager.Consoles.<Name> ──► RomManagerShared
+RomManagerTests ──► RomManagerShared, every console module, AvaloniaUI, SamplePlugin (built, loaded at runtime)
+SamplePlugin    ──► RomManager.Abstractions
+tools/ParserHarness ──► AvaloniaUI, every console module
 ```
 
 Solution: `RomManager.slnx`. Package versions: `Directory.Packages.props`. The desktop head is the only one
@@ -46,10 +48,10 @@ with no TitleID are dropped. Files that parse to nothing are reported with what 
 
 ## Composition (`AvaloniaUI/App.axaml.cs`)
 
-Generic Host + MS DI. `ConsoleModules.Register` (ADR 0003) reflects over `RomManagerShared` and
-`Modules/*.dll` and registers, per console type, parsers, title info providers, organizers and the
-console manager, all **scoped**. `ConsoleModules.Describe` gives each console its display name,
-manufacturer and badge. `AppDbContext` is scoped; migrations run at startup. `PluginManager` is a
+Generic Host + MS DI. `ConsoleModules.Load` (ADR 0003) loads the console modules from `<app>/Consoles` and
+`<data>/Consoles`; `ConsoleModules.Register` reflects over them and registers, per console type, parsers, title info providers, organizers and the
+console manager, all **scoped**, plus every `IDownloadableResources` and `IConsoleOptions` (singletons).
+`ConsoleModules.Describe` reads each console's `[ConsoleInfo]` (display name, manufacturer, badge). `AppDbContext` is scoped; migrations run at startup. `PluginManager` is a
 singleton. Console view models create a scope per load or action.
 
 ## Persistence

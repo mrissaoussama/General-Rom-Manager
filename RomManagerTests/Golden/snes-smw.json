@@ -1,6 +1,6 @@
 [
   {
-    "Type": "RomManagerShared.SNES.SNESGame, RomManagerShared",
+    "Type": "RomManagerShared.SNES.SNESGame, RomManager.Consoles.SNES",
     "Data": {
       "Id": 0,
       "Version": "0",

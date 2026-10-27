@@ -28,4 +28,25 @@
   <ItemGroup>
     <ProjectReference Include="..\AvaloniaUI\AvaloniaUI.csproj" />
   </ItemGroup>
+
+  <!-- Console modules are not referenced by the app: they are built, then copied into Consoles/ next to it and
+       loaded at startup. Deleting one of those DLLs removes that console. -->
+  <ItemGroup>
+    <ConsoleModule Include="..\..\Consoles\*\*.csproj" />
+    <ProjectReference Include="@(ConsoleModule)" ReferenceOutputAssembly="false" Private="false" />
+  </ItemGroup>
+
+  <Target Name="CollectConsoleModules">
+    <MSBuild Projects="@(ConsoleModule)" Targets="GetTargetPath" Properties="Configuration=$(Configuration)">
+      <Output TaskParameter="TargetOutputs" ItemName="ConsoleModuleDll" />
+    </MSBuild>
+  </Target>
+
+  <Target Name="CopyConsoleModules" AfterTargets="Build" DependsOnTargets="CollectConsoleModules">
+    <Copy SourceFiles="@(ConsoleModuleDll)" DestinationFolder="$(OutDir)Consoles" SkipUnchangedFiles="true" />
+  </Target>
+
+  <Target Name="PublishConsoleModules" AfterTargets="Publish" DependsOnTargets="CollectConsoleModules">
+    <Copy SourceFiles="@(ConsoleModuleDll)" DestinationFolder="$(PublishDir)Consoles" SkipUnchangedFiles="true" />
+  </Target>
 </Project>

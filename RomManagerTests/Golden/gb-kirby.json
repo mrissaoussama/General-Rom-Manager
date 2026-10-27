@@ -1,6 +1,6 @@
 [
   {
-    "Type": "RomManagerShared.GameBoy.GameBoyGame, RomManagerShared",
+    "Type": "RomManagerShared.GameBoy.GameBoyGame, RomManager.Consoles.GameBoy",
     "Data": {
       "Id": 0,
       "TitleID": "",

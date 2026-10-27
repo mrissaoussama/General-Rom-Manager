@@ -17,8 +17,10 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
 
 ## Phase B: Architecture
 
-- [ ] **[P1]** Modules contribute their own EF configuration (`IConsoleModule.ConfigureModel`), then split
-      Switch (LibHac) and Xbox (ISO2GOD) into module assemblies (ADR 0003 step 2, blocked in v2 on this).
+- [x] **[P1]** Every console is a module assembly in `Consoles/` (ADR 0003 outcome). The EF model is core-only
+      (unused rom/title-DB tables dropped), and modules reach the app only through interfaces
+      (`[ConsoleInfo]`, `IFolderLayout`, `IDownloadableResources`, `IConsoleOptions`). Removing a module DLL
+      leaves the app working (`MissingModuleTests`; checked with the real app).
 - [ ] Fold config.json into an options model (`IOptionsMonitor<AppOptions>`); `RomManagerConfiguration` is
       still a static facade read everywhere.
 - [x] **[P1]** Removed dead code: the PS4 Store scraper (`PS4PKGUpdateAndDLCChecker`, its HtmlAgilityPack use),

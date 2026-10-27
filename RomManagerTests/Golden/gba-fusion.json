@@ -1,6 +1,6 @@
 [
   {
-    "Type": "RomManagerShared.GameBoyAdvance.GameBoyAdvanceGame, RomManagerShared",
+    "Type": "RomManagerShared.GameBoyAdvance.GameBoyAdvanceGame, RomManager.Consoles.GameBoyAdvance",
     "Data": {
       "Id": 0,
       "TitleID": "AMTE",

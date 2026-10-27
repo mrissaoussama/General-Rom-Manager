@@ -1,6 +1,6 @@
 [
   {
-    "Type": "RomManagerShared.PS4.PS4Update, RomManagerShared",
+    "Type": "RomManagerShared.PS4.PS4Update, RomManager.Consoles.PS4",
     "Data": {
       "Id": 0,
       "TitleID": "CUSA00001",

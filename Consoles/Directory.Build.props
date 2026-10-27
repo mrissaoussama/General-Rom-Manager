@@ -1,0 +1,17 @@
+<Project>
+  <!-- Console modules: one assembly per console (Xbox 360 and the original Xbox share one), loaded at runtime from
+       the app's Consoles folder. They see only the core library; removing one removes that console. -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Using Include="RomManagerShared.Logging" />
+    <InternalsVisibleTo Include="RomManagerTests" />
+    <!-- The host provides the core library at runtime: compile against it, never copy it. -->
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\RomManagerShared\RomManagerShared.csproj" Private="false" />
+  </ItemGroup>
+</Project>

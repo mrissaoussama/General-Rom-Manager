@@ -1,6 +1,6 @@
 [
   {
-    "Type": "RomManagerShared.PS1.PS1Game, RomManagerShared",
+    "Type": "RomManagerShared.PS1.PS1Game, RomManager.Consoles.PS1",
     "Data": {
       "Id": 0,
       "TitleID": "SLUS_004.99",

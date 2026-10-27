@@ -31,7 +31,9 @@ public static class RomSnapshot
         var roms = new List<Rom>(entries.Count);
         foreach (var entry in entries)
         {
-            var type = Type.GetType(entry.Type) ?? ConsoleModules.FindType(entry.Type.Split(',')[0]);
+            // By full name among loaded modules: rows written before a type moved assemblies still resolve, and a
+            // console whose module was removed reads as plain roms instead of failing.
+            var type = ConsoleModules.FindType(entry.Type.Split(',')[0].Trim());
             if (type is null || !typeof(Rom).IsAssignableFrom(type))
                 type = typeof(Rom);
             if (entry.Data.Deserialize(type, Options) is Rom rom)

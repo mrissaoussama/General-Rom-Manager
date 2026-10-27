@@ -1,6 +1,6 @@
 [
   {
-    "Type": "RomManagerShared.Dreamcast.DreamcastGame, RomManagerShared",
+    "Type": "RomManagerShared.Dreamcast.DreamcastGame, RomManager.Consoles.Dreamcast",
     "Data": {
       "DiscNumber": 2,
       "Id": 0,
