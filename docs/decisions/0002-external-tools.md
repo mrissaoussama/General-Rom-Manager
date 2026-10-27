@@ -46,6 +46,8 @@ What each tool was really needed for:
   the XDBF resource. References: xenia `src/xenia/cpu/xex_module.cc`, `xex2` docs on free60. Larger
   effort; a Title ID → name database is the cheaper route.
 
-## Pinning (todo)
+## Pinning (done 2026-10-28)
 
-When a user points to a tool, store its SHA-256 on first use and warn if it changes.
+Conversion tools are pinned to their SHA-256 on first use (`ToolPins`, `tool-pins.json` next to the database); a
+program that changed since asks for confirmation before it runs. Their arguments are passed as a list
+(`ProcessStartInfo.ArgumentList`), never as one string with paths pasted in.

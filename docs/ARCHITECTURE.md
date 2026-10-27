@@ -35,10 +35,10 @@ ConsoleViewModel<T>.LoadAsync
   └─ LibraryScanner.ScanAsync
         files under the ROM folder matching parser extensions
         unchanged (size, mtime, ScanVersion, DataFingerprint) → cached roms
-        changed/new → parallel batches (MaxParallelism 4):
-            ParseDiagnostics.CaptureAsync(RomParserExecutor<T>.ExecuteParsers(file))
-            → ConsoleManager<T>.EnrichAsync (title providers, DAT matching)  sequential
-            → LibraryFile { RomsJson, Error } saved in batches
+        changed/new → worker pool (MaxParallelism, default 4) → bounded channel:
+            ParseDiagnostics.CaptureAsync(RomParserExecutor<T>.ExecuteParsers(file))   parallel
+            → ConsoleManager<T>.EnrichAsync (title providers, DAT matching)  one result at a time
+            → LibraryFile { RomsJson, Error } saved every 25 files
         deleted → LibraryFile removed
   └─ RomViewModel per Rom → DataGrid / cards; LibraryWatcher triggers debounced rescans
 ```
@@ -51,7 +51,9 @@ with no TitleID are dropped. Files that parse to nothing are reported with what 
 Generic Host + MS DI. `ConsoleModules.Load` (ADR 0003) loads the console modules from `<app>/Consoles` and
 `<data>/Consoles`; `ConsoleModules.Register` reflects over them and registers, per console type, parsers, title info providers, organizers and the
 console manager, all **scoped**, plus every `IDownloadableResources` and `IConsoleOptions` (singletons).
-`ConsoleModules.Describe` reads each console's `[ConsoleInfo]` (display name, manufacturer, badge). `AppDbContext` is scoped; migrations run at startup. `PluginManager` is a
+`ConsoleModules.Describe` reads each console's `[ConsoleInfo]` (display name, manufacturer, badge); `IdOf` gives the
+default id and `RomTypesOf` a console's rom types (same module, name prefix). `AppDbContext` is scoped; migrations run at startup (`DatabaseStartup.MigrateOrReset`: a database that fails to
+migrate is moved aside as `*.broken-<time>` and rebuilt, since it only caches scans and hashes). `PluginManager` is a
 singleton. Console view models create a scope per load or action.
 
 ## Persistence
@@ -66,13 +68,15 @@ DTOs and hashes have their own tables. `MigrationTests` and CI check for pending
 |---|---|---|
 | Logging | `AppLog` over `ILoggerFactory` (the host's in the app); `LogFileProvider` → `LogSink` (file, log panel) | `ParseDiagnostics` captures per-file messages during a scan; `FileUtils.Log` stays as a shim for plugins |
 | Config | `AppOptions` + per-module `Consoles:<Id>` sections (config.json, reloading) + `Settings.Instance` (settings.json) | Static accessor kept for non-DI code; `IOptionsMonitor<AppOptions>` in DI |
-| Operations | `OperationQueue` / `QueuedOperation` with cancel + undo, `RomOperationService` | Rename/move have dry-run previews |
+| Operations | `OperationQueue` / `QueuedOperation` with cancel + undo, `RomOperationService` | Rename/move have dry-run previews; partial failures set `QueuedOperation.Warning` ("Partly done") |
+| Hashing | `HashUtils`: every algorithm in one read (`System.IO.Hashing.Crc32`, `IncrementalHash`), cancellable with progress | `HashRomsAsync` serves the queue and the context action |
+| File names | `FileRenamer.SanitizeFileName`: Windows/FAT-safe on every OS (invalid characters, trailing dots, device names, 255 chars) | Versions compare with `VersionKey` (numeric parts, culture-independent) |
 | Requirements | `IHasRequirements` → `ConsoleRequirement` (keys, dirs, DB files) | Surfaced in UI/onboarding |
 | Context actions | `IHasContextMenuActions`, `IConsoleRomAction`, `UniversalRomActions` | |
 | Missing updates | `IMissingUpdateReporter` (Switch: `SwitchUpdateChecker` + versions.json) | Console page report + dashboard total |
 | Plugins | `PluginManager`: collectible `AssemblyLoadContext`, `[Plugin(Permissions = ...)]`, `PluginApiVersion`, approvals pinned to SHA-256 | Permissions are approved, not sandboxed; `IPluginContext` hands out HTTP, files outside the data folder, processes and DB services only for approved permissions |
 | Downloads | `FileDownloader` (`[ResourceDownload]` methods) | |
-| External tools | Optional, user-supplied (cdecrypt, xextool) under `<BaseDirectory>/Tools` | ADR 0002: no binaries in the repo |
+| External tools | Optional, user-supplied (cdecrypt, xextool, converters) under `<BaseDirectory>/Tools` | ADR 0002: no binaries in the repo. Converters get arguments as a list (`ConversionTool.BuildArguments`) and are pinned to their SHA-256 (`ToolPins`, `tool-pins.json`) |
 
 ## UI (`AvaloniaApplication1/AvaloniaUI`)
 

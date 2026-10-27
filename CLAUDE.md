@@ -75,6 +75,8 @@ dotnet run --project tools/ParserHarness -- PS4Console "Y:\roms\PS4" 5
 ## Conventions
 
 - C# latest, nullable enabled, file-scoped namespaces, collection expressions (`[]`).
+- Culture-independent code: `ToLowerInvariant`/`ToUpperInvariant` (`.editorconfig` makes CA1304/CA1311 errors),
+  `CultureInfo.InvariantCulture` for dates/numbers that end up in file names or data, `VersionKey` to compare versions.
 - Parsers implement `IRomParser<T>` with lowercase extension list; return `[]` (not null) on failure
   and log via `AppLog.Warn`. Implement `IHasRequirements` if the parser needs keys/files/tools.
 - Console-specific ROM properties shown in the grid need `[UiProperty(...)]`.
