@@ -31,13 +31,19 @@
 
   <!-- Console modules are not referenced by the app: they are built, then copied into Consoles/ next to it and
        loaded at startup. Deleting one of those DLLs removes that console. -->
+  <PropertyGroup>
+    <ConsoleModuleRemovedProperties>RuntimeIdentifier;SelfContained;PublishSingleFile;IncludeNativeLibrariesForSelfExtract;_IsPublishing</ConsoleModuleRemovedProperties>
+  </PropertyGroup>
   <ItemGroup>
     <ConsoleModule Include="..\..\Consoles\*\*.csproj" />
-    <ProjectReference Include="@(ConsoleModule)" ReferenceOutputAssembly="false" Private="false" />
+    <!-- Modules are plain class libraries: never build them for a runtime identifier. -->
+    <ProjectReference Include="@(ConsoleModule)" ReferenceOutputAssembly="false" Private="false"
+                      GlobalPropertiesToRemove="$(ConsoleModuleRemovedProperties)" />
   </ItemGroup>
 
   <Target Name="CollectConsoleModules">
-    <MSBuild Projects="@(ConsoleModule)" Targets="GetTargetPath" Properties="Configuration=$(Configuration)">
+    <MSBuild Projects="@(ConsoleModule)" Targets="Build" Properties="Configuration=$(Configuration)"
+             RemoveProperties="$(ConsoleModuleRemovedProperties)">
       <Output TaskParameter="TargetOutputs" ItemName="ConsoleModuleDll" />
     </MSBuild>
   </Target>
