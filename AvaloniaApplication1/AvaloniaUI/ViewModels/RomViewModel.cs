@@ -33,6 +33,8 @@ public partial class RomViewModel : ViewModelBase
     public static ImageCache? CoverCache { get; set; }
     private Avalonia.Media.Imaging.Bitmap? _cover;
     private bool _coverRequested;
+    // Bumped by ReleaseCover so a load that finishes after the card scrolled away is discarded.
+    private int _coverGeneration;
 
     /// <summary>Card cover, loaded on first access (i.e. when the card is realized).</summary>
     public Avalonia.Media.Imaging.Bitmap? Cover
@@ -51,8 +53,20 @@ public partial class RomViewModel : ViewModelBase
     public string Initials => string.Concat(Title.Split(' ', StringSplitOptions.RemoveEmptyEntries)
         .Where(w => char.IsLetterOrDigit(w[0])).Take(2).Select(w => char.ToUpperInvariant(w[0])));
 
+    /// <summary>Frees the decoded cover when its card is recycled; it reloads if the card is realized again.</summary>
+    public void ReleaseCover()
+    {
+        _coverGeneration++;
+        _coverRequested = false;
+        if (_cover is not { } old) return;
+        _cover = null;
+        OnPropertyChanged(nameof(Cover));
+        old.Dispose();
+    }
+
     private async Task LoadCoverAsync()
     {
+        var generation = _coverGeneration;
         var source = new[] { _rom.Icon, _rom.Thumbnail, _rom.Banner, _rom.Images?.FirstOrDefault() }
             .FirstOrDefault(s => !string.IsNullOrWhiteSpace(s));
         if (source is null || CoverCache is null) return;
@@ -60,11 +74,17 @@ public partial class RomViewModel : ViewModelBase
         if (path is null) return;
         try
         {
-            _cover = await Task.Run(() =>
+            var bitmap = await Task.Run(() =>
             {
                 using var fs = FileUtils.OpenRead(path);
                 return Avalonia.Media.Imaging.Bitmap.DecodeToWidth(fs, 160);
             });
+            if (generation != _coverGeneration)
+            {
+                bitmap.Dispose();
+                return;
+            }
+            _cover = bitmap;
             OnPropertyChanged(nameof(Cover));
         }
         catch (Exception ex) { FileUtils.Log($"[Image] {source}: {ex.Message}"); }

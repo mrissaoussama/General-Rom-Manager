@@ -207,8 +207,9 @@ game data, not Wii), gbc 367, nsp 97, pkg 56, cso 46, iso 33).
 - [x] **Cards toggle** (`ItemsRepeater` + `UniformGridLayout`, covers load lazily per realized card).
 - [x] Embedded covers: Switch control-NCA icon, PS4 icon0.png, 3DS SMDH (CIA), DS banner, PSP ICON0.
 - [x] libretro-thumbnails box art URLs for DAT-matched cartridges (NES/SNES/GB/GBC/GBA/N64/Sega/PCE).
-- [ ] 3DS icons for .3ds/.cxi; PS4 thumbnails still stored as hex.
-- [ ] Test the card view with 5k+ rows; release cover bitmaps for cards scrolled far away.
+- [x] 3DS .3ds/.cci/.cxi parsed (icon for decrypted dumps); PS4 pic0/pic1 cached as files (managed PKG reader).
+- [x] Release cover bitmaps when cards are recycled (`ItemsRepeater.ElementClearing`).
+- [ ] Profile the card view with 5k+ rows on a real library.
 - [x] **Filters**: type, region, unnamed only, text search (title, TitleID, path).
 - [x] Filters: has/no update, duplicates (same title ID, type and version).
 - [x] Filters: language, format.

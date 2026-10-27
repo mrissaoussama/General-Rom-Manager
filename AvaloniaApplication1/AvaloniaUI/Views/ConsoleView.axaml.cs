@@ -27,6 +27,9 @@ public partial class ConsoleView : UserControl
         _menu.Opening += (_, _) => BuildMenu();
         this.FindControl<Button>("ColumnsButton")!.Click += (s, _) => ShowColumnsFlyout((Control)s!);
         _grid.KeyDown += OnGridKeyDown;
+        // Cards are virtualized; free covers of recycled cards so large libraries keep memory flat.
+        this.FindControl<ItemsRepeater>("Cards")!.ElementClearing += (_, e) =>
+            (e.Element.DataContext as RomViewModel)?.ReleaseCover();
     }
 
     public void FocusSearch()

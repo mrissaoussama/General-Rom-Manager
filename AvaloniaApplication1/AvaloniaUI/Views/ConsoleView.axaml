@@ -77,7 +77,7 @@
                 </DataGrid>
 
                 <ScrollViewer IsVisible="{Binding IsCardView}" Margin="8,0">
-                    <ItemsRepeater ItemsSource="{Binding RomsView}">
+                    <ItemsRepeater x:Name="Cards" ItemsSource="{Binding RomsView}">
                         <ItemsRepeater.Layout>
                             <UniformGridLayout MinItemWidth="150" MinItemHeight="200" MinRowSpacing="8" MinColumnSpacing="8" />
                         </ItemsRepeater.Layout>
