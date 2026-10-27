@@ -52,7 +52,8 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
 
 - [ ] **[P0]** Moving folder-format roms (Wii U, PS3, Xbox 360 GOD) fails today; implement a verified
       copy-then-delete for folders, with free-space checks.
-- [ ] **[P0]** Delete to the recycle bin / trash where the OS has one; permanent delete only on request.
+- [x] **[P0]** Delete moves files to the Recycle Bin (fixed drives) / Trash (macOS, freedesktop on Linux);
+      files that cannot be trashed are only deleted after a second, explicit confirmation.
 - [ ] **[P1]** Persist the operation journal so undo survives a restart.
 - [ ] **[P1]** Redump for multi-track and compressed discs: CHD header SHA-1 (no decompression needed),
       cue/bin track hashing, GDI.

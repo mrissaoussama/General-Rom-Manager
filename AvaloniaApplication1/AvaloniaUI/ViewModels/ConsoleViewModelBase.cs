@@ -389,15 +389,45 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
         }
         var plural = files.Count == 1 ? "" : "s";
         var skipped = folders.Count == 0 ? "" : $" {folders.Count} folder ROM(s) in the selection are skipped.";
-        if (!await Shell.ConfirmAsync("Delete", $"Delete {files.Count} file{plural} from disk? This cannot be undone.{skipped}", "Delete"))
+        if (!await Shell.ConfirmAsync("Delete", $"Move {files.Count} file{plural} to the Recycle Bin / Trash?{skipped}", "Move to trash"))
             return;
+
+        void RemoveRows(string path)
+        {
+            foreach (var row in Roms.Where(r => string.Equals(r.Path, path, StringComparison.OrdinalIgnoreCase)).ToList())
+                RemoveRow(row);
+        }
+
+        List<(string Path, string Reason)> notTrashed = [];
         foreach (var path in files)
         {
             try
             {
+                if (File.Exists(path)) await Task.Run(() => Trash.MoveToTrash(path));
+                RemoveRows(path);
+            }
+            catch (Exception ex) { notTrashed.Add((path, ex.Message)); }
+        }
+        if (notTrashed.Count == 0)
+        {
+            StatusMessage = $"Moved {files.Count} file{plural} to the trash";
+            return;
+        }
+
+        // No trash for these (network drive, USB stick, unsupported OS): only delete permanently when asked.
+        if (!await Shell.ConfirmAsync("Delete permanently?",
+                $"{notTrashed.Count} file(s) could not be moved to the trash ({notTrashed[0].Reason}). Delete them permanently? This cannot be undone.",
+                "Delete permanently"))
+        {
+            StatusMessage = $"{notTrashed.Count} file(s) kept";
+            return;
+        }
+        foreach (var (path, _) in notTrashed)
+        {
+            try
+            {
                 if (File.Exists(path)) File.Delete(path);
-                foreach (var row in Roms.Where(r => string.Equals(r.Path, path, StringComparison.OrdinalIgnoreCase)).ToList())
-                    RemoveRow(row);
+                RemoveRows(path);
             }
             catch (Exception ex) { StatusMessage = $"Delete failed: {ex.Message}"; }
         }
