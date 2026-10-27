@@ -63,6 +63,7 @@ public sealed class DreamcastDiscParserTests : IDisposable
         var gdi = WriteGdi("track03.iso", BuildIpBin(), 2048);
 
         var rom = (await new DreamcastDiscParser().ProcessFile(gdi)).Should().ContainSingle().Subject;
+        Golden.Verify("dreamcast-gdi", [rom], _dir);
 
         rom.TitleID.Should().Be("MK-51000");
         rom.ProductCode.Should().Be("MK-51000");

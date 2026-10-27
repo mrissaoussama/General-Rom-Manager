@@ -34,6 +34,7 @@ public sealed class CartridgeParserTests : IDisposable
         rom[0x14A] = 0x01;
 
         var game = (await new GameBoyRomParser().ProcessFile(Write("kirby.gb", rom))).Should().ContainSingle().Subject;
+        Golden.Verify("gb-kirby", [game], _dir);
 
         game.Titles![0].Value.Should().Be("KIRBY DREAM LAND");
         game.TitleID.Should().BeNullOrEmpty();
@@ -62,6 +63,7 @@ public sealed class CartridgeParserTests : IDisposable
         Ascii(rom, 0xB0, "01");
 
         var game = (await new GameBoyAdvanceRomParser().ProcessFile(Write("fusion.gba", rom))).Should().ContainSingle().Subject;
+        Golden.Verify("gba-fusion", [game], _dir);
 
         game.TitleID.Should().Be("AMTE");
         game.Titles![0].Value.Should().Be("METROID4USA");
@@ -77,6 +79,7 @@ public sealed class CartridgeParserTests : IDisposable
         Ascii(rom, 0x10, "01");
 
         var game = (await new DSNDSParser().ProcessFile(Write("tetris.nds", rom))).Should().ContainSingle().Subject;
+        Golden.Verify("nds-tetris", [game], _dir);
 
         game.TitleID.Should().Be("ATRP");
         game.Titles![0].Value.Should().Be("TETRIS DS");
@@ -109,6 +112,7 @@ public sealed class CartridgeParserTests : IDisposable
     public async Task N64_Z64_ReadsHeader()
     {
         var game = (await new Nintendo64RomParser().ProcessFile(Write("mk.z64", N64Header()))).Should().ContainSingle().Subject;
+        Golden.Verify("n64-mk-z64", [game], _dir);
 
         game.TitleID.Should().Be("KT");
         game.Titles![0].Value.Should().Be("MARIOKART64");
@@ -152,6 +156,7 @@ public sealed class CartridgeParserTests : IDisposable
         BinaryPrimitives.WriteUInt16LittleEndian(rom.AsSpan(header + 0x1E), 0xA0DA);
 
         var game = (await new SNESRomParser().ProcessFile(Write("smw.sfc", rom))).Should().ContainSingle().Subject;
+        Golden.Verify("snes-smw", [game], _dir);
 
         game.Titles![0].Value.Should().Be("SUPER MARIOWORLD");
         game.Regions.Should().Equal(Region.USA);

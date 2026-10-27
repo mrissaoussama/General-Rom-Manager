@@ -67,6 +67,7 @@ public sealed class PS4PkgTests : IDisposable
         File.WriteAllBytes(path, Pkg(Ps4Sfo(category)));
 
         var rom = (await new PS4PKGParser().ProcessFile(path)).Should().ContainSingle().Which;
+        Golden.Verify($"ps4-pkg-{category}", [rom], _dir);
 
         rom.Should().BeOfType(expected);
         rom.TitleID.Should().Be("CUSA00001");

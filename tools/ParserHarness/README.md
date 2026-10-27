@@ -28,3 +28,15 @@ dotnet run --project tools/ParserHarness -- all tools/ParserHarness/paths.json 2
 
 Review each CHANGED entry; if the new output is correct, write a new baseline and bump
 `LibraryScanner.ScanVersion` so cached libraries get re-parsed.
+
+## JSON output
+
+`--json` prints one JSON document on stdout (progress goes to stderr): for each file its console, time,
+the roms exactly as the library stores them, and the "not recognised" reason when it parsed to nothing.
+
+```sh
+dotnet run --project tools/ParserHarness -- PS4Console "Y:\roms\PS4" 50 --json > ps4.json
+```
+
+Synthetic fixtures have golden files instead: `RomManagerTests/Golden/*.json` (see `Golden.Verify`); after an
+intended parser change run the tests with `UPDATE_GOLDEN=1` and review the diff.

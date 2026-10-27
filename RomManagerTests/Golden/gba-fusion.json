@@ -1,0 +1,28 @@
+[
+  {
+    "Type": "RomManagerShared.GameBoyAdvance.GameBoyAdvanceGame, RomManagerShared",
+    "Data": {
+      "Id": 0,
+      "TitleID": "AMTE",
+      "Version": "00",
+      "Regions": [
+        1
+      ],
+      "Titles": [
+        {
+          "Id": 0,
+          "Language": 0,
+          "Value": "METROID4USA"
+        }
+      ],
+      "Languages": [
+        1
+      ],
+      "Path": "<fixture>/fusion.gba",
+      "Size": 512,
+      "NumberOfPlayers": 0,
+      "IsDemo": false,
+      "IsFolderFormat": false
+    }
+  }
+]

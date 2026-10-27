@@ -1,0 +1,31 @@
+[
+  {
+    "Type": "RomManagerShared.Dreamcast.DreamcastGame, RomManagerShared",
+    "Data": {
+      "DiscNumber": 2,
+      "Id": 0,
+      "TitleID": "MK-51000",
+      "Version": "V1.005",
+      "Regions": [
+        3,
+        1,
+        2
+      ],
+      "Publisher": "SEGA LC-T-123",
+      "Titles": [
+        {
+          "Id": 0,
+          "Language": 0,
+          "Value": "SONIC ADVENTURE"
+        }
+      ],
+      "Path": "<fixture>/disc.gdi",
+      "Size": 51584,
+      "ReleaseDate": "1999-09-08",
+      "ProductCode": "MK-51000",
+      "NumberOfPlayers": 0,
+      "IsDemo": false,
+      "IsFolderFormat": false
+    }
+  }
+]

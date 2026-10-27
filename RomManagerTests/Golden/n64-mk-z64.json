@@ -1,0 +1,26 @@
+[
+  {
+    "Type": "RomManagerShared.Nintendo64.Nintendo64Game, RomManagerShared",
+    "Data": {
+      "Id": 0,
+      "TitleID": "KT",
+      "Version": "0",
+      "Regions": [
+        1
+      ],
+      "Titles": [
+        {
+          "Id": 0,
+          "Language": 0,
+          "Value": "MARIOKART64"
+        }
+      ],
+      "Path": "<fixture>/mk.z64",
+      "Developer": "䭎",
+      "Size": 4096,
+      "NumberOfPlayers": 0,
+      "IsDemo": false,
+      "IsFolderFormat": false
+    }
+  }
+]

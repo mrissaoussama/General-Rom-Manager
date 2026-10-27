@@ -4,6 +4,7 @@
 //   ParserHarness all <paths.json> [maxFiles]      paths.json: { "PS4Console": "Y:\roms\PS4", ... }
 //   add --library to run the incremental scanner twice (temp DB) and compare timings
 //   add --snapshot <file> to save results, --compare <file> to diff against a saved snapshot (exit 2 on diff)
+//   add --json to print one JSON document (per file: console, ms, roms, reason) on stdout; progress goes to stderr
 using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json;
@@ -22,6 +23,11 @@ if (args.Length < 2)
     Console.WriteLine("Usage: ParserHarness <ConsoleTypeName|all> <directory|paths.json> [maxFiles]");
     return 1;
 }
+
+// --json: stdout carries only the JSON document.
+var stdout = Console.Out;
+var jsonOutput = args.Contains("--json");
+if (jsonOutput) Console.SetOut(Console.Error);
 
 var configPath = Path.Combine(AppContext.BaseDirectory, "config.json");
 RomManagerConfiguration.Load(configPath);
@@ -57,7 +63,7 @@ if (args.Contains("--library"))
         {
             var sw = Stopwatch.StartNew();
             var task = (Task<List<Rom>>)scan.MakeGenericMethod(ct)
-                .Invoke(scanner, [mgr, ct.Name, paths[ct.Name], false, null, CancellationToken.None])!;
+                .Invoke(scanner, [mgr, ct.Name, paths[ct.Name], false, null, CancellationToken.None, null])!;
             var roms = await task;
             Console.WriteLine($"## {ct.Name} {pass} scan: {roms.Count} rom(s) in {sw.ElapsedMilliseconds}ms");
         }
@@ -73,6 +79,7 @@ string? OptionValue(string name)
 var snapshotPath = OptionValue("--snapshot");
 var comparePath = OptionValue("--compare");
 var results = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+var report = new List<object>();
 
 foreach (var ct in consoleTypes)
 {
@@ -99,25 +106,46 @@ foreach (var ct in consoleTypes)
     {
         int before = romList.Count;
         sw.Restart();
-        var task = (Task)processFile.Invoke(mgr, [f])!;
-        if (await Task.WhenAny(task, Task.Delay(TimeSpan.FromSeconds(90))) != task)
+        var (task, messages) = await ParseDiagnostics.CaptureAsync(async () =>
+        {
+            var t = (Task)processFile.Invoke(mgr, [f])!;
+            await Task.WhenAny(t, Task.Delay(TimeSpan.FromSeconds(90)));
+            return t;
+        });
+        if (!task.IsCompleted)
         {
             Console.WriteLine($"   TIMEOUT {Path.GetFileName(f)}");
+            report.Add(new { console = ct.Name, file = f, ms = sw.ElapsedMilliseconds, error = "timeout" });
             continue;
         }
         if (task.IsFaulted)
         {
             Console.WriteLine($"   THROW {Path.GetFileName(f)}: {task.Exception!.GetBaseException().Message}");
+            report.Add(new { console = ct.Name, file = f, ms = sw.ElapsedMilliseconds, error = task.Exception!.GetBaseException().Message });
             continue;
         }
         var added = romList.Skip(before).ToList();
         results[f] = RomSnapshot.Serialize(added);
+        report.Add(new
+        {
+            console = ct.Name,
+            file = f,
+            ms = sw.ElapsedMilliseconds,
+            roms = JsonDocument.Parse(results[f]).RootElement,
+            reason = added.Count == 0 ? ParseDiagnostics.Summarize(messages) : null,
+        });
         Console.WriteLine($"   {sw.ElapsedMilliseconds,6}ms {Path.GetFileName(f)} -> {added.Count} rom(s)");
         foreach (var r in added.Take(3))
             Console.WriteLine($"          {r.GetType().Name}: {r}");
     }
 }
 Console.WriteLine($"Parser errors are logged to {RomManagerConfiguration.GetErrorLogPath()}");
+if (jsonOutput)
+    stdout.WriteLine(JsonSerializer.Serialize(report, new JsonSerializerOptions
+    {
+        WriteIndented = true,
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+    }));
 
 if (snapshotPath is not null)
 {

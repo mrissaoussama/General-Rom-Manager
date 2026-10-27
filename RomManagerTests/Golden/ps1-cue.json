@@ -1,0 +1,24 @@
+[
+  {
+    "Type": "RomManagerShared.PS1.PS1Game, RomManagerShared",
+    "Data": {
+      "Id": 0,
+      "TitleID": "SLUS_004.99",
+      "Regions": [
+        1
+      ],
+      "Titles": [
+        {
+          "Id": 0,
+          "Language": 0,
+          "Value": "Game"
+        }
+      ],
+      "Path": "<fixture>/Game.cue",
+      "Size": 63504,
+      "NumberOfPlayers": 0,
+      "IsDemo": false,
+      "IsFolderFormat": false
+    }
+  }
+]

@@ -1,0 +1,24 @@
+[
+  {
+    "Type": "RomManagerShared.PS4.PS4Update, RomManagerShared",
+    "Data": {
+      "Id": 0,
+      "TitleID": "CUSA00001",
+      "Version": "01.05",
+      "Titles": [
+        {
+          "Id": 0,
+          "Language": 0,
+          "Value": "Test Game"
+        }
+      ],
+      "Path": "<fixture>/gp.pkg",
+      "Size": 8192,
+      "ProductCode": "UP0001-CUSA00001_00-GAME000000000001",
+      "MinimumFirmware": "5.05",
+      "NumberOfPlayers": 0,
+      "IsDemo": false,
+      "IsFolderFormat": false
+    }
+  }
+]

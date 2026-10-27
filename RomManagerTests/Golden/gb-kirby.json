@@ -1,0 +1,25 @@
+[
+  {
+    "Type": "RomManagerShared.GameBoy.GameBoyGame, RomManagerShared",
+    "Data": {
+      "Id": 0,
+      "TitleID": "",
+      "Version": "00",
+      "Regions": [
+        0
+      ],
+      "Titles": [
+        {
+          "Id": 0,
+          "Language": 0,
+          "Value": "KIRBY DREAM LAND"
+        }
+      ],
+      "Path": "<fixture>/kirby.gb",
+      "Size": 32768,
+      "NumberOfPlayers": 0,
+      "IsDemo": false,
+      "IsFolderFormat": false
+    }
+  }
+]

@@ -46,6 +46,7 @@ public sealed class PS1DiscParserTests : IDisposable
         File.WriteAllText(cue, "FILE \"Game (Track 01).bin\" BINARY\n  TRACK 01 MODE2/2352\n    INDEX 01 00:00:00\n");
 
         var rom = (await new PS1DiscParser().ProcessFile(cue)).Should().ContainSingle().Subject;
+        Golden.Verify("ps1-cue", [rom], _dir);
 
         rom.TitleID.Should().Be("SLUS_004.99");
         rom.Regions.Should().Equal(Region.USA);

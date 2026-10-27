@@ -1,0 +1,25 @@
+[
+  {
+    "Type": "RomManagerShared.DS.DSGame, RomManagerShared",
+    "Data": {
+      "Id": 0,
+      "TitleID": "ATRP",
+      "Version": "00",
+      "Regions": [
+        2
+      ],
+      "Titles": [
+        {
+          "Id": 0,
+          "Language": 0,
+          "Value": "TETRIS DS"
+        }
+      ],
+      "Path": "<fixture>/tetris.nds",
+      "Size": 512,
+      "NumberOfPlayers": 0,
+      "IsDemo": false,
+      "IsFolderFormat": false
+    }
+  }
+]
