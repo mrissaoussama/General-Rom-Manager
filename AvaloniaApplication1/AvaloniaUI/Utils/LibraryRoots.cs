@@ -17,7 +17,7 @@ public sealed class LibraryRoots : ILibraryRoots
             roots.Add(configured);
         if (Settings.Instance.ConsoleExtraLibraryPaths.TryGetValue(id, out var extra))
             roots.AddRange(extra.Where(p => !string.IsNullOrWhiteSpace(p)));
-        return [.. roots.Select(p => p.Trim()).Distinct(OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal)];
+        return [.. roots.Select(p => p.Trim()).Distinct(FileUtils.PathComparer)];
     }
 
     public IReadOnlyList<Type> ConfiguredConsoles() => [.. ConsoleModules.ConsoleTypes.Where(t => GetRoots(t).Count > 0)];

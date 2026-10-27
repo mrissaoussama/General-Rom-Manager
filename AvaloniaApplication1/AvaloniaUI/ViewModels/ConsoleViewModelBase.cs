@@ -413,7 +413,7 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
     private async Task Delete(IReadOnlyList<RomViewModel> roms)
     {
         // One file can hold several roms (e.g. an NSP with a game and its update); delete per file.
-        var paths = roms.Select(r => r.Path).Where(p => p.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        var paths = roms.Select(r => r.Path).Where(p => p.Length > 0).Distinct(FileUtils.PathComparer).ToList();
         var folders = paths.Where(Directory.Exists).ToList();
         var files = paths.Except(folders).ToList();
         if (files.Count == 0)

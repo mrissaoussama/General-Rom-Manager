@@ -12,7 +12,7 @@ public sealed record RenameResult(
     bool WasDryRun,
     string? ErrorMessage = null)
 {
-    public bool Changed => !string.Equals(SourcePath, DestinationPath, StringComparison.OrdinalIgnoreCase);
+    public bool Changed => !string.Equals(SourcePath, DestinationPath, StringComparison.Ordinal);
 }
 
 public partial class FileRenamer
@@ -71,7 +71,7 @@ public partial class FileRenamer
         // sce_sys/param.sfo, default.xbe) would break the game.
         var romGroups = romList
             .Where(r => !string.IsNullOrEmpty(r.Path))
-            .GroupBy(r => r.IsFolderFormat ? RomUtils.GetRomBaseFolder(r) : r.Path!, StringComparer.OrdinalIgnoreCase);
+            .GroupBy(r => r.IsFolderFormat ? RomUtils.GetRomBaseFolder(r) : r.Path!, FileUtils.PathComparer);
 
         foreach (var group in romGroups)
         {
@@ -90,7 +90,7 @@ public partial class FileRenamer
         // The template's extension comes from the marker file; folders have none.
         var name = SanitizeFileName(Path.GetFileNameWithoutExtension(GenerateFileName(roms, formatString)));
         var parent = Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(folder)) ?? "";
-        if (name.Length == 0 || string.Equals(name, Path.GetFileName(folder), StringComparison.OrdinalIgnoreCase))
+        if (name.Length == 0 || string.Equals(name, Path.GetFileName(folder), StringComparison.Ordinal))
             return new RenameResult(folder, folder, true, dryRun);
 
         var target = Path.Combine(parent, name);
@@ -124,7 +124,7 @@ public partial class FileRenamer
         string newFileName = GenerateFileName(romGroup, formatString);
 
         // Nothing to do
-        if (string.Equals(newFileName, Path.GetFileName(sourcePath), StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(newFileName, Path.GetFileName(sourcePath), StringComparison.Ordinal))
             return new RenameResult(sourcePath, sourcePath, true, dryRun);
 
         string directory = Path.GetDirectoryName(sourcePath) ?? "";
@@ -286,7 +286,7 @@ public partial class FileRenamer
         // BUG FIX: was `sourcePath != newFileName` (comparing full path to filename)
         // Correct: skip collision check when candidate == source (nothing to do)
         while (File.Exists(candidate) &&
-               !string.Equals(candidate, sourcePath, StringComparison.OrdinalIgnoreCase))
+               !string.Equals(candidate, sourcePath, FileUtils.PathComparison))
         {
             candidate = Path.Combine(directory, $"{nameNoExt} ({counter}){ext}");
             counter++;

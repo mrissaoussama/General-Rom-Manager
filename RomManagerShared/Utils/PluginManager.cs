@@ -152,7 +152,7 @@ public sealed record PluginEntry(IPlugin Plugin, WeakReference<AssemblyLoadConte
 public sealed class PluginManager : IAsyncDisposable
 {
     private readonly List<PluginEntry> _entries = [];
-    private readonly HashSet<string> _loadedPaths = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _loadedPaths = new(FileUtils.PathComparer);
     // Startup loads plugins in the background while Settings can import or reload; one load at a time.
     private readonly SemaphoreSlim _loadGate = new(1, 1);
     private PluginApprovalStore? _approvals;

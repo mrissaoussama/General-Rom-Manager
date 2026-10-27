@@ -180,4 +180,24 @@ public class FileRenamerTests
         }
         finally { Directory.Delete(dir, true); }
     }
+
+    [Fact]
+    public async Task Rename_ThatOnlyChangesCase_IsApplied()
+    {
+        var dir = Directory.CreateTempSubdirectory("case").FullName;
+        try
+        {
+            var path = Path.Combine(dir, "zelda.nes");
+            File.WriteAllText(path, "x");
+            var rom = new RomManagerShared.Base.Game { Path = path, TitleID = "1" };
+            rom.AddTitleName("Zelda");
+
+            var result = (await FileRenamer.RenameFilesAsync([rom], "{TitleName}", ct: TestContext.Current.CancellationToken)).Single();
+
+            result.Success.Should().BeTrue();
+            result.Changed.Should().BeTrue();
+            Directory.GetFiles(dir).Select(Path.GetFileName).Should().Equal("Zelda.nes");
+        }
+        finally { Directory.Delete(dir, true); }
+    }
 }

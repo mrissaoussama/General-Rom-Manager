@@ -156,11 +156,11 @@ public sealed class RomOperationService
         var plan = new List<PathMove>();
         var units = originalPaths
             .Where(p => p.Original is not null && p.Rom.Path is not null && p.Rom.Path != p.Original)
-            .GroupBy(p => p.Rom.IsFolderFormat ? RomUtils.GetRomBaseFolder(p.Rom) : p.Rom.Path!, StringComparer.OrdinalIgnoreCase);
+            .GroupBy(p => p.Rom.IsFolderFormat ? RomUtils.GetRomBaseFolder(p.Rom) : p.Rom.Path!, FileUtils.PathComparer);
         foreach (var unit in units)
         {
             var (rom, original) = unit.First();
-            if (rom.IsFolderFormat && !string.Equals(unit.Key, rom.Path, StringComparison.OrdinalIgnoreCase))
+            if (rom.IsFolderFormat && !string.Equals(unit.Key, rom.Path, FileUtils.PathComparison))
             {
                 // The marker file's path inside the folder is the same before and after the move.
                 var inside = Path.GetRelativePath(unit.Key, rom.Path!);
@@ -202,8 +202,8 @@ public sealed class RomOperationService
         {
             if (rom.Path is null || original is null) continue;
             var move = plan.FirstOrDefault(m => m.IsDirectory
-                ? rom.Path.StartsWith(m.From + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
-                : string.Equals(rom.Path, m.From, StringComparison.OrdinalIgnoreCase));
+                ? rom.Path.StartsWith(m.From + Path.DirectorySeparatorChar, FileUtils.PathComparison)
+                : string.Equals(rom.Path, m.From, FileUtils.PathComparison));
             if (move is null) continue;
             rom.Path = move.IsDirectory ? Path.Combine(move.To, Path.GetRelativePath(move.From, rom.Path)) : original;
         }
@@ -218,7 +218,7 @@ public sealed class RomOperationService
     public QueuedOperation EnqueueConvert(IReadOnlyList<Rom> roms, ConversionTool tool, string exePath)
     {
         var inputs = roms.Where(r => !r.IsFolderFormat && r.Path is not null && tool.Accepts(r.Path))
-            .Select(r => r.Path!).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            .Select(r => r.Path!).Distinct(FileUtils.PathComparer).ToList();
         var created = new List<string>();
         return _queue.Enqueue(new QueuedOperation
         {

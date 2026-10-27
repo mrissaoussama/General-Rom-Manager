@@ -11,7 +11,7 @@ public sealed record MoveResult(
     bool WasDryRun,
     string? ErrorMessage = null)
 {
-    public bool Changed => !string.Equals(SourcePath, DestinationPath, StringComparison.OrdinalIgnoreCase);
+    public bool Changed => !string.Equals(SourcePath, DestinationPath, FileUtils.PathComparison);
 }
 
 /// <summary>
@@ -59,7 +59,7 @@ public sealed class RomMover
         if (romList is null || romList.Count == 0) return results;
 
         // Folder-format roms (Wii U, PS3, Xbox) move as their whole folder; roms sharing a file or folder move once.
-        var units = romList.GroupBy(UnitPath, StringComparer.OrdinalIgnoreCase).ToList();
+        var units = romList.GroupBy(UnitPath, FileUtils.PathComparer).ToList();
 
         // Infer common source root from the units' parent directories when not supplied
         string sourceRoot = commonSourceRoot
@@ -102,7 +102,7 @@ public sealed class RomMover
         try { relative = Path.GetRelativePath(sourceRoot, folder); }
         catch { relative = Path.GetFileName(folder); }
         var dest = Path.Combine(_targetRoot, relative);
-        if (string.Equals(Path.GetFullPath(folder), Path.GetFullPath(dest), StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(Path.GetFullPath(folder), Path.GetFullPath(dest), FileUtils.PathComparison))
             return new MoveResult(folder, dest, true, dryRun);
         for (int i = 1; Directory.Exists(dest) || File.Exists(dest); i++)
             dest = Path.Combine(_targetRoot, $"{relative} ({i})");
@@ -209,7 +209,7 @@ public sealed class RomMover
     private static string GetUniqueDestPath(string dest, string sourcePath)
     {
         if (!File.Exists(dest) ||
-            string.Equals(dest, sourcePath, StringComparison.OrdinalIgnoreCase))
+            string.Equals(dest, sourcePath, FileUtils.PathComparison))
             return dest;
 
         string dir = Path.GetDirectoryName(dest) ?? "";
