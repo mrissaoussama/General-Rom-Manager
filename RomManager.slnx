@@ -7,6 +7,7 @@
   </Folder>
   <Project Path="AvaloniaApplication1/AvaloniaUI.Desktop/AvaloniaUI.Desktop.csproj" />
   <Project Path="AvaloniaApplication1/AvaloniaUI/AvaloniaUI.csproj" />
+  <Project Path="RomManager.Abstractions/RomManager.Abstractions.csproj" />
   <Project Path="RomManagerShared/RomManagerShared.csproj" />
   <Project Path="RomManagerTests/RomManagerTests.csproj" />
   <Project Path="SamplePlugin/SamplePlugin.csproj" />

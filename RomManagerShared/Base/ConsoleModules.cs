@@ -27,7 +27,9 @@ public interface IConsoleModule
 /// </summary>
 public static class ConsoleModules
 {
-    private static List<Assembly> _assemblies = [typeof(Rom).Assembly];
+    // The built-in consoles plus the rom model (which lives in RomManager.Abstractions).
+    private static readonly Assembly[] CoreAssemblies = [typeof(GamingConsole).Assembly, typeof(Rom).Assembly];
+    private static List<Assembly> _assemblies = [.. CoreAssemblies];
 
     public static IReadOnlyList<Assembly> Assemblies => _assemblies;
 
@@ -38,7 +40,7 @@ public static class ConsoleModules
     /// <summary>Loads module DLLs from <paramref name="directory"/>; failures are logged and skipped.</summary>
     public static IReadOnlyList<Assembly> Load(string? directory = null)
     {
-        var list = new List<Assembly> { typeof(Rom).Assembly };
+        var list = new List<Assembly>(CoreAssemblies);
         directory ??= ModulesDirectory;
         if (Directory.Exists(directory))
         {
@@ -59,7 +61,7 @@ public static class ConsoleModules
 
     /// <summary>Includes extra assemblies (tests, harness) without touching the file system.</summary>
     public static void Use(params Assembly[] assemblies) =>
-        _assemblies = [.. new[] { typeof(Rom).Assembly }.Concat(assemblies).Distinct()];
+        _assemblies = [.. CoreAssemblies.Concat(assemblies).Distinct()];
 
     public static IEnumerable<Type> AllTypes => _assemblies.SelectMany(SafeTypes);
 

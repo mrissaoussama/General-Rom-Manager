@@ -73,9 +73,10 @@ public sealed class MyPlugin : IPlugin
 
 ```sh
 dotnet new install ./templates/RomManagerPlugin
-dotnet new rommanager-plugin -n MyPlugin --RomManagerShared ../RomManager/RomManagerShared/RomManagerShared.csproj
+dotnet new rommanager-plugin -n MyPlugin --Abstractions ../RomManager/RomManager.Abstractions/RomManager.Abstractions.csproj
 dotnet build MyPlugin
 ```
 
-The project compiles against `RomManagerShared` without copying it: RomManager supplies it at runtime
-(a plugin that ships its own copy still loads; the host's copy is used).
+The project compiles against `RomManager.Abstractions` (the plugin contract and rom model) without copying
+it: RomManager supplies it at runtime (a plugin that ships its own copy still loads; the host's copy is used).
+Plugins built against `RomManagerShared` before the contract moved keep working through type forwarding.

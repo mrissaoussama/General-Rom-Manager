@@ -9,8 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Reference the shared library — this is the only dependency plugins need -->
-    <ProjectReference Include="..\RomManagerShared\RomManagerShared.csproj" />
+    <!-- The plugin contract and rom model; RomManager supplies the assembly at runtime, so it is not copied. -->
+    <ProjectReference Include="..\RomManager.Abstractions\RomManager.Abstractions.csproj" Private="false" />
   </ItemGroup>
 
   <!--

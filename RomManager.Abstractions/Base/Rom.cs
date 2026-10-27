@@ -384,15 +384,9 @@ public class Rating
     public void AddContent(string ratingContent)
     {
         ratingContent = ratingContent.Replace(" ", "").Replace("-", "");
-        try
-        {
-            AddContent(Enum.Parse<RatingContent>(ratingContent));
-
-        }
-        catch (ArgumentException)
-        {
-            AppLog.Warn($"Rating Content {ratingContent} not found");
-        }
+        // Descriptors this enum does not know are skipped (title databases add new ones over time).
+        if (Enum.TryParse<RatingContent>(ratingContent, out var content))
+            AddContent(content);
     }
     public void AddContent(RatingContent content)
     {

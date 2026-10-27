@@ -10,12 +10,12 @@
   "preferNameDirectory": true,
   "tags": { "language": "C#", "type": "project" },
   "symbols": {
-    "RomManagerShared": {
+    "Abstractions": {
       "type": "parameter",
       "datatype": "string",
-      "description": "Path to RomManagerShared.csproj in your RomManager checkout.",
-      "defaultValue": "../RomManager/RomManagerShared/RomManagerShared.csproj",
-      "replaces": "ROMMANAGER_SHARED_PATH"
+      "description": "Path to RomManager.Abstractions.csproj (the plugin contract) in your RomManager checkout.",
+      "defaultValue": "../RomManager/RomManager.Abstractions/RomManager.Abstractions.csproj",
+      "replaces": "ROMMANAGER_ABSTRACTIONS_PATH"
     },
     "Author": {
       "type": "parameter",

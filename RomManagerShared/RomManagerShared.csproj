@@ -13,6 +13,7 @@
     <PackageReference Include="CHDSharp" />
     <PackageReference Include="Ryujinx.LibHac" />
     <ProjectReference Include="..\SkyEditor.IO\SkyEditor.IO.csproj" />
+    <ProjectReference Include="..\RomManager.Abstractions\RomManager.Abstractions.csproj" />
   </ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="LTRData.DiscUtils.Iso9660" />

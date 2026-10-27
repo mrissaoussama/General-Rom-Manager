@@ -29,8 +29,9 @@ dotnet run --project tools/ParserHarness -- PS4Console "Y:\roms\PS4" 5
 
 | Path | What |
 |---|---|
-| `RomManagerShared/` | Core library: domain model, parsers, title-info providers, EF Core, utils |
-| `RomManagerShared/Base/` | `Rom`/`Game`/`Update`/`DLC`, `ConsoleManager<T>`, `RomParserExecutor<T>`, `OperationQueue`, actions |
+| `RomManager.Abstractions/` | Plugin contract (`IPlugin`, `IPluginContext`) and rom model (`Rom`, `Game`, enums); namespaces `RomManagerShared.Base`/`.Utils`, forwarded from RomManagerShared |
+| `RomManagerShared/` | Core library: parsers, title-info providers, EF Core, utils |
+| `RomManagerShared/Base/` | `ConsoleManager<T>`, `OperationQueue`, library scanner, actions |
 | `RomManagerShared/<Console>/` | One folder per console: `Parsers/`, `TitleInfoProviders/`, `*Manager.cs`, `*Rom.cs` |
 | `RomManagerShared/Utils/` | File/hash/download utils, `PluginManager`, renamer, mover, duplicate detector, DAT matching (`Utils/Dat`); vendored ISO2GOD |
 | `AvaloniaApplication1/AvaloniaUI/` | UI library: `App.axaml.cs` (DI composition root), ViewModels, AXAML Views (`MainView` shell, `DashboardView`, `ConsoleView`, `RomDetailsView`); `ViewLocator` maps VM → view |

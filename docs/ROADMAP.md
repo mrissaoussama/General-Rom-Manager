@@ -127,8 +127,9 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
 - [x] **[P1]** Capability-scoped context: `IPluginContext.CreateHttpClient` needs `Network`, `OpenFile` outside
       the plugin data folder needs `FileSystem`, `StartProcess` needs `ExternalProcess`, and `Services` hides
       database services without `Database` (`PluginPermissionException`). Cooperative, not a sandbox.
-- [ ] Separate `RomManager.Plugins.Abstractions` assembly (contract only) so plugins stop referencing
-      all of RomManagerShared; version it with `PluginApi.Version`.
+- [x] `RomManager.Abstractions` assembly: the plugin contract and the rom model (same namespaces). Plugins and
+      the template reference only it; RomManagerShared forwards the moved types, so stored library entries and
+      plugins built against RomManagerShared still resolve. `PluginApi.Version` stays 1 (binary compatible).
 - [x] Plugin hooks: `ILibraryHooks.OnScanCompletedAsync` with the roms added/removed by each scan.
 - [x] `dotnet new` template for plugins (`templates/RomManagerPlugin`, short name `rommanager-plugin`). Plugin
       load contexts now share assemblies the host already loaded, so a plugin shipping `RomManagerShared.dll`

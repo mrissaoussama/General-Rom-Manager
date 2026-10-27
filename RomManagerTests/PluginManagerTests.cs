@@ -35,13 +35,12 @@ public sealed class PluginManagerTests : IDisposable
     }
 
     [Fact]
-    public async Task Plugin_ShippingItsOwnCopyOfTheHostLibrary_StillLoads()
+    public async Task Plugin_ShippingItsOwnCopyOfTheContract_StillLoads()
     {
-        // A plugin folder with RomManagerShared.dll next to it must use the host's copy, or IPlugin differs.
+        // A plugin folder with its own copy of the contract assembly must use the host's, or IPlugin differs.
         var dll = CopySample();
-        var source = Path.GetDirectoryName(SamplePluginDll())!;
-        foreach (var name in new[] { "RomManagerShared.dll", "SamplePlugin.deps.json" })
-            File.Copy(Path.Combine(source, name), Path.Combine(Path.GetDirectoryName(dll)!, name), overwrite: true);
+        foreach (var name in new[] { "RomManager.Abstractions.dll", "RomManagerShared.dll" })
+            File.Copy(Path.Combine(AppContext.BaseDirectory, name), Path.Combine(Path.GetDirectoryName(dll)!, name), overwrite: true);
         await using var manager = CreateManager(new PluginApprovalStore(Path.Combine(_dir, "approvals.json")));
         manager.ApprovalCallback = _ => Task.FromResult(true);
 
