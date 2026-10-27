@@ -64,7 +64,7 @@ public sealed class RomOperationService
     public QueuedOperation EnqueueBulkRename(IReadOnlyList<Rom> roms, string formatString)
     {
         // Capture original paths for undo
-        var originalPaths = roms.ToDictionary(r => r, r => r.Path);
+        var originalPaths = roms.Select(r => (r, r.Path)).ToList(); // not a dictionary: Rom equality depends on Path
 
         return _queue.Enqueue(new QueuedOperation
         {
@@ -81,18 +81,7 @@ public sealed class RomOperationService
                 if (fail > 0 && ok == 0)
                     throw new InvalidOperationException($"All {fail} rename(s) failed.");
             },
-            UndoAsync = async ct =>
-            {
-                foreach (var (rom, origPath) in originalPaths)
-                {
-                    if (rom.Path != origPath && !string.IsNullOrEmpty(rom.Path) && File.Exists(rom.Path))
-                    {
-                        File.Move(rom.Path, origPath!);
-                        rom.Path = origPath;
-                    }
-                }
-                await Task.CompletedTask;
-            },
+            UndoAsync = ct => Task.Run(() => RestorePaths(originalPaths, ct), ct),
         });
     }
 
@@ -105,7 +94,7 @@ public sealed class RomOperationService
     public QueuedOperation EnqueueMove(IReadOnlyList<Rom> roms, string targetRoot, string? commonSourceRoot = null)
     {
         // Capture original paths for undo
-        var originalPaths = roms.ToDictionary(r => r, r => r.Path);
+        var originalPaths = roms.Select(r => (r, r.Path)).ToList(); // not a dictionary: Rom equality depends on Path
 
         return _queue.Enqueue(new QueuedOperation
         {
@@ -123,22 +112,41 @@ public sealed class RomOperationService
                 if (fail > 0 && ok == 0)
                     throw new InvalidOperationException($"All {fail} move(s) failed.");
             },
-            UndoAsync = async ct =>
-            {
-                foreach (var (rom, origPath) in originalPaths)
-                {
-                    if (rom.Path != origPath && !string.IsNullOrEmpty(rom.Path) && File.Exists(rom.Path))
-                    {
-                        var dir = Path.GetDirectoryName(origPath);
-                        if (!string.IsNullOrEmpty(dir))
-                            Directory.CreateDirectory(dir);
-                        File.Move(rom.Path, origPath!);
-                        rom.Path = origPath;
-                    }
-                }
-                await Task.CompletedTask;
-            },
+            UndoAsync = ct => Task.Run(() => RestorePaths(originalPaths, ct), ct),
         });
+    }
+
+    /// <summary>
+    /// Undo for rename/move: puts each file or folder back once and fixes every rom that points into it.
+    /// Folder-format roms move as their whole folder, never just the marker file the parser opened.
+    /// </summary>
+    public static void RestorePaths(IEnumerable<(Rom Rom, string? Original)> originalPaths, CancellationToken ct = default)
+    {
+        var changed = originalPaths
+            .Where(p => p.Original is not null && p.Rom.Path is not null && p.Rom.Path != p.Original)
+            .GroupBy(p => p.Rom.IsFolderFormat ? RomUtils.GetRomBaseFolder(p.Rom) : p.Rom.Path!, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        foreach (var unit in changed)
+        {
+            ct.ThrowIfCancellationRequested();
+            var (rom, original) = unit.First();
+            if (Directory.Exists(unit.Key))
+            {
+                // The marker file's path inside the folder is the same before and after the move.
+                var inside = Path.GetRelativePath(unit.Key, rom.Path!);
+                var originalFolder = original![..^inside.Length].TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                Directory.CreateDirectory(Path.GetDirectoryName(originalFolder)!);
+                RomMover.MoveDirectoryVerified(unit.Key, originalFolder, ct);
+                foreach (var (r, _) in unit)
+                    r.Path = Path.Combine(originalFolder, Path.GetRelativePath(unit.Key, r.Path!));
+            }
+            else if (File.Exists(unit.Key))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(original!)!);
+                File.Move(unit.Key, original!);
+                foreach (var (r, o) in unit) r.Path = o;
+            }
+        }
     }
 
     // ── Hash Calculation ──────────────────────────────────────────────────

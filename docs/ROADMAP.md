@@ -50,8 +50,9 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
 
 ## Phase C: Correctness and data safety
 
-- [ ] **[P0]** Moving folder-format roms (Wii U, PS3, Xbox 360 GOD) fails today; implement a verified
-      copy-then-delete for folders, with free-space checks.
+- [x] **[P0]** Moving folder-format roms (Wii U, PS3, Xbox) moves the whole folder (rename on one volume,
+      length-checked copy then delete across volumes); roms sharing a file move once. Undo restores whole
+      folders and every rom of a shared file (it used to move only the marker file back).
 - [x] **[P0]** Delete moves files to the Recycle Bin (fixed drives) / Trash (macOS, freedesktop on Linux);
       files that cannot be trashed are only deleted after a second, explicit confirmation.
 - [ ] **[P1]** Persist the operation journal so undo survives a restart.

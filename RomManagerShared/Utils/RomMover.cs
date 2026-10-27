@@ -58,12 +58,15 @@ public sealed class RomMover
         var romList = roms?.Where(r => !string.IsNullOrEmpty(r.Path)).ToList();
         if (romList is null || romList.Count == 0) return results;
 
-        // Infer common source root from first file's directory when not supplied
+        // Folder-format roms (Wii U, PS3, Xbox) move as their whole folder; roms sharing a file or folder move once.
+        var units = romList.GroupBy(UnitPath, StringComparer.OrdinalIgnoreCase).ToList();
+
+        // Infer common source root from the units' parent directories when not supplied
         string sourceRoot = commonSourceRoot
-            ?? FindCommonRoot(romList.Select(r => Path.GetDirectoryName(r.Path)!));
+            ?? FindCommonRoot(units.Select(u => Path.GetDirectoryName(u.Key)!));
 
         // Validate disk space (skip in dry-run)
-        if (!dryRun && !HasEnoughSpace(_targetRoot, romList))
+        if (!dryRun && !HasEnoughSpace(_targetRoot, units.Select(u => u.Key)))
         {
             _logger?.LogError("Not enough disk space at '{Target}'", _targetRoot);
             return results;
@@ -79,17 +82,88 @@ public sealed class RomMover
             }
         }
 
-        foreach (var rom in romList)
+        foreach (var unit in units)
         {
             ct.ThrowIfCancellationRequested();
-            var result = MoveOne(rom, sourceRoot, dryRun);
-            results.Add(result);
+            results.Add(Directory.Exists(unit.Key)
+                ? MoveFolder(unit.Key, [.. unit], sourceRoot, dryRun, ct)
+                : MoveOne(unit.First(), sourceRoot, dryRun, [.. unit.Skip(1)]));
         }
 
         return results;
     }
 
-    private MoveResult MoveOne(Rom rom, string sourceRoot, bool dryRun)
+    private static string UnitPath(Rom rom) =>
+        rom.IsFolderFormat ? RomUtils.GetRomBaseFolder(rom) : rom.Path!;
+
+    private MoveResult MoveFolder(string folder, IReadOnlyList<Rom> roms, string sourceRoot, bool dryRun, CancellationToken ct)
+    {
+        string relative;
+        try { relative = Path.GetRelativePath(sourceRoot, folder); }
+        catch { relative = Path.GetFileName(folder); }
+        var dest = Path.Combine(_targetRoot, relative);
+        if (string.Equals(Path.GetFullPath(folder), Path.GetFullPath(dest), StringComparison.OrdinalIgnoreCase))
+            return new MoveResult(folder, dest, true, dryRun);
+        for (int i = 1; Directory.Exists(dest) || File.Exists(dest); i++)
+            dest = Path.Combine(_targetRoot, $"{relative} ({i})");
+        if (dryRun)
+            return new MoveResult(folder, dest, true, WasDryRun: true);
+
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+            MoveDirectoryVerified(folder, dest, ct);
+            foreach (var rom in roms)
+                rom.Path = Path.Combine(dest, Path.GetRelativePath(folder, rom.Path!));
+            _logger?.LogInformation("Moved folder '{Folder}' → '{Dest}'", folder, dest);
+            return new MoveResult(folder, dest, true, false);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Failed to move folder '{Src}'", folder);
+            return new MoveResult(folder, dest, false, false, ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Same volume: a rename. Across volumes: copy every file, check each copy's length, and only then delete
+    /// the source. A failed copy removes the partial destination and leaves the source untouched.
+    /// </summary>
+    public static void MoveDirectoryVerified(string source, string dest, CancellationToken ct = default)
+    {
+        if (string.Equals(Path.GetPathRoot(Path.GetFullPath(source)), Path.GetPathRoot(Path.GetFullPath(dest)), StringComparison.OrdinalIgnoreCase))
+        {
+            // On Unix every path shares the root "/", so a rename can still cross devices; copy then.
+            try
+            {
+                Directory.Move(source, dest);
+                return;
+            }
+            catch (IOException) when (Directory.Exists(source) && !Directory.Exists(dest)) { }
+        }
+        try
+        {
+            foreach (var file in Directory.EnumerateFiles(source, "*", SearchOption.AllDirectories))
+            {
+                ct.ThrowIfCancellationRequested();
+                var target = Path.Combine(dest, Path.GetRelativePath(source, file));
+                Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+                File.Copy(file, target, overwrite: false);
+                if (new FileInfo(target).Length != new FileInfo(file).Length)
+                    throw new IOException($"Copy of '{file}' is incomplete");
+            }
+            foreach (var dir in Directory.EnumerateDirectories(source, "*", SearchOption.AllDirectories))
+                Directory.CreateDirectory(Path.Combine(dest, Path.GetRelativePath(source, dir)));
+        }
+        catch
+        {
+            try { if (Directory.Exists(dest)) Directory.Delete(dest, recursive: true); } catch { /* keep the error below */ }
+            throw;
+        }
+        Directory.Delete(source, recursive: true);
+    }
+
+    private MoveResult MoveOne(Rom rom, string sourceRoot, bool dryRun, IReadOnlyList<Rom>? sameFile = null)
     {
         string src = rom.Path!;
 
@@ -119,6 +193,7 @@ public sealed class RomMover
             Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
             File.Move(src, dest);
             rom.Path = dest;
+            foreach (var other in sameFile ?? []) other.Path = dest;
             _logger?.LogInformation("Moved '{File}' → '{Dest}'", Path.GetFileName(src), dest);
             return new MoveResult(src, dest, true, false);
         }
@@ -163,15 +238,20 @@ public sealed class RomMover
         return common ?? "";
     }
 
-    private static bool HasEnoughSpace(string targetRoot, IList<Rom> roms)
+    private static bool HasEnoughSpace(string targetRoot, IEnumerable<string> units)
     {
         try
         {
             string root = Path.GetPathRoot(targetRoot) ?? targetRoot;
             var drive = new DriveInfo(root);
-            long needed = roms.Sum(r =>
+            long needed = units.Sum(u =>
             {
-                try { return new FileInfo(r.Path!).Length; }
+                try
+                {
+                    return Directory.Exists(u)
+                        ? Directory.EnumerateFiles(u, "*", SearchOption.AllDirectories).Sum(f => new FileInfo(f).Length)
+                        : new FileInfo(u).Length;
+                }
                 catch { return 0L; }
             });
             return drive.AvailableFreeSpace > needed;
