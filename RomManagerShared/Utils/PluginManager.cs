@@ -1,4 +1,4 @@
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using RomManagerShared.Base;
 using System.IO.Compression;
@@ -152,9 +152,14 @@ public sealed record PluginEntry(IPlugin Plugin, WeakReference<AssemblyLoadConte
 // PluginManager
 // ──────────────────────────────────────────────────────────────────────────────
 
+/// <summary>A plugin DLL (or one plugin in it) that was not loaded, and why.</summary>
+public sealed record PluginLoadFailure(string DllPath, string? PluginName, string Reason);
+
 public sealed class PluginManager : IAsyncDisposable
 {
     private readonly List<PluginEntry> _entries = [];
+    // Keyed by "<full dll path>|<plugin name>"; a DLL's entries are replaced each time it is tried again.
+    private readonly Dictionary<string, PluginLoadFailure> _failures = new(FileUtils.PathComparer);
     private readonly HashSet<string> _loadedPaths = new(FileUtils.PathComparer);
     // Startup loads plugins in the background while Settings can import or reload; one load at a time.
     private readonly SemaphoreSlim _loadGate = new(1, 1);
@@ -186,6 +191,25 @@ public sealed class PluginManager : IAsyncDisposable
     public IReadOnlyList<IPlugin> Plugins
     {
         get { lock (_entries) return _entries.Select(e => e.Plugin).ToList(); }
+    }
+
+    /// <summary>Plugins found in the plugins folder that are not loaded, with the reason (shown in Settings → Plugins).</summary>
+    public IReadOnlyList<PluginLoadFailure> Failures
+    {
+        get { lock (_failures) return [.. _failures.Values.OrderBy(f => f.DllPath, FileUtils.PathComparer)]; }
+    }
+
+    private void Fail(string dllPath, string? pluginName, string reason)
+    {
+        lock (_failures) _failures[$"{Path.GetFullPath(dllPath)}|{pluginName}"] = new PluginLoadFailure(dllPath, pluginName, reason);
+    }
+
+    private void ClearFailures(string dllPath)
+    {
+        var prefix = Path.GetFullPath(dllPath) + "|";
+        lock (_failures)
+            foreach (var key in _failures.Keys.Where(k => k.StartsWith(prefix, FileUtils.PathComparison)).ToList())
+                _failures.Remove(key);
     }
 
     public PluginManager(IServiceProvider rootServices, ILoggerFactory loggerFactory)
@@ -233,6 +257,7 @@ public sealed class PluginManager : IAsyncDisposable
 
     private async Task TryLoadPluginDllAsync(string dllPath, IReadOnlyList<Rom> selectedRoms, bool askForApproval)
     {
+        ClearFailures(dllPath);
         var loadContext = new PluginLoadContext(dllPath);
         try
         {
@@ -258,6 +283,7 @@ public sealed class PluginManager : IAsyncDisposable
             {
                 _logger.LogWarning("Skipped plugin {DLL}: built for plugin API {Found}, this app loads {Expected}. Add [assembly: PluginApiVersion({Expected})] and rebuild.",
                     Path.GetFileName(dllPath), apiVersion?.ToString() ?? "(none)", PluginApi.Version, PluginApi.Version);
+                Fail(dllPath, null, $"built for plugin API {apiVersion?.ToString() ?? "(none)"}; this version of RomManager loads API {PluginApi.Version}");
                 loadContext.Unload();
                 return;
             }
@@ -278,6 +304,7 @@ public sealed class PluginManager : IAsyncDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to load plugin DLL: {DLL}", dllPath);
+            Fail(dllPath, null, $"cannot be loaded: {ex.Message}");
             loadContext.Unload();
         }
     }
@@ -292,6 +319,7 @@ public sealed class PluginManager : IAsyncDisposable
         }
         _logger.LogWarning("Plugin {Name} {Version} is not approved; approve it from Settings → Plugins → Reload.",
             request.Name, request.Version);
+        Fail(request.DllPath, request.Name, "not approved (Reload asks for approval)");
         return false;
     }
 
@@ -310,6 +338,7 @@ public sealed class PluginManager : IAsyncDisposable
             {
                 _logger.LogWarning("Plugin {Name} asks for {Permissions} at runtime but does not declare them in [Plugin(Permissions = ...)]; not loaded.",
                     attr.Name, string.Join(", ", undeclared));
+                Fail(dllPath, attr.Name, $"asks for permissions it does not declare: {string.Join(", ", undeclared)}");
                 await plugin.DisposeAsync();
                 return false;
             }
@@ -329,6 +358,7 @@ public sealed class PluginManager : IAsyncDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to initialise plugin type: {Type}", type.FullName);
+            Fail(dllPath, type.GetCustomAttribute<PluginAttribute>()?.Name ?? type.Name, $"failed to start: {ex.Message}");
             return false;
         }
     }

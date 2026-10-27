@@ -1,4 +1,4 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:res="using:AvaloniaUI.Resources"
              xmlns:vm="using:AvaloniaUI.ViewModels"
@@ -267,6 +267,16 @@
                     </StackPanel>
                     <TextBlock DockPanel.Dock="Top" Classes="hint" IsVisible="{Binding !HasPlugins}"
                                Text="{x:Static res:Strings.Settings_NoPluginsLoadedImportAZipOrPutAPluginFolderInThe}" />
+                    <StackPanel DockPanel.Dock="Top" Spacing="2" Margin="0,0,0,8" IsVisible="{Binding HasPluginFailures}">
+                        <TextBlock Text="{x:Static res:Strings.Settings_PluginsNotLoaded}" FontWeight="SemiBold" />
+                        <ItemsControl ItemsSource="{Binding PluginFailures}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="x:String">
+                                    <TextBlock Classes="hint" Text="{Binding}" TextWrapping="Wrap" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
                     <ScrollViewer>
                         <ItemsControl ItemsSource="{Binding Plugins}">
                             <ItemsControl.ItemTemplate>

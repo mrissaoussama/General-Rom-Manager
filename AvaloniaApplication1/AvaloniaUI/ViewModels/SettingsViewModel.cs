@@ -1,4 +1,4 @@
-using Avalonia.Styling;
+﻿using Avalonia.Styling;
 
 
 namespace AvaloniaUI.ViewModels;
@@ -217,6 +217,10 @@ public sealed partial class SettingsViewModel : DialogViewModel
 
     public ObservableCollection<PluginRow> Plugins { get; } = [];
     public bool HasPlugins => Plugins.Count > 0;
+
+    /// <summary>Plugins in the folder that did not load: "name (file): reason".</summary>
+    public ObservableCollection<string> PluginFailures { get; } = [];
+    public bool HasPluginFailures => PluginFailures.Count > 0;
     [ObservableProperty] private string _pluginStatus = "";
 
     private void LoadPlugins()
@@ -225,6 +229,12 @@ public sealed partial class SettingsViewModel : DialogViewModel
         foreach (var p in _plugins?.Plugins ?? [])
             Plugins.Add(new PluginRow(p, _settings.IsPluginEnabled(p.PluginName)));
         OnPropertyChanged(nameof(HasPlugins));
+        PluginFailures.Clear();
+        foreach (var f in _plugins?.Failures ?? [])
+            PluginFailures.Add(f.PluginName is null
+                ? $"{Path.GetFileName(f.DllPath)}: {f.Reason}"
+                : $"{f.PluginName} ({Path.GetFileName(f.DllPath)}): {f.Reason}");
+        OnPropertyChanged(nameof(HasPluginFailures));
     }
 
     private static string PluginsFolder() => RomManagerConfiguration.GetPluginsPath();

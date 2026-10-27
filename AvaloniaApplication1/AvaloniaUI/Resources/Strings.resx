@@ -347,6 +347,7 @@ cannot be opened or created: {1}
 
 Scans will not be saved until this is fixed (check that the folder is writable).</value></data>
   <data name="Operations_PartlyDone" xml:space="preserve"><value>Partly done</value></data>
+  <data name="Settings_PluginsNotLoaded" xml:space="preserve"><value>Not loaded</value></data>
   <data name="Console_ToolChangedTitle" xml:space="preserve"><value>Program changed</value></data>
   <data name="Console_ToolChanged" xml:space="preserve"><value>{0} at
 {1}

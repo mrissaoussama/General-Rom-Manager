@@ -1,4 +1,4 @@
-using AwesomeAssertions;
+﻿using AwesomeAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using RomManagerShared.Base;
@@ -63,12 +63,14 @@ public sealed class PluginManagerTests : IDisposable
         await using var first = CreateManager(store);
         await first.LoadPluginsAsync(_dir);
         first.Plugins.Should().BeEmpty();
+        first.Failures.Should().ContainSingle().Which.Reason.Should().StartWith("not approved");
 
         PluginApprovalRequest? asked = null;
         first.ApprovalCallback = r => { asked = r; return Task.FromResult(true); };
         await first.LoadPluginsAsync(_dir, askForApproval: true);
 
         first.Plugins.Should().ContainSingle().Which.PluginName.Should().Be("GameMetadataFetcher");
+        first.Failures.Should().BeEmpty();
         asked!.Permissions.Should().BeEquivalentTo([PluginPermission.Network]);
 
         // Reloading the same folder does not load the plugin twice.
