@@ -9,7 +9,7 @@ namespace RomManagerShared.Utils.Dat;
 /// Subclasses pick their DAT files and how to strip copier headers. Adding or changing DATs changes
 /// <see cref="DataFingerprint"/>, so the next scan re-parses this console's cached files.
 /// </summary>
-public abstract class DatTitleInfoProvider<T> : ITitleInfoProvider<T>, IHasDataFingerprint where T : GamingConsole
+public abstract class DatTitleInfoProvider<T> : ITitleInfoProvider<T>, IHasDataFingerprint, IDatSource where T : GamingConsole
 {
     /// <summary>Larger files are skipped (cartridge dumps are well below this).</summary>
     protected virtual long MaxSize => 128L * 1024 * 1024;
@@ -25,6 +25,8 @@ public abstract class DatTitleInfoProvider<T> : ITitleInfoProvider<T>, IHasDataF
     protected virtual DatIndex? GetIndex() => DatIndex.ForConsole(MatchesDat);
 
     public string DataFingerprint => DatIndex.Fingerprint(MatchesDat);
+
+    public DatIndex? Index => GetIndex();
 
     /// <summary>libretro-thumbnails system folder (e.g. "Nintendo - Game Boy"); null disables box art URLs.</summary>
     protected virtual string? LibretroSystem(Rom rom) => null;

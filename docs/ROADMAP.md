@@ -73,7 +73,8 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
 
 ## Phase E: Features
 
-- [ ] **[P1]** Have/miss report per DAT: which titles in a No-Intro/Redump set are missing.
+- [x] **[P1]** Have/miss report per DAT (dashboard → "Have/miss report…"; `DatCoverage`, counts verified
+      hash matches against every game in the console's DATs).
 - [x] **[P1]** Export the library (CSV/JSON): Library → Export library…, and "Export…" on a console page
       for the filtered rows (`LibraryExporter`; CSV is formula-safe).
 - [ ] 1G1R ("one game, one ROM") selection from DATs with a region priority list, feeding the move/delete

@@ -17,6 +17,10 @@ public sealed partial class DatIndex
 {
     private readonly Dictionary<string, DatEntry> _bySha1 = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<(string Crc, long Size), DatEntry> _byCrc = [];
+    private readonly HashSet<string> _games = new(StringComparer.Ordinal);
+
+    /// <summary>Every game (set) name in the loaded DATs.</summary>
+    public IReadOnlyCollection<string> Games => _games;
 
     public int Count => _byCrc.Count + _bySha1.Count(kv => kv.Value.Crc is null);
 
@@ -45,7 +49,10 @@ public sealed partial class DatIndex
         {
             if (reader.NodeType != XmlNodeType.Element) continue;
             if (reader.Name is "game" or "machine")
+            {
                 game = reader.GetAttribute("name");
+                if (game is not null) _games.Add(game);
+            }
             else if (reader.Name == "rom" && game is not null)
             {
                 long.TryParse(reader.GetAttribute("size"), out var size);

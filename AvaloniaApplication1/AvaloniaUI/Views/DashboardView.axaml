@@ -79,6 +79,8 @@
                     <SelectableTextBlock Text="{Binding DatDirectory}" Classes="muted" VerticalAlignment="Center" />
                     <Button Content="Open folder" Classes="small" Command="{Binding OpenDatFolderCommand}" />
                     <Button Content="Refresh" Classes="small" Command="{Binding RefreshDatsCommand}" />
+                    <Button Content="Have/miss report…" Classes="small" Command="{Binding ShowDatCoverageCommand}"
+                            ToolTip.Tip="Which games of each DAT set are in the library" />
                 </StackPanel>
             </StackPanel>
 

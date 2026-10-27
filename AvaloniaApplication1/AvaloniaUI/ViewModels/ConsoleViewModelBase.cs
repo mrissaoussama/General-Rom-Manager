@@ -54,6 +54,10 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
     /// <summary>Games with a newer update than the library has; null when unsupported or no version database.</summary>
     public virtual Task<int?> CountMissingUpdatesAsync() => Task.FromResult<int?>(null);
 
+    /// <summary>Have/miss against this console's DATs; null when it has no DAT files.</summary>
+    public virtual Task<RomManagerShared.Utils.Dat.DatCoverage?> GetDatCoverageAsync() =>
+        Task.FromResult<RomManagerShared.Utils.Dat.DatCoverage?>(null);
+
     /// <summary>Stable console id (settings keys, plugin matching).</summary>
     public string ConsoleName { get; }
     /// <summary>Name shown in the UI; defaults to <see cref="ConsoleName"/>.</summary>

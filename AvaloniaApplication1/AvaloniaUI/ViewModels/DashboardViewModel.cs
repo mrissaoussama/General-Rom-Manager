@@ -108,6 +108,25 @@ public sealed partial class DashboardViewModel : ViewModelBase
         catch (Exception ex) { DatSummary = $"Cannot read DAT folder: {ex.Message}"; }
     }
 
+    /// <summary>Per console: how many games of its DAT sets the library has, and the missing ones.</summary>
+    [RelayCommand]
+    private async Task ShowDatCoverage()
+    {
+        List<string> lines = [];
+        int consoles = 0;
+        foreach (var console in Consoles.ToList())
+        {
+            if (await console.GetDatCoverageAsync() is not { Total: > 0 } coverage) continue;
+            consoles++;
+            lines.Add($"{console.DisplayName}: {coverage.Have.Count:N0} of {coverage.Total:N0} ({coverage.Have.Count * 100.0 / coverage.Total:0.#}%), {coverage.Missing.Count:N0} missing");
+            lines.AddRange(coverage.Missing.Select(m => "    " + m));
+        }
+        var summary = consoles == 0
+            ? "No console has DAT files yet. Add No-Intro (or Redump) DATs to the DAT folder and scan."
+            : "Games are counted as present when a file's hash matches the DAT (verified). Missing games are listed under each console.";
+        await Shell.ShowDialogAsync(new PreviewWindow("DAT have/miss", summary, lines, "Close", showCancel: false));
+    }
+
     [RelayCommand]
     private void OpenDatFolder()
     {

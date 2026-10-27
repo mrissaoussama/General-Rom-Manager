@@ -37,6 +37,17 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
         CanCheckUpdates = scope.ServiceProvider.GetService<ConsoleManager<T>>() is IMissingUpdateReporter;
     }
 
+    public override async Task<RomManagerShared.Utils.Dat.DatCoverage?> GetDatCoverageAsync()
+    {
+        using var scope = _serviceProvider.CreateScope();
+        var indexes = scope.ServiceProvider.GetServices<ITitleInfoProvider<T>>()
+            .OfType<RomManagerShared.Utils.Dat.IDatSource>()
+            .Select(s => s.Index).OfType<RomManagerShared.Utils.Dat.DatIndex>().ToList();
+        if (indexes.Count == 0) return null;
+        var library = Roms.Select(r => r.RomSource).ToList();
+        return await Task.Run(() => RomManagerShared.Utils.Dat.DatCoverage.Compute(indexes, library));
+    }
+
     public override async Task<int?> CountMissingUpdatesAsync()
     {
         if (!CanCheckUpdates || Roms.Count == 0) return null;

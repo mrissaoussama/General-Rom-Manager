@@ -11,7 +11,7 @@ namespace RomManagerShared.Utils.Dat;
 /// opt-in: set <c>"Dats": { "HashDiscImages": true }</c> in config.json. Only single-file images
 /// (.iso/.gcm) are hashed; compressed and multi-track formats never match Redump hashes.
 /// </summary>
-public abstract class DiscDatTitleInfoProvider<T> : ITitleInfoProvider<T>, IHasDataFingerprint where T : GamingConsole
+public abstract class DiscDatTitleInfoProvider<T> : ITitleInfoProvider<T>, IHasDataFingerprint, IDatSource where T : GamingConsole
 {
     private static readonly string[] HashedExtensions = [".iso", ".gcm"];
 
@@ -25,6 +25,8 @@ public abstract class DiscDatTitleInfoProvider<T> : ITitleInfoProvider<T>, IHasD
 
     // Turning hashing on or off, or changing the DATs, re-parses the console's cached files.
     public string DataFingerprint => Enabled ? DatIndex.Fingerprint(MatchesDat) : "";
+
+    public DatIndex? Index => Enabled ? DatIndex.ForConsole(MatchesDat) : null;
 
     public Task LoadTitleDatabaseAsync() => Task.CompletedTask;
 
