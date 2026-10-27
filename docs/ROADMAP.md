@@ -56,8 +56,9 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
 - [x] **[P0]** Delete moves files to the Recycle Bin (fixed drives) / Trash (macOS, freedesktop on Linux);
       files that cannot be trashed are only deleted after a second, explicit confirmation.
 - [ ] **[P1]** Persist the operation journal so undo survives a restart.
-- [ ] **[P1]** Redump for multi-track and compressed discs: CHD header SHA-1 (no decompression needed),
-      cue/bin track hashing, GDI.
+- [x] **[P1]** Redump for multi-track discs: PS1/PS2 `.cue` and Dreamcast `.gdi` sets match by their first
+      track. (CHD's internal SHA-1 covers the whole compressed image and cannot match Redump's per-track
+      hashes; matching CHDs needs decompression.)
 - [ ] XCI parsing test with a homebrew XCI fixture.
 - [ ] Switch missing-DLC report (titledb `cnmts.json`).
 - [ ] PS4 update check without PS4_Tools (Sony's public update XML), behind a network opt-in.
