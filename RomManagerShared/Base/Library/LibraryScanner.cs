@@ -84,7 +84,7 @@ public sealed class LibraryScanner(AppDbContext db)
             for (int b = 0; b < batch.Length; b++)
             {
                 var path = files[batch[b]];
-                var roms = await manager.EnrichAsync(parsedBatch[b].Roms);
+                var roms = await manager.EnrichAsync(parsedBatch[b].Roms, ct);
                 slots[batch[b]] = roms;
                 errors[batch[b]] = roms.Count == 0 ? parsedBatch[b].UnidentifiedReason : null;
 

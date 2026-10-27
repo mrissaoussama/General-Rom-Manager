@@ -7,7 +7,11 @@ public interface ITitleInfoProvider<T> where T : GamingConsole
     public string Source { get; set; }
     public Task LoadTitleDatabaseAsync();
     Task<Rom> GetTitleInfo(Rom rom);
-}public class TitleInfoProvider<T> : ITitleInfoProvider<T> where T : GamingConsole
+
+    /// <summary>Cancellable lookup; providers with long work (hashing disc images) override it.</summary>
+    Task<Rom> GetTitleInfo(Rom rom, CancellationToken ct) => GetTitleInfo(rom);
+}
+public class TitleInfoProvider<T> : ITitleInfoProvider<T> where T : GamingConsole
 {
     public TitleInfoProvider()
     {
@@ -26,4 +30,5 @@ public interface ITitleInfoProvider<T> where T : GamingConsole
     {
         return Task.FromResult(rom);
     }
-}
+}
+

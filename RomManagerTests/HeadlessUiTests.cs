@@ -228,7 +228,6 @@ public sealed class HeadlessUiTests
         var cards = sw.ElapsedMilliseconds;
         var realized = Find<ItemsRepeater>(window).Children.Count(c => c.IsVisible);
 
-        TestContext.Current.TestOutputHelper?.WriteLine($"load {load} ms, filter {filter} ms, cards {cards} ms, {realized} cards realized");
         if (Environment.GetEnvironmentVariable("PERF_LOG") is { } perfLog) File.WriteAllText(perfLog, $"load {load} ms, filter {filter} ms, cards {cards} ms, {realized} cards realized");
         realized.Should().BeLessThan(200, "cards are virtualized");
         load.Should().BeLessThan(5000);

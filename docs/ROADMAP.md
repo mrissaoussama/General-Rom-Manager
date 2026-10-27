@@ -29,8 +29,9 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
       reason); `IRomParser<T>.ProcessFile(path, ct)` is a default method, so existing parsers work unchanged.
 - [x] Content sniffing: `IContentSniffer.CanParse(path, header)` + `FileMagic` (PSN/PS4 packages, GameCube/Wii
       discs, PSP/PlayStation ISOs). Used by the executor and by the add-folder console detector.
-- [ ] Parsers honour cancellation inside long reads (CHD/ISO): the executor stops between parsers; the
-      parsers themselves still need to override `ProcessFile(path, ct)`.
+- [x] Cancellation reaches the long work: title-info providers take a token (`GetTitleInfo(rom, ct)`), so a
+      cancelled scan stops Redump hashing mid-file (nothing partial is cached). Parsers only read headers;
+      they can override `ProcessFile(path, ct)` when that changes.
 
 ### B.2 Static state [P1]
 - [ ] `FileUtils.Log` → `ILogger<T>` (keep `ParseDiagnostics` by capturing through a logger scope); 180 call

@@ -18,9 +18,9 @@ public sealed class LibraryScannerTests : IDisposable
         public List<string> Extensions { get; set; } = ["nsp"];
         public Task<List<Rom>> ProcessFile(string path)
         {
-            Calls++;
+            var call = Interlocked.Increment(ref Calls); // the scanner parses files in parallel
             var rom = new Game { TitleID = Path.GetFileNameWithoutExtension(path), Path = path };
-            rom.AddTitleName($"Title {Calls}");
+            rom.AddTitleName($"Title {call}");
             return Task.FromResult<List<Rom>>([rom]);
         }
     }

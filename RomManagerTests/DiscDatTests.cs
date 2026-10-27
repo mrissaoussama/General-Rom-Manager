@@ -34,7 +34,7 @@ public sealed class DiscDatTests : IDisposable
         var rom = new Game { Path = path, TitleID = "SLUS_200.62" };
 
         PS2RedumpProvider.Enabled.Should().BeFalse();
-        (await new PS2RedumpProvider().GetTitleInfo(rom)).Hashes.Should().BeNull();
+        (await new PS2RedumpProvider().GetTitleInfo(rom, TestContext.Current.CancellationToken)).Hashes.Should().BeNull();
         new PS2RedumpProvider().DataFingerprint.Should().BeEmpty();
     }
 
@@ -64,5 +64,18 @@ public sealed class DiscDatTests : IDisposable
         PS2RedumpProvider.FileToHash(cue).Should().Be(Path.Combine(_dir, "game (Track 1).bin"));
         PS2RedumpProvider.FileToHash(Path.Combine(_dir, "x.ISO")).Should().EndWith("x.ISO");
         PS2RedumpProvider.FileToHash(Path.Combine(_dir, "x.chd")).Should().BeNull();
+    }
+
+    [Fact]
+    public async Task HashAsync_StopsWhenCancelled()
+    {
+        var path = Path.Combine(_dir, "big.iso");
+        File.WriteAllBytes(path, new byte[4 << 20]);
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        var act = () => RomManagerShared.Utils.Dat.PS2RedumpProvider.HashAsync(path, cts.Token);
+
+        await act.Should().ThrowAsync<OperationCanceledException>();
     }
 }

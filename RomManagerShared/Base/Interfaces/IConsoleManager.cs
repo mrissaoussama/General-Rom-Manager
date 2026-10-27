@@ -39,12 +39,12 @@ public  class ConsoleManager<T> :IConsoleManager<T>, IHasContextMenuActions wher
         => await EnrichAsync(await RomParserExecutor.ExecuteParsers(file));
 
     /// <summary>Runs title info providers over parsed roms. Not thread-safe (providers may share a DbContext).</summary>
-    public virtual async Task<List<Rom>> EnrichAsync(List<Rom> roms)
+    public virtual async Task<List<Rom>> EnrichAsync(List<Rom> roms, CancellationToken ct = default)
     {
         if (TitleInfoProviderManager is not null)
         {
             for (int i = 0; i < roms.Count; i++)
-                roms[i] = await TitleInfoProviderManager.GetTitleInfo(roms[i]);
+                roms[i] = await TitleInfoProviderManager.GetTitleInfo(roms[i], ct);
         }
         return roms;
     }

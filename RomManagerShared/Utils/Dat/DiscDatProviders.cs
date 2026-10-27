@@ -29,15 +29,18 @@ public abstract class DiscDatTitleInfoProvider<T> : ITitleInfoProvider<T>, IHasD
 
     public Task LoadTitleDatabaseAsync() => Task.CompletedTask;
 
-    public async Task<Rom> GetTitleInfo(Rom rom)
+    public Task<Rom> GetTitleInfo(Rom rom) => GetTitleInfo(rom, CancellationToken.None);
+
+    // Hashing a DVD image takes minutes: a cancelled scan stops mid-file, and nothing partial is cached.
+    public async Task<Rom> GetTitleInfo(Rom rom, CancellationToken ct)
     {
         if (!Enabled || rom.Path is not { } path || !File.Exists(path)) return rom;
         if (FileToHash(path) is not { } file || !File.Exists(file)) return rom;
         if (DatIndex.ForConsole(MatchesDat) is not { } index) return rom;
 
         var (sha1, crc, size) = HashCache.Default is { } cache
-            ? await cache.GetOrComputeAsync(file, f => HashAsync(f))
-            : await HashAsync(file);
+            ? await cache.GetOrComputeAsync(file, f => HashAsync(f, ct))
+            : await HashAsync(file, ct);
         if (index.Find(sha1, crc, size) is { } hit)
             DatTitleInfoProvider<T>.Apply(rom, hit, sha1, crc);
         return rom;
