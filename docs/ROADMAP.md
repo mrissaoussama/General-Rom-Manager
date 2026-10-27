@@ -46,7 +46,8 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
 ### B.4 Scanning
 - [ ] Polling fallback for ROM folders on network shares, where `FileSystemWatcher` misses changes.
 - [ ] Per-root scan settings: parallelism (1 for network/HDD), excluded sub-folders.
-- [ ] Hash cache: store file hashes in `LibraryFile` so DAT/Redump matching never re-hashes unchanged files.
+- [x] Hash cache (`Cache/hashes.json`, keyed by path, size and mtime) so Redump matching never re-hashes
+      an unchanged disc image when DATs change.
 
 ## Phase C: Correctness and data safety
 

@@ -36,7 +36,9 @@ public abstract class DiscDatTitleInfoProvider<T> : ITitleInfoProvider<T>, IHasD
         if (FileToHash(path) is not { } file || !File.Exists(file)) return rom;
         if (DatIndex.ForConsole(MatchesDat) is not { } index) return rom;
 
-        var (sha1, crc, size) = await HashAsync(file);
+        var (sha1, crc, size) = HashCache.Default is { } cache
+            ? await cache.GetOrComputeAsync(file, f => HashAsync(f))
+            : await HashAsync(file);
         if (index.Find(sha1, crc, size) is { } hit)
             DatTitleInfoProvider<T>.Apply(rom, hit, sha1, crc);
         return rom;
