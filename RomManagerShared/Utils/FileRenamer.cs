@@ -67,18 +67,50 @@ public partial class FileRenamer
             return results;
         }
 
+        // Folder-format roms are renamed by their game folder: renaming the marker file (code/app.xml,
+        // sce_sys/param.sfo, default.xbe) would break the game.
         var romGroups = romList
             .Where(r => !string.IsNullOrEmpty(r.Path))
-            .GroupBy(r => r.Path);
+            .GroupBy(r => r.IsFolderFormat ? RomUtils.GetRomBaseFolder(r) : r.Path!, StringComparer.OrdinalIgnoreCase);
 
         foreach (var group in romGroups)
         {
             ct.ThrowIfCancellationRequested();
-            var result = ProcessGroup(group.ToList(), formatString, dryRun, logger);
+            var result = Directory.Exists(group.Key)
+                ? ProcessFolder(group.Key, group.ToList(), formatString, dryRun, logger)
+                : ProcessGroup(group.ToList(), formatString, dryRun, logger);
             results.Add(result);
         }
 
         return results;
+    }
+
+    private static RenameResult ProcessFolder(string folder, IList<Rom> roms, string formatString, bool dryRun, ILogger? logger)
+    {
+        // The template's extension comes from the marker file; folders have none.
+        var name = SanitizeFileName(Path.GetFileNameWithoutExtension(GenerateFileName(roms, formatString)));
+        var parent = Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(folder)) ?? "";
+        if (name.Length == 0 || string.Equals(name, Path.GetFileName(folder), StringComparison.OrdinalIgnoreCase))
+            return new RenameResult(folder, folder, true, dryRun);
+
+        var target = Path.Combine(parent, name);
+        for (int i = 1; Directory.Exists(target) || File.Exists(target); i++)
+            target = Path.Combine(parent, $"{name} ({i})");
+        if (dryRun)
+            return new RenameResult(folder, target, true, WasDryRun: true);
+        try
+        {
+            Directory.Move(folder, target);
+            foreach (var rom in roms)
+                rom.Path = Path.Combine(target, Path.GetRelativePath(folder, rom.Path!));
+            logger?.LogInformation("Renamed folder '{Source}' → '{Dest}'", folder, target);
+            return new RenameResult(folder, target, true, false);
+        }
+        catch (Exception ex)
+        {
+            logger?.LogError(ex, "Failed to rename folder '{Folder}'", folder);
+            return new RenameResult(folder, target, false, false, ex.Message);
+        }
     }
 
     private static RenameResult ProcessGroup(

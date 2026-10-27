@@ -158,4 +158,26 @@ public class FileRenamerTests
         string result = FileRenamer.GenerateFileName([game, update], "{TitleName} [v{Version}]");
         result.Should().Contain("2.0");
     }
+
+    [Fact]
+    public async Task RenameFiles_RenamesTheFolderOfFolderFormatRoms()
+    {
+        var dir = Directory.CreateTempSubdirectory().FullName;
+        try
+        {
+            var game = Path.Combine(dir, "dump0001");
+            Directory.CreateDirectory(Path.Combine(game, "code"));
+            File.WriteAllText(Path.Combine(game, "code", "app.xml"), "<app/>");
+            var rom = new RomManagerShared.WiiU.WiiUGame { Path = Path.Combine(game, "code", "app.xml"), IsFolderFormat = true };
+            rom.AddTitleName("Zelda");
+
+            var result = (await FileRenamer.RenameFilesAsync([rom], "{TitleName}", ct: TestContext.Current.CancellationToken))
+                .Should().ContainSingle().Subject;
+
+            result.Success.Should().BeTrue();
+            File.Exists(Path.Combine(dir, "Zelda", "code", "app.xml")).Should().BeTrue();
+            rom.Path.Should().Be(Path.Combine(dir, "Zelda", "code", "app.xml"));
+        }
+        finally { Directory.Delete(dir, true); }
+    }
 }
