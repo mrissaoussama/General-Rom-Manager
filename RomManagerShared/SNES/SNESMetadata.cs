@@ -3,7 +3,7 @@
 public class SNESMetadata
 {
     public enum BankTypeEnum { Lo, Hi };
-    public string Name;
+    public string Name = "";
     public byte Layout;
     public byte CartridgeType;
     public byte RomSize;

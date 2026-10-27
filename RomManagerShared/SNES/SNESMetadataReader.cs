@@ -3,8 +3,8 @@
 public class SNESMetadataReader
 {
     bool SmcHeader;
-    public byte[] Data;
-    SNESMetadata snesmetadata;
+    public byte[] Data = [];
+    SNESMetadata snesmetadata = new();
     int HeaderLocation;
     //i'm still not sure about the header and icon extraction, will do this later.
     public SNESMetadata GetMetadata(string path)

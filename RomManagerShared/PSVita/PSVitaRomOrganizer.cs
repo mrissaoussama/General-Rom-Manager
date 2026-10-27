@@ -22,11 +22,11 @@ namespace RomManagerShared.PSVita
         // Minimum required free space (100MB)
         private const long MinFreeSpace = 100 * 1024 * 1024;
 
-        private string SourceDirectory { get; set; }
-        private string DestinationDirectory { get; set; }
+        private string SourceDirectory { get; set; } = "";
+        private string DestinationDirectory { get; set; } = "";
         private bool RemoveEmptyFolders { get; set; }
         private bool DryRun { get; set; }
-        public string Description { get; set ; }
+        public string Description { get; set; } = "";
 
         /// <summary>
         /// Organizes PS Vita ROMs into the proper folder structure

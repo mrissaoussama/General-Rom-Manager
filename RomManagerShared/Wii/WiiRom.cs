@@ -11,5 +11,5 @@ public class WiiWadGame : Game, IWiiRom
 {
     public WiiWadGame() : base()
     {
-    }    public string ChannelType { get; internal set; }
+    }    public string ChannelType { get; internal set; } = "";
 }

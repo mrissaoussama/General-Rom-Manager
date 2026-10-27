@@ -6,9 +6,9 @@ namespace RomManagerShared.Base;
 public class UiPropertyAttribute : Attribute
 {
     public bool Visible { get; set; } = true;
-    public string DisplayName { get; set; }
+    public string DisplayName { get; set; } = "";
     public int Order { get; set; } = 100;
-    public string Format { get; set; }
+    public string Format { get; set; } = "";
     public UiPropertyType PropertyType { get; set; } = UiPropertyType.Auto;
     
     public UiPropertyAttribute() { }
@@ -366,10 +366,10 @@ public class License
     {
         Path = path;
     }
-    public string LicenseId { get; set; }
+    public string LicenseId { get; set; } = "";
     public Rom Rom { get; set; }
     public string Path { get; set; }
-    public string TitleID { get; set; }
+    public string TitleID { get; set; } = "";
 }
 public class Homebrew : Rom
 {

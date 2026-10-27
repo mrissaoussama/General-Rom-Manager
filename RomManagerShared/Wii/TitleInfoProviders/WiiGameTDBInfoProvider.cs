@@ -8,21 +8,21 @@ using System.Xml;namespace RomManagerShared.Wii.TitleInfoProviders;
 public class WiiGameTDBXmlRomDTO
 {
     public int Id { get; set; }
-    public string TitleID { get; set; }
-    public string Region { get; set; }
-    public string Languages { get; set; }
-    public string Developer { get; set; }
-    public string Publisher { get; set; }
+    public string TitleID { get; set; } = "";
+    public string Region { get; set; } = "";
+    public string Languages { get; set; } = "";
+    public string Developer { get; set; } = "";
+    public string Publisher { get; set; } = "";
     public int? ReleaseDate { get; set; }
     public int Players { get; set; } // Players attribute for input
-    public string Version { get; set; } // Version attribute for rom
+    public string Version { get; set; } = ""; // Version attribute for rom
     public long? Size { get; set; } // Size attribute for rom
     public string? Title { get; internal set; }
     public string? Synopsis { get; internal set; }
 }
 public class WiiGameTDBInfoProvider : ITitleInfoProvider<WiiConsole>
-{    public string Source { get; set; }
-    public List<WiiGameTDBXmlRomDTO> TitleList { get; private set; }    public async Task LoadTitleDatabaseAsync()
+{    public string Source { get; set; } = "";
+    public List<WiiGameTDBXmlRomDTO> TitleList { get; private set; } = [];    public async Task LoadTitleDatabaseAsync()
     {
         Source = WiiConfiguration.GetGameTDBPath();
         try

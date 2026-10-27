@@ -9,7 +9,7 @@ public class PSPGame : Game, IPSPRom
     }    public int DiskNumber { get; internal set; }
     public int DiskTotal { get; internal set; }
     public int ParentalLevel { get; internal set; }
-    public string Category { get; internal set; }
+    public string Category { get; internal set; } = "";
 }
 public class PSPUpdate : Update, IPSPRom
 {
@@ -27,5 +27,5 @@ public class PSPDLC : DLC, IPSPRom
     }    public int DiskNumber { get; internal set; }
     public int DiskTotal { get; internal set; }
     public int ParentalLevel { get; internal set; }
-    public string Category { get; internal set; }
+    public string Category { get; internal set; } = "";
 }

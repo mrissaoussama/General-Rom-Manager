@@ -25,9 +25,9 @@ public class ResourceDownloadAttribute : Attribute
     }
 }
 public class DownloadMethodInfo
-{public string DownloadName { get; set; }
-    public string[] Url { get; set; }
-    public string[] FilePaths{ get; set; }
+{public string DownloadName { get; set; } = "";
+    public string[] Url { get; set; } = [];
+    public string[] FilePaths{ get; set; } = [];
 }
 public class FileDownloader
 {

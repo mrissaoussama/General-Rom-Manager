@@ -7,9 +7,9 @@ namespace RomManagerShared.Configuration;
 public static class RomManagerConfiguration
 {
     #region Properties
-    public static IConfigurationRoot Configuration { get; private set; }
+    public static IConfigurationRoot Configuration { get; private set; } = new ConfigurationBuilder().Build();
     public static bool ConfigurationLoaded { get; private set; }
-    public static string BaseFolder { get; private set; }
+    public static string BaseFolder { get; private set; } = "";
     #endregion
 
     #region Initialization

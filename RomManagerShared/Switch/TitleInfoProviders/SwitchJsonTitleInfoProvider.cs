@@ -86,7 +86,7 @@ public class SwitchJsonTitleInfoProvider : TitleInfoProvider<SwitchConsole>, ICa
 {
     public GenericRepository<SwitchJsonRomDTO> TitlesDatabaseRepository { get; set; }
 
-    public Dictionary<string, JsonElement> TitlesDatabase { get; set; }
+    public Dictionary<string, JsonElement>? TitlesDatabase { get; set; }
     public SwitchJsonTitleInfoProvider(GenericRepository<SwitchJsonRomDTO> repo)
     {
         TitlesDatabaseRepository = repo;

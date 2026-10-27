@@ -35,12 +35,12 @@ public class WiiUWikiBrewTitleDTO : IExternalRomFormat<WiiUConsole>
 }
 public class TableData
 {
-    public List<string> ColumnNames { get; set; }
-    public List<List<string>> Rows { get; set; }
+    public List<string> ColumnNames { get; set; } = [];
+    public List<List<string>> Rows { get; set; } = [];
 }
 public class WiiUWikiBrewScraper
 {
-    public static List<WiiUWikiBrewTitleDTO> titles;
+    public static List<WiiUWikiBrewTitleDTO>? titles;
     public async static Task<List<WiiUWikiBrewTitleDTO>> ScrapeTitles()
     {
         titles = [];
