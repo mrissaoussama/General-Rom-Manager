@@ -38,7 +38,8 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
 ## Phase D: UI and UX
 
 - [ ] **[P1]** Localisation: resx strings with a `{l:Tr}` markup extension; English first, then French.
-- [ ] Duplicates: a dialog listing each group with "keep / move the others" (as 1G1R does), instead of log lines.
+- [x] Duplicates…: keeps one file per identical rom (same ID, type and version; a DAT-verified dump or the largest)
+      and moves the other copies after a preview (`DuplicateDetector.FindExactCopies`).
 - [ ] A "Verify" report per console: DAT-verified, unverified and unknown dumps.
 
 ## Phase E: Features

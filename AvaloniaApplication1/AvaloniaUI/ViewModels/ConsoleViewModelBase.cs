@@ -533,6 +533,30 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
         Track(Operations.EnqueueMove(others, target), rows);
     }
 
+    /// <summary>Keeps one file of each set of identical roms and moves the other copies, after a preview (undoable).</summary>
+    [RelayCommand]
+    private async Task ResolveDuplicates()
+    {
+        if (Operations is null) return;
+        var groups = DuplicateDetector.FindExactCopies(Roms.Select(r => r.RomSource));
+        if (groups.Count == 0)
+        {
+            StatusMessage = "No duplicate files";
+            return;
+        }
+        var others = groups.SelectMany(g => g.Redundant).ToList();
+        var lines = groups.SelectMany(g => new[] { $"{g.Preferred.Titles?.FirstOrDefault()?.Value ?? g.GroupKey}: keep {g.Preferred.Path}" }
+            .Concat(g.Redundant.Select(o => $"    move {o.Path}")));
+        if (!await Dialogs.PreviewAsync("Duplicates",
+                $"{groups.Count} rom(s) are stored more than once (same title ID, type and version). The copy to keep is a " +
+                $"DAT-verified dump if there is one, else the largest file. The {others.Count} other cop(ies) can be moved to a folder.",
+                lines, "Move copies…"))
+            return;
+        if (await Dialogs.PickFolderAsync("Move the duplicate copies to") is not { } target) return;
+        var moving = new HashSet<object>(others, ReferenceEqualityComparer.Instance);
+        Track(Operations.EnqueueMove(others, target), [.. Roms.Where(r => moving.Contains(r.RomSource))]);
+    }
+
     /// <summary>Exports the rows that pass the current filters.</summary>
     [RelayCommand]
     private async Task ExportShown()

@@ -143,4 +143,25 @@ public class DuplicateDetectorTests
         redundant.Should().HaveCount(1);
         ((Game)redundant[0]).Version.Should().Be("1.0");
     }
+
+    [Fact]
+    public void FindExactCopies_KeepsTheVerifiedOrLargestCopy_AndIgnoresGameUpdatePairs()
+    {
+        var small = new RomManagerShared.PS4.PS4Game { TitleID = "CUSA00001", Version = "01.00", Path = "/a/game.pkg", Size = 10 };
+        var big = new RomManagerShared.PS4.PS4Game { TitleID = "cusa00001", Version = "01.00", Path = "/b/game.pkg", Size = 20 };
+        var verified = new RomManagerShared.PS4.PS4Game
+        {
+            TitleID = "CUSA00001", Version = "01.00", Path = "/c/game.pkg", Size = 5,
+            Hashes = [new RomHash { Type = HashTypeEnum.SHA1, Value = "x", IsVerified = true }],
+        };
+        var update = new RomManagerShared.PS4.PS4Update { TitleID = "CUSA00001", Version = "01.00", Path = "/a/patch.pkg" };
+        var bundled = new Game { TitleID = "X", Path = "/n/bundle.nsp" };
+        var sameFile = new Game { TitleID = "X", Path = "/n/bundle.nsp" };
+
+        var groups = DuplicateDetector.FindExactCopies([small, big, verified, update, bundled, sameFile]);
+
+        var g = groups.Should().ContainSingle().Subject;
+        g.Preferred.Should().BeSameAs(verified);
+        g.Redundant.Should().Equal(big, small);
+    }
 }

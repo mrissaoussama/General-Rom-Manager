@@ -31,6 +31,8 @@
                               ToolTip.Tip="Group updates and DLC under their game" />
                 <Button x:Name="ColumnsButton" Content="Columns" />
                 <Button Content="Export…" Command="{Binding ExportShownCommand}" ToolTip.Tip="Save the rows shown (after filters) as CSV or JSON" />
+                <Button Content="Duplicates…" Command="{Binding ResolveDuplicatesCommand}" IsVisible="{Binding HasDuplicates}"
+                        ToolTip.Tip="Keep one file of each rom stored more than once and move the other copies" />
                 <Button Content="1G1R…" Command="{Binding OneGameOneRomCommand}"
                         ToolTip.Tip="One game, one ROM: keep the best version of each game by region priority and move the others" />
                 <Button Content="Missing updates" Command="{Binding CheckMissingUpdatesCommand}"

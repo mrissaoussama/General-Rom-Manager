@@ -87,6 +87,22 @@ public sealed class DuplicateDetector
             .Distinct()
             .ToList();
 
+    /// <summary>
+    /// Files holding the same rom: same title ID, rom type and version, in different files. (Grouping by title ID
+    /// alone would pair a PS4 game with its update, which share the ID.) The copy to keep comes first: a
+    /// DAT-verified dump, then the larger file, then the shorter path.
+    /// </summary>
+    public static IReadOnlyList<DuplicateGroup> FindExactCopies(IEnumerable<Rom> roms) =>
+        [.. roms
+            .Where(r => !string.IsNullOrEmpty(r.TitleID) && !string.IsNullOrEmpty(r.Path))
+            .GroupBy(r => (Id: r.TitleID!.ToUpperInvariant(), Type: r.GetType().Name, Version: r.Version ?? ""))
+            .Select(g => g.DistinctBy(r => r.Path!, FileUtils.PathComparer).ToList())
+            .Where(g => g.Count > 1)
+            .Select(g => new DuplicateGroup(g[0].TitleID!, DuplicateStrategy.TitleId,
+                [.. g.OrderByDescending(r => r.Hashes?.Any(h => h.IsVerified) == true)
+                     .ThenByDescending(r => r.Size ?? TryGetFileSize(r.Path))
+                     .ThenBy(r => r.Path!.Length)]))];
+
     // ── Strategy implementations ──────────────────────────────────────────
 
     private static IEnumerable<DuplicateGroup> FindByTitleId(IList<Rom> roms)
