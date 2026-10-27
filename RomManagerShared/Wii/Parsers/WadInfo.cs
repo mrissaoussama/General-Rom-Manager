@@ -124,7 +124,7 @@ public class WadInfo
         {
             using FileStream fs = FileUtils.OpenRead(sourcefile);
             byte[] filearray = new byte[fs.Length];
-            fs.Read(filearray, 0, filearray.Length);
+            fs.ReadExactly(filearray, 0, filearray.Length);
             return filearray;
         }
         else throw new FileNotFoundException("File couldn't be found:\r\n" + sourcefile);
@@ -279,7 +279,7 @@ public class WadInfo
         using (MemoryStream memory = new(encryptedwater))
         {
             using CryptoStream crypto = new(memory, cryptor, CryptoStreamMode.Read);
-            crypto.Read(decryptedwater, 0, 10);
+            crypto.ReadExactly(decryptedwater, 0, 10);
         }
         string water = BitConverter.ToString(decryptedwater).Replace("-", "").ToLower() + " ";
         water = water.Insert(0, fat[2].ToString());
@@ -639,7 +639,7 @@ public class WadInfo
     {
         using FileStream fs = FileUtils.OpenRead(wadtmd);
         byte[] temp = new byte[fs.Length];
-        fs.Read(temp, 0, temp.Length);
+        fs.ReadExactly(temp, 0, temp.Length);
         return GetNandBlocks(temp);
     }
     /// <summary>
@@ -682,7 +682,7 @@ public class WadInfo
             if (fs.Length < length) length = (int)fs.Length;
             byte[] filearray = new byte[length];
             fs.Seek(offset, SeekOrigin.Begin);
-            fs.Read(filearray, 0, length);
+            fs.ReadExactly(filearray, 0, length);
             return filearray;
         }
         else throw new FileNotFoundException("File couldn't be found:\r\n" + sourcefile);
@@ -940,7 +940,7 @@ public class WadInfo
         MemoryStream memory = new(encryptedkey);
         CryptoStream crypto = new(memory, cryptor, CryptoStreamMode.Read);
         byte[] decryptedkey = new byte[16];
-        crypto.Read(decryptedkey, 0, decryptedkey.Length);
+        crypto.ReadExactly(decryptedkey, 0, decryptedkey.Length);
         crypto.Close();
         memory.Close();
         return decryptedkey;

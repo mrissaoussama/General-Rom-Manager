@@ -16,7 +16,7 @@ public class GameBoyAdvanceMetadataReader
         byte[] gbaHeader;        using (FileStream fileStream = new(path, FileMode.Open, FileAccess.Read))
         {
             gbaHeader = new byte[HEADER_LENGTH];
-            fileStream.Read(gbaHeader, 0, HEADER_LENGTH);
+            fileStream.ReadExactly(gbaHeader, 0, HEADER_LENGTH);
         }        string title = BinUtils.AsciiToString(gbaHeader, TITLE_OFFSET, TITLE_LENGTH).Replace("\0", ""); ;
         string gameCode = BinUtils.AsciiToString(gbaHeader, GAME_CODE_OFFSET, GAME_CODE_LENGTH);
         string makerCode = BinUtils.AsciiToString(gbaHeader, MAKER_CODE_OFFSET, MAKER_CODE_LENGTH);

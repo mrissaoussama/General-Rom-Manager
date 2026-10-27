@@ -24,7 +24,7 @@ dotnet run --project tools/ParserHarness -- PS4Console "Y:\roms\PS4" 5
 - `AvaloniaUI.Android` / `AvaloniaUI.Browser` target net9.0-* and are not maintained; only the
   Desktop head matters.
 - Don't add new warnings (Desktop head baseline is small; vendored code in `Utils/ISO2GOD`,
-  `Utils/AltoMultiThreadDownloadManager` is noisy).
+  is marked `#nullable disable warnings`).
 
 ## Layout
 

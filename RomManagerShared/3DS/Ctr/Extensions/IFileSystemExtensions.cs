@@ -1,4 +1,6 @@
-﻿using SkyEditor.IO.FileSystem;
+﻿// Vendored code: nullable warnings are not fixed here.
+#nullable disable warnings
+using SkyEditor.IO.FileSystem;
 namespace DotNet3dsToolkit.Extensions;
 
 public static class IFileSystemExtensions

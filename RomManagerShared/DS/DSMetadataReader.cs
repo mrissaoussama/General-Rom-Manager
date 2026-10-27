@@ -26,7 +26,7 @@ public class DSMetadataReader
         using (FileStream fileStream = new(path, FileMode.Open, FileAccess.Read))
         {
             ndsHeader = new byte[HEADER_LENGTH];
-            fileStream.Read(ndsHeader, 0, HEADER_LENGTH);
+            fileStream.ReadExactly(ndsHeader, 0, HEADER_LENGTH);
             string title = Encoding.Latin1.GetString(ndsHeader, TITLE_OFFSET, TITLE_LENGTH).Trim(); // Latin1 keeps invalid bytes visible to the printable check
             string gameCode = BinUtils.AsciiToString(ndsHeader, GAME_CODE_OFFSET, GAME_CODE_LENGTH);
             string makerCode = BinUtils.AsciiToString(ndsHeader, MAKER_CODE_OFFSET, MAKER_CODE_LENGTH);

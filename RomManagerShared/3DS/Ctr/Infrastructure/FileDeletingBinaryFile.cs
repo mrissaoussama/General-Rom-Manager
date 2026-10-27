@@ -1,4 +1,6 @@
-﻿using SkyEditor.IO.Binary;
+﻿// Vendored code: nullable warnings are not fixed here.
+#nullable disable warnings
+using SkyEditor.IO.Binary;
 namespace DotNet3dsToolkit.Infrastructure;
 
 /// <summary>

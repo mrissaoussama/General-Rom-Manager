@@ -1,4 +1,6 @@
-﻿using DotNet3dsToolkit.Ctr;
+﻿// Vendored code: nullable warnings are not fixed here.
+#nullable disable warnings
+using DotNet3dsToolkit.Ctr;
 using DotNet3dsToolkit.Infrastructure;
 using RomManagerShared.Base;
 using SkyEditor.IO.Binary;

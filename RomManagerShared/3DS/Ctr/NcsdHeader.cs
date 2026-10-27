@@ -1,4 +1,6 @@
-﻿using System.Text;namespace DotNet3dsToolkit.Ctr;
+﻿// Vendored code: nullable warnings are not fixed here.
+#nullable disable warnings
+using System.Text;namespace DotNet3dsToolkit.Ctr;
 /// <summary>
 /// A NCSD Header
 /// </summary>

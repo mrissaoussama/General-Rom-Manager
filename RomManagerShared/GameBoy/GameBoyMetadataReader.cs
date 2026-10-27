@@ -26,7 +26,7 @@ public class GameBoyMetadataReader
         byte[] gbaHeader;        using (FileStream fileStream = new(path, FileMode.Open, FileAccess.Read))
         {
             gbaHeader = new byte[HEADER_LENGTH];
-            fileStream.Read(gbaHeader, 0, HEADER_LENGTH);
+            fileStream.ReadExactly(gbaHeader, 0, HEADER_LENGTH);
         }
         bool isCgb = (gbaHeader[CGB_FLAG_OFFSET] & (1 << CGB_FLAG_BIT)) != 0;        
         // CGB carts shrink the title to 11 bytes when a 4-char game code follows; older carts use all 16.

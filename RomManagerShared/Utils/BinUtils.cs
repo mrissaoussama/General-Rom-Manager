@@ -84,7 +84,7 @@ public static class BinUtils
         {
             bytes = new byte[length];
             fileStream.Seek(offset, SeekOrigin.Begin);
-            fileStream.Read(bytes, 0, length);
+            fileStream.ReadExactly(bytes, 0, length);
         }        return bytes;
     }
     public static string ReadUnicodeString(string filePath, int offset, int length)
@@ -93,7 +93,7 @@ public static class BinUtils
         {
             unicodeBytes = new byte[length * 2];
             fileStream.Seek(offset, SeekOrigin.Begin);
-            fileStream.Read(unicodeBytes, 0, length * 2);
+            fileStream.ReadExactly(unicodeBytes, 0, length * 2);
         }        // Assuming little-endian encoding for Unicode
         string unicodeString = Encoding.Unicode.GetString(unicodeBytes);        // Remove any null characters at the end of the string
         int nullCharIndex = unicodeString.IndexOf('\0');

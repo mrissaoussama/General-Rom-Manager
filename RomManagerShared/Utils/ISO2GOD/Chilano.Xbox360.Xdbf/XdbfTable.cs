@@ -1,3 +1,5 @@
+// Vendored code: nullable warnings are not fixed here.
+#nullable disable warnings
 using RomManagerShared.Utils.ISO2GOD.Chilano.Xbox360.IO;
 
 namespace RomManagerShared.Utils.ISO2GOD.Chilano.Xbox360.Xdbf;

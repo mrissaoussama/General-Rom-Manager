@@ -1,4 +1,6 @@
-﻿namespace DotNet3dsToolkit;
+﻿// Vendored code: nullable warnings are not fixed here.
+#nullable disable warnings
+namespace DotNet3dsToolkit;
 
 public static class BitMath
 {
