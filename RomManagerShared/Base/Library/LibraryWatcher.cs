@@ -43,8 +43,8 @@ public sealed class LibraryWatcher : IDisposable
         var interval = pollInterval ?? (IsNetworkPath(root) ? TimeSpan.FromMinutes(2) : TimeSpan.Zero);
         if (interval > TimeSpan.Zero)
         {
-            _lastSnapshot = Snapshot();
-            _poll = new Timer(_ => Poll(), null, interval, interval);
+            // The first tick takes the baseline listing off the caller's thread (a share can be slow).
+            _poll = new Timer(_ => Poll(), null, TimeSpan.Zero, interval);
         }
     }
 
@@ -78,7 +78,17 @@ public sealed class LibraryWatcher : IDisposable
         catch { return null; } // share offline: try again next time
     }
 
+    private int _polling;
+
     private void Poll()
+    {
+        // A listing slower than the interval must not overlap the next one.
+        if (Interlocked.Exchange(ref _polling, 1) == 1) return;
+        try { PollOnce(); }
+        finally { Volatile.Write(ref _polling, 0); }
+    }
+
+    private void PollOnce()
     {
         var now = Snapshot();
         if (now is null || now == _lastSnapshot) return;
