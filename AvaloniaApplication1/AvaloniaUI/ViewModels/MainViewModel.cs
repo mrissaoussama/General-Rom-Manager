@@ -177,7 +177,7 @@ public partial class MainViewModel : ViewModelBase
         var rows = ConsoleViewModels.SelectMany(c => c.Roms.Select(r => ExportRow.From(c.ConsoleName, r.RomSource))).ToList();
         try
         {
-            if (await Shell.ExportAsync("RomManager library.csv", rows) is { } path)
+            if (await Shell.ExportAsync(Dialogs, "RomManager library.csv", rows) is { } path)
                 StatusMessage = $"Exported {rows.Count:N0} rows to {path}";
         }
         catch (Exception ex) { StatusMessage = $"Export failed: {ex.Message}"; }
@@ -281,13 +281,11 @@ public partial class MainViewModel : ViewModelBase
         var detail = guess is null
             ? "No known ROM files found. Pick the console manually."
             : $"Looks like {guess.DisplayName} ({best!.Files} matching file(s)).";
-        var dialog = new ChooseConsoleWindow(folder, consoles, guess, detail);
-        await Shell.ShowDialogAsync(dialog);
-        if (dialog.Result is not { } chosen) return;
+        if (await Dialogs.ChooseConsoleAsync(folder, consoles, guess, detail) is not { } chosen) return;
 
         if (Settings.Instance.ConsoleLibraryPaths.TryGetValue(chosen.Id, out var existing) && !string.IsNullOrEmpty(existing)
             && !string.Equals(existing, folder, StringComparison.OrdinalIgnoreCase)
-            && !await Shell.ConfirmAsync("Replace folder", $"{chosen.DisplayName} already uses {existing}. Use {folder} instead?", "Replace"))
+            && !await Dialogs.ConfirmAsync("Replace folder", $"{chosen.DisplayName} already uses {existing}. Use {folder} instead?", "Replace"))
             return;
 
         Settings.Instance.ConsoleLibraryPaths[chosen.Id] = folder;
@@ -306,7 +304,7 @@ public partial class MainViewModel : ViewModelBase
     {
         var win = new SettingsWindow(_serviceProvider.GetService<PluginManager>(), ConsoleViewModels,
             () => DownloadMissingDatabasesAsync(showPanel: true));
-        await Shell.ShowDialogAsync(win);
+        await Dialogs.ShowWindowAsync(win);
         // Paths may have changed.
         ReloadRomPaths();
         var added = await SyncConsolesAsync();

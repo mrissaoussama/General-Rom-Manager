@@ -1,0 +1,24 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:AvaloniaUI.ViewModels"
+             xmlns:base="using:RomManagerShared.Base"
+             x:Class="AvaloniaUI.Views.DialogViews.ChooseConsoleDialogView"
+             x:DataType="vm:ChooseConsoleDialogViewModel">
+    <StackPanel Spacing="8">
+        <TextBlock Text="{Binding Folder}" TextWrapping="Wrap" FontWeight="SemiBold" />
+        <TextBlock Text="{Binding Detail}" TextWrapping="Wrap" Opacity="0.75" />
+        <TextBlock Text="Console" />
+        <ComboBox ItemsSource="{Binding Consoles}" SelectedItem="{Binding Selected}" HorizontalAlignment="Stretch"
+                  AutomationProperties.Name="Console">
+            <ComboBox.ItemTemplate>
+                <DataTemplate x:DataType="base:ConsoleDescriptor">
+                    <TextBlock Text="{Binding DisplayName}" />
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
+        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+            <Button Content="Cancel" IsCancel="True" Command="{Binding CancelCommand}" />
+            <Button Content="Add" IsDefault="True" Command="{Binding ConfirmCommand}" />
+        </StackPanel>
+    </StackPanel>
+</UserControl>

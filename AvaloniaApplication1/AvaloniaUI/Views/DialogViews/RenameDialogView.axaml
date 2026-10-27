@@ -1,0 +1,33 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:AvaloniaUI.ViewModels"
+             x:Class="AvaloniaUI.Views.DialogViews.RenameDialogView"
+             x:DataType="vm:RenameDialogViewModel"
+             x:Name="Root">
+    <UserControl.Resources>
+        <ItemsPanelTemplate x:Key="Wrap">
+            <WrapPanel />
+        </ItemsPanelTemplate>
+        <DataTemplate x:Key="Chip" x:DataType="x:String">
+            <Button Content="{Binding}" Classes="small" Margin="0,0,4,4"
+                    Command="{Binding #Root.((vm:RenameDialogViewModel)DataContext).InsertCommand}"
+                    CommandParameter="{Binding}" />
+        </DataTemplate>
+    </UserControl.Resources>
+    <StackPanel Spacing="8">
+        <TextBlock Text="Template" FontWeight="SemiBold" />
+        <TextBox Text="{Binding Template}" CaretIndex="{Binding CaretIndex}" AutomationProperties.Name="Template" />
+        <TextBlock Text="General" Opacity="0.7" />
+        <ItemsControl ItemsSource="{Binding General}" ItemsPanel="{StaticResource Wrap}" ItemTemplate="{StaticResource Chip}" />
+        <TextBlock Text="{Binding ConsoleName}" Opacity="0.7" IsVisible="{Binding HasConsolePlaceholders}" />
+        <ItemsControl ItemsSource="{Binding ConsolePlaceholders}" ItemsPanel="{StaticResource Wrap}"
+                      ItemTemplate="{StaticResource Chip}" IsVisible="{Binding HasConsolePlaceholders}" />
+        <TextBlock Text="{Binding Summary}" Opacity="0.75" />
+        <ListBox ItemsSource="{Binding PreviewRows}" MaxHeight="260"
+                 FontFamily="Cascadia Mono, Consolas, monospace" FontSize="11" />
+        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+            <Button Content="Cancel" IsCancel="True" Command="{Binding CancelCommand}" />
+            <Button Content="Rename" IsDefault="True" Command="{Binding ConfirmCommand}" />
+        </StackPanel>
+    </StackPanel>
+</UserControl>

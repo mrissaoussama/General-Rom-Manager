@@ -41,24 +41,22 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
     [RelayCommand]
     private async Task ShowUnrecognized()
     {
-        var list = new PreviewWindow("Not recognised",
-            "These files have a matching extension but no parser could read them (wrong console, corrupt, encrypted or missing keys). " +
-            "The reason is what the parsers logged. You can move them out of the ROM folder so they stop showing up here.",
-            Unrecognized.Select(u => $"{u.Path}  —  {u.Reason}"), "Move to folder…");
-        await Shell.ShowDialogAsync(list);
-        if (list.Confirmed) await MoveUnrecognizedAsync();
+        if (await Dialogs.PreviewAsync("Not recognised",
+                "These files have a matching extension but no parser could read them (wrong console, corrupt, encrypted or missing keys). " +
+                "The reason is what the parsers logged. You can move them out of the ROM folder so they stop showing up here.",
+                Unrecognized.Select(u => $"{u.Path}  —  {u.Reason}"), "Move to folder…"))
+            await MoveUnrecognizedAsync();
     }
 
     // Moves the unrecognised files elsewhere (keeping their sub-folders) after a preview, then rescans.
     private async Task MoveUnrecognizedAsync()
     {
-        if (Unrecognized.Count == 0 || await Shell.PickFolderAsync("Move unrecognised files to") is not { } target) return;
+        if (Unrecognized.Count == 0 || await Dialogs.PickFolderAsync("Move unrecognised files to") is not { } target) return;
         var files = Unrecognized.Select(u => new Rom { Path = u.Path }).ToList();
         var mover = new RomMover(target);
-        var preview = new PreviewWindow("Move unrecognised files", $"{files.Count} file(s) will be moved to {target}.",
-            mover.PreviewMoves(files).Select(m => $"{m.SourcePath}  →  {m.DestinationPath}"), "Move");
-        await Shell.ShowDialogAsync(preview);
-        if (!preview.Confirmed) return;
+        if (!await Dialogs.PreviewAsync("Move unrecognised files", $"{files.Count} file(s) will be moved to {target}.",
+                mover.PreviewMoves(files).Select(m => $"{m.SourcePath}  →  {m.DestinationPath}"), "Move"))
+            return;
         var results = await mover.MoveFilesAsync(files);
         var failed = results.Count(r => !r.Success);
         StatusMessage = failed == 0 ? $"Moved {results.Count} file(s) to {target}"
@@ -363,10 +361,10 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
     private async Task Rename(IReadOnlyList<RomViewModel> roms)
     {
         if (Operations is null || roms.Count == 0) return;
-        var dialog = new FormatNameWindow([.. roms.Select(r => r.RomSource)], GetColumnDescriptors()
-            .Where(d => d.UsesDictionaryLookup).Select(d => d.PropName), ConsoleName);
-        await Shell.ShowDialogAsync(dialog);
-        if (dialog.Result is not { } format) return;
+        if (await Dialogs.AskRenameTemplateAsync([.. roms.Select(r => r.RomSource)], GetColumnDescriptors()
+                .Where(d => d.UsesDictionaryLookup).Select(d => d.PropName), ConsoleName,
+                Settings.Instance.RenameFormatString) is not { } format)
+            return;
 
         Settings.Instance.RenameFormatString = format;
         Settings.Instance.Save();
@@ -380,7 +378,7 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
     private async Task Move(IReadOnlyList<RomViewModel> roms)
     {
         if (Operations is null || roms.Count == 0) return;
-        var target = await Shell.PickFolderAsync("Select target directory");
+        var target = await Dialogs.PickFolderAsync("Select target directory");
         if (target is null) return;
         var sources = roms.Select(r => r.RomSource).ToList();
 
@@ -393,11 +391,10 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
             return;
         }
         var bytes = sources.Sum(r => r.Size ?? 0);
-        var preview = new PreviewWindow("Move",
-            $"Move {moving.Count} file(s) ({FileUtils.FormatFileSize(bytes)}) to {target}:",
-            moving.Select(m => $"{m.SourcePath}  →  {m.DestinationPath}"), "Move");
-        await Shell.ShowDialogAsync(preview);
-        if (!preview.Confirmed) return;
+        if (!await Dialogs.PreviewAsync("Move",
+                $"Move {moving.Count} file(s) ({FileUtils.FormatFileSize(bytes)}) to {target}:",
+                moving.Select(m => $"{m.SourcePath}  →  {m.DestinationPath}"), "Move"))
+            return;
         Track(Operations.EnqueueMove(sources, target), roms);
     }
 
@@ -415,7 +412,7 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
         }
         var plural = files.Count == 1 ? "" : "s";
         var skipped = folders.Count == 0 ? "" : $" {folders.Count} folder ROM(s) in the selection are skipped.";
-        if (!await Shell.ConfirmAsync("Delete", $"Move {files.Count} file{plural} to the Recycle Bin / Trash?{skipped}", "Move to trash"))
+        if (!await Dialogs.ConfirmAsync("Delete", $"Move {files.Count} file{plural} to the Recycle Bin / Trash?{skipped}", "Move to trash"))
             return;
 
         void RemoveRows(string path)
@@ -441,7 +438,7 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
         }
 
         // No trash for these (network drive, USB stick, unsupported OS): only delete permanently when asked.
-        if (!await Shell.ConfirmAsync("Delete permanently?",
+        if (!await Dialogs.ConfirmAsync("Delete permanently?",
                 $"{notTrashed.Count} file(s) could not be moved to the trash ({notTrashed[0].Reason}). Delete them permanently? This cannot be undone.",
                 "Delete permanently"))
         {
@@ -467,7 +464,7 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
             .Select(r => ExportRow.From(r.Console.Length > 0 ? r.Console : ConsoleName, r.RomSource)).ToList();
         try
         {
-            if (await Shell.ExportAsync($"{ConsoleName}.csv", rows) is { } path)
+            if (await Shell.ExportAsync(Dialogs, $"{ConsoleName}.csv", rows) is { } path)
                 StatusMessage = $"Exported {rows.Count:N0} rows to {path}";
         }
         catch (Exception ex) { StatusMessage = $"Export failed: {ex.Message}"; }
@@ -490,7 +487,7 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
 
     [RelayCommand]
     private Task ViewProperties(IReadOnlyList<RomViewModel> roms) =>
-        roms.FirstOrDefault() is { } r ? Shell.ShowDialogAsync(new PropertiesWindow(r)) : Task.CompletedTask;
+        roms.FirstOrDefault() is { } r ? Dialogs.ShowPropertiesAsync(r) : Task.CompletedTask;
 
     public void RunAction(IConsoleRomAction action, IReadOnlyList<RomViewModel> roms)
     {

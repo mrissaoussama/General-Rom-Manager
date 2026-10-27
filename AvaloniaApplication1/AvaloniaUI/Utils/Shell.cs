@@ -2,7 +2,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 
 namespace AvaloniaUI.Utils;
 
-/// <summary>Window-level services (clipboard, dialogs, shell open) for view models.</summary>
+/// <summary>Window-level services (clipboard, shell open, export) for view models. Dialogs: <see cref="IDialogService"/>.</summary>
 internal static class Shell
 {
     public static Window? MainWindow =>
@@ -14,55 +14,14 @@ internal static class Shell
             await clipboard.SetTextAsync(text);
     }
 
-    public static Task<string?> PickFolderAsync(string title) =>
-        MainWindow is { } owner ? Dialogs.PickFolderAsync(owner, title) : Task.FromResult<string?>(null);
-
     /// <summary>Asks for a CSV or JSON path and writes the rows there; returns the path or null when cancelled.</summary>
-    public static async Task<string?> ExportAsync(string suggestedName, IReadOnlyList<RomManagerShared.Utils.ExportRow> rows)
+    public static async Task<string?> ExportAsync(IDialogService dialogs, string suggestedName, IReadOnlyList<RomManagerShared.Utils.ExportRow> rows)
     {
-        if (MainWindow is not { } owner) return null;
-        var path = await Dialogs.SaveFileAsync(owner, "Export", suggestedName, ("CSV", "csv"), ("JSON", "json"));
+        var path = await dialogs.PickSaveFileAsync("Export", suggestedName, ("CSV", "csv"), ("JSON", "json"));
         if (path is null) return null;
         await Task.Run(() => RomManagerShared.Utils.LibraryExporter.Export(rows, path));
         return path;
     }
-
-    public static async Task<bool> ConfirmAsync(string title, string message, string confirmText = "OK")
-    {
-        if (MainWindow is not { } owner) return false;
-        var result = false;
-        var dialog = new Window
-        {
-            Title = title,
-            Width = 420,
-            SizeToContent = SizeToContent.Height,
-            CanResize = false,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner,
-        };
-        var ok = new Button { Content = confirmText, IsDefault = true };
-        var cancel = new Button { Content = "Cancel", IsCancel = true };
-        ok.Click += (_, _) => { result = true; dialog.Close(); };
-        cancel.Click += (_, _) => dialog.Close();
-        dialog.Content = new StackPanel
-        {
-            Margin = new Thickness(16),
-            Spacing = 12,
-            Children =
-            {
-                new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap },
-                new StackPanel
-                {
-                    Orientation = Orientation.Horizontal, Spacing = 8, HorizontalAlignment = HorizontalAlignment.Right,
-                    Children = { cancel, ok },
-                },
-            },
-        };
-        await dialog.ShowDialog(owner);
-        return result;
-    }
-
-    public static Task ShowDialogAsync(Window window) =>
-        MainWindow is { } owner ? window.ShowDialog(owner) : Task.CompletedTask;
 
     public static void RevealInExplorer(string path)
     {

@@ -1,0 +1,79 @@
+namespace AvaloniaUI.Utils;
+
+/// <summary>
+/// Dialogs and pickers for view models, so they never construct windows themselves and tests can
+/// answer them. <see cref="DialogService.Current"/> is the instance view models use.
+/// </summary>
+public interface IDialogService
+{
+    Task<bool> ConfirmAsync(string title, string message, string confirmText = "OK");
+
+    /// <summary>Shows a one-line-per-change list; true when the user confirmed.</summary>
+    Task<bool> PreviewAsync(string title, string summary, IEnumerable<string> lines, string confirmText, bool showCancel = true);
+
+    Task ShowPropertiesAsync(RomViewModel rom);
+
+    Task<ConsoleDescriptor?> ChooseConsoleAsync(string folder, IReadOnlyList<ConsoleDescriptor> consoles, ConsoleDescriptor? guess, string detail);
+
+    /// <summary>Asks for a rename template (with a live preview); null when cancelled.</summary>
+    Task<string?> AskRenameTemplateAsync(IReadOnlyList<Rom> roms, IEnumerable<string> consoleProperties, string consoleName, string template);
+
+    Task<string?> PickFolderAsync(string title);
+
+    /// <summary>Save dialog offering each (name, extension) pair as a file type; null when cancelled.</summary>
+    Task<string?> PickSaveFileAsync(string title, string suggestedName, params (string Name, string Extension)[] types);
+
+    /// <summary>Shows a window that is not (yet) a <see cref="DialogViewModel"/>, e.g. Settings.</summary>
+    Task ShowWindowAsync(Window window);
+}
+
+public static class DialogService
+{
+    /// <summary>The service view models use; tests replace it.</summary>
+    public static IDialogService Current { get; set; } = new AvaloniaDialogService();
+}
+
+/// <summary>Shows dialogs modally over the main window.</summary>
+public sealed class AvaloniaDialogService : IDialogService
+{
+    private static Window? Owner => Shell.MainWindow;
+
+    /// <summary>Shows <paramref name="vm"/> in a <see cref="DialogWindow"/>; false when there is no main window.</summary>
+    public static async Task<bool> ShowAsync(DialogViewModel vm)
+    {
+        if (Owner is not { } owner) return false;
+        await new DialogWindow(vm).ShowDialog(owner);
+        return vm.Confirmed;
+    }
+
+    public Task<bool> ConfirmAsync(string title, string message, string confirmText = "OK") =>
+        ShowAsync(new ConfirmDialogViewModel(title, message, confirmText));
+
+    public Task<bool> PreviewAsync(string title, string summary, IEnumerable<string> lines, string confirmText, bool showCancel = true) =>
+        ShowAsync(new PreviewDialogViewModel(title, summary, lines, confirmText, showCancel));
+
+    public Task ShowPropertiesAsync(RomViewModel rom) => ShowAsync(new PropertiesDialogViewModel(rom));
+
+    public async Task<ConsoleDescriptor?> ChooseConsoleAsync(string folder, IReadOnlyList<ConsoleDescriptor> consoles,
+        ConsoleDescriptor? guess, string detail)
+    {
+        var vm = new ChooseConsoleDialogViewModel(folder, consoles, guess, detail);
+        return await ShowAsync(vm) ? vm.Selected : null;
+    }
+
+    public async Task<string?> AskRenameTemplateAsync(IReadOnlyList<Rom> roms, IEnumerable<string> consoleProperties,
+        string consoleName, string template)
+    {
+        var vm = new RenameDialogViewModel(roms, consoleProperties, consoleName, template);
+        return await ShowAsync(vm) ? vm.Template : null;
+    }
+
+    public Task<string?> PickFolderAsync(string title) =>
+        Owner is { } owner ? Dialogs.PickFolderAsync(owner, title) : Task.FromResult<string?>(null);
+
+    public Task<string?> PickSaveFileAsync(string title, string suggestedName, params (string Name, string Extension)[] types) =>
+        Owner is { } owner ? Dialogs.SaveFileAsync(owner, title, suggestedName, types) : Task.FromResult<string?>(null);
+
+    public Task ShowWindowAsync(Window window) =>
+        Owner is { } owner ? window.ShowDialog(owner) : Task.CompletedTask;
+}

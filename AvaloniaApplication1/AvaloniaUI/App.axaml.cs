@@ -88,7 +88,7 @@ public partial class App : Application
                 // Forward UI requests from plugins onto the Avalonia UI thread
                 pluginManager.ShowPluginUICallback = async (control, title) =>
                     await Dispatcher.UIThread.InvokeAsync(() => ShowPluginUI(control, title));
-                pluginManager.ApprovalCallback = request => Dispatcher.UIThread.InvokeAsync(() => Shell.ConfirmAsync(
+                pluginManager.ApprovalCallback = request => Dispatcher.UIThread.InvokeAsync(() => DialogService.Current.ConfirmAsync(
                     "Allow plugin?",
                     $"{request.Name} {request.Version}" + (request.Author is null ? "" : $" by {request.Author}") + Environment.NewLine
                     + (request.Description is null ? "" : request.Description + Environment.NewLine) + Environment.NewLine

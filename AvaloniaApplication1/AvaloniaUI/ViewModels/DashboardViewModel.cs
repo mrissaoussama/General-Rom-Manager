@@ -127,7 +127,7 @@ public sealed partial class DashboardViewModel : ViewModelBase
         var summary = consoles == 0
             ? "No console has DAT files yet. Add No-Intro (or Redump) DATs to the DAT folder and scan."
             : "Games are counted as present when a file's hash matches the DAT (verified). Missing games are listed under each console.";
-        await Shell.ShowDialogAsync(new PreviewWindow("DAT have/miss", summary, lines, "Close", showCancel: false));
+        await Dialogs.PreviewAsync("DAT have/miss", summary, lines, "Close", showCancel: false);
     }
 
     [RelayCommand]

@@ -20,10 +20,15 @@ public class ViewLocator : IDataTemplate
             DashboardViewModel => new DashboardView(),
             ConsoleViewModelBase => new ConsoleView(),
             RomDetailsViewModel => new RomDetailsView(),
+            ConfirmDialogViewModel => new Views.DialogViews.ConfirmDialogView(),
+            PreviewDialogViewModel => new Views.DialogViews.PreviewDialogView(),
+            PropertiesDialogViewModel => new Views.DialogViews.PropertiesDialogView(),
+            ChooseConsoleDialogViewModel => new Views.DialogViews.ChooseConsoleDialogView(),
+            RenameDialogViewModel => new Views.DialogViews.RenameDialogView(),
             _ => null,
         };
         if (view is null) return new TextBlock { Text = "No view for " + param.GetType().Name };
-        if (param is not RomDetailsViewModel) _cache.Add(param, view);
+        if (param is not (RomDetailsViewModel or DialogViewModel)) _cache.Add(param, view);
         return view;
     }
 

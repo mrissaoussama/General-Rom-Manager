@@ -1,0 +1,13 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:AvaloniaUI.ViewModels"
+             x:Class="AvaloniaUI.Views.DialogViews.ConfirmDialogView"
+             x:DataType="vm:ConfirmDialogViewModel">
+    <StackPanel Spacing="12">
+        <TextBlock Text="{Binding Message}" TextWrapping="Wrap" />
+        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+            <Button Content="Cancel" IsCancel="True" Command="{Binding CancelCommand}" />
+            <Button Content="{Binding ConfirmText}" IsDefault="True" Command="{Binding ConfirmCommand}" />
+        </StackPanel>
+    </StackPanel>
+</UserControl>

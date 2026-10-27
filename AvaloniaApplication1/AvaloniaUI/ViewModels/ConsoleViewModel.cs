@@ -74,7 +74,7 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
         {
             if (!reporter.HasVersionDatabase)
             {
-                if (!await Shell.ConfirmAsync("Missing updates",
+                if (!await Dialogs.ConfirmAsync("Missing updates",
                         "The version database has not been downloaded yet. Download it now?", "Download"))
                     return;
                 StatusMessage = "Downloading version database...";
@@ -93,9 +93,9 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
             var summary = missing.Count == 0
                 ? "Every game in the library has its latest update."
                 : $"{missing.Count} game(s) have a newer update than the newest one in the library (installed → latest).";
-            await Shell.ShowDialogAsync(new PreviewWindow("Missing updates", summary,
+            await Dialogs.PreviewAsync("Missing updates", summary,
                 missing.Select(m => $"{m.Title}  [{m.Game.TitleID}]  v{m.InstalledVersion} → v{m.LatestVersion}"),
-                "Close", showCancel: false));
+                "Close", showCancel: false);
         }
         catch (Exception ex)
         {

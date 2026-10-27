@@ -1,0 +1,10 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:AvaloniaUI.ViewModels"
+        x:Class="AvaloniaUI.Views.DialogWindow"
+        x:DataType="vm:DialogViewModel"
+        Title="{Binding Title}"
+        CanResize="{Binding CanResize}"
+        WindowStartupLocation="CenterOwner">
+    <ContentControl Content="{Binding}" Margin="16" />
+</Window>

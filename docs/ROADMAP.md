@@ -69,7 +69,9 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
 
 ## Phase D: UI and UX
 
-- [ ] **[P1]** `IDialogService`; Settings, Onboarding and the preview/properties windows as AXAML views.
+- [x] **[P1]** `IDialogService` (`DialogService.Current`, faked in tests); confirm, preview, properties, rename and
+      choose-console dialogs are AXAML views hosted by `DialogWindow`.
+- [ ] Settings and Onboarding as AXAML views (still built in code; shown through `IDialogService.ShowWindowAsync`).
 - [x] Settings: toggle Redump hashing (settings.json overrides config.json).
 - [ ] Settings: scan parallelism, DAT file overview per console.
 - [x] Plugins page: the enable/disable toggle is now enforced (it was saved but ignored), permissions
