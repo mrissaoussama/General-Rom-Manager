@@ -114,6 +114,7 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
         var pluginActions = pluginManager is null
             ? []
             : pluginManager.GetPluginsForConsole(ConsoleName)
+                .Where(p => Settings.Instance.IsPluginEnabled(p.PluginName))
                 .SelectMany(p => p.Options.Select((opt, i) => (IConsoleRomAction)new PluginRomAction(p, i, opt)));
 
         var roms = selectedRoms.ToList();

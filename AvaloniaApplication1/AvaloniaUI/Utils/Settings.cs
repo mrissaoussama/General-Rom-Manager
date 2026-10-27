@@ -78,6 +78,8 @@ public class Settings
     /// When true, auto-download missing database files on startup. Default: false.
     /// </summary>
     public bool AutoDownloadMissingDBs { get; set; } = false;
+    /// <summary>Hash whole disc images for Redump matching; null = use config.json.</summary>
+    public bool? HashDiscImages { get; set; }
 
     // ── Config URL / path overrides (user can override config.json defaults) ──
     /// <summary>Override for Switch TitleDB base URL.</summary>

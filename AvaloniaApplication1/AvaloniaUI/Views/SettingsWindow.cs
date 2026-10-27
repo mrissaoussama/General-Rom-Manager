@@ -221,6 +221,18 @@ public sealed class SettingsWindow : Window
         };
         sp.Children.Add(autoDlCheck);
 
+        var redumpCheck = new CheckBox
+        {
+            Content = "Hash disc images for Redump DAT matching (slow on first scan; results are cached)",
+            IsChecked = RomManagerShared.Utils.Dat.DiscHashing.Enabled,
+        };
+        redumpCheck.IsCheckedChanged += (_, _) =>
+        {
+            settings.HashDiscImages = redumpCheck.IsChecked ?? false;
+            RomManagerShared.Utils.Dat.DiscHashing.UserOverride = settings.HashDiscImages;
+        };
+        sp.Children.Add(redumpCheck);
+
         // Reuses MainViewModel's missing-resource check + download manager.
         var dlStatus = MakeLabel("", fontSize: 11, muted: true);
         dlStatus.VerticalAlignment = VerticalAlignment.Center;
@@ -608,6 +620,20 @@ public sealed class SettingsWindow : Window
             if (plugin.SupportedConsoles?.Count > 0)
                 infoPanel.Children.Add(MakeLabel(
                     $"Consoles: {string.Join(", ", plugin.SupportedConsoles)}", fontSize: 11, muted: true));
+            infoPanel.Children.Add(MakeLabel(
+                $"Permissions: {(plugin.RequiredPermissions.Count == 0 ? "none" : string.Join(", ", plugin.RequiredPermissions))}",
+                fontSize: 11, muted: true));
+            var revoke = new Button { Content = "Revoke approval", Classes = { "small" }, HorizontalAlignment = HorizontalAlignment.Left };
+            ToolTip.SetTip(revoke, "Ask again before loading this plugin next time (it stays loaded until restart)");
+            var pluginName = plugin.PluginName;
+            revoke.Click += (_, _) =>
+            {
+                _plugins?.Approvals.Revoke(pluginName);
+                settings.SetPluginEnabled(pluginName, false);
+                revoke.IsEnabled = false;
+                revoke.Content = "Approval revoked";
+            };
+            infoPanel.Children.Add(revoke);
 
             Grid.SetColumn(infoPanel, 0);
             rowGrid.Children.Add(infoPanel);

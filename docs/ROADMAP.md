@@ -68,8 +68,10 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
 ## Phase D: UI and UX
 
 - [ ] **[P1]** `IDialogService`; Settings, Onboarding and the preview/properties windows as AXAML views.
-- [ ] Settings: toggle Redump hashing, scan parallelism, manage DAT files (which consoles are covered).
-- [ ] Plugins page: enable/disable, revoke approval, show declared permissions.
+- [x] Settings: toggle Redump hashing (settings.json overrides config.json).
+- [ ] Settings: scan parallelism, DAT file overview per console.
+- [x] Plugins page: the enable/disable toggle is now enforced (it was saved but ignored), permissions
+      shown, "Revoke approval".
 - [x] Unrecognised files: "Move to folder…" from the list (preview, keeps sub-folders, rescans after).
 - [ ] Profile the card view with 5k+ rows on a real library.
 - [ ] Keyboard navigation in the card view.

@@ -17,8 +17,7 @@ public abstract class DiscDatTitleInfoProvider<T> : ITitleInfoProvider<T>, IHasD
 
     public string Source { get; set; } = "Redump DAT";
 
-    public static bool Enabled =>
-        bool.TryParse(RomManagerConfiguration.Configuration.GetSection("Dats:HashDiscImages").Value, out var v) && v;
+    public static bool Enabled => DiscHashing.Enabled;
 
     /// <summary>True for DAT file names that belong to this console.</summary>
     protected abstract bool MatchesDat(string fileName);
@@ -118,6 +117,16 @@ public abstract class DiscDatTitleInfoProvider<T> : ITitleInfoProvider<T>, IHasD
             ArrayPool<byte>.Shared.Return(buffer);
         }
     }
+}
+
+/// <summary>Whether disc images are hashed for Redump matching: the user setting, else config.json.</summary>
+public static class DiscHashing
+{
+    /// <summary>Set by the app from settings.json; null falls back to <c>Dats:HashDiscImages</c>.</summary>
+    public static bool? UserOverride { get; set; }
+
+    public static bool Enabled => UserOverride
+        ?? (bool.TryParse(RomManagerConfiguration.Configuration.GetSection("Dats:HashDiscImages").Value, out var v) && v);
 }
 
 // Redump DAT file names: "<Company> - <System> - Datfile (...)".
