@@ -88,7 +88,7 @@ public class FileUtils
         try
         {
             string fileName = Path.GetFileName(filePath);
-            string fileDirectory = Path.GetDirectoryName(filePath);
+            string fileDirectory = Path.GetDirectoryName(filePath) ?? "";
             string errorFilesDirectory = Path.Combine(fileDirectory, "ErrorFiles");
             Directory.CreateDirectory(errorFilesDirectory);
             string errorFilePath = Path.Combine(errorFilesDirectory, fileName);
@@ -203,7 +203,7 @@ public class FileUtils
 
     public static bool IsNestedFolder(string nestedFolderPath)
     {
-        string parentFolderName = Path.GetFileName(Path.GetDirectoryName(nestedFolderPath));
+        string parentFolderName = Path.GetFileName(Path.GetDirectoryName(nestedFolderPath)) ?? "";
         if (string.IsNullOrEmpty(parentFolderName))
         {
             return false;
@@ -216,7 +216,7 @@ public class FileUtils
     public static bool DriveHasEnoughSpace(long fileSize, string destinationFolder)
     {
         // Check if there is enough space in the destination folder
-        DriveInfo drive = new DriveInfo(Path.GetPathRoot(destinationFolder));
+        DriveInfo drive = new DriveInfo(Path.GetPathRoot(destinationFolder) ?? destinationFolder);
         return drive.AvailableFreeSpace > fileSize;
     }
 

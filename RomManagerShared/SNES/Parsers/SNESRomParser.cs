@@ -12,6 +12,7 @@ public class SNESRomParser : IRomParser<SNESConsole>
     public List<string> Extensions { get; set; }
     public static IEnumerable<string> GetRegionAndLanguage(Rom DSrom)
     {
+        if (DSrom.TitleID is not { Length: >= 3 }) yield break;
         char lastCharacter = DSrom.TitleID[2];        switch (lastCharacter)
         {
             case 'U':

@@ -22,12 +22,12 @@ public class WiiUXmlParser : IRomParser<WiiUConsole>
         {
             return [];
         }
-        string DirectoryName = Path.GetDirectoryName(path);
+        string DirectoryName = Path.GetDirectoryName(path) ?? "";
 
         Rom rom = new();
         string appXmlPath = Path.Combine(DirectoryName, "app.xml");
-        string codedir = Path.GetDirectoryName(path);
-        string gamedir = Path.GetDirectoryName(codedir);
+        string codedir = Path.GetDirectoryName(path) ?? "";
+        string gamedir = Path.GetDirectoryName(codedir) ?? "";
 
         if (File.Exists(appXmlPath))
         {

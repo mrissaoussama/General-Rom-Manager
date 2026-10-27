@@ -43,11 +43,11 @@ public class ThreeDSJsonTitleInfoProvider :TitleInfoProvider<ThreeDSConsole>,ICa
             string regionFilePath = Path.Combine(Source, regionFile);            try
             {
                 var jsonContent = await File.ReadAllTextAsync(regionFilePath);
-                var regionTitles = JsonSerializer.Deserialize<List<JsonElement>>(jsonContent);                foreach (var title in regionTitles)
+                var regionTitles = JsonSerializer.Deserialize<List<JsonElement>>(jsonContent);                foreach (var title in regionTitles ?? [])
                 {
                     // Assuming "TitleID" is unique, you can use it as the key
                     var titleId = title.GetProperty("TitleID").GetString();
-                    TitlesJson[titleId] = title;
+                    if (titleId is not null) TitlesJson[titleId] = title;
                 }
             }
             catch (JsonException ex)
@@ -71,9 +71,9 @@ public class ThreeDSJsonTitleInfoProvider :TitleInfoProvider<ThreeDSConsole>,ICa
 
     }    public override async Task<Rom> GetTitleInfo(Rom rom)
     {
-        if (TitlesJson.TryGetValue(rom.TitleID, out var titleInfoElement))
+        if (rom.TitleID is not null && TitlesJson is not null && TitlesJson.TryGetValue(rom.TitleID, out var titleInfoElement))
         {
-            ThreeDSJsonDTO titleInfoDto = JsonElementToDto(titleInfoElement);            rom.AddTitleName(titleInfoDto.Name);
+            ThreeDSJsonDTO titleInfoDto = JsonElementToDto(titleInfoElement);            if (titleInfoDto.Name is not null) rom.AddTitleName(titleInfoDto.Name);
             if (rom.Version == null || rom.Version == "0" || int.Parse(rom.Version) < 0)
                 rom.Version = titleInfoDto.Version;
             rom.Publisher = titleInfoDto.Publisher;
@@ -90,17 +90,17 @@ public class ThreeDSJsonTitleInfoProvider :TitleInfoProvider<ThreeDSConsole>,ICa
             Name = titleInfoElement.GetProperty("Name").GetString(),
             UID = titleInfoElement.GetProperty("UID").GetString(),
             TitleID = titleInfoElement.GetProperty("TitleID").GetString(),
-            Version = ThreeDSJsonDTO.NormalizeVersion(titleInfoElement.GetProperty("Version").GetString()),
+            Version = ThreeDSJsonDTO.NormalizeVersion(titleInfoElement.GetProperty("Version").GetString() ?? ""),
             ProductCode = titleInfoElement.GetProperty("Product Code").GetString(),
             Publisher = titleInfoElement.GetProperty("Publisher").GetString(),
-            Size = ThreeDSJsonDTO.ParseSize(titleInfoElement.GetProperty("Size").GetString())
+            Size = ThreeDSJsonDTO.ParseSize(titleInfoElement.GetProperty("Size").GetString() ?? "")
         };
     }
 
     public string GetRelatedGameRomName(string titleID)
     {
         titleID = titleID.Replace("0004008C", "00040000");
-        if (TitlesJson.TryGetValue(titleID, out var titleInfoElement))
+        if (TitlesJson is not null && TitlesJson.TryGetValue(titleID, out var titleInfoElement))
         {
             var name = titleInfoElement.GetProperty("Name").GetString();
             return name ?? "";

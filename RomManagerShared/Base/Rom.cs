@@ -323,7 +323,7 @@ public class Rating
             AddContent(Enum.Parse<RatingContent>(ratingContent));
 
         }
-        catch (ArgumentException ex)
+        catch (ArgumentException)
         {
             FileUtils.Log($"Rating Content {ratingContent} not found");
         }

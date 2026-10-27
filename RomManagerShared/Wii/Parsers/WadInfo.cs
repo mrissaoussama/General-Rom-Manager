@@ -298,7 +298,7 @@ public class WadInfo
         int count = -1;
         for (int i = 0; i < 32; i += 2)
             cheese[++count] = byte.Parse(water.Remove(0, i).Remove(2), System.Globalization.NumberStyles.HexNumber);
-        try { Directory.CreateDirectory(Path.GetDirectoryName(WiiConfiguration.GetWadCommonKeyPath())); } catch { /* best-effort */ }
+        try { Directory.CreateDirectory(Path.GetDirectoryName(WiiConfiguration.GetWadCommonKeyPath())!); } catch { /* best-effort */ }
         using FileStream keystream = new(WiiConfiguration.GetWadCommonKeyPath(), FileMode.Create);
         keystream.Write(cheese, 0, cheese.Length);
     }

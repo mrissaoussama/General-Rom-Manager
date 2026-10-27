@@ -9,7 +9,7 @@ namespace RomManagerShared.Utils;
 
 public class RomUtils
 {
-    static List<string> processedPaths = [];
+    static List<string> processedPaths = [];
     public static void CopyNonNullProperties(object source, object destination)
     {
         if (source == null || destination == null)
@@ -29,7 +29,7 @@ public class RomUtils
 
             if (destinationProperty != null)
             {
-                object value = sourceProperty.GetValue(source);
+                object? value = sourceProperty.GetValue(source);
                 if (value != null)
                 {
                     destinationProperty.SetValue(destination, value);
@@ -56,7 +56,7 @@ public class RomUtils
 
             if (destinationProperty != null)
             {
-                object value = sourceProperty.GetValue(source);
+                object? value = sourceProperty.GetValue(source);
                 destinationProperty.SetValue(destination, value);
             }
         }
@@ -92,59 +92,29 @@ public class RomUtils
         }
     }    public static string GetRomListSize(List<Rom> romList)
     {
-        return romList.Sum(x => x.Size).ToString();
+        return (romList.Sum(x => x.Size) ?? 0).ToString();
     }
 
+    /// <summary>The folder that holds a folder-format rom, found from the marker file the parser opened.</summary>
     public static string GetRomBaseFolder(Rom rom)
-    {if (rom.Path is null)
+    {
+        if (rom.Path is null)
             throw new ArgumentException("rom path invalid");
-    if (rom.IsFolderFormat is false)
+        if (!rom.IsFolderFormat)
             return rom.Path;
-       if(rom is IWiiURom)
+
+        var file = Path.GetFileName(rom.Path).ToLowerInvariant();
+        var parent = Path.GetDirectoryName(rom.Path);
+        var grandParent = parent is null ? null : Path.GetDirectoryName(parent);
+        var folder = (rom, file) switch
         {
-            if(rom.Path.ToLower().EndsWith("app.xml"))
-            {
-                DirectoryInfo directory = Directory.GetParent(Directory.GetParent(rom.Path).FullName);
-                return directory.FullName;
-            }
-            if (rom.Path.ToLower().EndsWith("title.tmd"))
-            {
-                DirectoryInfo directory = Directory.GetParent(rom.Path);
-                return directory.FullName;
-            }
-        }
-       if(rom is IPS3Rom)
-        {
-            if (rom.Path.ToLower().EndsWith("param.sfo"))
-            {
-                DirectoryInfo directory = Directory.GetParent(Directory.GetParent(rom.Path).FullName);
-                return directory.FullName;
-            }
-        }
-        if (rom is IPSVitaRom)
-        {
-            if (rom.Path.ToLower().EndsWith("param.sfo"))
-            {
-                DirectoryInfo directory = Directory.GetParent(Directory.GetParent(rom.Path).FullName);
-                return directory.FullName;
-            }
-        }
-        if (rom is IOriginalXboxRom)
-        {
-            if (rom.Path.ToLower().EndsWith("default.xbe"))
-            {
-                DirectoryInfo directory = Directory.GetParent(rom.Path);
-                return directory.FullName;
-            }
-        }
-        if (rom is IXbox360Rom)
-        {
-            if (rom.Path.ToLower().EndsWith("default.xex"))
-            {
-                DirectoryInfo directory = Directory.GetParent(rom.Path);
-                return directory.FullName;
-            }
-        }
-        return rom.Path;
+            (IWiiURom, "app.xml") => grandParent,          // <title>/code/app.xml
+            (IWiiURom, "title.tmd") => parent,
+            (IPS3Rom or IPSVitaRom, "param.sfo") => grandParent, // <title>/sce_sys/param.sfo
+            (IOriginalXboxRom, "default.xbe") => parent,
+            (IXbox360Rom, "default.xex") => parent,
+            _ => null,
+        };
+        return folder ?? rom.Path;
     }
 }

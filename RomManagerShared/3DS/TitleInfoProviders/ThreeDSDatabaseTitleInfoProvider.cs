@@ -14,7 +14,8 @@ public class ThreeDSDatabaseTitleInfoProvider : TitleInfoProvider<ThreeDSConsole
         TitlesDatabase = repo;
     }    public override async Task<Rom> GetTitleInfo(Rom rom)
     {
-        var titleInfoDto =await TitlesDatabase.GetByPropertyAsync(nameof(ThreeDSJsonDTO.TitleID), rom.TitleID);
+        if (rom.TitleID is null) return rom;
+        var titleInfoDto = await TitlesDatabase.GetByPropertyAsync(nameof(ThreeDSJsonDTO.TitleID), rom.TitleID);
         if (titleInfoDto is not null) { 
             
             rom.AddTitleName(titleInfoDto.Name!);

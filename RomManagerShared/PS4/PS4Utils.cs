@@ -21,6 +21,7 @@ public class PS4Utils
             return "0";
     }    public static string GetTitleIDFromProductCode(string? productCode)
     {
+        if (productCode is null) return string.Empty;
         int startIndex = productCode.IndexOf('-') + 1;
         int endIndex = productCode.IndexOf('_', startIndex);
         var titleid = productCode[startIndex..endIndex];

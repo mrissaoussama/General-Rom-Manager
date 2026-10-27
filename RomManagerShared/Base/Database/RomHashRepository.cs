@@ -51,7 +51,7 @@ public class RomHashRepository
         return 0;
     }
     // Method to get a RomHash by its ID
-    public RomHash GetRomHashById(int id)
+    public RomHash? GetRomHashById(int id)
     {
         return RomHashes.FirstOrDefault(rh => rh.Id == id);
     }
@@ -68,13 +68,13 @@ public class RomHashRepository
         var roms = _context.Roms
                       .Where(r => r.TitleID == titleId);
 
-        var hashes = roms.SelectMany(r => r.Hashes); // Flatten the list of hashes from all ROMs
+        var hashes = roms.SelectMany(r => r.Hashes ?? new List<RomHash>()); // Flatten the list of hashes from all ROMs
 
         return hashes.ToList();
     }
 
     // Method to get a RomHash by its Value
-    public RomHash GetRomHashByValue(string value)
+    public RomHash? GetRomHashByValue(string value)
     {
         return RomHashes.FirstOrDefault(rh => rh.Value == value);
     }
@@ -94,13 +94,13 @@ public class RomHashRepository
     // Method to get a collection of RomHashes by Filename and guaranteeing a specific RomHashProperty key or value
     public IEnumerable<RomHash> GetRomHashesByFilenameWithProperty(string filename, string key, string value)
     {
-        return RomHashes.Where(rh => rh.Filename == filename && rh.Properties.Any(p => p.Key == key && p.Value == value));
+        return RomHashes.Where(rh => rh.Filename == filename && rh.Properties != null && rh.Properties.Any(p => p.Key == key && p.Value == value));
     }
 
     // Method to get a collection of RomHashes by Extension and guaranteeing a specific RomHashProperty key or value
     public IEnumerable<RomHash> GetRomHashesByExtensionWithProperty(string extension, string key, string value)
     {
-        return RomHashes.Where(rh => rh.Extension == extension && rh.Properties.Any(p => p.Key == key && p.Value == value));
+        return RomHashes.Where(rh => rh.Extension == extension && rh.Properties != null && rh.Properties.Any(p => p.Key == key && p.Value == value));
     }
 }
 

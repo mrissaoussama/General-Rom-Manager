@@ -23,7 +23,7 @@ public class PSVitaFolderRomParser : IRomParser<PSVitaConsole>
             try
             {
                 // Set ROM path to the directory containing sce_sys folder
-                string romRootPath = Directory.GetParent(Path.GetDirectoryName(path)).FullName;
+                string romRootPath = Directory.GetParent(Path.GetDirectoryName(path) ?? path)?.FullName ?? path;
 
                 using FileStream fileStream = new(path, FileMode.Open, FileAccess.Read);
                 using MemoryStream memoryStream = new();

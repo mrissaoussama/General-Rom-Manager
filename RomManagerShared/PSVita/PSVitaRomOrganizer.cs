@@ -194,7 +194,7 @@ namespace RomManagerShared.PSVita
             }
 
             // Check free space
-            var drive = new DriveInfo(Path.GetPathRoot(DestinationDirectory));
+            var drive = new DriveInfo(Path.GetPathRoot(DestinationDirectory) ?? DestinationDirectory);
             if (drive.AvailableFreeSpace < MinFreeSpace)
             {
                 FileUtils.Log($"Insufficient disk space: {FileUtils.FormatFileSize(drive.AvailableFreeSpace)} available");
@@ -233,7 +233,7 @@ namespace RomManagerShared.PSVita
             string currentPath = path;
             while (!string.IsNullOrEmpty(currentPath))
             {
-                currentPath = Path.GetDirectoryName(currentPath);
+                currentPath = Path.GetDirectoryName(currentPath)!;
                 if (string.IsNullOrEmpty(currentPath))
                     break;
 
@@ -412,7 +412,7 @@ namespace RomManagerShared.PSVita
             {
                 string patchFolder;
 
-                if (organizedGames.TryGetValue(titleId, out string gameFolder))
+                if (organizedGames.TryGetValue(titleId, out string? gameFolder))
                 {
                     // Update belongs to known game
                     patchFolder = Path.Combine(gameFolder, "patch");
@@ -457,7 +457,7 @@ namespace RomManagerShared.PSVita
                 string gameId = titleId.Substring(0, 9); // First 9 chars (PCSE00123)
                 string dlcFolder;
 
-                if (organizedGames.TryGetValue(gameId, out string gameFolder))
+                if (organizedGames.TryGetValue(gameId, out string? gameFolder))
                 {
                     // DLC belongs to known game
                     string addcontFolder = Path.Combine(gameFolder, "addcont");
@@ -502,7 +502,7 @@ namespace RomManagerShared.PSVita
             {
                 string licenseFolder;
 
-                if (organizedGames.TryGetValue(titleId, out string gameFolder))
+                if (organizedGames.TryGetValue(titleId, out string? gameFolder))
                 {
                     // License belongs to known game
                     licenseFolder = Path.Combine(gameFolder, "license");
@@ -619,7 +619,7 @@ namespace RomManagerShared.PSVita
             if (!File.Exists(filePath) || DryRun)
                 return filePath;
 
-            string dir = Path.GetDirectoryName(filePath);
+            string dir = Path.GetDirectoryName(filePath) ?? "";
             string name = Path.GetFileNameWithoutExtension(filePath);
             string ext = Path.GetExtension(filePath);
 

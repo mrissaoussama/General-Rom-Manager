@@ -86,11 +86,11 @@ public class GenericRepository<TEntity> where TEntity : class
         var tasks = entities
             .Select((entity, index) =>
             {
-                var tidValue = (string)tidProperty.GetValue(entity);
+                var tidValue = tidProperty?.GetValue(entity) as string;
                 return new { Entity = entity, Index = index, TidValue = tidValue };
             })
             .Where(entry => entry.TidValue is not null)
-            .Select(entry => AddOrUpdateByTitleIDAsync(entry.Entity, entry.TidValue, false));
+            .Select(entry => AddOrUpdateByTitleIDAsync(entry.Entity, entry.TidValue ?? "", false));
 
         await Task.WhenAll(tasks);
         if (entities.Any())

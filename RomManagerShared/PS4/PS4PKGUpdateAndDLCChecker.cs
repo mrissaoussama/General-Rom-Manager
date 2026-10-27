@@ -24,12 +24,12 @@ public class PS4PKGUpdateAndDLCChecker
     public async Task<List<Rom>> GetDLCList(Rom ps4rom)
     {
         string url = string.Empty;
-        List<Rom> dlcs = [];        if (CheckedTitleIDDLC.Contains(ps4rom.TitleID)) { return dlcs; }
+        List<Rom> dlcs = [];        if (ps4rom.TitleID is null || CheckedTitleIDDLC.Contains(ps4rom.TitleID)) { return dlcs; }
         CheckedTitleIDDLC.Add(ps4rom.TitleID);        var handler = new HttpClientHandler
         {
             AllowAutoRedirect = false
         };
-        HttpClient client = new(handler);        string[] priorityRegions = ps4rom.Regions.Contains(Region.USA)
+        HttpClient client = new(handler);        string[] priorityRegions = ps4rom.Regions?.Contains(Region.USA) == true
             ? northAmericaRegions.Concat(europeRegions).ToArray()
             : europeRegions.Concat(northAmericaRegions).ToArray();        foreach (var regioncode in priorityRegions)
         {
@@ -43,7 +43,7 @@ public class PS4PKGUpdateAndDLCChecker
             }
         }
         string html = await client.GetStringAsync(url);        HtmlDocument doc = new();
-        doc.LoadHtml(html);        HtmlNode scriptNode = doc.DocumentNode.SelectSingleNode("//div[@class='pdp-add-ons']//script[@type='application/json']");
+        doc.LoadHtml(html);        HtmlNode? scriptNode = doc.DocumentNode.SelectSingleNode("//div[@class='pdp-add-ons']//script[@type='application/json']");
         if (scriptNode != null)
         {
             string jsonData = scriptNode.InnerText; JsonDocument jsonDoc = JsonDocument.Parse(jsonData);
@@ -55,10 +55,10 @@ public class PS4PKGUpdateAndDLCChecker
                     {
                         var productData = cacheItem.Value;                        rom.ProductCode = productData.GetProperty("id").GetString();
                         rom.TitleID = PS4Utils.GetTitleIDFromProductCode(rom.ProductCode);
-                        rom.Images.Add(productData.GetProperty("boxArt").GetProperty("url").GetString());
+                        if (productData.GetProperty("boxArt").GetProperty("url").GetString() is { } boxArt) rom.AddImage(boxArt);
                         //  rom.Rating = productData.GetProperty("contentRating").GetProperty("name").GetString();
                         //   rom.Type = productData.GetProperty("localizedStoreDisplayClassification").GetString();
-                        rom.AddTitleName(productData.GetProperty("name").GetString());
+                        if (productData.GetProperty("name").GetString() is { } dlcName) rom.AddTitleName(dlcName);
                         //will eventually be used for ps5
                         //Platforms = productData.GetProperty("platforms").EnumerateArray().Select(p => p.GetString()).ToArray();
                         JsonElement localizedGenresElement = productData.GetProperty("localizedGenres");

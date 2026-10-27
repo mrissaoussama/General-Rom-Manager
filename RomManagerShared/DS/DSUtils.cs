@@ -38,6 +38,7 @@ public static class DSUtils
     }
     public static void GetRegionAndLanguage(Rom DSrom)
     {
+        if (DSrom.TitleID is not { Length: >= 4 }) return;
         char lastCharacter = DSrom.TitleID[3];
         switch (lastCharacter)
         {

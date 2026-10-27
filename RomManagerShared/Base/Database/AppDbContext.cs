@@ -144,7 +144,7 @@ public partial class AppDbContext : DbContext, IUnitOfWork
         }
     }
 
-    public async ValueTask DisposeAsync()
+    public override async ValueTask DisposeAsync()
     {
         if (_currentTransaction is not null)
         {

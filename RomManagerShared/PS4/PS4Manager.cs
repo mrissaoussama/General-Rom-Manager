@@ -45,7 +45,7 @@ RomParserExecutor<PS4Console> romParserExecutor)
         }
         // Find the update with the highest version
         PS4Update latestUpdate = (PS4Update)relatedUpdates
-            .OrderByDescending(rom => Version.Parse(((PS4Update)rom).Version))
+            .OrderByDescending(rom => Version.TryParse(((PS4Update)rom).Version, out var v) ? v : new Version())
             .First();
         return latestUpdate;
     }

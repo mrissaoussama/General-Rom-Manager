@@ -203,7 +203,7 @@ public class SwitchRomNSPXCIParser : IRomParser<SwitchConsole>, IHasRequirements
                 var id = new Nca(keyset, ncaFile.Get.AsStorage()).Header.TitleId.ToString("X16");
                 if (roms.Any(x => x.TitleID == id))
                     continue;
-                var rom = (Rom)Activator.CreateInstance(SwitchUtils.GetRomMetadataClass(id))!;
+                var rom = (Rom)Activator.CreateInstance(SwitchUtils.GetRomMetadataClass(id) ?? typeof(SwitchGame))!;
                 rom.TitleID = id;
                 rom.Path = path;
                 roms.Add(rom);

@@ -18,7 +18,8 @@ public static class HashUtils
         }
         else
         {
-            var hashes= await CalculateFileHashes(rom.Path, hashTypes);
+            if (rom.Path is null) return rom.Hashes;
+        var hashes= await CalculateFileHashes(rom.Path, hashTypes);
             rom.Hashes.AddRange(hashes);
             return hashes;
         }
