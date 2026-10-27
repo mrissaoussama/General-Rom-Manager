@@ -11,9 +11,8 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
 
 ## Phase A: Dependencies and build
 
-- [ ] **[P1]** Clear the remaining RomManagerShared warnings (121 nullable warnings in first-party code:
-      Switch/3DS title providers, PS Vita organizer, repositories), then turn on
-      `TreatWarningsAsErrors` and `AnalysisLevel latest` for it.
+- [x] **[P1]** Clear the remaining RomManagerShared warnings and treat warnings as errors there too
+      (the whole solution now builds with zero warnings).
 - [ ] Remove `SkyEditor.Utilities.AsyncFor` (old netstandard package used by the vendored 3DS toolkit for
       `ProgressReportToken` and parallel loops). Replace with plain loops and a small progress type.
 - [ ] Align `Avalonia.Controls.ItemsRepeater` (11.1.5) and `Avalonia.Controls.DataGrid` with Avalonia.

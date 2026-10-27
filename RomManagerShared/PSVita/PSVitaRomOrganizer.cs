@@ -69,7 +69,7 @@ namespace RomManagerShared.PSVita
                         continue;
 
                     // Get the title ID if present
-                    string titleId = ExtractTitleId(path);
+                    string? titleId = ExtractTitleId(path);
                     if (string.IsNullOrEmpty(titleId))
                         continue;
 
@@ -247,7 +247,7 @@ namespace RomManagerShared.PSVita
         /// <summary>
         /// Extracts PS Vita title ID from path
         /// </summary>
-        private string ExtractTitleId(string path)
+        private string? ExtractTitleId(string path)
         {
             var match = TitleIdRegex.Match(path);
             return match.Success ? match.Groups[1].Value : null;
@@ -345,7 +345,7 @@ namespace RomManagerShared.PSVita
         /// <summary>
         /// Finds the root game folder for an organized structure
         /// </summary>
-        private string FindGameRootFolder(string path)
+        private string? FindGameRootFolder(string path)
         {
             // If it's the app folder, return parent
             if (path.EndsWith("\\app"))
@@ -368,7 +368,7 @@ namespace RomManagerShared.PSVita
         /// <summary>
         /// Organizes a PS Vita game
         /// </summary>
-        private string OrganizeGame(string sourcePath, string titleId)
+        private string? OrganizeGame(string sourcePath, string titleId)
         {
             try
             {

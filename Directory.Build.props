@@ -7,7 +7,7 @@
     <VersionPrefix>0.1.0</VersionPrefix>
     <!-- Symbols inside the assemblies so a single-file publish ships no loose .pdb files. -->
     <DebugType Condition="'$(Configuration)' == 'Release'">embedded</DebugType>
-    <!-- New warnings fail the build. RomManagerShared opts out until its warning backlog is cleared.
+    <!-- New warnings fail the build (the unmaintained Android/Browser heads opt out).
          Package vulnerability advisories stay warnings so a new advisory does not break unrelated builds. -->
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>

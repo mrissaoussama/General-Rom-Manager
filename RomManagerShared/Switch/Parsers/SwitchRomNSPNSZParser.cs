@@ -50,8 +50,8 @@ public class SwitchRomNSPNSZParser : IRomParser<SwitchConsole>
                     string? requiredSystemVersion = xmlDoc.SelectSingleNode("//RequiredSystemVersion")?.InnerText;                    Rom? rom = list.FirstOrDefault(x => x.TitleID == id);
                     if (rom is null)
                     {
-                        var romtype = SwitchUtils.GetRomMetadataClass(id);
-                        rom = Activator.CreateInstance(romtype) as Rom;
+                        var romtype = SwitchUtils.GetRomMetadataClass(id ?? "") ?? typeof(SwitchGame);
+                        rom = (Rom)Activator.CreateInstance(romtype)!;
                     }
                     rom.TitleID = id;
                     rom.Path = switchRomPath;
@@ -67,8 +67,8 @@ public class SwitchRomNSPNSZParser : IRomParser<SwitchConsole>
             Rom? rom = list.FirstOrDefault(x => x.TitleID == id);
             if (rom is null)
             {
-                var romtype = SwitchUtils.GetRomMetadataClass(id);
-                rom = Activator.CreateInstance(romtype) as Rom;
+                var romtype = SwitchUtils.GetRomMetadataClass(id ?? "") ?? typeof(SwitchGame);
+                rom = (Rom)Activator.CreateInstance(romtype)!;
             }
             rom.TitleID = id;
             rom.Path = switchRomPath;

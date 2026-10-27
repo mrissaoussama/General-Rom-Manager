@@ -59,11 +59,11 @@ public class WiiUXmlParser : IRomParser<WiiUConsole>
                 images.Add(bootDrcTexpath);
             rom.AddImages(images);
         }
-        var metadataClass = WiiUUtils.GetRomMetadataClass(rom.TitleID);
+        var metadataClass = WiiUUtils.GetRomMetadataClass(rom.TitleID ?? "") ?? rom.GetType();
         if (metadataClass != rom.GetType())
         {
-            var metadataInstance = Activator.CreateInstance(metadataClass);
-            RomUtils.CopyNonNullProperties(rom, (Rom)metadataInstance);
+            var metadataInstance = (Rom)Activator.CreateInstance(metadataClass)!;
+            RomUtils.CopyNonNullProperties(rom, metadataInstance);
             rom = (Rom)metadataInstance;
         }
         rom.Path = path;

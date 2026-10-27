@@ -23,9 +23,8 @@ dotnet run --project tools/ParserHarness -- PS4Console "Y:\roms\PS4" 5
   items carry no `Version`. Solution file: `RomManager.slnx`.
 - `AvaloniaUI.Android` / `AvaloniaUI.Browser` target net9.0-* and are not maintained; only the
   Desktop head matters.
-- Warnings are errors in every project except `RomManagerShared` (backlog, ROADMAP phase A). Don't
-  add new ones there either. Vendored code in `Utils/ISO2GOD` and `3DS/Ctr` is marked
-  `#nullable disable warnings`.
+- Warnings are errors in every project (the solution builds with zero warnings). Vendored code in
+  `Utils/ISO2GOD` and `3DS/Ctr` is marked `#nullable disable warnings`.
 
 ## Layout
 

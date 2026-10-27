@@ -60,7 +60,7 @@ public static class SwitchConfiguration
         if (!RomManagerConfiguration.ConfigurationLoaded) return null;
         var regionFilesSection = RomManagerConfiguration.Configuration.GetSection("Switch:TitleDB:RegionFiles");
         var regionFiles = regionFilesSection.GetChildren().Select(section => section.Value).Where(v => v != null).ToArray()!;
-        return regionFiles.Length > 0 ? regionFiles! : null;
+        return regionFiles.Length > 0 ? regionFiles.Select(v => v!).ToArray() : null;
     }
 
     public static string GetGlobalTitleDBUrl()

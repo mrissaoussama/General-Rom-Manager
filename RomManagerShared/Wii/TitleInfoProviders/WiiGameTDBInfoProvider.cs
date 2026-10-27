@@ -100,7 +100,7 @@ public class WiiGameTDBInfoProvider : ITitleInfoProvider<WiiConsole>
                 case "date":
                     var yearAttr = propertyNode.Attributes?["year"];
                     var monthAttr = propertyNode.Attributes?["month"];
-                    var dayAttr = propertyNode.Attributes["day"];                    if (yearAttr != null && monthAttr != null && dayAttr != null &&
+                    var dayAttr = propertyNode.Attributes?["day"];                    if (yearAttr != null && monthAttr != null && dayAttr != null &&
                         int.TryParse(yearAttr.Value, out var year) &&
                         int.TryParse(monthAttr.Value, out var month) &&
                         int.TryParse(dayAttr.Value, out var day))

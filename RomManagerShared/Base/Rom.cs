@@ -367,7 +367,7 @@ public class License
         Path = path;
     }
     public string LicenseId { get; set; } = "";
-    public Rom Rom { get; set; }
+    public Rom? Rom { get; set; }
     public string Path { get; set; }
     public string TitleID { get; set; } = "";
 }

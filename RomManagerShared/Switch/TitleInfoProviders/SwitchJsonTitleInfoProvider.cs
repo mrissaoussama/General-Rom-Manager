@@ -23,7 +23,7 @@ public class LongToStringConverter : JsonConverter<long?>
         }
         else if (reader.TokenType == JsonTokenType.String)
         {
-            string versionString = reader.GetString();
+            string? versionString = reader.GetString();
             if (versionString != null && long.TryParse(versionString, out long version))
             {
                 return version;
@@ -133,7 +133,7 @@ public class SwitchJsonTitleInfoProvider : TitleInfoProvider<SwitchConsole>, ICa
             FileUtils.Log($"[SwitchTitleDB] Global titledb not found at '{globalJsonPath}'. Run 'Check for Updates' to download.");
         }
 
-        foreach (var regionFile in SwitchConfiguration.GetTitleDBRegionFiles())
+        foreach (var regionFile in SwitchConfiguration.GetTitleDBRegionFiles() ?? [])
         {
             if (string.IsNullOrEmpty(regionFile)) continue;
             var regionPath = Path.Combine(Source, regionFile);
@@ -185,6 +185,7 @@ public class SwitchJsonTitleInfoProvider : TitleInfoProvider<SwitchConsole>, ICa
         var list = TitlesDatabase.Values
             .Select(title => JsonSerializer.Deserialize<SwitchJsonRomDTO>(title.GetRawText()))
             .Where(romDto => romDto != null && romDto.TitleID!=null && frequencies.ContainsKey(romDto.TitleID) && frequencies[romDto.TitleID] > 1)
+            .Select(romDto => romDto!)
             .ToList();
 
         // Call AddOrUpdateByPropertyRangeAsync with the filtered list
@@ -194,22 +195,22 @@ public class SwitchJsonTitleInfoProvider : TitleInfoProvider<SwitchConsole>, ICa
     public async override Task<Rom> GetTitleInfo(Rom rom)
     {
         // Not loaded yet (Setup skipped or download failed), or nothing to look up.
-        if (TitlesDatabase is null || string.IsNullOrEmpty(rom.TitleID))
+        if (TitlesDatabase is null || rom.TitleID is not { Length: > 0 } titleId)
             return rom;
 
         bool existsInDatabase = false;
         try
         {
-            if (TitlesDatabase.TryGetValue(rom.TitleID, out var titleInfo))
+            if (TitlesDatabase.TryGetValue(titleId, out var titleInfo))
             {
                 existsInDatabase = true;
-                var metadataClass = SwitchUtils.GetRomMetadataClass(rom.TitleID);
+                var metadataClass = SwitchUtils.GetRomMetadataClass(titleId) ?? rom.GetType();
                 UpdateRomIfDifferentType(ref rom, metadataClass);
 
                 rom = MapToRom(rom, titleInfo, metadataClass);
                 if (rom.Titles is not null)
                 {
-                    var valueswithid = rom.Titles.Where(x => x.Value.Contains(rom.TitleID)).ToList();
+                    var valueswithid = rom.Titles.Where(x => x.Value.Contains(titleId)).ToList();
                     if (rom.Titles.Count == valueswithid.Count || rom.Titles.Count == 0)
                         if (IsUpdateOrDLC(metadataClass))
                         {
@@ -236,9 +237,9 @@ public class SwitchJsonTitleInfoProvider : TitleInfoProvider<SwitchConsole>, ICa
 
         if (!existsInDatabase)
         {
-            var metadataClass = SwitchUtils.GetRomMetadataClass(rom.TitleID);
+            var metadataClass = SwitchUtils.GetRomMetadataClass(titleId) ?? rom.GetType();
             UpdateRomIfDifferentType(ref rom, metadataClass);
-            if (rom.Titles == null || rom.Titles.Count == 0 || rom.Titles.Count == rom.Titles.Where(x => x.Value.Contains(rom.TitleID)).ToList().Count)
+            if (rom.Titles == null || rom.Titles.Count == 0 || rom.Titles.Count == rom.Titles.Where(x => x.Value.Contains(titleId)).ToList().Count)
                 if (IsUpdateOrDLC(metadataClass))
                 {
                     HandleUpdateOrDLCTitle(rom);
@@ -253,9 +254,9 @@ public class SwitchJsonTitleInfoProvider : TitleInfoProvider<SwitchConsole>, ICa
         var romclasstype = rom.GetType();
         if (metadataClass != romclasstype)
         {
-            var metadataInstance = Activator.CreateInstance(metadataClass);
-            RomUtils.CopyNonNullProperties(rom, (Rom)metadataInstance);
-            rom = (Rom)metadataInstance;
+            var metadataInstance = (Rom)Activator.CreateInstance(metadataClass)!;
+            RomUtils.CopyNonNullProperties(rom, metadataInstance);
+            rom = metadataInstance;
         }
     }
 
@@ -282,7 +283,7 @@ public class SwitchJsonTitleInfoProvider : TitleInfoProvider<SwitchConsole>, ICa
         }
         if (rom.Titles != null)
         {
-            rom.Titles.RemoveAll(x => x.Value.Contains(rom.TitleID));
+            if (rom.TitleID is { } id) rom.Titles.RemoveAll(x => x.Value.Contains(id));
             if (rom.Titles.Count == 0)
                 rom.AddTitleName(relatedtitlename);
             else
@@ -296,6 +297,7 @@ public class SwitchJsonTitleInfoProvider : TitleInfoProvider<SwitchConsole>, ICa
 
     private string GetRelatedGameName(Rom rom)
     {
+        if (rom.TitleID is null || TitlesDatabase is null) return string.Empty;
         var sharedID = SwitchUtils.GetIdentifyingTitleID(rom.TitleID);
         var gameId = sharedID + "000";
 
@@ -325,18 +327,10 @@ public class SwitchJsonTitleInfoProvider : TitleInfoProvider<SwitchConsole>, ICa
 
     private static Rom MapToRom(Rom rom, JsonElement titleInfo, Type metadataClass)
     {
-        if (metadataClass != null)
-        {
-            var jsonString = titleInfo.GetRawText();
-            var romDto = JsonSerializer.Deserialize<SwitchJsonRomDTO>(jsonString);
-            // Copy non-null and non-default values from DTO to IRom
+        // Copy non-null and non-default values from DTO to IRom
+        if (JsonSerializer.Deserialize<SwitchJsonRomDTO>(titleInfo.GetRawText()) is { } romDto)
             CopyNonNullValues(romDto, rom);
-            return rom;
-        }
-        else
-        {
-            return null;
-        }
+        return rom;
     }
     private static void CopyNonNullValues(SwitchJsonRomDTO romDto, Rom rom)
     {
@@ -345,7 +339,7 @@ public class SwitchJsonTitleInfoProvider : TitleInfoProvider<SwitchConsole>, ICa
         if (romDto.TitleName is not null && (rom.Titles is null || !rom.Titles.Any(x => x.Value.Contains(romDto.TitleName))))
         {
             rom.AddTitleName(romDto.TitleName);
-            rom.Titles.RemoveAll(x => x.Value.Contains(rom.TitleID) || x.Value.Contains(romDto.TitleID));
+            rom.Titles!.RemoveAll(x => (rom.TitleID is { } id && x.Value.Contains(id)) || (romDto.TitleID is { } dtoId && x.Value.Contains(dtoId)));
 
         }
 

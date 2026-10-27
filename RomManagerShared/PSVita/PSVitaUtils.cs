@@ -61,7 +61,7 @@ public static class PSVitaUtils
     /// <summary>
     /// Extracts base Title ID from folder structure
     /// </summary>
-    public static string GetBaseTitleIdFromFolder(string folderPath)
+    public static string? GetBaseTitleIdFromFolder(string folderPath)
     {
         var sfoPath = Path.Combine(folderPath, "sce_sys", "param.sfo");
         if (!File.Exists(sfoPath)) return null;

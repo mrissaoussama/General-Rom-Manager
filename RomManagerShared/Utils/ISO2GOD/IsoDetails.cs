@@ -311,7 +311,6 @@ internal class IsoDetails
     {
         IsoDetailsResults isoDetailsResults = null;
         byte[] array = null;
-        string text = null;
         try
         {
             array = File.ReadAllBytes(xexfilepath);

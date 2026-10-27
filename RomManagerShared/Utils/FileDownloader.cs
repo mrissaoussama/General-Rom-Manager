@@ -37,16 +37,16 @@ public class FileDownloader
         MethodInfo[] methods = typeof(FileDownloader).GetMethods(BindingFlags.Public | BindingFlags.Static);
         foreach (MethodInfo method in methods)
         {
-            ResourceDownloadAttribute attribute = method.GetCustomAttribute<ResourceDownloadAttribute>();
+            ResourceDownloadAttribute attribute = method.GetCustomAttribute<ResourceDownloadAttribute>()!;
             if (attribute != null)
             {
                 DownloadMethodInfo info = new();
                 info.DownloadName = attribute.ResourceName;
-                MethodInfo getUrlMethod = attribute.ConfigurationTypes.GetMethod(attribute.ResourceURLsMethodNames);
-                MethodInfo getPathMethod = attribute.ConfigurationTypes.GetMethod(attribute.ResourcePathsMethodNames);
+                MethodInfo? getUrlMethod = attribute.ConfigurationTypes.GetMethod(attribute.ResourceURLsMethodNames);
+                MethodInfo? getPathMethod = attribute.ConfigurationTypes.GetMethod(attribute.ResourcePathsMethodNames);
 
-                object urlObject = getUrlMethod.Invoke(null, null);
-                object pathObject = getPathMethod.Invoke(null, null);
+                object? urlObject = getUrlMethod?.Invoke(null, null);
+                object? pathObject = getPathMethod?.Invoke(null, null);
 
                 if (urlObject is string[])
                 {
