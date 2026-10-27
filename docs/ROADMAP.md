@@ -47,7 +47,8 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
       fields (lists combined, flags OR-ed, so a second parser no longer clears `IsFolderFormat`); subclass
       properties via a cached property map.
 - [ ] Narrow `Rom`: platform-only fields move to subclasses.
-- [ ] Align namespaces with folders (mechanical, one PR, no behaviour change).
+- [x] Namespaces match folders (`NamespaceTests`). Mostly files moved (3DS → ThreeDS, N64 → Nintendo64,
+      Configuration/Parsers sub-folders) so stored rom type names stay valid; only parsers/readers changed namespace.
 - [ ] Split heavy consoles into module assemblies (ADR 0003 step 2: Switch/LibHac, Xbox/ISO2GOD).
 
 ### B.4 Scanning

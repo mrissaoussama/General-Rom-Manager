@@ -4,7 +4,8 @@ using AwesomeAssertions;
 using RomManagerShared.Base;
 using RomManagerShared.PS4;
 using RomManagerShared.PS4.Parsers;
-using RomManagerShared.PSVITA;
+using RomManagerShared.PS3;
+using RomManagerShared.PSVita;
 using RomManagerShared.Utils;
 
 namespace RomManagerTests;

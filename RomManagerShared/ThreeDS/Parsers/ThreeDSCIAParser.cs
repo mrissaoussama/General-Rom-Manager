@@ -2,7 +2,7 @@
 using RomManagerShared.Base;
 using RomManagerShared.Interfaces;
 using RomManagerShared.Utils;
-namespace RomManagerShared.ThreeDS;
+namespace RomManagerShared.ThreeDS.Parsers;
 
 public class ThreeDSCIAParser : IRomParser<ThreeDSConsole>
 {

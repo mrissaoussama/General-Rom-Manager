@@ -2,7 +2,7 @@ using DotNet3dsToolkit;
 using RomManagerShared.Base;
 using RomManagerShared.Interfaces;
 using RomManagerShared.Utils;
-namespace RomManagerShared.ThreeDS;
+namespace RomManagerShared.ThreeDS.Parsers;
 
 /// <summary>
 /// Cartridge images (.3ds/.cci) and single partitions (.cxi). The header gives the title ID and product

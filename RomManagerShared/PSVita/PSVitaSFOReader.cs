@@ -2,7 +2,7 @@
 using RomManagerShared.PSVita;
 using RomManagerShared.Utils;
 
-namespace RomManagerShared.PSVITA;
+namespace RomManagerShared.PSVita;
 
 public static class PSVitaSFOReader
 {

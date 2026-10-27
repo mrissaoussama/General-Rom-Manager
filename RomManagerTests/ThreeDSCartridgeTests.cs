@@ -2,6 +2,7 @@ using System.Buffers.Binary;
 using System.Text;
 using AwesomeAssertions;
 using RomManagerShared.ThreeDS;
+using RomManagerShared.ThreeDS.Parsers;
 
 namespace RomManagerTests;
 

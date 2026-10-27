@@ -1,38 +1,42 @@
 ﻿using RomManagerShared.Base;
 using RomManagerShared.Interfaces;
-using RomManagerShared.PSVITA;
+using RomManagerShared.PS3;
+using RomManagerShared.PSVita;
 using RomManagerShared.Utils;
 
-namespace RomManagerShared.PS3.Parsers;
+namespace RomManagerShared.PSVita.Parsers;
 
-public class PS3FolderRomParser : IRomParser<PS3Console>
+public class PSVitaFolderRomParser : IRomParser<PSVitaConsole>
 {
-    public PS3FolderRomParser()
+    public PSVitaFolderRomParser()
     {
         Extensions = ["sfo"];
 
     }
     public List<string> Extensions { get; set; }
     //string[] gameCategories = { "AC", "GC", "GDC" };
+
     public Task<List<Rom>> ProcessFile(string path)
     {
         List<Rom> list = [];
-        if (Path.GetExtension(path).ToLower().Contains("sfo"))
+        if (Path.GetFileName(path).Equals("param.sfo", StringComparison.OrdinalIgnoreCase))
         {
             try
             {
+                // Set ROM path to the directory containing sce_sys folder
+                string romRootPath = Directory.GetParent(Path.GetDirectoryName(path) ?? path)?.FullName ?? path;
+
                 using FileStream fileStream = new(path, FileMode.Open, FileAccess.Read);
                 using MemoryStream memoryStream = new();
-                fileStream.Seek(0, SeekOrigin.Begin);
                 fileStream.CopyTo(memoryStream);
-                var sfodata = memoryStream.ToArray();
-                if (PS3Utils.IsPS3SFO(memoryStream))
+
+                if (PSVitaUtils.IsPSVitaSFO(memoryStream))
                 {
-                    Rom? vitarom = PS3SFOReader.ParseSFO(sfodata);
+                    Rom? vitarom = PSVitaSFOReader.ParseSFO(memoryStream.ToArray());
                     if (vitarom is not null)
                     {
                         vitarom.IsFolderFormat = true;
-                        vitarom.Path = path;
+                        vitarom.Path = romRootPath; // Set to ROM root directory
                         list.Add(vitarom);
                     }
                 }
@@ -40,7 +44,6 @@ public class PS3FolderRomParser : IRomParser<PS3Console>
             catch (Exception ex)
             {
                 FileUtils.Log(ex.Message);
-
             }
         }
         return Task.FromResult(list);

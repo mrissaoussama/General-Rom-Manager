@@ -2,7 +2,7 @@
 using RomManagerShared.PS3;
 using RomManagerShared.Utils;
 
-namespace RomManagerShared.PSVITA;
+namespace RomManagerShared.PS3;
 
 public static class PS3SFOReader
 {

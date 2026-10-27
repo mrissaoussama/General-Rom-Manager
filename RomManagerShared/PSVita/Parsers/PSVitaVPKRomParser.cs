@@ -1,6 +1,7 @@
 ﻿using RomManagerShared.Base;
 using RomManagerShared.Interfaces;
-using RomManagerShared.PSVITA;
+using RomManagerShared.PS3;
+using RomManagerShared.PSVita;
 using RomManagerShared.Utils;
 using System.IO.Compression;
 

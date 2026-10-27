@@ -23,7 +23,7 @@ dotnet run --project tools/ParserHarness -- PS4Console "Y:\roms\PS4" 5
   items carry no `Version`. Solution file: `RomManager.slnx`.
 - Desktop is the only head (Android/Browser heads were removed; see git history).
 - Warnings are errors in every project (the solution builds with zero warnings). Vendored code in
-  `Utils/ISO2GOD` and `3DS/Ctr` is marked `#nullable disable warnings`.
+  `Utils/ISO2GOD` and `ThreeDS/Ctr` is marked `#nullable disable warnings`.
 
 ## Layout
 
@@ -80,8 +80,8 @@ dotnet run --project tools/ParserHarness -- PS4Console "Y:\roms\PS4" 5
   `RomManagerConfiguration.GetCachePath()`.
 - No external programs in the scan path and no binaries in the repo (ADR 0002). Optional tools are
   user-supplied, default to `<BaseDirectory>/Tools/`, and run in `Cache/Temp`.
-- Namespaces don't always match folders (e.g. `GamingConsole` is in `RomManagerShared.Interfaces`
-  but lives in `Base/`). Grep for the type before adding usings.
+- Namespaces match folders in RomManagerShared (`NamespaceTests` enforces it; vendored `ThreeDS/Ctr` keeps
+  `DotNet3dsToolkit`). Persisted rom types are stored by full name: don't rename their namespaces.
 
 ## Adding a console
 

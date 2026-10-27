@@ -1,7 +1,7 @@
 ﻿using RomManagerShared.Base;
 using RomManagerShared.Interfaces;
 using RomManagerShared.Utils;
-namespace RomManagerShared.WiiU;
+namespace RomManagerShared.WiiU.Parsers;
 public class WiiUXmlParser : IRomParser<WiiUConsole>
 {
     public List<string> Extensions { get; set; } = ["xml"];
