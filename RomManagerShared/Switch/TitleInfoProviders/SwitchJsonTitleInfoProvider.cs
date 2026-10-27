@@ -88,8 +88,8 @@ public class SwitchJsonTitleInfoProvider : TitleInfoProvider<SwitchConsole>
     public Dictionary<string, JsonElement>? TitlesDatabase { get; set; }
     public override async Task LoadTitleDatabaseAsync()
     {
-        await FileDownloader.DownloadSwitchGlobalTitleDBFile();
-        await FileDownloader.DownloadSwitchTitleDBFiles();
+        await SwitchDownloads.DownloadGlobalTitleDBFile();
+        await SwitchDownloads.DownloadTitleDBFiles();
 
         Source = SwitchConfiguration.GetTitleDBPath();
         if (TitlesDatabase is not null)

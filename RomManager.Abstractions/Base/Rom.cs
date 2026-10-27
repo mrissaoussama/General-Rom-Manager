@@ -434,3 +434,13 @@ public class License
 public class Homebrew : Rom
 {
 }
+
+/// <summary>
+/// For folder-format roms (<see cref="Rom.IsFolderFormat"/>): where the game folder is relative to the marker file
+/// the parser opened, e.g. 2 for <c>&lt;game&gt;/code/app.xml</c>. Console modules implement it on their rom types.
+/// </summary>
+public interface IFolderLayout
+{
+    /// <summary>How many folders above the marker file the game folder is (1 = its folder); 0 when unknown.</summary>
+    int FolderLevelsAboveMarker(string markerFileName);
+}

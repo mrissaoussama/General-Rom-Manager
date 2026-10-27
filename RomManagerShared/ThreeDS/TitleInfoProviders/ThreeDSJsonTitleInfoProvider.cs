@@ -36,7 +36,7 @@ public class ThreeDSJsonTitleInfoProvider  : TitleInfoProvider<ThreeDSConsole>
             return;
         }
         if (!File.Exists(Source))
-            await FileDownloader.DownloadThreeDSRegionFiles();
+            await ThreeDSDownloads.DownloadRegionFiles();
         TitlesJson = [];
         foreach (var regionFile in regionfiles)
         {

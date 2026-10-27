@@ -1,9 +1,4 @@
 ﻿using RomManagerShared.Base;
-using RomManagerShared.OriginalXbox;
-using RomManagerShared.PS3;
-using RomManagerShared.PSVita;
-using RomManagerShared.WiiU;
-using RomManagerShared.Xbox360;
 using System.Reflection;
 namespace RomManagerShared.Utils;
 
@@ -53,18 +48,10 @@ public class RomUtils
         if (!rom.IsFolderFormat)
             return rom.Path;
 
-        var file = Path.GetFileName(rom.Path).ToLowerInvariant();
-        var parent = Path.GetDirectoryName(rom.Path);
-        var grandParent = parent is null ? null : Path.GetDirectoryName(parent);
-        var folder = (rom, file) switch
-        {
-            (IWiiURom, "app.xml") => grandParent,          // <title>/code/app.xml
-            (IWiiURom, "title.tmd") => parent,
-            (IPS3Rom or IPSVitaRom, "param.sfo") => grandParent, // <title>/sce_sys/param.sfo
-            (IOriginalXboxRom, "default.xbe") => parent,
-            (IXbox360Rom, "default.xex") => parent,
-            _ => null,
-        };
+        var levels = rom is IFolderLayout layout ? layout.FolderLevelsAboveMarker(Path.GetFileName(rom.Path).ToLowerInvariant()) : 0;
+        if (levels <= 0) return rom.Path;
+        string? folder = rom.Path;
+        for (int i = 0; i < levels && folder is not null; i++) folder = Path.GetDirectoryName(folder);
         return folder ?? rom.Path;
     }
 }

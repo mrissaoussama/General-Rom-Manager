@@ -47,7 +47,7 @@ RomParserExecutor<SwitchConsole> romParserExecutor)
     // ── IMissingUpdateReporter ────────────────────────────────────────────
     public bool HasVersionDatabase => File.Exists(SwitchConfiguration.GetVersionsPath());
 
-    public Task DownloadVersionDatabaseAsync() => FileDownloader.DownloadSwitchVersionsFile(overrideExistingFiles: true);
+    public Task DownloadVersionDatabaseAsync() => SwitchDownloads.DownloadVersionsFile(overwrite: true);
 
     public IReadOnlyList<MissingUpdate> FindMissingUpdates(IReadOnlyList<Rom> library)
         => SwitchUpdateChecker.FindMissing(library, SwitchUpdateChecker.LoadLatestVersions(SwitchConfiguration.GetVersionsPath()));

@@ -233,7 +233,8 @@ public partial class MainViewModel : ViewModelBase
         DownloadMethodInfo[] missing;
         try
         {
-            missing = await Task.Run(() => FileDownloader.GetMissingResources());
+            var providers = _serviceProvider.GetServices<IDownloadableResources>().ToList();
+            missing = await Task.Run(() => providers.SelectMany(p => p.GetMissingResources()).ToArray());
         }
         catch (Exception ex)
         {
