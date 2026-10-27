@@ -1,5 +1,6 @@
 using System.ComponentModel;
 
+
 namespace AvaloniaUI.ViewModels;
 
 /// <summary>"All consoles" page: the rows of every console page in one list, with a console column.</summary>
@@ -44,7 +45,7 @@ public sealed partial class LibraryViewModel : ConsoleViewModelBase
         var selected = SelectedRom;
         Roms = new ObservableCollection<RomViewModel>(_consoles.SelectMany(c => c.Roms));
         if (selected is not null && Roms.Contains(selected)) SelectedRom = selected;
-        StatusMessage = $"{Roms.Count:N0} ROMs in {_consoles.Count} consoles";
+        StatusMessage = string.Format(Strings.Library_ROMsInConsoles, Roms.Count, _consoles.Count);
     }
 
     private ConsoleViewModelBase? Owner(RomViewModel row) => _consoles.FirstOrDefault(c => c.ConsoleName == row.Console);

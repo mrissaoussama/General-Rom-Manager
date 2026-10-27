@@ -6,7 +6,7 @@ namespace AvaloniaUI.Utils;
 /// </summary>
 public interface IDialogService
 {
-    Task<bool> ConfirmAsync(string title, string message, string confirmText = "OK");
+    Task<bool> ConfirmAsync(string title, string message, string? confirmText = null);
 
     /// <summary>Shows a one-line-per-change list; true when the user confirmed.</summary>
     Task<bool> PreviewAsync(string title, string summary, IEnumerable<string> lines, string confirmText, bool showCancel = true);
@@ -49,8 +49,8 @@ public sealed class AvaloniaDialogService : IDialogService
         return vm.Confirmed;
     }
 
-    public Task<bool> ConfirmAsync(string title, string message, string confirmText = "OK") =>
-        ShowAsync(new ConfirmDialogViewModel(title, message, confirmText));
+    public Task<bool> ConfirmAsync(string title, string message, string? confirmText = null) =>
+        ShowAsync(new ConfirmDialogViewModel(title, message, confirmText ?? Strings.Common_OK));
 
     public Task<bool> PreviewAsync(string title, string summary, IEnumerable<string> lines, string confirmText, bool showCancel = true) =>
         ShowAsync(new PreviewDialogViewModel(title, summary, lines, confirmText, showCancel));

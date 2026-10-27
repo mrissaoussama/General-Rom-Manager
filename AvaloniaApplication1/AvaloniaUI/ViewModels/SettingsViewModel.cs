@@ -1,5 +1,6 @@
 using Avalonia.Styling;
 
+
 namespace AvaloniaUI.ViewModels;
 
 /// <summary>
@@ -8,7 +9,7 @@ namespace AvaloniaUI.ViewModels;
 /// </summary>
 public sealed partial class SettingsViewModel : DialogViewModel
 {
-    public static readonly IReadOnlyList<string> ThemeNames = ["Default (system)", "Light", "Dark"];
+    public static readonly IReadOnlyList<string> ThemeNames = [Strings.Theme_System, Strings.Theme_Light, Strings.Theme_Dark];
     public static readonly IReadOnlyList<string> RenamePlaceholders =
         ["{TitleName}", "{TitleID}", "{Region}", "{Version}", "{Publisher}", "{Developer}", "{ReleaseDate}", "{Platform}"];
 
@@ -52,7 +53,7 @@ public sealed partial class SettingsViewModel : DialogViewModel
         foreach (var group in ConsoleGroups) _ = group.RefreshStatusCommand.ExecuteAsync(null);
     }
 
-    public override string Title => "Settings";
+    public override string Title => Strings.Settings_Settings;
     public override double Width => 820;
     public override double Height => 600;
     public override bool CanResize => true;
@@ -86,38 +87,38 @@ public sealed partial class SettingsViewModel : DialogViewModel
     [RelayCommand]
     private async Task BrowseDatabase()
     {
-        if (await Dialogs.PickFolderAsync("Select database directory") is { } path) DatabasePath.Value = path;
+        if (await Dialogs.PickFolderAsync(Strings.Settings_SelectDatabaseDirectory) is { } path) DatabasePath.Value = path;
     }
 
     [RelayCommand]
     private async Task BrowsePluginsDirectory()
     {
-        if (await Dialogs.PickFolderAsync("Select plugins directory") is { } path) PluginsDirectory.Value = path;
+        if (await Dialogs.PickFolderAsync(Strings.Settings_SelectPluginsDirectory) is { } path) PluginsDirectory.Value = path;
     }
 
     [RelayCommand]
     private async Task BrowseRomFolder(ConsoleSettingsRow row)
     {
-        if (await Dialogs.PickFolderAsync($"Select {row.DisplayName} ROM folder") is { } path) row.Primary.Value = path;
+        if (await Dialogs.PickFolderAsync(string.Format(Strings.Onboarding_SelectROMFolder, row.DisplayName)) is { } path) row.Primary.Value = path;
     }
 
     [RelayCommand]
     private async Task AddRomFolder(ConsoleSettingsRow row)
     {
-        if (await Dialogs.PickFolderAsync($"Add a {row.DisplayName} ROM folder") is { } path)
+        if (await Dialogs.PickFolderAsync(string.Format(Strings.Settings_AddAROMFolder, row.DisplayName)) is { } path)
             row.ExtraFolders = string.IsNullOrWhiteSpace(row.ExtraFolders) ? path : $"{row.ExtraFolders}; {path}";
     }
 
     [RelayCommand]
     private async Task BrowseEmulator(ConsoleSettingsRow row)
     {
-        if (await Dialogs.PickFileAsync($"Emulator for {row.DisplayName}", "Programs", "exe", "*") is { } path) row.EmulatorPath = path;
+        if (await Dialogs.PickFileAsync(string.Format(Strings.Settings_EmulatorFor, row.DisplayName), Strings.Settings_Programs, Strings.Settings_Exe, "*") is { } path) row.EmulatorPath = path;
     }
 
     [RelayCommand]
     private async Task BrowseTool(ToolPathRow row)
     {
-        if (await Dialogs.PickFileAsync(row.Tool.DisplayName, "Programs", "exe", "*") is { } path) row.Path = path;
+        if (await Dialogs.PickFileAsync(row.Tool.DisplayName, Strings.Settings_Programs, Strings.Settings_Exe, "*") is { } path) row.Path = path;
     }
 
     // ── File organiser ────────────────────────────────────────────────────
@@ -163,31 +164,31 @@ public sealed partial class SettingsViewModel : DialogViewModel
     [RelayCommand]
     private async Task ShowDatOverview()
     {
-        DatOverview = "Loading DATs...";
+        DatOverview = Strings.Settings_LoadingDATs;
         var lines = await Task.Run(() => _consoles.Select(c =>
         {
             var indexes = c.GetDatIndexes();
             return indexes.Count == 0
                 ? $"{c.DisplayName}: no DAT"
-                : $"{c.DisplayName}: {indexes.Count} DAT set(s), {indexes.Sum(i => i.Games.Count):N0} games";
+                : string.Format(Strings.Settings_DATSetSGames, c.DisplayName, indexes.Count, indexes.Sum(i => i.Games.Count));
         }).ToList());
-        DatOverview = lines.Count == 0 ? "No console folders configured." : string.Join(Environment.NewLine, lines);
+        DatOverview = lines.Count == 0 ? Strings.Settings_NoConsoleFoldersConfigured : string.Join(Environment.NewLine, lines);
     }
 
     [RelayCommand]
     private async Task DownloadTitleDatabases()
     {
         if (_downloadTitleDatabases is null) return;
-        DownloadStatus = "Checking…";
+        DownloadStatus = Strings.Settings_Checking;
         try
         {
             var queued = await _downloadTitleDatabases();
-            DownloadStatus = queued switch { < 0 => "Check failed (see log)", 0 => "All present", _ => $"Queued {queued} download(s)" };
+            DownloadStatus = queued switch { < 0 => Strings.Settings_CheckFailedSeeLog, 0 => Strings.Settings_AllPresent, _ => string.Format(Strings.Settings_QueuedDownloadS, queued) };
         }
         catch (Exception ex)
         {
             AppLog.Warn($"[Settings] Title DB download failed: {ex.Message}");
-            DownloadStatus = "Check failed (see log)";
+            DownloadStatus = Strings.Settings_CheckFailedSeeLog;
         }
     }
 
@@ -208,7 +209,7 @@ public sealed partial class SettingsViewModel : DialogViewModel
         {
             var visible = _settings.VisibleColumns.GetValueOrDefault(console.ConsoleName) ?? [.. console.DefaultColumns];
             yield return new ColumnGroup(console.ConsoleName, console.DisplayName, console.DefaultColumns,
-                [.. console.GetColumnDescriptors().Select(d => new ColumnToggle(d.PropName, d.Header, visible.Contains(d.PropName)))]);
+                [.. console.GetColumnDescriptors().Select(d => new ColumnToggle(d.PropName, Labels.Property(d.PropName, d.Header), visible.Contains(d.PropName)))]);
         }
     }
 
@@ -231,13 +232,13 @@ public sealed partial class SettingsViewModel : DialogViewModel
     [RelayCommand]
     private async Task ImportPlugin()
     {
-        if (_plugins is null || await Dialogs.PickFileAsync("Select plugin ZIP", "Plugin zip", "zip") is not { } zip) return;
+        if (_plugins is null || await Dialogs.PickFileAsync(Strings.Settings_SelectPluginZIP, Strings.Settings_PluginZip, Strings.Settings_Zip) is not { } zip) return;
         try
         {
             var name = await _plugins.ImportZipAsync(zip);
-            PluginStatus = $"Imported {name}";
+            PluginStatus = string.Format(Strings.Settings_Imported, name);
         }
-        catch (Exception ex) { PluginStatus = $"Import failed: {ex.Message}"; }
+        catch (Exception ex) { PluginStatus = string.Format(Strings.Settings_ImportFailed, ex.Message); }
         LoadPlugins();
     }
 
@@ -256,12 +257,12 @@ public sealed partial class SettingsViewModel : DialogViewModel
         try
         {
             await _plugins.LoadPluginsAsync(PluginsFolder(), askForApproval: true);
-            PluginStatus = $"{_plugins.Plugins.Count} plugin(s) loaded";
+            PluginStatus = string.Format(Strings.Settings_PluginSLoaded, _plugins.Plugins.Count);
         }
         catch (Exception ex)
         {
             AppLog.Warn($"[Settings] Plugin reload failed: {ex}");
-            PluginStatus = $"Reload failed: {ex.Message}";
+            PluginStatus = string.Format(Strings.Settings_ReloadFailed, ex.Message);
         }
         LoadPlugins();
     }
@@ -338,9 +339,9 @@ public sealed partial class PathField : ObservableObject
     private readonly string _emptyText;
     private int _version;
 
-    public PathField(string value, string emptyText = "Not set")
+    public PathField(string value, string? emptyText = null)
     {
-        _emptyText = emptyText;
+        _emptyText = emptyText ?? Strings.Settings_NotSet;
         _value = value;
         _ = CheckAsync(debounce: false);
     }
@@ -373,7 +374,7 @@ public sealed partial class PathField : ObservableObject
                 try { return Directory.Exists(Resolve(text)); }
                 catch { return false; }
             });
-            if (my == _version) Status = exists ? StatusLine.Ok("Found") : StatusLine.Bad("Not found");
+            if (my == _version) Status = exists ? StatusLine.Ok(Strings.Settings_Found) : StatusLine.Bad(Strings.Settings_NotFound);
         }
     }
 
@@ -488,8 +489,8 @@ public sealed partial class PluginRow(IPlugin plugin, bool enabled) : Observable
     public string Details { get; } = string.Join(" · ", new[]
     {
         string.IsNullOrEmpty(plugin.PluginAuthor) ? null : $"Author: {plugin.PluginAuthor}",
-        plugin.SupportedConsoles is { Count: > 0 } c ? $"Consoles: {string.Join(", ", c)}" : null,
-        $"Permissions: {(plugin.RequiredPermissions.Count == 0 ? "none" : string.Join(", ", plugin.RequiredPermissions))}",
+        plugin.SupportedConsoles is { Count: > 0 } c ? string.Format(Strings.Settings_Consoles, string.Join(", ", c)) : null,
+        string.Format(Strings.Settings_Permissions, (plugin.RequiredPermissions.Count == 0 ? "none" : string.Join(", ", plugin.RequiredPermissions))),
     }.Where(x => x is not null));
     [ObservableProperty] private bool _isEnabled = enabled;
     [ObservableProperty] private bool _isRevoked;

@@ -10,6 +10,7 @@ using RomManagerShared.Base.Database;
 using RomManagerShared.Utils;
 using System.Reflection;
 
+
 namespace AvaloniaUI;
 
 public partial class App : Application
@@ -99,10 +100,10 @@ public partial class App : Application
                     "Allow plugin?",
                     $"{request.Name} {request.Version}" + (request.Author is null ? "" : $" by {request.Author}") + Environment.NewLine
                     + (request.Description is null ? "" : request.Description + Environment.NewLine) + Environment.NewLine
-                    + "Permissions: " + (request.Permissions.Count == 0 ? "none" : string.Join(", ", request.Permissions)) + Environment.NewLine
-                    + $"File: {request.DllPath}" + Environment.NewLine + Environment.NewLine
-                    + "Plugins run with your user account's access. Only allow plugins you trust.",
-                    "Allow"));
+                    + "Permissions: " + (request.Permissions.Count == 0 ? Strings.App_None : string.Join(", ", request.Permissions)) + Environment.NewLine
+                    + string.Format(Strings.App_File, request.DllPath) + Environment.NewLine + Environment.NewLine
+                    + Strings.App_PluginsRunWithYourUserAccountSAccessOnlyAllowPlu,
+                    Strings.App_Allow));
                 await pluginManager.LoadPluginsAsync(pluginDir);
             }
             catch (Exception ex)
@@ -190,7 +191,7 @@ public partial class App : Application
                     FontSize = 13,
                 }
             },
-            _ => new TextBlock { Text = control?.ToString() ?? "(empty)" }
+            _ => new TextBlock { Text = control?.ToString() ?? Strings.App_Empty }
         };
 
         var win = new Window

@@ -1,3 +1,4 @@
+
 namespace AvaloniaUI.ViewModels;
 
 /// <summary>First-run wizard: welcome → ROM folders → theme → done. Shown once, until finished or closed.</summary>
@@ -21,7 +22,7 @@ public sealed partial class OnboardingViewModel : DialogViewModel
     public static bool ShouldShow(Settings settings, ILibraryRoots roots) =>
         !settings.OnboardingCompleted && roots.ConfiguredConsoles().Count == 0;
 
-    public override string Title => "Welcome to RomManager";
+    public override string Title => Strings.Onboarding_WelcomeToRomManager2;
     public override double Width => 620;
     public override double Height => 500;
 
@@ -43,7 +44,7 @@ public sealed partial class OnboardingViewModel : DialogViewModel
     public bool IsTheme => Step == 2;
     public bool IsDone => Step == StepCount - 1;
     public bool CanGoBack => Step > 0;
-    public string StepText => $"Step {Step + 1} of {StepCount}";
+    public string StepText => string.Format(Strings.Onboarding_StepOf, Step + 1, StepCount);
     public int ChosenFolders => Folders.Count(f => !string.IsNullOrWhiteSpace(f.Path.Value));
 
     partial void OnThemeIndexChanged(int value) => SettingsViewModel.PreviewTheme(value);
@@ -65,7 +66,7 @@ public sealed partial class OnboardingViewModel : DialogViewModel
     [RelayCommand]
     private async Task Browse(OnboardingFolder folder)
     {
-        if (await Dialogs.PickFolderAsync($"Select {folder.DisplayName} ROM folder") is { } path) folder.Path.Value = path;
+        if (await Dialogs.PickFolderAsync(string.Format(Strings.Onboarding_SelectROMFolder, folder.DisplayName)) is { } path) folder.Path.Value = path;
     }
 
     /// <summary>Saves the folders and theme on Finish. Either way the wizard does not come back on the next start.</summary>

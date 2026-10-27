@@ -5,6 +5,7 @@ using AvaloniaUI.Utils;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
+
 namespace AvaloniaUI.ViewModels;
 
 // ---------------------------------------------------------------------------
@@ -56,8 +57,8 @@ public partial class DownloadEntryViewModel : ObservableObject
     /// <summary>Human-readable speed, e.g. "1.5 MB/s".</summary>
     public string SpeedText =>
         SpeedKbps >= 1024
-            ? $"{SpeedKbps / 1024.0:F1} MB/s"
-            : $"{SpeedKbps:F0} KB/s";
+            ? string.Format(Strings.DownloadManager_MBS, SpeedKbps / 1024.0)
+            : string.Format(Strings.DownloadManager_KBS, SpeedKbps);
 
     /// <summary>Whether the Pause button should be visible.</summary>
     public bool CanPause => Status is DownloadStatus.Downloading or DownloadStatus.Queued;

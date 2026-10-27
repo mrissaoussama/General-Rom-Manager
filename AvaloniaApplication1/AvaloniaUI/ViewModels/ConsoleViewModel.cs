@@ -1,6 +1,7 @@
 using System.Globalization;
 using Avalonia.Data.Converters;
 
+
 namespace AvaloniaUI.ViewModels;
 
 /// <summary>What the settings window and shell need from a console page.</summary>
@@ -82,20 +83,20 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
         if (scope.ServiceProvider.GetService<ConsoleManager<T>>() is not IMissingDlcReporter reporter) return;
         try
         {
-            StatusMessage = "Checking for missing DLC...";
+            StatusMessage = Strings.Console_CheckingForMissingDLC;
             var library = Roms.Select(r => r.RomSource).ToList();
             var missing = await Task.Run(() => reporter.FindMissingDlcAsync(library));
-            StatusMessage = missing.Count == 0 ? "No missing DLC found" : $"{missing.Count} DLC missing";
+            StatusMessage = missing.Count == 0 ? Strings.Console_NoMissingDLCFound : string.Format(Strings.Console_DLCMissing, missing.Count);
             var summary = missing.Count == 0
-                ? "The title database lists no DLC for your games that the library lacks (or the title database is not downloaded)."
-                : $"{missing.Count} DLC listed in the title database for games in the library are not in the library.";
-            await Dialogs.PreviewAsync("Missing DLC", summary,
-                missing.Select(m => $"{m.Game}: {m.Dlc}  [{m.TitleId}]"), "Close", showCancel: false);
+                ? Strings.Console_TheTitleDatabaseListsNoDLCForYourGamesThatTheLib
+                : string.Format(Strings.Console_DLCListedInTheTitleDatabaseForGamesInTheLibraryA, missing.Count);
+            await Dialogs.PreviewAsync(Strings.Console_MissingDLC2, summary,
+                missing.Select(m => $"{m.Game}: {m.Dlc}  [{m.TitleId}]"), Strings.Console_Close, showCancel: false);
         }
         catch (Exception ex)
         {
             AppLog.Warn($"[{ConsoleName}] Missing DLC check failed: {ex}");
-            StatusMessage = $"Missing DLC check failed: {ex.Message}";
+            StatusMessage = string.Format(Strings.Console_MissingDLCCheckFailed, ex.Message);
         }
     }
 
@@ -107,32 +108,32 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
         {
             if (!reporter.HasVersionDatabase)
             {
-                if (!await Dialogs.ConfirmAsync("Missing updates", reporter.SetupPrompt, reporter.IsOnline ? "Allow" : "Download"))
+                if (!await Dialogs.ConfirmAsync(Strings.Console_MissingUpdates, reporter.SetupPrompt, reporter.IsOnline ? Strings.Console_Allow : Strings.Console_Download))
                     return;
-                StatusMessage = "Downloading version database...";
+                StatusMessage = Strings.Console_DownloadingVersionDatabase;
                 await reporter.DownloadVersionDatabaseAsync();
                 if (!reporter.HasVersionDatabase)
                 {
-                    StatusMessage = "Version database download failed (see log)";
+                    StatusMessage = Strings.Console_VersionDatabaseDownloadFailedSeeLog;
                     return;
                 }
             }
 
-            StatusMessage = "Checking for missing updates...";
+            StatusMessage = Strings.Console_CheckingForMissingUpdates;
             var library = Roms.Select(r => r.RomSource).ToList();
             var missing = await reporter.FindMissingUpdatesAsync(library);
-            StatusMessage = missing.Count == 0 ? "All games are up to date" : $"{missing.Count} game(s) have newer updates";
+            StatusMessage = missing.Count == 0 ? Strings.Console_AllGamesAreUpToDate : string.Format(Strings.Console_GameSHaveNewerUpdates, missing.Count);
             var summary = missing.Count == 0
-                ? "Every game in the library has its latest update."
-                : $"{missing.Count} game(s) have a newer update than the newest one in the library (installed → latest).";
-            await Dialogs.PreviewAsync("Missing updates", summary,
+                ? Strings.Console_EveryGameInTheLibraryHasItsLatestUpdate
+                : string.Format(Strings.Console_GameSHaveANewerUpdateThanTheNewestOneInTheLibrar, missing.Count);
+            await Dialogs.PreviewAsync(Strings.Console_MissingUpdates, summary,
                 missing.Select(m => $"{m.Title}  [{m.Game.TitleID}]  v{m.InstalledVersion} → v{m.LatestVersion}"),
-                "Close", showCancel: false);
+                Strings.Console_Close, showCancel: false);
         }
         catch (Exception ex)
         {
             AppLog.Warn($"[{ConsoleName}] Missing update check failed: {ex}");
-            StatusMessage = $"Missing update check failed: {ex.Message}";
+            StatusMessage = string.Format(Strings.Console_MissingUpdateCheckFailed, ex.Message);
         }
     }
 
@@ -177,7 +178,7 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
         {
             IsLoading = true;
             IsIndeterminate = true;
-            StatusMessage = "Loading library...";
+            StatusMessage = Strings.Console_LoadingLibrary;
             using var scope = _serviceProvider.CreateScope();
             var manager = scope.ServiceProvider.GetRequiredService<ConsoleManager<T>>();
             var scanner = scope.ServiceProvider.GetRequiredService<LibraryScanner>();
@@ -191,12 +192,12 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
             if (reachable.Count == 0)
             {
                 StatusMessage = cached.Count > 0
-                    ? $"{cached.Count} ROMs (cached) — ROM folder not found"
-                    : $"ROM path not configured or not found for {ConsoleName}";
+                    ? string.Format(Strings.Console_ROMsCachedROMFolderNotFound, cached.Count)
+                    : string.Format(Strings.Console_ROMPathNotConfiguredOrNotFoundFor, ConsoleName);
                 return;
             }
 
-            StatusMessage = cached.Count > 0 ? $"{cached.Count} ROMs — checking for changes..." : "Scanning...";
+            StatusMessage = cached.Count > 0 ? string.Format(Strings.Console_ROMsCheckingForChanges, cached.Count) : Strings.Console_Scanning;
             await manager.Setup();
 
             var progress = new Progress<ScanProgress>(p =>
@@ -204,14 +205,14 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
                 IsIndeterminate = p.Total == 0;
                 ProgressPercent = p.Total > 0 ? p.Processed * 100.0 / p.Total : 0;
                 if (p.CurrentFile is not null)
-                    StatusMessage = $"Scanning {p.Processed + 1}/{p.Total}: {Path.GetFileName(p.CurrentFile)}";
+                    StatusMessage = string.Format(Strings.Console_Scanning2, p.Processed + 1, p.Total, Path.GetFileName(p.CurrentFile));
             });
             var roms = await scanner.ScanAsync(manager, libraryKey, roots, fullRescan, progress, ct,
                 root => Settings.Instance.GetScanOptions(ConsoleName, root));
             ShowRoms(roms);
             StatusMessage = scanner.Unrecognized.Count == 0
-                ? $"Loaded {Roms.Count} ROMs"
-                : $"Loaded {Roms.Count} ROMs · {scanner.Unrecognized.Count} file(s) not recognised";
+                ? string.Format(Strings.Console_LoadedROMs, Roms.Count)
+                : string.Format(Strings.Console_LoadedROMsFileSNotRecognised, Roms.Count, scanner.Unrecognized.Count);
             Unrecognized = scanner.Unrecognized;
             LastScanned = DateTime.Now;
             if (scanner.Unrecognized.Count > 0)
@@ -225,12 +226,12 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
         }
         catch (OperationCanceledException)
         {
-            StatusMessage = "Scan cancelled";
+            StatusMessage = Strings.Console_ScanCancelled;
         }
         catch (Exception ex)
         {
             AppLog.Warn($"[{ConsoleName}] LoadData failed: {ex}");
-            StatusMessage = $"Error: {ex.Message}";
+            StatusMessage = string.Format(Strings.Console_Error, ex.Message);
         }
         finally
         {

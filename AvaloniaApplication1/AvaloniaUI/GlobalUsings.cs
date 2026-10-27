@@ -27,3 +27,4 @@ global using RomManagerShared.Configuration;
 global using RomManagerShared.Interfaces;
 global using RomManagerShared.Utils;
 global using RomManagerShared.Logging;
+global using AvaloniaUI.Resources;

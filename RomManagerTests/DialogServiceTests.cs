@@ -18,7 +18,7 @@ public sealed class DialogServiceTests : IDisposable
         public string? Folder { get; set; }
         public List<string> Asked { get; } = [];
 
-        public Task<bool> ConfirmAsync(string title, string message, string confirmText = "OK")
+        public Task<bool> ConfirmAsync(string title, string message, string? confirmText = null)
         {
             Asked.Add(title);
             return Task.FromResult(Answer);

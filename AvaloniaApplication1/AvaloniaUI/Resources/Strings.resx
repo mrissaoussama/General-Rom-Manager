@@ -176,4 +176,205 @@
   <data name="Settings_TheFolderWithEachConsoleSROMsMoreFoldersSeparate" xml:space="preserve"><value>The folder with each console's ROMs. More folders (separated by ';') are scanned with it as one library.</value></data>
   <data name="Settings_USAWorldEuropeJapan" xml:space="preserve"><value>USA, World, Europe, Japan</value></data>
   <data name="Settings_UsedByLaunchInEmulatorArgumentsRomFullPathDirIts" xml:space="preserve"><value>Used by "Launch in emulator". Arguments: {rom} full path, {dir} its folder, {name} file name.</value></data>
+  <data name="ConsoleView_Convert" xml:space="preserve"><value>Convert</value></data>
+  <data name="ConsoleView_KeepsTheOriginalWritesNextToIt" xml:space="preserve"><value>Keeps the original; writes .{0} next to it</value></data>
+  <data name="ConsoleView_NoROMSelected" xml:space="preserve"><value>No ROM selected</value></data>
+  <data name="Console_1G1REveryGameHasASingleVersion" xml:space="preserve"><value>1G1R: every game has a single version</value></data>
+  <data name="Console_ActionFailed" xml:space="preserve"><value>Action failed: {0}</value></data>
+  <data name="Console_AllGamesAreUpToDate" xml:space="preserve"><value>All games are up to date</value></data>
+  <data name="Console_Allow" xml:space="preserve"><value>Allow</value></data>
+  <data name="Console_CheckingForMissingDLC" xml:space="preserve"><value>Checking for missing DLC...</value></data>
+  <data name="Console_CheckingForMissingUpdates" xml:space="preserve"><value>Checking for missing updates...</value></data>
+  <data name="Console_Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Console_CouldNotStartTheEmulator" xml:space="preserve"><value>Could not start the emulator: {0}</value></data>
+  <data name="Console_DLCMissing" xml:space="preserve"><value>{0} DLC missing</value></data>
+  <data name="Console_Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Console_DeleteFailed" xml:space="preserve"><value>Delete failed: {0}</value></data>
+  <data name="Console_DeletePermanently" xml:space="preserve"><value>Delete permanently?</value></data>
+  <data name="Console_DeletePermanently2" xml:space="preserve"><value>Delete permanently</value></data>
+  <data name="Console_Download" xml:space="preserve"><value>Download</value></data>
+  <data name="Console_DownloadingVersionDatabase" xml:space="preserve"><value>Downloading version database...</value></data>
+  <data name="Console_Duplicates2" xml:space="preserve"><value>Duplicates</value></data>
+  <data name="Console_Error" xml:space="preserve"><value>Error: {0}</value></data>
+  <data name="Console_ExportFailed" xml:space="preserve"><value>Export failed: {0}</value></data>
+  <data name="Console_ExportedRowsTo" xml:space="preserve"><value>Exported {0:N0} rows to {1}</value></data>
+  <data name="Console_FileSCouldNotBeMovedToTheTrashDeleteThemPermanen" xml:space="preserve"><value>{0} file(s) could not be moved to the trash ({1}). Delete them permanently? This cannot be undone.</value></data>
+  <data name="Console_FileSKept" xml:space="preserve"><value>{0} file(s) kept</value></data>
+  <data name="Console_FileSNotRecognised" xml:space="preserve"><value>{0} file(s) not recognised</value></data>
+  <data name="Console_FileSWillBeMovedTo" xml:space="preserve"><value>{0} file(s) will be moved to {1}.</value></data>
+  <data name="Console_FolderNotReachableItsRomsAreShownFromTheLastScan" xml:space="preserve"><value>Folder not reachable: {0}. Its roms are shown from the last scan.</value></data>
+  <data name="Console_FolderROMsAreNotDeletedFromHereRemoveTheFolderIn" xml:space="preserve"><value>Folder ROMs are not deleted from here; remove the folder in your file manager.</value></data>
+  <data name="Console_FoldersNotReachableTheirRomsAreShownFromTheLastS" xml:space="preserve"><value>{0} folders not reachable ({1}). Their roms are shown from the last scan.</value></data>
+  <data name="Console_GameSHaveNewerUpdates" xml:space="preserve"><value>{0} game(s) have newer updates</value></data>
+  <data name="Console_GameSHaveSeveralVersionsRegionPriorityOthersCoun" xml:space="preserve"><value>{0} game(s) have several versions. Region priority: {1}others.Count</value></data>
+  <data name="Console_LoadedROMs" xml:space="preserve"><value>Loaded {0} ROMs</value></data>
+  <data name="Console_LoadedROMsFileSNotRecognised" xml:space="preserve"><value>Loaded {0} ROMs · {1} file(s) not recognised</value></data>
+  <data name="Console_LoadingLibrary" xml:space="preserve"><value>Loading library...</value></data>
+  <data name="Console_MissingDLC2" xml:space="preserve"><value>Missing DLC</value></data>
+  <data name="Console_MissingDLCCheckFailed" xml:space="preserve"><value>Missing DLC check failed: {0}</value></data>
+  <data name="Console_MissingUpdateCheckFailed" xml:space="preserve"><value>Missing update check failed: {0}</value></data>
+  <data name="Console_MissingUpdates" xml:space="preserve"><value>Missing updates</value></data>
+  <data name="Console_Move" xml:space="preserve"><value>Move</value></data>
+  <data name="Console_MoveCopies" xml:space="preserve"><value>Move copies…</value></data>
+  <data name="Console_MoveFileSTo" xml:space="preserve"><value>Move {0} file(s) ({1}) to {2}:</value></data>
+  <data name="Console_MoveFileToTheRecycleBinTrash" xml:space="preserve"><value>Move {0} file{1} to the Recycle Bin / Trash?{2}</value></data>
+  <data name="Console_MoveOthers" xml:space="preserve"><value>Move others…</value></data>
+  <data name="Console_MoveTheDuplicateCopiesTo" xml:space="preserve"><value>Move the duplicate copies to</value></data>
+  <data name="Console_MoveTheOtherVersionsTo" xml:space="preserve"><value>Move the other versions to</value></data>
+  <data name="Console_MoveToFolder" xml:space="preserve"><value>Move to folder…</value></data>
+  <data name="Console_MoveToTrash" xml:space="preserve"><value>Move to trash</value></data>
+  <data name="Console_MoveUnrecognisedFiles" xml:space="preserve"><value>Move unrecognised files</value></data>
+  <data name="Console_MoveUnrecognisedFilesTo" xml:space="preserve"><value>Move unrecognised files to</value></data>
+  <data name="Console_MovedFailed" xml:space="preserve"><value>Moved {0}, {1} failed: {2}</value></data>
+  <data name="Console_MovedFileSTo" xml:space="preserve"><value>Moved {0} file(s) to {1}</value></data>
+  <data name="Console_MovedFileToTheTrash" xml:space="preserve"><value>Moved {0} file{1} to the trash</value></data>
+  <data name="Console_NoDATForThisConsoleAddNoIntroOrRedumpDATsToTheDA" xml:space="preserve"><value>No DAT for this console: add No-Intro or Redump DATs to the DAT folder, then scan.</value></data>
+  <data name="Console_NoDuplicateFiles" xml:space="preserve"><value>No duplicate files</value></data>
+  <data name="Console_NoEmulatorSetForAddOneInSettingsEmulators" xml:space="preserve"><value>No emulator set for {0}; add one in Settings → Emulators.</value></data>
+  <data name="Console_NoMissingDLCFound" xml:space="preserve"><value>No missing DLC found</value></data>
+  <data name="Console_NotRecognised" xml:space="preserve"><value>Not recognised</value></data>
+  <data name="Console_NotScannedYet" xml:space="preserve"><value>Not scanned yet</value></data>
+  <data name="Console_NothingToMoveFilesAreAlreadyThere" xml:space="preserve"><value>Nothing to move: files are already there.</value></data>
+  <data name="Console_OfDumpSMatchADATEntryExactlyTheseDoNotABadOrModi" xml:space="preserve"><value>{0:N0} of {1:N0} dump(s) match a DAT entry exactly. These {2:N0} do not (a bad or modified dump, a hack or translation, a format the DAT does not list, or disc images when hashing is off):</value></data>
+  <data name="Console_ROMPathNotConfiguredOrNotFoundFor" xml:space="preserve"><value>ROM path not configured or not found for {0}</value></data>
+  <data name="Console_ROMsCachedROMFolderNotFound" xml:space="preserve"><value>{0} ROMs (cached) — ROM folder not found</value></data>
+  <data name="Console_ROMsCheckingForChanges" xml:space="preserve"><value>{0} ROMs — checking for changes...</value></data>
+  <data name="Console_RemoveFolders" xml:space="preserve"><value>Remove folders</value></data>
+  <data name="Console_RomSAreStoredMoreThanOnceSameTitleIDTypeAndVersi" xml:space="preserve"><value>{0} rom(s) are stored more than once (same title ID, type and version). The copy to keep is a DAT-verified dump if there is one, else the largest file. The {1} other cop(ies) can be moved to a folder.</value></data>
+  <data name="Console_ScanCancelled" xml:space="preserve"><value>Scan cancelled</value></data>
+  <data name="Console_Scanned" xml:space="preserve"><value>Scanned {0:g}</value></data>
+  <data name="Console_ScannedAt" xml:space="preserve"><value>Scanned at {0:t}</value></data>
+  <data name="Console_Scanning" xml:space="preserve"><value>Scanning...</value></data>
+  <data name="Console_Scanning2" xml:space="preserve"><value>Scanning {0}/{1}: {2}</value></data>
+  <data name="Console_SelectTargetDirectory" xml:space="preserve"><value>Select target directory</value></data>
+  <data name="Console_StopUsingForTheirRomsLeaveTheLibraryOnTheNextSca" xml:space="preserve"><value>Stop using {0} for {1}? Their roms leave the library on the next scan; no files are touched.</value></data>
+  <data name="Console_TheseFilesHaveAMatchingExtensionButNoParserCould" xml:space="preserve"><value>These files have a matching extension but no parser could read them (wrong console, corrupt, encrypted or missing keys). The reason is what the parsers logged. You can move them out of the ROM folder so they stop showing up here.</value></data>
+  <data name="Console_Verify2" xml:space="preserve"><value>Verify</value></data>
+  <data name="Console_VersionDatabaseDownloadFailedSeeLog" xml:space="preserve"><value>Version database download failed (see log)</value></data>
+  <data name="Dashboard_DATHaveMiss" xml:space="preserve"><value>DAT have/miss</value></data>
+  <data name="Dialogs_AddROMFolder" xml:space="preserve"><value>Add ROM folder</value></data>
+  <data name="Dialogs_Properties" xml:space="preserve"><value>Properties — {0}</value></data>
+  <data name="Dialogs_Rename" xml:space="preserve"><value>Rename</value></data>
+  <data name="Dialogs_RenameROMs" xml:space="preserve"><value>Rename {0} ROMs</value></data>
+  <data name="DownloadManager_KBS" xml:space="preserve"><value>{0:F0} KB/s</value></data>
+  <data name="DownloadManager_MBS" xml:space="preserve"><value>{0:F1} MB/s</value></data>
+  <data name="Library_ROMsInConsoles" xml:space="preserve"><value>{0:N0} ROMs in {1} consoles</value></data>
+  <data name="Main_AddFolder" xml:space="preserve"><value>Add folder</value></data>
+  <data name="Main_AllDatabaseFilesArePresent" xml:space="preserve"><value>All database files are present.</value></data>
+  <data name="Main_AlreadyUsesAddAsAnotherFolder" xml:space="preserve"><value>{0} already uses {1}. Add {2} as another folder?</value></data>
+  <data name="Main_CannotRead" xml:space="preserve"><value>Cannot read {0}: {1}</value></data>
+  <data name="Main_CheckingForMissingDatabaseFiles" xml:space="preserve"><value>Checking for missing database files…</value></data>
+  <data name="Main_DBCheckFailed" xml:space="preserve"><value>DB check failed: {0}</value></data>
+  <data name="Main_DownloadingRomManager" xml:space="preserve"><value>Downloading RomManager {0}…</value></data>
+  <data name="Main_DownloadingRomManager2" xml:space="preserve"><value>Downloading RomManager {0}… {1}%</value></data>
+  <data name="Main_IsAlreadyAFolder" xml:space="preserve"><value>{0} is already a {1} folder</value></data>
+  <data name="Main_QueuedMissingDatabaseDownloadS" xml:space="preserve"><value>Queued {0} missing database download(s).</value></data>
+  <data name="Main_Ready" xml:space="preserve"><value>Ready</value></data>
+  <data name="Main_RomManagerIsAvailableDownloadItAndRestartNow" xml:space="preserve"><value>RomManager {0} is available. Download it and restart now?</value></data>
+  <data name="Main_RomManagerIsUpToDate" xml:space="preserve"><value>RomManager is up to date</value></data>
+  <data name="Main_Update" xml:space="preserve"><value>Update</value></data>
+  <data name="Main_UpdateAvailable" xml:space="preserve"><value>Update available</value></data>
+  <data name="Main_UpdateCheckFailed" xml:space="preserve"><value>Update check failed: {0}</value></data>
+  <data name="Main_UpdatesAreAvailableForInstalledCopiesOnlyThisOne" xml:space="preserve"><value>Updates are available for installed copies only (this one runs from a folder).</value></data>
+  <data name="Onboarding_SelectROMFolder" xml:space="preserve"><value>Select {0} ROM folder</value></data>
+  <data name="Onboarding_StepOf" xml:space="preserve"><value>Step {0} of {1}</value></data>
+  <data name="Onboarding_WelcomeToRomManager2" xml:space="preserve"><value>Welcome to RomManager</value></data>
+  <data name="Rom_Unknown" xml:space="preserve"><value>Unknown</value></data>
+  <data name="Settings_AddAROMFolder" xml:space="preserve"><value>Add a {0} ROM folder</value></data>
+  <data name="Settings_AllPresent" xml:space="preserve"><value>All present</value></data>
+  <data name="Settings_CheckFailedSeeLog" xml:space="preserve"><value>Check failed (see log)</value></data>
+  <data name="Settings_Checking" xml:space="preserve"><value>Checking…</value></data>
+  <data name="Settings_EmulatorFor" xml:space="preserve"><value>Emulator for {0}</value></data>
+  <data name="Settings_Exe" xml:space="preserve"><value>exe</value></data>
+  <data name="Settings_Found" xml:space="preserve"><value>Found</value></data>
+  <data name="Settings_ImportFailed" xml:space="preserve"><value>Import failed: {0}</value></data>
+  <data name="Settings_Imported" xml:space="preserve"><value>Imported {0}</value></data>
+  <data name="Settings_LoadingDATs" xml:space="preserve"><value>Loading DATs...</value></data>
+  <data name="Settings_NoConsoleFoldersConfigured" xml:space="preserve"><value>No console folders configured.</value></data>
+  <data name="Settings_NotFound" xml:space="preserve"><value>Not found</value></data>
+  <data name="Settings_PluginSLoaded" xml:space="preserve"><value>{0} plugin(s) loaded</value></data>
+  <data name="Settings_PluginZip" xml:space="preserve"><value>Plugin zip</value></data>
+  <data name="Settings_Programs" xml:space="preserve"><value>Programs</value></data>
+  <data name="Settings_QueuedDownloadS" xml:space="preserve"><value>Queued {0} download(s)</value></data>
+  <data name="Settings_ReloadFailed" xml:space="preserve"><value>Reload failed: {0}</value></data>
+  <data name="Settings_SelectDatabaseDirectory" xml:space="preserve"><value>Select database directory</value></data>
+  <data name="Settings_SelectPluginZIP" xml:space="preserve"><value>Select plugin ZIP</value></data>
+  <data name="Settings_SelectPluginsDirectory" xml:space="preserve"><value>Select plugins directory</value></data>
+  <data name="Settings_Settings" xml:space="preserve"><value>Settings</value></data>
+  <data name="Settings_Zip" xml:space="preserve"><value>zip</value></data>
+  <data name="App_Allow" xml:space="preserve"><value>Allow</value></data>
+  <data name="App_Empty" xml:space="preserve"><value>(empty)</value></data>
+  <data name="App_File" xml:space="preserve"><value>File: {0}</value></data>
+  <data name="App_None" xml:space="preserve"><value>none</value></data>
+  <data name="App_PluginsRunWithYourUserAccountSAccessOnlyAllowPlu" xml:space="preserve"><value>Plugins run with your user account's access. Only allow plugins you trust.</value></data>
+  <data name="ConsoleView_CopyFileName" xml:space="preserve"><value>Copy file name</value></data>
+  <data name="ConsoleView_CopyTitle" xml:space="preserve"><value>Copy title</value></data>
+  <data name="ConsoleView_CopyTitleID" xml:space="preserve"><value>Copy title ID</value></data>
+  <data name="ConsoleView_Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="ConsoleView_LaunchInEmulator" xml:space="preserve"><value>Launch in emulator</value></data>
+  <data name="ConsoleView_MoveTo" xml:space="preserve"><value>Move to…</value></data>
+  <data name="ConsoleView_OpenWithDefaultApp" xml:space="preserve"><value>Open with default app</value></data>
+  <data name="ConsoleView_Properties" xml:space="preserve"><value>Properties…</value></data>
+  <data name="ConsoleView_Rename" xml:space="preserve"><value>Rename…</value></data>
+  <data name="ConsoleView_ShowInFolder" xml:space="preserve"><value>Show in folder</value></data>
+  <data name="Console_DLCListedInTheTitleDatabaseForGamesInTheLibraryA" xml:space="preserve"><value>{0} DLC listed in the title database for games in the library are not in the library.</value></data>
+  <data name="Console_EveryGameInTheLibraryHasItsLatestUpdate" xml:space="preserve"><value>Every game in the library has its latest update.</value></data>
+  <data name="Console_FolderROMSInTheSelectionAreSkipped" xml:space="preserve"><value> {0} folder ROM(s) in the selection are skipped.</value></data>
+  <data name="Console_GameSHaveANewerUpdateThanTheNewestOneInTheLibrar" xml:space="preserve"><value>{0} game(s) have a newer update than the newest one in the library (installed → latest).</value></data>
+  <data name="Console_Keep" xml:space="preserve"><value>{0}: keep {1}</value></data>
+  <data name="Console_MissingSomeFeaturesMayBeUnavailableCheckSettings" xml:space="preserve"><value>Missing: {0}. Some features may be unavailable; check Settings.</value></data>
+  <data name="Console_Move2" xml:space="preserve"><value>    move {0}</value></data>
+  <data name="Console_NothingToDelete" xml:space="preserve"><value>Nothing to delete</value></data>
+  <data name="Console_Remove" xml:space="preserve"><value>Remove</value></data>
+  <data name="Console_TheTitleDatabaseListsNoDLCForYourGamesThatTheLib" xml:space="preserve"><value>The title database lists no DLC for your games that the library lacks (or the title database is not downloaded).</value></data>
+  <data name="Dashboard_CannotReadDATFolder" xml:space="preserve"><value>Cannot read DAT folder: {0}</value></data>
+  <data name="Dashboard_GamesAreCountedAsPresentWhenAFileSHashMatchesThe" xml:space="preserve"><value>Games are counted as present when a file's hash matches the DAT (verified). Missing games are listed under each console.</value></data>
+  <data name="Dashboard_NoConsoleHasDATFilesYetAddNoIntroOrRedumpDATsToT" xml:space="preserve"><value>No console has DAT files yet. Add No-Intro (or Redump) DATs to the DAT folder and scan.</value></data>
+  <data name="Dashboard_NoDATFilesAddNoIntroDATsToNameCartridgeROMsByHas" xml:space="preserve"><value>No DAT files. Add No-Intro DATs to name cartridge ROMs by hash; the next scan applies them.</value></data>
+  <data name="Dashboard_OfMissing" xml:space="preserve"><value>{0}: {1:N0} of {2:N0} ({3:0.#}%), {4:N0} missing</value></data>
+  <data name="Dialogs_FirstShown" xml:space="preserve"><value> (first {0} shown)</value></data>
+  <data name="Dialogs_InvalidTemplate" xml:space="preserve"><value>Invalid template: {0}</value></data>
+  <data name="Dialogs_OfFileSChange" xml:space="preserve"><value>{0} of {1} file(s) change</value></data>
+  <data name="Dialogs_Unchanged" xml:space="preserve"><value>{0}   (unchanged)</value></data>
+  <data name="Main_LooksLikeMatchingFileS" xml:space="preserve"><value>Looks like {0} ({1} matching file(s)).</value></data>
+  <data name="Main_NoKnownROMFilesFoundPickTheConsoleManually" xml:space="preserve"><value>No known ROM files found. Pick the console manually.</value></data>
+  <data name="Settings_Consoles" xml:space="preserve"><value>Consoles: {0}</value></data>
+  <data name="Settings_DATSetSGames" xml:space="preserve"><value>{0}: {1} DAT set(s), {2:N0} games</value></data>
+  <data name="Settings_Permissions" xml:space="preserve"><value>Permissions: {0}</value></data>
+  <data name="Property_TitleID" xml:space="preserve"><value>Title ID</value></data>
+  <data name="Property_Title" xml:space="preserve"><value>Title</value></data>
+  <data name="Property_Type" xml:space="preserve"><value>Type</value></data>
+  <data name="Property_RomType" xml:space="preserve"><value>Type</value></data>
+  <data name="Property_Region" xml:space="preserve"><value>Region</value></data>
+  <data name="Property_Version" xml:space="preserve"><value>Version</value></data>
+  <data name="Property_FilePath" xml:space="preserve"><value>File path</value></data>
+  <data name="Property_FileName" xml:space="preserve"><value>File name</value></data>
+  <data name="Property_Size" xml:space="preserve"><value>Size</value></data>
+  <data name="Property_ReleaseDate" xml:space="preserve"><value>Release date</value></data>
+  <data name="Property_Publisher" xml:space="preserve"><value>Publisher</value></data>
+  <data name="Property_Developer" xml:space="preserve"><value>Developer</value></data>
+  <data name="Property_Languages" xml:space="preserve"><value>Languages</value></data>
+  <data name="Property_Genres" xml:space="preserve"><value>Genres</value></data>
+  <data name="Property_Players" xml:space="preserve"><value>Players</value></data>
+  <data name="Property_ProductCode" xml:space="preserve"><value>Product code</value></data>
+  <data name="Property_Description" xml:space="preserve"><value>Description</value></data>
+  <data name="Property_AltTitles" xml:space="preserve"><value>Alternative titles</value></data>
+  <data name="Property_MinFirmware" xml:space="preserve"><value>Minimum firmware</value></data>
+  <data name="Property_Rating" xml:space="preserve"><value>Rating</value></data>
+  <data name="Property_Hashes" xml:space="preserve"><value>Hashes</value></data>
+  <data name="Property_IsDemo" xml:space="preserve"><value>Demo</value></data>
+  <data name="Property_Console" xml:space="preserve"><value>Console</value></data>
+  <data name="Property_Format" xml:space="preserve"><value>Format</value></data>
+  <data name="Value_All" xml:space="preserve"><value>All</value></data>
+  <data name="Value_Game" xml:space="preserve"><value>Game</value></data>
+  <data name="Value_Update" xml:space="preserve"><value>Update</value></data>
+  <data name="Value_DLC" xml:space="preserve"><value>DLC</value></data>
+  <data name="Value_Homebrew" xml:space="preserve"><value>Homebrew</value></data>
+  <data name="Value_HasUpdate" xml:space="preserve"><value>Has update</value></data>
+  <data name="Value_NoUpdate" xml:space="preserve"><value>No update</value></data>
+  <data name="Theme_System" xml:space="preserve"><value>Default (system)</value></data>
+  <data name="Theme_Light" xml:space="preserve"><value>Light</value></data>
+  <data name="Theme_Dark" xml:space="preserve"><value>Dark</value></data>
+  <data name="Common_OK" xml:space="preserve"><value>OK</value></data>
+  <data name="Settings_NotSet" xml:space="preserve"><value>Not set</value></data>
 </root>

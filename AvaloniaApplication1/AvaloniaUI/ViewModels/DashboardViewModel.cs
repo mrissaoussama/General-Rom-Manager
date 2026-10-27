@@ -1,5 +1,6 @@
 using System.ComponentModel;
 
+
 namespace AvaloniaUI.ViewModels;
 
 /// <summary>Library overview: totals across consoles plus one tile per console.</summary>
@@ -107,10 +108,10 @@ public sealed partial class DashboardViewModel : ViewModelBase
                     .Count(f => f.EndsWith(".dat", StringComparison.OrdinalIgnoreCase) || f.EndsWith(".xml", StringComparison.OrdinalIgnoreCase))
                 : 0;
             DatSummary = count == 0
-                ? "No DAT files. Add No-Intro DATs to name cartridge ROMs by hash; the next scan applies them."
+                ? Strings.Dashboard_NoDATFilesAddNoIntroDATsToNameCartridgeROMsByHas
                 : $"{count} DAT file(s). Added or changed DATs are applied on the next scan.";
         }
-        catch (Exception ex) { DatSummary = $"Cannot read DAT folder: {ex.Message}"; }
+        catch (Exception ex) { DatSummary = string.Format(Strings.Dashboard_CannotReadDATFolder, ex.Message); }
     }
 
     /// <summary>Per console: how many games of its DAT sets the library has, and the missing ones.</summary>
@@ -123,13 +124,13 @@ public sealed partial class DashboardViewModel : ViewModelBase
         {
             if (await console.GetDatCoverageAsync() is not { Total: > 0 } coverage) continue;
             consoles++;
-            lines.Add($"{console.DisplayName}: {coverage.Have.Count:N0} of {coverage.Total:N0} ({coverage.Have.Count * 100.0 / coverage.Total:0.#}%), {coverage.Missing.Count:N0} missing");
+            lines.Add(string.Format(Strings.Dashboard_OfMissing, console.DisplayName, coverage.Have.Count, coverage.Total, coverage.Have.Count * 100.0 / coverage.Total, coverage.Missing.Count));
             lines.AddRange(coverage.Missing.Select(m => "    " + m));
         }
         var summary = consoles == 0
-            ? "No console has DAT files yet. Add No-Intro (or Redump) DATs to the DAT folder and scan."
-            : "Games are counted as present when a file's hash matches the DAT (verified). Missing games are listed under each console.";
-        await Dialogs.PreviewAsync("DAT have/miss", summary, lines, "Close", showCancel: false);
+            ? Strings.Dashboard_NoConsoleHasDATFilesYetAddNoIntroOrRedumpDATsToT
+            : Strings.Dashboard_GamesAreCountedAsPresentWhenAFileSHashMatchesThe;
+        await Dialogs.PreviewAsync(Strings.Dashboard_DATHaveMiss, summary, lines, Strings.Console_Close, showCancel: false);
     }
 
     [RelayCommand]

@@ -1,5 +1,6 @@
 using Avalonia.Collections;
 
+
 namespace AvaloniaUI.ViewModels;
 
 /// <summary>Console-independent page state: rom list, filtering, grouping, selection and rom commands.</summary>
@@ -24,7 +25,7 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
     [NotifyPropertyChangedFor(nameof(UnrecognizedText))]
     private IReadOnlyList<UnrecognizedFile> _unrecognized = [];
 
-    public string? UnrecognizedText => Unrecognized.Count == 0 ? null : $"{Unrecognized.Count} file(s) not recognised";
+    public string? UnrecognizedText => Unrecognized.Count == 0 ? null : string.Format(Strings.Console_FileSNotRecognised, Unrecognized.Count);
 
     /// <summary>Configured ROM folders that could not be reached at the last scan; their roms come from the cache.</summary>
     [ObservableProperty]
@@ -36,17 +37,17 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
     public string? OfflineText => OfflineFolders.Count switch
     {
         0 => null,
-        1 => $"Folder not reachable: {OfflineFolders[0]}. Its roms are shown from the last scan.",
-        _ => $"{OfflineFolders.Count} folders not reachable ({string.Join(", ", OfflineFolders)}). Their roms are shown from the last scan.",
+        1 => string.Format(Strings.Console_FolderNotReachableItsRomsAreShownFromTheLastScan, OfflineFolders[0]),
+        _ => string.Format(Strings.Console_FoldersNotReachableTheirRomsAreShownFromTheLastS, OfflineFolders.Count, string.Join(", ", OfflineFolders)),
     };
 
     /// <summary>Forgets offline folders that are gone for good (removes them from Settings), then rescans.</summary>
     [RelayCommand]
     private async Task RemoveOfflineFolders()
     {
-        if (OfflineFolders.Count == 0 || !await Dialogs.ConfirmAsync("Remove folders",
-                $"Stop using {string.Join(", ", OfflineFolders)} for {DisplayName}? Their roms leave the library on the next scan; no files are touched.",
-                "Remove"))
+        if (OfflineFolders.Count == 0 || !await Dialogs.ConfirmAsync(Strings.Console_RemoveFolders,
+                string.Format(Strings.Console_StopUsingForTheirRomsLeaveTheLibraryOnTheNextSca, string.Join(", ", OfflineFolders), DisplayName),
+                Strings.Console_Remove))
             return;
         var settings = Settings.Instance;
         foreach (var folder in OfflineFolders)
@@ -66,8 +67,8 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
     [NotifyPropertyChangedFor(nameof(LastScanText))]
     private DateTime? _lastScanned;
 
-    public string LastScanText => LastScanned is not { } t ? "Not scanned yet"
-        : t.Date == DateTime.Today ? $"Scanned at {t:t}" : $"Scanned {t:g}";
+    public string LastScanText => LastScanned is not { } t ? Strings.Console_NotScannedYet
+        : t.Date == DateTime.Today ? string.Format(Strings.Console_ScannedAt, t) : string.Format(Strings.Console_Scanned, t);
 
     /// <summary>Files sharing title ID, type and version with another file.</summary>
     public int DuplicateCount => _duplicates.Count;
@@ -76,26 +77,25 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
     [RelayCommand]
     private async Task ShowUnrecognized()
     {
-        if (await Dialogs.PreviewAsync("Not recognised",
-                "These files have a matching extension but no parser could read them (wrong console, corrupt, encrypted or missing keys). " +
-                "The reason is what the parsers logged. You can move them out of the ROM folder so they stop showing up here.",
-                Unrecognized.Select(u => $"{u.Path}  —  {u.Reason}"), "Move to folder…"))
+        if (await Dialogs.PreviewAsync(Strings.Console_NotRecognised,
+                Strings.Console_TheseFilesHaveAMatchingExtensionButNoParserCould,
+                Unrecognized.Select(u => $"{u.Path}  —  {u.Reason}"), Strings.Console_MoveToFolder))
             await MoveUnrecognizedAsync();
     }
 
     // Moves the unrecognised files elsewhere (keeping their sub-folders) after a preview, then rescans.
     private async Task MoveUnrecognizedAsync()
     {
-        if (Unrecognized.Count == 0 || await Dialogs.PickFolderAsync("Move unrecognised files to") is not { } target) return;
+        if (Unrecognized.Count == 0 || await Dialogs.PickFolderAsync(Strings.Console_MoveUnrecognisedFilesTo) is not { } target) return;
         var files = Unrecognized.Select(u => new Rom { Path = u.Path }).ToList();
         var mover = new RomMover(target);
-        if (!await Dialogs.PreviewAsync("Move unrecognised files", $"{files.Count} file(s) will be moved to {target}.",
-                mover.PreviewMoves(files).Select(m => $"{m.SourcePath}  →  {m.DestinationPath}"), "Move"))
+        if (!await Dialogs.PreviewAsync(Strings.Console_MoveUnrecognisedFiles, string.Format(Strings.Console_FileSWillBeMovedTo, files.Count, target),
+                mover.PreviewMoves(files).Select(m => $"{m.SourcePath}  →  {m.DestinationPath}"), Strings.Console_Move))
             return;
         var results = await mover.MoveFilesAsync(files);
         var failed = results.Count(r => !r.Success);
-        StatusMessage = failed == 0 ? $"Moved {results.Count} file(s) to {target}"
-            : $"Moved {results.Count - failed}, {failed} failed: {results.First(r => !r.Success).ErrorMessage}";
+        StatusMessage = failed == 0 ? string.Format(Strings.Console_MovedFileSTo, results.Count, target)
+            : string.Format(Strings.Console_MovedFailed, results.Count - failed, failed, results.First(r => !r.Success).ErrorMessage);
         await LoadData();
     }
 
@@ -202,7 +202,7 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
         var unmet = GetUnmetRequirements();
         RequirementsWarning = unmet.Count == 0
             ? null
-            : $"Missing: {string.Join(", ", unmet.Select(r => r.DisplayName))}. Some features may be unavailable; check Settings.";
+            : string.Format(Strings.Console_MissingSomeFeaturesMayBeUnavailableCheckSettings, string.Join(", ", unmet.Select(r => r.DisplayName)));
     }
 
     protected void ShowRoms(IEnumerable<Rom> roms) =>
@@ -424,7 +424,7 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
     private async Task Move(IReadOnlyList<RomViewModel> roms)
     {
         if (Operations is null || roms.Count == 0) return;
-        var target = await Dialogs.PickFolderAsync("Select target directory");
+        var target = await Dialogs.PickFolderAsync(Strings.Console_SelectTargetDirectory);
         if (target is null) return;
         var sources = roms.Select(r => r.RomSource).ToList();
 
@@ -433,13 +433,13 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
         var moving = plan.Where(m => m.Changed).ToList();
         if (moving.Count == 0)
         {
-            StatusMessage = "Nothing to move: files are already there.";
+            StatusMessage = Strings.Console_NothingToMoveFilesAreAlreadyThere;
             return;
         }
         var bytes = sources.Sum(r => r.Size ?? 0);
-        if (!await Dialogs.PreviewAsync("Move",
-                $"Move {moving.Count} file(s) ({FileUtils.FormatFileSize(bytes)}) to {target}:",
-                moving.Select(m => $"{m.SourcePath}  →  {m.DestinationPath}"), "Move"))
+        if (!await Dialogs.PreviewAsync(Strings.Console_Move,
+                string.Format(Strings.Console_MoveFileSTo, moving.Count, FileUtils.FormatFileSize(bytes), target),
+                moving.Select(m => $"{m.SourcePath}  →  {m.DestinationPath}"), Strings.Console_Move))
             return;
         Track(Operations.EnqueueMove(sources, target), roms);
     }
@@ -453,12 +453,12 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
         var files = paths.Except(folders).ToList();
         if (files.Count == 0)
         {
-            StatusMessage = folders.Count > 0 ? "Folder ROMs are not deleted from here; remove the folder in your file manager." : "Nothing to delete";
+            StatusMessage = folders.Count > 0 ? Strings.Console_FolderROMsAreNotDeletedFromHereRemoveTheFolderIn : Strings.Console_NothingToDelete;
             return;
         }
         var plural = files.Count == 1 ? "" : "s";
-        var skipped = folders.Count == 0 ? "" : $" {folders.Count} folder ROM(s) in the selection are skipped.";
-        if (!await Dialogs.ConfirmAsync("Delete", $"Move {files.Count} file{plural} to the Recycle Bin / Trash?{skipped}", "Move to trash"))
+        var skipped = folders.Count == 0 ? "" : string.Format(Strings.Console_FolderROMSInTheSelectionAreSkipped, folders.Count);
+        if (!await Dialogs.ConfirmAsync(Strings.Console_Delete, string.Format(Strings.Console_MoveFileToTheRecycleBinTrash, files.Count, plural, skipped), Strings.Console_MoveToTrash))
             return;
 
         void RemoveRows(string path)
@@ -479,16 +479,16 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
         }
         if (notTrashed.Count == 0)
         {
-            StatusMessage = $"Moved {files.Count} file{plural} to the trash";
+            StatusMessage = string.Format(Strings.Console_MovedFileToTheTrash, files.Count, plural);
             return;
         }
 
         // No trash for these (network drive, USB stick, unsupported OS): only delete permanently when asked.
-        if (!await Dialogs.ConfirmAsync("Delete permanently?",
-                $"{notTrashed.Count} file(s) could not be moved to the trash ({notTrashed[0].Reason}). Delete them permanently? This cannot be undone.",
-                "Delete permanently"))
+        if (!await Dialogs.ConfirmAsync(Strings.Console_DeletePermanently,
+                string.Format(Strings.Console_FileSCouldNotBeMovedToTheTrashDeleteThemPermanen, notTrashed.Count, notTrashed[0].Reason),
+                Strings.Console_DeletePermanently2))
         {
-            StatusMessage = $"{notTrashed.Count} file(s) kept";
+            StatusMessage = string.Format(Strings.Console_FileSKept, notTrashed.Count);
             return;
         }
         foreach (var (path, _) in notTrashed)
@@ -498,7 +498,7 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
                 if (File.Exists(path)) File.Delete(path);
                 RemoveRows(path);
             }
-            catch (Exception ex) { StatusMessage = $"Delete failed: {ex.Message}"; }
+            catch (Exception ex) { StatusMessage = string.Format(Strings.Console_DeleteFailed, ex.Message); }
         }
     }
 
@@ -516,18 +516,17 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
         var groups = await Task.Run(() => RomManagerShared.Utils.Dat.OneGameOneRom.Select(library, priority, dats));
         if (groups.Count == 0)
         {
-            StatusMessage = "1G1R: every game has a single version";
+            StatusMessage = Strings.Console_1G1REveryGameHasASingleVersion;
             return;
         }
         var others = groups.SelectMany(g => g.Others).ToList();
-        var lines = groups.SelectMany(g => new[] { $"{g.Game}: keep {Path.GetFileName(g.Keep.Path)}" }
-            .Concat(g.Others.Select(o => $"    move {Path.GetFileName(o.Path)}")));
+        var lines = groups.SelectMany(g => new[] { string.Format(Strings.Console_Keep, g.Game, Path.GetFileName(g.Keep.Path)) }
+            .Concat(g.Others.Select(o => string.Format(Strings.Console_Move2, Path.GetFileName(o.Path)))));
         if (!await Dialogs.PreviewAsync("1G1R",
-                $"{groups.Count} game(s) have several versions. Region priority: {string.Join(", ", priority)} " +
-                $"(Settings → File Organiser). The {others.Count} other version(s) can be moved to a folder.",
-                lines, "Move others…"))
+                string.Format(Strings.Console_GameSHaveSeveralVersionsRegionPriorityOthersCoun, groups.Count, string.Join(", $", priority)),
+                lines, Strings.Console_MoveOthers))
             return;
-        if (await Dialogs.PickFolderAsync("Move the other versions to") is not { } target) return;
+        if (await Dialogs.PickFolderAsync(Strings.Console_MoveTheOtherVersionsTo) is not { } target) return;
         var moving = new HashSet<object>(others, ReferenceEqualityComparer.Instance);
         var rows = Roms.Where(r => moving.Contains(r.RomSource)).ToList();
         Track(Operations.EnqueueMove(others, target), rows);
@@ -539,16 +538,15 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
     {
         if (GetDatIndexes().Count == 0)
         {
-            StatusMessage = "No DAT for this console: add No-Intro or Redump DATs to the DAT folder, then scan.";
+            StatusMessage = Strings.Console_NoDATForThisConsoleAddNoIntroOrRedumpDATsToTheDA;
             return;
         }
         var library = Roms.Select(r => r.RomSource).ToList();
         var result = await Task.Run(() => RomManagerShared.Utils.Dat.DatVerification.Compute(library));
         var total = result.Verified.Count + result.Unmatched.Count;
-        await Dialogs.PreviewAsync("Verify",
-            $"{result.Verified.Count:N0} of {total:N0} dump(s) match a DAT entry exactly. These {result.Unmatched.Count:N0} do not " +
-            "(a bad or modified dump, a hack or translation, a format the DAT does not list, or disc images when hashing is off):",
-            result.Unmatched.Select(r => $"{r.Titles?.FirstOrDefault()?.Value ?? "?"}  —  {r.Path}"), "Close", showCancel: false);
+        await Dialogs.PreviewAsync(Strings.Console_Verify2,
+            string.Format(Strings.Console_OfDumpSMatchADATEntryExactlyTheseDoNotABadOrModi, result.Verified.Count, total, result.Unmatched.Count),
+            result.Unmatched.Select(r => $"{r.Titles?.FirstOrDefault()?.Value ?? "?"}  —  {r.Path}"), Strings.Console_Close, showCancel: false);
     }
 
     /// <summary>Keeps one file of each set of identical roms and moves the other copies, after a preview (undoable).</summary>
@@ -559,18 +557,17 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
         var groups = DuplicateDetector.FindExactCopies(Roms.Select(r => r.RomSource));
         if (groups.Count == 0)
         {
-            StatusMessage = "No duplicate files";
+            StatusMessage = Strings.Console_NoDuplicateFiles;
             return;
         }
         var others = groups.SelectMany(g => g.Redundant).ToList();
-        var lines = groups.SelectMany(g => new[] { $"{g.Preferred.Titles?.FirstOrDefault()?.Value ?? g.GroupKey}: keep {g.Preferred.Path}" }
-            .Concat(g.Redundant.Select(o => $"    move {o.Path}")));
-        if (!await Dialogs.PreviewAsync("Duplicates",
-                $"{groups.Count} rom(s) are stored more than once (same title ID, type and version). The copy to keep is a " +
-                $"DAT-verified dump if there is one, else the largest file. The {others.Count} other cop(ies) can be moved to a folder.",
-                lines, "Move copies…"))
+        var lines = groups.SelectMany(g => new[] { string.Format(Strings.Console_Keep, g.Preferred.Titles?.FirstOrDefault()?.Value ?? g.GroupKey, g.Preferred.Path) }
+            .Concat(g.Redundant.Select(o => string.Format(Strings.Console_Move2, o.Path))));
+        if (!await Dialogs.PreviewAsync(Strings.Console_Duplicates2,
+                string.Format(Strings.Console_RomSAreStoredMoreThanOnceSameTitleIDTypeAndVersi, groups.Count, others.Count),
+                lines, Strings.Console_MoveCopies))
             return;
-        if (await Dialogs.PickFolderAsync("Move the duplicate copies to") is not { } target) return;
+        if (await Dialogs.PickFolderAsync(Strings.Console_MoveTheDuplicateCopiesTo) is not { } target) return;
         var moving = new HashSet<object>(others, ReferenceEqualityComparer.Instance);
         Track(Operations.EnqueueMove(others, target), [.. Roms.Where(r => moving.Contains(r.RomSource))]);
     }
@@ -584,9 +581,9 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
         try
         {
             if (await Shell.ExportAsync(Dialogs, $"{ConsoleName}.csv", rows) is { } path)
-                StatusMessage = $"Exported {rows.Count:N0} rows to {path}";
+                StatusMessage = string.Format(Strings.Console_ExportedRowsTo, rows.Count, path);
         }
-        catch (Exception ex) { StatusMessage = $"Export failed: {ex.Message}"; }
+        catch (Exception ex) { StatusMessage = string.Format(Strings.Console_ExportFailed, ex.Message); }
     }
 
     /// <summary>Conversions that apply to some of <paramref name="roms"/> and whose program is present.</summary>
@@ -608,11 +605,11 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
         var console = rom.Console.Length > 0 ? rom.Console : ConsoleName;
         if (!Settings.Instance.Emulators.TryGetValue(console, out var emulator) || string.IsNullOrWhiteSpace(emulator.Path))
         {
-            StatusMessage = $"No emulator set for {console}; add one in Settings → Emulators.";
+            StatusMessage = string.Format(Strings.Console_NoEmulatorSetForAddOneInSettingsEmulators, console);
             return;
         }
         try { EmulatorLauncher.Launch(emulator.Path, emulator.Arguments, rom.Path); }
-        catch (Exception ex) { StatusMessage = $"Could not start the emulator: {ex.Message}"; }
+        catch (Exception ex) { StatusMessage = string.Format(Strings.Console_CouldNotStartTheEmulator, ex.Message); }
     }
 
     [RelayCommand]
@@ -625,7 +622,7 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
         try { Track(Operations.EnqueueAction(action, [.. roms.Select(r => r.RomSource)]), roms); }
         catch (Exception ex)
         {
-            StatusMessage = $"Action failed: {ex.Message}";
+            StatusMessage = string.Format(Strings.Console_ActionFailed, ex.Message);
             AppLog.Warn($"[Action] '{action.Name}' failed: {ex.Message}");
         }
     }

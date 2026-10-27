@@ -1,6 +1,7 @@
 // csharp - AvaloniaApplication1/AvaloniaUI/ViewModels/RomViewModel.cs
 
 
+
 namespace AvaloniaUI.ViewModels;
 
 public partial class RomViewModel : ViewModelBase
@@ -11,7 +12,7 @@ public partial class RomViewModel : ViewModelBase
     public Rom RomSource => _rom;
 
     public string TitleID => _rom.TitleID ?? string.Empty;
-    public string Title   => _rom.Titles?.FirstOrDefault(t => !string.IsNullOrWhiteSpace(t.Value))?.Value ?? "Unknown";
+    public string Title   => _rom.Titles?.FirstOrDefault(t => !string.IsNullOrWhiteSpace(t.Value))?.Value ?? Strings.Rom_Unknown;
     public string Region  => _rom.Regions?.Any() == true ? string.Join(", ", _rom.Regions) : "Unknown";
     public string Version => _rom.Version ?? "N/A";
     public string RomType => DetermineRomType();

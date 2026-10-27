@@ -1,3 +1,4 @@
+
 namespace AvaloniaUI.ViewModels;
 
 /// <summary>Shell: navigation (dashboard + one page per console), menus and the bottom panels.</summary>
@@ -159,7 +160,7 @@ public partial class MainViewModel : ViewModelBase
     public void RecalculateTotalRomCount()
     {
         var total = ConsoleViewModels.Sum(c => c.RomCount);
-        StatusMessage = total > 0 ? $"{total:N0} ROMs in {ConsoleViewModels.Count} consoles" : "Ready";
+        StatusMessage = total > 0 ? string.Format(Strings.Library_ROMsInConsoles, total, ConsoleViewModels.Count) : Strings.Main_Ready;
     }
 
     [RelayCommand]
@@ -172,9 +173,9 @@ public partial class MainViewModel : ViewModelBase
         try
         {
             if (await Shell.ExportAsync(Dialogs, "RomManager library.csv", rows) is { } path)
-                StatusMessage = $"Exported {rows.Count:N0} rows to {path}";
+                StatusMessage = string.Format(Strings.Console_ExportedRowsTo, rows.Count, path);
         }
-        catch (Exception ex) { StatusMessage = $"Export failed: {ex.Message}"; }
+        catch (Exception ex) { StatusMessage = string.Format(Strings.Console_ExportFailed, ex.Message); }
     }
 
     [RelayCommand]
@@ -202,34 +203,34 @@ public partial class MainViewModel : ViewModelBase
     {
         if (Updater is not { IsInstalled: true } updater)
         {
-            if (!quiet) StatusMessage = "Updates are available for installed copies only (this one runs from a folder).";
+            if (!quiet) StatusMessage = Strings.Main_UpdatesAreAvailableForInstalledCopiesOnlyThisOne;
             return;
         }
         try
         {
             if (await updater.CheckAsync() is not { } version)
             {
-                if (!quiet) StatusMessage = "RomManager is up to date";
+                if (!quiet) StatusMessage = Strings.Main_RomManagerIsUpToDate;
                 return;
             }
-            if (!await Dialogs.ConfirmAsync("Update available", $"RomManager {version} is available. Download it and restart now?", "Update"))
+            if (!await Dialogs.ConfirmAsync(Strings.Main_UpdateAvailable, string.Format(Strings.Main_RomManagerIsAvailableDownloadItAndRestartNow, version), Strings.Main_Update))
                 return;
-            StatusMessage = $"Downloading RomManager {version}…";
-            await updater.DownloadAndRestartAsync(new Progress<int>(p => StatusMessage = $"Downloading RomManager {version}… {p}%"));
+            StatusMessage = string.Format(Strings.Main_DownloadingRomManager, version);
+            await updater.DownloadAndRestartAsync(new Progress<int>(p => StatusMessage = string.Format(Strings.Main_DownloadingRomManager2, version, p)));
             // A normal exit saves window placement and settings; the update installs and restarts afterwards.
             Exit();
         }
         catch (Exception ex)
         {
             AppLog.Warn($"Update check failed: {ex.Message}");
-            if (!quiet) StatusMessage = $"Update check failed: {ex.Message}";
+            if (!quiet) StatusMessage = string.Format(Strings.Main_UpdateCheckFailed, ex.Message);
         }
     }
 
     /// <summary>Queues downloads for missing DB files. Returns the number queued, or -1 if the check failed.</summary>
     private async Task<int> DownloadMissingDatabasesAsync(bool showPanel)
     {
-        StatusMessage = "Checking for missing database files…";
+        StatusMessage = Strings.Main_CheckingForMissingDatabaseFiles;
         DownloadMethodInfo[] missing;
         try
         {
@@ -238,13 +239,13 @@ public partial class MainViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            StatusMessage = $"DB check failed: {ex.Message}";
+            StatusMessage = string.Format(Strings.Main_DBCheckFailed, ex.Message);
             return -1;
         }
 
         if (missing.Length == 0)
         {
-            StatusMessage = "All database files are present.";
+            StatusMessage = Strings.Main_AllDatabaseFilesArePresent;
             return 0;
         }
 
@@ -258,7 +259,7 @@ public partial class MainViewModel : ViewModelBase
                 _ = DownloadManager.DownloadAsync(resource.Url[i], path, resource.DownloadName);
             }
         }
-        StatusMessage = $"Queued {missing.Length} missing database download(s).";
+        StatusMessage = string.Format(Strings.Main_QueuedMissingDatabaseDownloadS, missing.Length);
         return missing.Length;
     }
 
@@ -308,27 +309,27 @@ public partial class MainViewModel : ViewModelBase
             (console, path, header) => executors[console].MightParse(path, header))); }
         catch (Exception ex)
         {
-            StatusMessage = $"Cannot read {folder}: {ex.Message}";
+            StatusMessage = string.Format(Strings.Main_CannotRead, folder, ex.Message);
             return;
         }
 
         var best = guesses.FirstOrDefault();
         var guess = best is null ? null : consoles.First(c => c.ConsoleType == best.Console);
         var detail = guess is null
-            ? "No known ROM files found. Pick the console manually."
-            : $"Looks like {guess.DisplayName} ({best!.Files} matching file(s)).";
+            ? Strings.Main_NoKnownROMFilesFoundPickTheConsoleManually
+            : string.Format(Strings.Main_LooksLikeMatchingFileS, guess.DisplayName, best!.Files);
         if (await Dialogs.ChooseConsoleAsync(folder, consoles, guess, detail) is not { } chosen) return;
 
         var existing = _roots.GetRoots(chosen.ConsoleType);
         if (existing.Contains(folder, FileUtils.PathComparer))
         {
-            StatusMessage = $"{folder} is already a {chosen.DisplayName} folder";
+            StatusMessage = string.Format(Strings.Main_IsAlreadyAFolder, folder, chosen.DisplayName);
             return;
         }
         if (existing.Count == 0)
             Settings.Instance.ConsoleLibraryPaths[chosen.Id] = folder;
-        else if (await Dialogs.ConfirmAsync("Add folder",
-                     $"{chosen.DisplayName} already uses {string.Join(", ", existing)}. Add {folder} as another folder?", "Add folder"))
+        else if (await Dialogs.ConfirmAsync(Strings.Main_AddFolder,
+                     string.Format(Strings.Main_AlreadyUsesAddAsAnotherFolder, chosen.DisplayName, string.Join(", ", existing), folder), Strings.Main_AddFolder))
             Settings.Instance.ConsoleExtraLibraryPaths[chosen.Id] = [.. Settings.Instance.ConsoleExtraLibraryPaths.GetValueOrDefault(chosen.Id) ?? [], folder];
         else
             return;

@@ -1,3 +1,4 @@
+
 namespace AvaloniaUI.ViewModels;
 
 /// <summary>
@@ -56,11 +57,11 @@ public sealed class PreviewDialogViewModel(string title, string summary, IEnumer
 /// <summary>Read-only list of every property of a rom.</summary>
 public sealed class PropertiesDialogViewModel(RomViewModel rom) : DialogViewModel
 {
-    public override string Title => $"Properties — {rom.Title}";
+    public override string Title => string.Format(Strings.Dialogs_Properties, rom.Title);
     public override double Width => 560;
     public override double Height => 520;
     public override bool CanResize => true;
-    public IReadOnlyList<DetailRow> Rows { get; } = [.. rom.Properties.Select(kv => new DetailRow(kv.Key, kv.Value))];
+    public IReadOnlyList<DetailRow> Rows { get; } = [.. rom.Properties.Select(kv => new DetailRow(Labels.Property(kv.Key), kv.Value))];
 }
 
 /// <summary>Asks which console a dropped folder holds, preselecting the detected one.</summary>
@@ -74,7 +75,7 @@ public sealed partial class ChooseConsoleDialogViewModel : DialogViewModel
         _selected = guess is null ? null : consoles.FirstOrDefault(c => c.ConsoleType == guess.ConsoleType);
     }
 
-    public override string Title => "Add ROM folder";
+    public override string Title => Strings.Dialogs_AddROMFolder;
     public string Folder { get; }
     public string Detail { get; }
     public IReadOnlyList<ConsoleDescriptor> Consoles { get; }
@@ -108,7 +109,7 @@ public sealed partial class RenameDialogViewModel : DialogViewModel
         UpdatePreview();
     }
 
-    public override string Title => _roms.Count == 1 ? "Rename" : $"Rename {_roms.Count} ROMs";
+    public override string Title => _roms.Count == 1 ? Strings.Dialogs_Rename : string.Format(Strings.Dialogs_RenameROMs, _roms.Count);
     public override double Width => 760;
     public string ConsoleName { get; }
     public IReadOnlyList<string> General => GeneralPlaceholders;
@@ -141,15 +142,15 @@ public sealed partial class RenameDialogViewModel : DialogViewModel
             var results = FileRenamer.PreviewRename(_roms.Take(PreviewLimit), Template);
             foreach (var r in results)
                 PreviewRows.Add(r.SourcePath == r.DestinationPath
-                    ? $"{Path.GetFileName(r.SourcePath)}   (unchanged)"
+                    ? string.Format(Strings.Dialogs_Unchanged, Path.GetFileName(r.SourcePath))
                     : $"{Path.GetFileName(r.SourcePath)}  →  {Path.GetFileName(r.DestinationPath)}");
             var changed = results.Count(r => r.SourcePath != r.DestinationPath);
-            Summary = $"{changed} of {results.Count} file(s) change" + (_roms.Count > PreviewLimit ? $" (first {PreviewLimit} shown)" : "");
+            Summary = string.Format(Strings.Dialogs_OfFileSChange, changed, results.Count) + (_roms.Count > PreviewLimit ? string.Format(Strings.Dialogs_FirstShown, PreviewLimit) : "");
             _valid = true;
         }
         catch (Exception ex)
         {
-            Summary = $"Invalid template: {ex.Message}";
+            Summary = string.Format(Strings.Dialogs_InvalidTemplate, ex.Message);
             _valid = false;
         }
         ConfirmCommand.NotifyCanExecuteChanged();

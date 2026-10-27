@@ -33,7 +33,7 @@ public sealed partial class RomDetailsViewModel : ViewModelBase, IDisposable
 
         Properties = rom.Properties
             .Where(kv => !string.IsNullOrWhiteSpace(kv.Value) && kv.Value != "N/A" && !SpecialKeys.Contains(kv.Key))
-            .Select(kv => new DetailRow(kv.Key, kv.Value))
+            .Select(kv => new DetailRow(Labels.Property(kv.Key), kv.Value))
             .ToList();
         Hashes = src.Hashes?.Select(h => new DetailRow(h.Type.ToString(), h.Value ?? "")).ToList() ?? [];
         Description = src.Descriptions?.FirstOrDefault(d => !string.IsNullOrWhiteSpace(d.Value))?.Value;

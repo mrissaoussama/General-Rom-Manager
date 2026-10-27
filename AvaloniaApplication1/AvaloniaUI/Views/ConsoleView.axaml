@@ -50,15 +50,45 @@
         <!-- Filters -->
         <WrapPanel DockPanel.Dock="Top" Margin="10,0,10,6" ItemSpacing="8" LineSpacing="6">
             <TextBlock Text="{x:Static res:Strings.Console_Type}" VerticalAlignment="Center" Classes="muted" />
-            <ComboBox ItemsSource="{Binding TypeOptions}" SelectedItem="{Binding TypeFilter}" MinWidth="110" />
+            <ComboBox ItemsSource="{Binding TypeOptions}" SelectedItem="{Binding TypeFilter}" MinWidth="110" >
+                <ComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="x:String">
+                        <TextBlock Text="{Binding Converter={x:Static res:ValueLabelConverter.Instance}}" />
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
             <TextBlock Text="{x:Static res:Strings.Console_Region}" VerticalAlignment="Center" Classes="muted" Margin="6,0,0,0" />
-            <ComboBox ItemsSource="{Binding RegionOptions}" SelectedItem="{Binding RegionFilter}" MinWidth="110" />
+            <ComboBox ItemsSource="{Binding RegionOptions}" SelectedItem="{Binding RegionFilter}" MinWidth="110" >
+                <ComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="x:String">
+                        <TextBlock Text="{Binding Converter={x:Static res:ValueLabelConverter.Instance}}" />
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
             <TextBlock Text="{x:Static res:Strings.Console_Language}" VerticalAlignment="Center" Classes="muted" Margin="6,0,0,0" />
-            <ComboBox ItemsSource="{Binding LanguageOptions}" SelectedItem="{Binding LanguageFilter}" MinWidth="110" />
+            <ComboBox ItemsSource="{Binding LanguageOptions}" SelectedItem="{Binding LanguageFilter}" MinWidth="110" >
+                <ComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="x:String">
+                        <TextBlock Text="{Binding Converter={x:Static res:ValueLabelConverter.Instance}}" />
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
             <TextBlock Text="{x:Static res:Strings.Console_Format}" VerticalAlignment="Center" Classes="muted" Margin="6,0,0,0" />
-            <ComboBox ItemsSource="{Binding FormatOptions}" SelectedItem="{Binding FormatFilter}" MinWidth="90" />
+            <ComboBox ItemsSource="{Binding FormatOptions}" SelectedItem="{Binding FormatFilter}" MinWidth="90" >
+                <ComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="x:String">
+                        <TextBlock Text="{Binding Converter={x:Static res:ValueLabelConverter.Instance}}" />
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
             <TextBlock Text="{x:Static res:Strings.Common_Updates}" VerticalAlignment="Center" Classes="muted" Margin="6,0,0,0" />
-            <ComboBox ItemsSource="{Binding UpdateOptions}" SelectedItem="{Binding UpdateFilter}" MinWidth="120" />
+            <ComboBox ItemsSource="{Binding UpdateOptions}" SelectedItem="{Binding UpdateFilter}" MinWidth="120" >
+                <ComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="x:String">
+                        <TextBlock Text="{Binding Converter={x:Static res:ValueLabelConverter.Instance}}" />
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
             <CheckBox Content="{x:Static res:Strings.Console_UnnamedOnly}" IsChecked="{Binding UnnamedOnly}" Margin="6,0,0,0"
                       ToolTip.Tip="{x:Static res:Strings.Console_ROMsWithNoTitleOrOnlyTheirFileNameAsTitle}" />
             <CheckBox Content="{x:Static res:Strings.Common_Duplicates}" IsChecked="{Binding DuplicatesOnly}"

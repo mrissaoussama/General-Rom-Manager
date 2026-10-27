@@ -3,6 +3,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 
+
 namespace AvaloniaUI.Views;
 
 /// <summary>
@@ -144,7 +145,7 @@ public partial class ConsoleView : UserControl
         {
             _grid.Columns.Add(new DataGridTextColumn
             {
-                Header = header,
+                Header = Labels.Property(prop, header),
                 Binding = usesDict
                     ? new Binding(nameof(RomViewModel.PropertiesDictionary)) { Converter = new DictionaryItemConverter(), ConverterParameter = prop }
                     : new Binding(prop),
@@ -196,7 +197,7 @@ public partial class ConsoleView : UserControl
         var sel = Selection;
         if (sel.Count == 0)
         {
-            _menu.Items.Add(new MenuItem { Header = "No ROM selected", IsEnabled = false });
+            _menu.Items.Add(new MenuItem { Header = Strings.ConsoleView_NoROMSelected, IsEnabled = false });
             return;
         }
         var single = sel.Count == 1;
@@ -211,31 +212,31 @@ public partial class ConsoleView : UserControl
             InputGesture = gesture is null ? null : KeyGesture.Parse(gesture),
         };
 
-        _menu.Items.Add(Item("Show in folder", vm.RevealInExplorerCommand, single));
-        _menu.Items.Add(Item("Open with default app", vm.OpenWithDefaultAppCommand, single));
-        _menu.Items.Add(Item("Launch in emulator", vm.LaunchInEmulatorCommand, single));
+        _menu.Items.Add(Item(Strings.ConsoleView_ShowInFolder, vm.RevealInExplorerCommand, single));
+        _menu.Items.Add(Item(Strings.ConsoleView_OpenWithDefaultApp, vm.OpenWithDefaultAppCommand, single));
+        _menu.Items.Add(Item(Strings.ConsoleView_LaunchInEmulator, vm.LaunchInEmulatorCommand, single));
         _menu.Items.Add(new Separator());
-        _menu.Items.Add(Item("Copy title ID" + n, vm.CopyTitleIdsCommand));
-        _menu.Items.Add(Item("Copy title" + n, vm.CopyTitlesCommand));
-        _menu.Items.Add(Item("Copy file name" + n, vm.CopyFileNamesCommand));
+        _menu.Items.Add(Item(Strings.ConsoleView_CopyTitleID + n, vm.CopyTitleIdsCommand));
+        _menu.Items.Add(Item(Strings.ConsoleView_CopyTitle + n, vm.CopyTitlesCommand));
+        _menu.Items.Add(Item(Strings.ConsoleView_CopyFileName + n, vm.CopyFileNamesCommand));
         _menu.Items.Add(new Separator());
-        _menu.Items.Add(Item("Rename…" + n, vm.RenameCommand, gesture: "F2"));
-        _menu.Items.Add(Item("Move to…" + n, vm.MoveCommand));
-        _menu.Items.Add(Item("Properties…", vm.ViewPropertiesCommand, single));
+        _menu.Items.Add(Item(Strings.ConsoleView_Rename + n, vm.RenameCommand, gesture: "F2"));
+        _menu.Items.Add(Item(Strings.ConsoleView_MoveTo + n, vm.MoveCommand));
+        _menu.Items.Add(Item(Strings.ConsoleView_Properties, vm.ViewPropertiesCommand, single));
         if (ConsoleViewModelBase.AvailableConversions(sel) is { Count: > 0 } conversions)
         {
-            var convert = new MenuItem { Header = "Convert" + n };
+            var convert = new MenuItem { Header = Strings.ConsoleView_Convert + n };
             foreach (var tool in conversions)
             {
                 var item = new MenuItem { Header = tool.DisplayName };
-                ToolTip.SetTip(item, $"Keeps the original; writes .{tool.OutputExtension} next to it");
+                ToolTip.SetTip(item, string.Format(Strings.ConsoleView_KeepsTheOriginalWritesNextToIt, tool.OutputExtension));
                 item.Click += (_, _) => vm.Convert(tool, sel);
                 convert.Items.Add(item);
             }
             _menu.Items.Add(convert);
         }
         _menu.Items.Add(new Separator());
-        _menu.Items.Add(Item("Delete" + n, vm.DeleteCommand, gesture: "Delete"));
+        _menu.Items.Add(Item(Strings.ConsoleView_Delete + n, vm.DeleteCommand, gesture: "Delete"));
 
         var actions = vm.GetContextActionsForSelection(sel.Select(r => r.RomSource)).GroupBy(a => a.Category).ToList();
         foreach (var group in actions)
