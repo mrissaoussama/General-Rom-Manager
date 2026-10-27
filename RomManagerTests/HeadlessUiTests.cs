@@ -192,6 +192,50 @@ public sealed class HeadlessUiTests
         Focused().Should().Be("11");
     });
 
+    // ── Performance ──────────────────────────────────────────────────────
+    // A 5,000-rom library must load, filter and switch to cards without stalling the UI thread.
+
+    [Fact]
+    public Task LargeLibrary_StaysResponsive() => Ui(() =>
+    {
+        var roms = Enumerable.Range(0, 5000).Select(i =>
+        {
+            var g = new Game { Path = $"/roms/{i:D5}.nsp", TitleID = $"{i:X16}", Version = "1", Size = 1 << 20 };
+            g.AddTitleName($"Game {i:D5}");
+            g.AddRegion(i % 2 == 0 ? Region.USA : Region.Japan);
+            return (Rom)g;
+        }).ToArray();
+        var vm = new TestConsoleViewModel();
+        var window = new Window { Width = 1400, Height = 900, Content = vm };
+        window.Show();
+
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        vm.Show(roms);
+        window.UpdateLayout();
+        var load = sw.ElapsedMilliseconds;
+
+        sw.Restart();
+        vm.SearchText = "Game 049";
+        Dispatcher.UIThread.RunJobs();
+        window.UpdateLayout();
+        var filter = sw.ElapsedMilliseconds;
+        vm.SearchText = "";
+        Dispatcher.UIThread.RunJobs();
+
+        sw.Restart();
+        vm.IsCardView = true;
+        window.UpdateLayout();
+        var cards = sw.ElapsedMilliseconds;
+        var realized = Find<ItemsRepeater>(window).Children.Count(c => c.IsVisible);
+
+        TestContext.Current.TestOutputHelper?.WriteLine($"load {load} ms, filter {filter} ms, cards {cards} ms, {realized} cards realized");
+        if (Environment.GetEnvironmentVariable("PERF_LOG") is { } perfLog) File.WriteAllText(perfLog, $"load {load} ms, filter {filter} ms, cards {cards} ms, {realized} cards realized");
+        realized.Should().BeLessThan(200, "cards are virtualized");
+        load.Should().BeLessThan(5000);
+        filter.Should().BeLessThan(2000);
+        cards.Should().BeLessThan(3000);
+    });
+
     // ── Screenshots ──────────────────────────────────────────────────────
     // Always renders (a cheap check that real frames work); writes docs/screenshots/*.png with SCREENSHOTS=1.
 
