@@ -66,9 +66,12 @@ public sealed partial class SettingsViewModel : DialogViewModel
     public IReadOnlyList<ToolPathRow> Tools { get; }
 
     // Preview the theme while the dialog is open; Cancel puts the old one back.
-    partial void OnThemeIndexChanged(int value) => ApplyTheme(ThemeKey(value));
+    partial void OnThemeIndexChanged(int value) => PreviewTheme(value);
 
-    private static string ThemeKey(int index) => index switch { 1 => "Light", 2 => "Dark", _ => "Default" };
+    /// <summary>Applies the theme at <paramref name="index"/> of <see cref="ThemeNames"/> to the running app.</summary>
+    public static void PreviewTheme(int index) => ApplyTheme(ThemeKey(index));
+
+    public static string ThemeKey(int index) => index switch { 1 => "Light", 2 => "Dark", _ => "Default" };
 
     private static void ApplyTheme(string key)
     {

@@ -256,5 +256,15 @@ public sealed class HeadlessUiTests
         settingsWindow.UpdateLayout();
         Find<Button>(settingsWindow, b => b.Content as string == "Reload plugins").Should().NotBeNull();
         settingsWindow.Close();
+
+        var onboarding = new OnboardingViewModel(new AvaloniaUI.Utils.Settings(), _ => { });
+        onboarding.NextCommand.Execute(null);
+        var onboardingWindow = new DialogWindow(onboarding);
+        onboardingWindow.Show();
+        Find<OnboardingView>(onboardingWindow).Should().NotBeNull();
+        Capture(onboardingWindow, "onboarding");
+        Click(Find<Button>(onboardingWindow, b => b.Content as string == "Next" && b.IsEffectivelyVisible));
+        onboarding.IsTheme.Should().BeTrue();
+        onboardingWindow.Close();
     });
 }

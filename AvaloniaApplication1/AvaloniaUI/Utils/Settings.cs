@@ -42,6 +42,9 @@ public class Settings
     /// <summary>Root directories to scan per console (Key = console name).</summary>
     public Dictionary<string, string> ConsoleLibraryPaths { get; set; } = new();
 
+    /// <summary>The first-run wizard was finished or closed; it is not shown again.</summary>
+    public bool OnboardingCompleted { get; set; }
+
     /// <summary>More ROM folders per console id, scanned together with the primary one.</summary>
     public Dictionary<string, List<string>> ConsoleExtraLibraryPaths { get; set; } = new();
     /// <summary>Per console id: emulator executable and arguments template (see EmulatorLauncher).</summary>

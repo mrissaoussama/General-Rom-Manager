@@ -81,7 +81,8 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
       choose-console dialogs are AXAML views hosted by `DialogWindow`.
 - [x] Settings as an AXAML view (`SettingsViewModel` + `SettingsView`). It edits a draft: Cancel used to keep
       every edit in memory (saved by the next unrelated save); plugin reload refreshes the list in place.
-- [ ] Onboarding as an AXAML view.
+- [x] Onboarding as an AXAML view (`OnboardingViewModel`). It no longer reappears on every start after being
+      skipped, and is not shown when config.json already has ROM folders.
 - [x] Settings: toggle Redump hashing (settings.json overrides config.json).
 - [x] Settings: scan parallelism and excluded folders.
 - [x] Settings: DAT overview per console (sets and game counts, on request) and "Open DAT folder".

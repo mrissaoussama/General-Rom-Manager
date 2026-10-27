@@ -28,8 +28,6 @@ public interface IDialogService
     /// <summary>Save dialog offering each (name, extension) pair as a file type; null when cancelled.</summary>
     Task<string?> PickSaveFileAsync(string title, string suggestedName, params (string Name, string Extension)[] types);
 
-    /// <summary>Shows a window that is not (yet) a <see cref="DialogViewModel"/>, e.g. Settings.</summary>
-    Task ShowWindowAsync(Window window);
 }
 
 public static class DialogService
@@ -81,7 +79,4 @@ public sealed class AvaloniaDialogService : IDialogService
 
     public Task<string?> PickSaveFileAsync(string title, string suggestedName, params (string Name, string Extension)[] types) =>
         Owner is { } owner ? Dialogs.SaveFileAsync(owner, title, suggestedName, types) : Task.FromResult<string?>(null);
-
-    public Task ShowWindowAsync(Window window) =>
-        Owner is { } owner ? window.ShowDialog(owner) : Task.CompletedTask;
 }

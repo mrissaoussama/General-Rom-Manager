@@ -1,0 +1,68 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:AvaloniaUI.ViewModels"
+             x:Class="AvaloniaUI.Views.DialogViews.OnboardingView"
+             x:DataType="vm:OnboardingViewModel"
+             x:Name="Root">
+    <DockPanel>
+        <DockPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
+            <Button DockPanel.Dock="Right" Content="Finish" IsDefault="True" Command="{Binding ConfirmCommand}"
+                    IsVisible="{Binding IsDone}" Width="90" />
+            <Button DockPanel.Dock="Right" Content="Next" IsDefault="{Binding !IsDone}" Command="{Binding NextCommand}"
+                    IsVisible="{Binding !IsDone}" Width="90" />
+            <Button DockPanel.Dock="Right" Content="Back" Command="{Binding BackCommand}" IsVisible="{Binding CanGoBack}"
+                    Width="90" Margin="0,0,8,0" />
+            <TextBlock Text="{Binding StepText}" Classes="muted" VerticalAlignment="Center" />
+        </DockPanel>
+
+        <Panel>
+            <!-- Welcome -->
+            <StackPanel IsVisible="{Binding IsWelcome}" VerticalAlignment="Center" Spacing="16" Margin="32">
+                <TextBlock Text="Welcome to RomManager" Classes="h1" HorizontalAlignment="Center" />
+                <TextBlock TextWrapping="Wrap" TextAlignment="Center" Opacity="0.75"
+                           Text="RomManager reads your ROM files to find each game's title, version, region and icon, and helps you rename, move, de-duplicate and convert them." />
+                <TextBlock TextWrapping="Wrap" TextAlignment="Center" Opacity="0.6"
+                           Text="Next, pick the folder that holds each console's ROMs. You can change everything later in Settings." />
+            </StackPanel>
+
+            <!-- ROM folders -->
+            <DockPanel IsVisible="{Binding IsFolders}">
+                <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,8">
+                    <TextBlock Text="ROM folders" Classes="h2" />
+                    <TextBlock Classes="muted" TextWrapping="Wrap" Text="Choose a folder for each console you have; leave the others empty." />
+                </StackPanel>
+                <ScrollViewer>
+                    <ItemsControl ItemsSource="{Binding Folders}" Margin="0,0,12,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:OnboardingFolder">
+                                <Grid ColumnDefinitions="160,*,Auto,70" Margin="0,2">
+                                    <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                    <TextBox Grid.Column="1" Text="{Binding Path.Value}" Watermark="Folder with ROMs"
+                                             AutomationProperties.Name="{Binding DisplayName}" />
+                                    <Button Grid.Column="2" Content="Browse…" Margin="4,0" CommandParameter="{Binding}"
+                                            Command="{Binding #Root.((vm:OnboardingViewModel)DataContext).BrowseCommand}" />
+                                    <TextBlock Grid.Column="3" Text="{Binding Path.Status.Text}" Foreground="{Binding Path.Status.Brush}"
+                                               FontSize="11" VerticalAlignment="Center" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </DockPanel>
+
+            <!-- Theme -->
+            <StackPanel IsVisible="{Binding IsTheme}" VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="12">
+                <TextBlock Text="Theme" Classes="h2" />
+                <ListBox ItemsSource="{Binding ThemeNames}" SelectedIndex="{Binding ThemeIndex}" Width="260"
+                         AutomationProperties.Name="Theme" />
+            </StackPanel>
+
+            <!-- Done -->
+            <StackPanel IsVisible="{Binding IsDone}" VerticalAlignment="Center" Spacing="16" Margin="32">
+                <TextBlock Text="All set" Classes="h1" HorizontalAlignment="Center" />
+                <TextBlock TextWrapping="Wrap" TextAlignment="Center" Opacity="0.75"
+                           Text="{Binding ChosenFolders, StringFormat='{}{0} console folder(s) chosen. Click Finish: RomManager scans them now and watches them for changes.'}" />
+            </StackPanel>
+        </Panel>
+    </DockPanel>
+</UserControl>

@@ -81,7 +81,8 @@ DTOs and hashes have their own tables. `MigrationTests` and CI check for pending
   adds scanning; `LibraryViewModel` is the all-consoles view.
 - View models open dialogs through `IDialogService` (`DialogService.Current`; tests swap in a fake). Dialogs are
   `DialogViewModel`s (confirm, preview, properties, rename, choose console) shown in `DialogWindow`, with views
-  in `Views/DialogViews/` resolved by `ViewLocator`. Settings is `SettingsViewModel` (a draft, applied on Save); `OnboardingWindow` is still built in code.
+  in `Views/DialogViews/` resolved by `ViewLocator`. Settings is `SettingsViewModel` (a draft, applied on Save) and the first-run wizard is `OnboardingViewModel`;
+  no window is built in code any more.
 
 ## Console support matrix (real-file runs 2026-10-25; later formats covered by fixture tests)
 

@@ -26,6 +26,7 @@ public class ViewLocator : IDataTemplate
             ChooseConsoleDialogViewModel => new Views.DialogViews.ChooseConsoleDialogView(),
             RenameDialogViewModel => new Views.DialogViews.RenameDialogView(),
             SettingsViewModel => new Views.DialogViews.SettingsView(),
+            OnboardingViewModel => new Views.DialogViews.OnboardingView(),
             _ => null,
         };
         if (view is null) return new TextBlock { Text = "No view for " + param.GetType().Name };

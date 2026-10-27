@@ -40,7 +40,6 @@ public sealed class DialogServiceTests : IDisposable
         public Task<bool> ShowAsync(DialogViewModel dialog) => Task.FromResult(Answer);
         public Task<string?> PickSaveFileAsync(string title, string suggestedName, params (string Name, string Extension)[] types) =>
             Task.FromResult<string?>(null);
-        public Task ShowWindowAsync(Avalonia.Controls.Window window) => Task.CompletedTask;
     }
 
     private sealed class TestConsoleViewModel() : ConsoleViewModelBase("Test", null)

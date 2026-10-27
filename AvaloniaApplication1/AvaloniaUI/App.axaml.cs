@@ -129,7 +129,8 @@ public partial class App : Application
             // Show onboarding wizard on first run (after the main window has rendered)
             desktop.MainWindow.Opened += async (_, _) =>
             {
-                await OnboardingWindow.ShowIfFirstRunAsync(desktop.MainWindow);
+                if (OnboardingViewModel.ShouldShow(Settings.Instance, _host.Services.GetRequiredService<ILibraryRoots>()))
+                    await DialogService.Current.ShowAsync(new OnboardingViewModel(Settings.Instance));
                 // Cached libraries show immediately; only new/changed files are parsed.
                 await mainVm.RefreshCommand.ExecuteAsync(null);
             };
