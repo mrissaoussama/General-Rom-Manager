@@ -58,7 +58,8 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
       schema and every stored snapshot for no gain.
 - [x] Namespaces match folders (`NamespaceTests`). Mostly files moved (3DS → ThreeDS, N64 → Nintendo64,
       Configuration/Parsers sub-folders) so stored rom type names stay valid; only parsers/readers changed namespace.
-- [ ] Split heavy consoles into module assemblies (ADR 0003 step 2: Switch/LibHac, Xbox/ISO2GOD).
+- [ ] Split heavy consoles into module assemblies (ADR 0003 step 2). **Blocked:** `AppDbContext` maps Switch and
+      Wii U title-DB entities, so modules first need to contribute their own EF configuration. → v3.
 
 ### B.4 Scanning
 - [x] Polling fallback for ROM folders on network drives/UNC paths (every 2 minutes: file count, total
@@ -81,7 +82,8 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
 - [x] **[P1]** Redump for multi-track discs: PS1/PS2 `.cue` and Dreamcast `.gdi` sets match by their first
       track. (CHD's internal SHA-1 covers the whole compressed image and cannot match Redump's per-track
       hashes; matching CHDs needs decompression.)
-- [ ] XCI parsing test with a homebrew XCI fixture.
+- [ ] XCI parsing test. **Needs a real file:** an XCI cannot be identified without keys, and building an
+      encrypted XCI fixture is not practical; run ParserHarness on one of yours.
 - [x] Switch missing-DLC report (`SwitchDlcChecker`): DLC IDs in the already-downloaded titledb whose base game
       (DLC ID − 0x1000, low 13 bits cleared) is in the library; no extra download (`cnmts.json` not needed).
 - [x] PS4 missing updates from Sony's update XML (`PS4UpdateChecker`; HMAC-keyed URL, TLS pinned to Sony's
@@ -107,7 +109,7 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
       F2 and Alt+Enter act on the focused card.
 - [x] README screenshots, rendered by `HeadlessUiTests.Screenshots` (Skia, the app's own styles from
       `AppStyles.axaml`) with `SCREENSHOTS=1`. The dashboard now counts consoles that already have roms.
-- [ ] Localisation (resx) once strings are in AXAML.
+- [ ] Localisation (resx). Prerequisite done: every window is AXAML now. → v3.
 
 ## Phase E: Features
 
