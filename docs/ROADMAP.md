@@ -49,8 +49,8 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
 
 ## Phase F: Plugins
 
-- [ ] Plugin settings: let a plugin describe its options (key, label, type) and edit them in Settings → Plugins
-      instead of hand-editing `config.json` in its data folder.
+- [x] Plugin settings: `IPluginSettings` declares options (Text, Secret, Boolean); Settings → Plugins edits them;
+      plugins read `IPluginContext.Settings`. The sample plugin's API key moved there.
 
 ## Phase G: Testing and release
 

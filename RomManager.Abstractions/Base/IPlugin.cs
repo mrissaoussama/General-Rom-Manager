@@ -120,6 +120,12 @@ public interface IPluginContext
     /// <summary>The permissions the user approved for this plugin.</summary>
     IReadOnlySet<PluginPermission> GrantedPermissions { get; }
 
+    /// <summary>
+    /// The values of the plugin's <see cref="IPluginSettings.SettingDescriptors"/>, as the user set them in
+    /// Settings → Plugins (defaults where unset). Empty for plugins without settings.
+    /// </summary>
+    IReadOnlyDictionary<string, string> Settings => new Dictionary<string, string>();
+
     /// <summary>An <see cref="HttpClient"/> for the plugin. Requires <see cref="PluginPermission.Network"/>.</summary>
     /// <exception cref="PluginPermissionException">Network was not approved.</exception>
     HttpClient CreateHttpClient();
@@ -141,6 +147,28 @@ public sealed class PluginPermissionException(string pluginName, PluginPermissio
     : InvalidOperationException($"Plugin '{pluginName}' needs the {permission} permission for this.")
 {
     public PluginPermission Permission { get; } = permission;
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Settings
+// ──────────────────────────────────────────────────────────────────────────────
+
+public enum PluginSettingKind
+{
+    Text,
+    /// <summary>Hidden while typing (API keys, passwords). Stored like Text, in the plugin's data folder.</summary>
+    Secret,
+    Boolean,
+}
+
+/// <summary>One option a plugin offers in Settings → Plugins.</summary>
+public sealed record PluginSettingDescriptor(string Key, string Label, PluginSettingKind Kind = PluginSettingKind.Text,
+    string Default = "", string? Description = null);
+
+/// <summary>Optional for plugins: implement next to <see cref="IPlugin"/> to get options edited by the app.</summary>
+public interface IPluginSettings
+{
+    IReadOnlyList<PluginSettingDescriptor> SettingDescriptors { get; }
 }
 
 // ──────────────────────────────────────────────────────────────────────────────

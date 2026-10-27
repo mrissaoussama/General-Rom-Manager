@@ -6,12 +6,17 @@ using RomManagerShared.Utils;
 
 namespace RomManagerTests;
 
+[Collection("PluginData")] // PluginManager.DataRootOverride is static
 public sealed class PluginManagerTests : IDisposable
 {
     private readonly string _dir = Directory.CreateTempSubdirectory("plugins").FullName;
 
+    // Plugin data folders go to a temp folder, never the configured base folder.
+    public PluginManagerTests() => PluginManager.DataRootOverride = Path.Combine(_dir, "data");
+
     public void Dispose()
     {
+        PluginManager.DataRootOverride = null;
         try { Directory.Delete(_dir, true); } catch (UnauthorizedAccessException) { /* plugin DLL may stay mapped */ }
     }
 
@@ -89,5 +94,23 @@ public sealed class PluginManagerTests : IDisposable
 
         store.Revoke("P");
         new PluginApprovalStore(store.Path).IsApproved(request).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task PluginSettings_UseDefaults_AndRoundTrip()
+    {
+        CopySample();
+        await using var manager = CreateManager(new PluginApprovalStore(Path.Combine(_dir, "approvals.json")));
+        manager.ApprovalCallback = _ => Task.FromResult(true);
+        await manager.LoadPluginsAsync(_dir, askForApproval: true);
+        var plugin = manager.Plugins.Should().ContainSingle().Subject;
+        plugin.Should().BeAssignableTo<IPluginSettings>();
+
+        PluginManager.GetSettings(plugin).Should().Equal(new Dictionary<string, string> { ["ApiKey"] = "" });
+
+        PluginManager.SaveSettings(plugin, new Dictionary<string, string> { ["ApiKey"] = "k-123", ["Unknown"] = "dropped" });
+
+        PluginManager.GetSettings(plugin).Should().Equal(new Dictionary<string, string> { ["ApiKey"] = "k-123" });
+        File.ReadAllText(Path.Combine(_dir, "data", "GameMetadataFetcher", "settings.json")).Should().NotContain("Unknown");
     }
 }

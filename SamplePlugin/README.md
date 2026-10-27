@@ -14,12 +14,14 @@ to fetch game metadata for selected ROMs.
 2. Build the plugin: `dotnet build SamplePlugin/SamplePlugin.csproj`.
 3. Copy the output DLL and its dependencies to the RomManager `plugins/` folder
    (default: `plugins/SamplePlugin/SamplePlugin.dll`).
-4. Edit the auto-created config file at:
-   ```
-   %LOCALAPPDATA%\RomManager\plugins\GameMetadataFetcher\config.json
-   ```
-   Replace `YOUR_RAWG_API_KEY_HERE` with your actual key.
-5. Restart RomManager. The options will appear when you right-click a ROM.
+4. Start RomManager, approve the plugin, and enter the key in Settings → Plugins → GameMetadataFetcher.
+   The options appear when you right-click a ROM.
+
+## Settings
+
+Implement `IPluginSettings` to declare options (`PluginSettingDescriptor`: key, label, Text / Secret / Boolean,
+default). Settings → Plugins shows them; the values are saved in the plugin's data folder (`settings.json`)
+and handed to the plugin as `IPluginContext.Settings`.
 
 ## Library hooks
 

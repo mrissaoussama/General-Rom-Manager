@@ -14,16 +14,14 @@ namespace SamplePlugin;
 ///
 /// Setup:
 ///   1. Register for a free RAWG API key at https://rawg.io/login
-///   2. Edit the plugin config file at:
-///        %AppData%\RomManager\plugins\GameMetadataFetcher\config.json
-///      and set:  { "ApiKey": "YOUR_KEY_HERE" }
-///   3. Re-launch the app. The option will appear in the ROM context menu.
+///   2. Enter it in Settings → Plugins → GameMetadataFetcher (the plugin declares it via IPluginSettings).
+///   3. The options appear in the ROM context menu.
 /// </summary>
 [Plugin("GameMetadataFetcher", "1.0.0",
     Description = "Fetches game metadata from the RAWG API",
     Author = "RomManager Sample",
-    Permissions = [PluginPermission.Network])] // its config lives in the plugin data folder: no FileSystem needed
-public sealed class GameMetadataPlugin : IPlugin, ILibraryHooks
+    Permissions = [PluginPermission.Network])]
+public sealed class GameMetadataPlugin : IPlugin, ILibraryHooks, IPluginSettings
 {
     // ── IPlugin identity ──────────────────────────────────────────────────
     public string PluginName        => "GameMetadataFetcher";
@@ -53,37 +51,21 @@ public sealed class GameMetadataPlugin : IPlugin, ILibraryHooks
 
     // ── Private state ─────────────────────────────────────────────────────
     private HttpClient? _http;
-    private string _apiKey = string.Empty;
     private ILogger _logger = null!;
 
     // ── IPlugin lifecycle ─────────────────────────────────────────────────
 
-    public async Task InitializeAsync(IPluginContext context)
+    // IPluginSettings: the API key is edited in Settings → Plugins (hidden while typing).
+    public IReadOnlyList<PluginSettingDescriptor> SettingDescriptors =>
+    [
+        new("ApiKey", "RAWG API key", PluginSettingKind.Secret, Description: "Free key from https://rawg.io/apidocs"),
+    ];
+
+    public Task InitializeAsync(IPluginContext context)
     {
         _logger = context.Logger;
         _http = context.CreateHttpClient(); // granted because Network is declared and approved
-
-        // Load config (API key). OpenFile needs no FileSystem permission inside the plugin data folder.
-        if (File.Exists(context.ConfigFilePath))
-        {
-            try
-            {
-                await using var stream = context.OpenFile(context.ConfigFilePath, FileMode.Open, FileAccess.Read);
-                var doc = await System.Text.Json.JsonDocument.ParseAsync(stream);
-                _apiKey = doc.RootElement.TryGetProperty("ApiKey", out var v) ? v.GetString() ?? "" : "";
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning("Failed to read plugin config: {Message}", ex.Message);
-            }
-        }
-        else
-        {
-            // Write a template config
-            await using var stream = context.OpenFile(context.ConfigFilePath, FileMode.Create, FileAccess.Write);
-            await stream.WriteAsync("""{ "ApiKey": "YOUR_RAWG_API_KEY_HERE" }"""u8.ToArray());
-            _logger.LogInformation("Created template config at {Path}", context.ConfigFilePath);
-        }
+        return Task.CompletedTask;
     }
 
     // ILibraryHooks: called after every scan of a console this plugin supports.
@@ -108,10 +90,10 @@ public sealed class GameMetadataPlugin : IPlugin, ILibraryHooks
 
     private async Task FetchMetadataAsync(IPluginContext context)
     {
-        if (string.IsNullOrWhiteSpace(_apiKey) || _apiKey == "YOUR_RAWG_API_KEY_HERE")
+        var apiKey = context.Settings.GetValueOrDefault("ApiKey", "");
+        if (string.IsNullOrWhiteSpace(apiKey))
         {
-            await ShowErrorAsync(context, "RAWG API key not set.",
-                $"Edit the config file at:\n{context.ConfigFilePath}\nand replace YOUR_RAWG_API_KEY_HERE.");
+            await ShowErrorAsync(context, "RAWG API key not set.", "Enter it in Settings → Plugins → GameMetadataFetcher.");
             return;
         }
 
@@ -121,7 +103,7 @@ public sealed class GameMetadataPlugin : IPlugin, ILibraryHooks
             var title = rom.Titles?.FirstOrDefault()?.Value ?? rom.TitleID ?? "Unknown";
             try
             {
-                var url = $"https://api.rawg.io/api/games?key={_apiKey}&search={Uri.EscapeDataString(title)}&page_size=1";
+                var url = $"https://api.rawg.io/api/games?key={Uri.EscapeDataString(apiKey)}&search={Uri.EscapeDataString(title)}&page_size=1";
                 var response = await _http!.GetFromJsonAsync<RawgSearchResponse>(url);
                 if (response?.Results.Count > 0)
                     results.Add(response.Results[0]);

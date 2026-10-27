@@ -55,10 +55,12 @@ internal sealed class DefaultPluginContext : IPluginContext, IDisposable
         string pluginDataDirectory,
         string configFilePath,
         IReadOnlyList<Rom> selectedRoms,
-        Func<object, string, Task> showUI)
+        Func<object, string, Task> showUI,
+        IReadOnlyDictionary<string, string>? settings = null)
     {
         _scope = rootProvider.CreateScope();
         _pluginName = pluginName;
+        Settings = settings ?? new Dictionary<string, string>();
         GrantedPermissions = granted.ToHashSet();
         Services = new PermissionFilteredServiceProvider(_scope.ServiceProvider, GrantedPermissions);
         Logger = logger;
@@ -74,6 +76,7 @@ internal sealed class DefaultPluginContext : IPluginContext, IDisposable
     public string ConfigFilePath { get; }
     public IReadOnlyList<Rom> SelectedRoms { get; }
     public IReadOnlySet<PluginPermission> GrantedPermissions { get; }
+    public IReadOnlyDictionary<string, string> Settings { get; }
 
     public Task ShowPluginUIAsync(object avaloniaControl, string title)
         => _showUI(avaloniaControl, title);
@@ -311,26 +314,11 @@ public sealed class PluginManager : IAsyncDisposable
                 return false;
             }
 
-            // Build a plugin-scoped data directory
-            var pluginDataDir = Path.Combine(
-                RomManagerShared.Configuration.RomManagerConfiguration.GetBaseFolderPath(),
-                "Plugins",
-                attr.Name);
-            try { Directory.CreateDirectory(pluginDataDir); }
+            try { Directory.CreateDirectory(DataDirectory(attr.Name)); }
             catch { /* best-effort; if the data dir can't be created the plugin may still function without it */ }
 
-            var configFile = Path.Combine(pluginDataDir, "config.json");
-            var pluginLogger = _loggerFactory.CreateLogger(type.FullName ?? attr.Name);
-
-            var context = new DefaultPluginContext(
-                _rootServices,
-                pluginLogger,
-                attr.Name,
-                attr.Permissions,
-                pluginDataDir,
-                configFile,
-                selectedRoms,
-                ShowPluginUICallback ?? ((_, _) => Task.CompletedTask));
+            // Kept for the plugin's lifetime: plugins may hold on to what InitializeAsync gave them.
+            var context = CreateContext(plugin, selectedRoms);
 
             await plugin.InitializeAsync(context);
 
@@ -389,7 +377,7 @@ public sealed class PluginManager : IAsyncDisposable
     {
         var attr = plugin.GetType().GetCustomAttribute<PluginAttribute>();
         var name = attr?.Name ?? plugin.PluginName;
-        var pluginDataDir = Path.Combine(RomManagerShared.Configuration.RomManagerConfiguration.GetBaseFolderPath(), "Plugins", name);
+        var pluginDataDir = DataDirectory(name);
         return new DefaultPluginContext(
             _rootServices,
             _loggerFactory.CreateLogger(plugin.GetType().FullName ?? name),
@@ -398,7 +386,42 @@ public sealed class PluginManager : IAsyncDisposable
             pluginDataDir,
             Path.Combine(pluginDataDir, "config.json"),
             selectedRoms,
-            ShowPluginUICallback ?? ((_, _) => Task.CompletedTask));
+            ShowPluginUICallback ?? ((_, _) => Task.CompletedTask),
+            GetSettings(plugin));
+    }
+
+    /// <summary>Folder holding one data folder per plugin; tests point it somewhere private.</summary>
+    internal static string? DataRootOverride { get; set; }
+
+    private static string DataDirectory(string pluginName) =>
+        Path.Combine(DataRootOverride ?? Path.Combine(RomManagerShared.Configuration.RomManagerConfiguration.GetBaseFolderPath(), "Plugins"), pluginName);
+
+    private static string SettingsFile(IPlugin plugin) =>
+        Path.Combine(DataDirectory(plugin.GetType().GetCustomAttribute<PluginAttribute>()?.Name ?? plugin.PluginName), "settings.json");
+
+    /// <summary>Values of the plugin's settings (defaults where unset), stored in its data folder as settings.json.</summary>
+    public static IReadOnlyDictionary<string, string> GetSettings(IPlugin plugin)
+    {
+        if (plugin is not IPluginSettings declared) return new Dictionary<string, string>();
+        Dictionary<string, string> stored = [];
+        try
+        {
+            var file = SettingsFile(plugin);
+            if (File.Exists(file))
+                stored = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(file)) ?? [];
+        }
+        catch (Exception ex) { AppLog.Warn($"[Plugins] {plugin.PluginName} settings: {ex.Message}"); }
+        return declared.SettingDescriptors.ToDictionary(d => d.Key, d => stored.GetValueOrDefault(d.Key, d.Default));
+    }
+
+    /// <summary>Saves the plugin's settings; keys it does not declare are dropped.</summary>
+    public static void SaveSettings(IPlugin plugin, IReadOnlyDictionary<string, string> values)
+    {
+        if (plugin is not IPluginSettings declared) return;
+        var keep = declared.SettingDescriptors.Where(d => values.ContainsKey(d.Key)).ToDictionary(d => d.Key, d => values[d.Key]);
+        var file = SettingsFile(plugin);
+        Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+        File.WriteAllText(file, System.Text.Json.JsonSerializer.Serialize(keep, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
     }
 
     // ── Query helpers ──────────────────────────────────────────────────────

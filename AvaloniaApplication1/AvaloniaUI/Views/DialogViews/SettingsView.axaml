@@ -268,6 +268,22 @@
                                                 <TextBlock Text="{Binding Heading}" FontWeight="SemiBold" />
                                                 <TextBlock Classes="hint" Text="{Binding Description}" />
                                                 <TextBlock Classes="hint" Text="{Binding Details}" />
+                                                <ItemsControl ItemsSource="{Binding Fields}" IsVisible="{Binding HasFields}" Margin="0,4">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate x:DataType="vm:PluginSettingField">
+                                                            <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,2"
+                                                                        ToolTip.Tip="{Binding Descriptor.Description}">
+                                                                <TextBlock Classes="label" Text="{Binding Descriptor.Label}" />
+                                                                <TextBox Text="{Binding Value}" Width="300" IsVisible="{Binding IsText}"
+                                                                         AutomationProperties.Name="{Binding Descriptor.Label}" />
+                                                                <TextBox Text="{Binding Value}" Width="300" PasswordChar="•" IsVisible="{Binding IsSecret}"
+                                                                         AutomationProperties.Name="{Binding Descriptor.Label}" />
+                                                                <CheckBox IsChecked="{Binding BoolValue}" IsVisible="{Binding IsBoolean}"
+                                                                          AutomationProperties.Name="{Binding Descriptor.Label}" />
+                                                            </StackPanel>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
                                                 <Button Content="Revoke approval" Classes="small" HorizontalAlignment="Left"
                                                         IsEnabled="{Binding !IsRevoked}" CommandParameter="{Binding}"
                                                         ToolTip.Tip="Ask again before loading this plugin (it stays loaded until restart)"

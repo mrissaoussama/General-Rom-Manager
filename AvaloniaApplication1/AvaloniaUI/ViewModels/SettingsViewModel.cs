@@ -341,7 +341,14 @@ public sealed partial class SettingsViewModel : DialogViewModel
         foreach (var group in ColumnGroups)
             s.VisibleColumns[group.ConsoleName] = [.. group.Columns.Where(c => c.IsVisible).Select(c => c.PropName)];
         foreach (var plugin in Plugins.Where(p => !p.IsRevoked))
+        {
             s.SetPluginEnabled(plugin.Name, plugin.IsEnabled);
+            if (plugin.HasFields)
+            {
+                try { PluginManager.SaveSettings(plugin.Plugin, plugin.Fields.ToDictionary(f => f.Descriptor.Key, f => f.Value)); }
+                catch (Exception ex) { AppLog.Warn($"[Settings] {plugin.Name} settings: {ex.Message}"); }
+            }
+        }
         _persist(s);
 
         RomManagerShared.Utils.Dat.DiscHashing.UserOverride = s.HashDiscImages;
@@ -509,7 +516,15 @@ public sealed partial class ColumnGroup(string consoleName, string displayName, 
 
 public sealed partial class PluginRow(IPlugin plugin, bool enabled) : ObservableObject
 {
+    public IPlugin Plugin { get; } = plugin;
     public string Name { get; } = plugin.PluginName;
+
+    /// <summary>The plugin's own options (<see cref="IPluginSettings"/>), with their current values.</summary>
+    public IReadOnlyList<PluginSettingField> Fields { get; } = plugin is IPluginSettings declared
+        ? [.. declared.SettingDescriptors.Select(d => new PluginSettingField(d, PluginManager.GetSettings(plugin).GetValueOrDefault(d.Key, d.Default)))]
+        : [];
+
+    public bool HasFields => Fields.Count > 0;
     public string Heading { get; } = $"{plugin.PluginName}  v{plugin.PluginVersion}";
     public string Description { get; } = plugin.PluginDescription;
     public string Details { get; } = string.Join(" · ", new[]
@@ -520,4 +535,23 @@ public sealed partial class PluginRow(IPlugin plugin, bool enabled) : Observable
     }.Where(x => x is not null));
     [ObservableProperty] private bool _isEnabled = enabled;
     [ObservableProperty] private bool _isRevoked;
+}
+
+/// <summary>One plugin option being edited; booleans are stored as "true"/"false".</summary>
+public sealed partial class PluginSettingField(PluginSettingDescriptor descriptor, string value) : ObservableObject
+{
+    public PluginSettingDescriptor Descriptor { get; } = descriptor;
+    public bool IsText => Descriptor.Kind == PluginSettingKind.Text;
+    public bool IsSecret => Descriptor.Kind == PluginSettingKind.Secret;
+    public bool IsBoolean => Descriptor.Kind == PluginSettingKind.Boolean;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(BoolValue))]
+    private string _value = value;
+
+    public bool BoolValue
+    {
+        get => bool.TryParse(Value, out var b) && b;
+        set => Value = value ? "true" : "false";
+    }
 }
