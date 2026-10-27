@@ -106,6 +106,9 @@ public class Settings
 
     /// <summary>Let "Missing updates" on the PS4 page ask Sony's update server (one request per game).</summary>
     public bool AllowPs4OnlineUpdateCheck { get; set; }
+
+    /// <summary>Download box art (libretro-thumbnails, title databases) for the cover view and details.</summary>
+    public bool DownloadBoxArt { get; set; } = true;
     /// <summary>Hash whole disc images for Redump matching; null = use config.json.</summary>
     public bool? HashDiscImages { get; set; }
 

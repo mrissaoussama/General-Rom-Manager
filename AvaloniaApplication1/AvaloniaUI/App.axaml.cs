@@ -69,7 +69,9 @@ public partial class App : Application
 
         _host = builder.Build();
 
-        RomViewModel.CoverCache = _host.Services.GetRequiredService<ImageCache>();
+        var covers = _host.Services.GetRequiredService<ImageCache>();
+        covers.AllowDownloads = Settings.Instance.DownloadBoxArt;
+        RomViewModel.CoverCache = covers;
         RomManagerShared.Utils.Dat.DiscHashing.UserOverride = Settings.Instance.HashDiscImages;
         RomManagerShared.PS4.PS4UpdateChecker.OnlineAllowed = Settings.Instance.AllowPs4OnlineUpdateCheck;
 

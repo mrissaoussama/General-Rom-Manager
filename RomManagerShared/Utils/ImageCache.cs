@@ -14,6 +14,9 @@ public sealed class ImageCache(string directory, HttpClient http)
 
     public string Directory { get; } = directory;
 
+    /// <summary>When false, only images already on disk are used; nothing is downloaded (Settings → Online).</summary>
+    public bool AllowDownloads { get; set; } = true;
+
     public Task<string?> GetAsync(string? source)
     {
         if (string.IsNullOrWhiteSpace(source))
@@ -26,6 +29,8 @@ public sealed class ImageCache(string directory, HttpClient http)
         var target = Path.Combine(Directory, CacheName(uri));
         if (File.Exists(target))
             return Task.FromResult<string?>(target);
+        if (!AllowDownloads)
+            return Task.FromResult<string?>(null);
         return _pending.GetOrAdd(target, _ => DownloadAsync(uri, target));
     }
 

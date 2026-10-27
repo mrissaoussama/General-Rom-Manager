@@ -55,6 +55,10 @@
                 <TextBlock Text="Theme" Classes="h2" />
                 <ListBox ItemsSource="{Binding ThemeNames}" SelectedIndex="{Binding ThemeIndex}" Width="260"
                          AutomationProperties.Name="Theme" />
+                <TextBlock Text="Online" Classes="h3" Margin="0,8,0,0" />
+                <CheckBox Content="Download box art for the cover view (libretro-thumbnails)" IsChecked="{Binding DownloadBoxArt}" />
+                <TextBlock Classes="muted" TextWrapping="Wrap" MaxWidth="360"
+                           Text="Other online features (title databases, update checks) ask first. Settings → Online lists them all." />
             </StackPanel>
 
             <!-- Done -->

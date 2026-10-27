@@ -14,6 +14,7 @@ public sealed partial class OnboardingViewModel : DialogViewModel
         Folders = [.. ConsoleModules.Descriptors.Select(d =>
             new OnboardingFolder(d.Id, d.DisplayName, new PathField(settings.ConsoleLibraryPaths.GetValueOrDefault(d.Id, ""))))];
         _themeIndex = settings.Theme switch { "Light" => 1, "Dark" => 2, _ => 0 };
+        _downloadBoxArt = settings.DownloadBoxArt;
     }
 
     /// <summary>True when nothing is configured yet (no folder in settings or config.json) and the wizard never ran.</summary>
@@ -33,6 +34,9 @@ public sealed partial class OnboardingViewModel : DialogViewModel
     private int _step;
 
     [ObservableProperty] private int _themeIndex;
+
+    /// <summary>The one online feature that runs without being asked for; chosen here, changeable in Settings → Online.</summary>
+    [ObservableProperty] private bool _downloadBoxArt;
 
     public bool IsWelcome => Step == 0;
     public bool IsFolders => Step == 1;
@@ -75,6 +79,8 @@ public sealed partial class OnboardingViewModel : DialogViewModel
                 else _settings.ConsoleLibraryPaths[f.Id] = f.Path.Value.Trim();
             }
             _settings.Theme = SettingsViewModel.ThemeKey(ThemeIndex);
+            _settings.DownloadBoxArt = DownloadBoxArt;
+            if (RomViewModel.CoverCache is { } covers) covers.AllowDownloads = DownloadBoxArt;
         }
         else
             SettingsViewModel.PreviewTheme(_settings.Theme switch { "Light" => 1, "Dark" => 2, _ => 0 });

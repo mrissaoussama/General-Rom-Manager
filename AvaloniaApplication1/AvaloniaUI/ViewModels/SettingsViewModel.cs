@@ -39,6 +39,7 @@ public sealed partial class SettingsViewModel : DialogViewModel
         _autoDownloadMissingDbs = settings.AutoDownloadMissingDBs;
         _checkForAppUpdates = settings.CheckForAppUpdates;
         _allowPs4OnlineUpdateCheck = settings.AllowPs4OnlineUpdateCheck;
+        _downloadBoxArt = settings.DownloadBoxArt;
         _hashDiscImages = RomManagerShared.Utils.Dat.DiscHashing.Enabled;
         _switchTitleDbUrl = settings.SwitchTitleDBUrlOverride ?? "";
         _switchVersionsUrl = settings.SwitchVersionsUrlOverride ?? "";
@@ -140,6 +141,7 @@ public sealed partial class SettingsViewModel : DialogViewModel
     [ObservableProperty] private bool _autoDownloadMissingDbs;
     [ObservableProperty] private bool _checkForAppUpdates;
     [ObservableProperty] private bool _allowPs4OnlineUpdateCheck;
+    [ObservableProperty] private bool _downloadBoxArt;
     [ObservableProperty] private bool _hashDiscImages;
     [ObservableProperty] private string _downloadStatus = "";
     [ObservableProperty] private string _datOverview = "";
@@ -328,6 +330,7 @@ public sealed partial class SettingsViewModel : DialogViewModel
         s.AutoDownloadMissingDBs = AutoDownloadMissingDbs;
         s.CheckForAppUpdates = CheckForAppUpdates;
         s.AllowPs4OnlineUpdateCheck = AllowPs4OnlineUpdateCheck;
+        s.DownloadBoxArt = DownloadBoxArt;
         s.HashDiscImages = HashDiscImages;
         s.SwitchTitleDBUrlOverride = NullIfBlank(SwitchTitleDbUrl);
         s.SwitchVersionsUrlOverride = NullIfBlank(SwitchVersionsUrl);
@@ -340,6 +343,7 @@ public sealed partial class SettingsViewModel : DialogViewModel
 
         RomManagerShared.Utils.Dat.DiscHashing.UserOverride = s.HashDiscImages;
         RomManagerShared.PS4.PS4UpdateChecker.OnlineAllowed = s.AllowPs4OnlineUpdateCheck;
+        if (RomViewModel.CoverCache is { } covers) covers.AllowDownloads = s.DownloadBoxArt;
         SwitchConfiguration.TitleDBUrlOverride = s.SwitchTitleDBUrlOverride;
         SwitchConfiguration.VersionsUrlOverride = s.SwitchVersionsUrlOverride;
         SwitchConfiguration.TitleDBPathOverride = s.SwitchTitleDBPathOverride;

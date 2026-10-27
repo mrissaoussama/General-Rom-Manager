@@ -59,4 +59,17 @@ public sealed class ImageCacheTests : IDisposable
         (await NewCache().GetAsync("https://example.com/none.png")).Should().BeNull();
         Directory.GetFiles(_dir).Should().BeEmpty();
     }
+
+    [Fact]
+    public async Task GetAsync_WithDownloadsOff_UsesOnlyWhatIsCached()
+    {
+        const string url = "https://example.com/art/cover.png";
+        await NewCache().GetAsync(url);
+        var offline = NewCache();
+        offline.AllowDownloads = false;
+
+        (await offline.GetAsync(url)).Should().NotBeNull(); // already on disk
+        (await offline.GetAsync("https://example.com/art/other.png")).Should().BeNull();
+        _handler.Calls.Should().Be(1);
+    }
 }

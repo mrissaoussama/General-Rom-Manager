@@ -145,10 +145,14 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
-                        <TextBlock Classes="heading" Text="Downloads and DATs" />
-                        <CheckBox Content="Download missing title databases on startup" IsChecked="{Binding AutoDownloadMissingDbs}" />
-                        <CheckBox Content="Check GitHub for a newer RomManager on startup (installed copies)" IsChecked="{Binding CheckForAppUpdates}" />
+                        <TextBlock Classes="heading" Text="Online" />
+                        <TextBlock Classes="hint" Text="Everything RomManager fetches from the internet. Scanning itself never goes online." />
+                        <CheckBox Content="Download box art (libretro-thumbnails, title databases)" IsChecked="{Binding DownloadBoxArt}" />
+                        <CheckBox Content="Download missing title databases on startup (titledb, WikiBrew)" IsChecked="{Binding AutoDownloadMissingDbs}" />
                         <CheckBox Content="PS4 missing updates: ask Sony's update server (one request per game)" IsChecked="{Binding AllowPs4OnlineUpdateCheck}" />
+                        <CheckBox Content="Check GitHub for a newer RomManager on startup (installed copies)" IsChecked="{Binding CheckForAppUpdates}" />
+
+                        <TextBlock Classes="heading" Text="Downloads and DATs" />
                         <CheckBox Content="Hash disc images for Redump DAT matching (slow on the first scan; results are cached)"
                                   IsChecked="{Binding HashDiscImages}" />
                         <StackPanel Orientation="Horizontal" Spacing="8">
