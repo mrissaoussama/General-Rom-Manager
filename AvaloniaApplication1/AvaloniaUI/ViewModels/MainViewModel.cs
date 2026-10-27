@@ -8,7 +8,7 @@ public partial class MainViewModel : ViewModelBase
     private readonly IServiceProvider _serviceProvider;
     // Startup and Refresh can both trigger a load; serialize them.
     private readonly SemaphoreSlim _configLock = new(1, 1);
-    public static Dictionary<Type, string> RomPaths = LoadConsolePaths();
+    private readonly ILibraryRoots _roots;
 
     public IServiceProvider ServiceProvider => _serviceProvider;
     public DownloadManagerViewModel DownloadManager { get; } = new();
@@ -31,6 +31,7 @@ public partial class MainViewModel : ViewModelBase
     public MainViewModel(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
+        _roots = serviceProvider.GetService<ILibraryRoots>() ?? new LibraryRoots();
         OperationService = new RomOperationService(Operations, serviceProvider, CreateJournal());
         OperationsPanel = new OperationsViewModel(Operations);
         OperationService.RestoreJournal();
@@ -55,29 +56,6 @@ public partial class MainViewModel : ViewModelBase
         catch { return null; }
     }
 
-    /// <summary>Rebuilds RomPaths from config.json and Settings (Settings wins).</summary>
-    public static void ReloadRomPaths() => RomPaths = LoadConsolePaths();
-
-    private static Dictionary<Type, string> LoadConsolePaths()
-    {
-        var consolePaths = new Dictionary<Type, string>();
-        var consoleTypes = ConsoleModules.ConsoleTypes.ToDictionary(t => t.Name, StringComparer.OrdinalIgnoreCase);
-
-        try
-        {
-            foreach (var section in RomManagerConfiguration.Configuration.GetSection("Consoles").GetChildren())
-                if (consoleTypes.TryGetValue(section.Key + "Console", out var type) && !string.IsNullOrEmpty(section["RomPath"]))
-                    consolePaths.TryAdd(type, section["RomPath"]!);
-        }
-        catch { /* config missing/malformed */ }
-
-        foreach (var kv in Settings.Instance.ConsoleLibraryPaths)
-            if (consoleTypes.TryGetValue(kv.Key + "Console", out var type) && !string.IsNullOrEmpty(kv.Value))
-                consolePaths[type] = kv.Value;
-
-        return consolePaths;
-    }
-
     // Adds pages for newly configured consoles and drops ones whose folder is gone; existing pages keep their state.
     private async Task<List<ConsoleViewModelBase>> SyncConsolesAsync()
     {
@@ -85,9 +63,8 @@ public partial class MainViewModel : ViewModelBase
         await _configLock.WaitAsync();
         try
         {
-            var wanted = await Task.Run(() => RomPaths
-                .Where(kv => !string.IsNullOrEmpty(kv.Value) && Directory.Exists(kv.Value))
-                .Select(kv => kv.Key)
+            var wanted = await Task.Run(() => _roots.ConfiguredConsoles()
+                .Where(t => _roots.GetRoots(t).Any(Directory.Exists))
                 .ToList());
 
             foreach (var stale in ConsoleViewModels.Where(c => !wanted.Any(t => Name(t) == c.ConsoleName)).ToList())
@@ -142,7 +119,6 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private async Task Refresh()
     {
-        ReloadRomPaths();
         await SyncConsolesAsync();
         foreach (var c in ConsoleViewModels) c.RefreshRequirements();
         await ScanAllAsync(false);
@@ -288,14 +264,20 @@ public partial class MainViewModel : ViewModelBase
             : $"Looks like {guess.DisplayName} ({best!.Files} matching file(s)).";
         if (await Dialogs.ChooseConsoleAsync(folder, consoles, guess, detail) is not { } chosen) return;
 
-        if (Settings.Instance.ConsoleLibraryPaths.TryGetValue(chosen.Id, out var existing) && !string.IsNullOrEmpty(existing)
-            && !string.Equals(existing, folder, StringComparison.OrdinalIgnoreCase)
-            && !await Dialogs.ConfirmAsync("Replace folder", $"{chosen.DisplayName} already uses {existing}. Use {folder} instead?", "Replace"))
+        var existing = _roots.GetRoots(chosen.ConsoleType);
+        if (existing.Contains(folder, StringComparer.OrdinalIgnoreCase))
+        {
+            StatusMessage = $"{folder} is already a {chosen.DisplayName} folder";
             return;
-
-        Settings.Instance.ConsoleLibraryPaths[chosen.Id] = folder;
+        }
+        if (existing.Count == 0)
+            Settings.Instance.ConsoleLibraryPaths[chosen.Id] = folder;
+        else if (await Dialogs.ConfirmAsync("Add folder",
+                     $"{chosen.DisplayName} already uses {string.Join(", ", existing)}. Add {folder} as another folder?", "Add folder"))
+            Settings.Instance.ConsoleExtraLibraryPaths[chosen.Id] = [.. Settings.Instance.ConsoleExtraLibraryPaths.GetValueOrDefault(chosen.Id) ?? [], folder];
+        else
+            return;
         Settings.Instance.Save();
-        ReloadRomPaths();
         await SyncConsolesAsync();
         var page = ConsoleViewModels.FirstOrDefault(c => c.ConsoleName == chosen.Id);
         if (page is null) return;
@@ -310,8 +292,7 @@ public partial class MainViewModel : ViewModelBase
         var win = new SettingsWindow(_serviceProvider.GetService<PluginManager>(), ConsoleViewModels,
             () => DownloadMissingDatabasesAsync(showPanel: true));
         await Dialogs.ShowWindowAsync(win);
-        // Paths may have changed.
-        ReloadRomPaths();
+        // Paths may have changed (LibraryRoots reads Settings on every call).
         var added = await SyncConsolesAsync();
         foreach (var c in ConsoleViewModels) c.RefreshRequirements();
         foreach (var c in added) await c.LoadData();

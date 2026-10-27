@@ -41,6 +41,9 @@ public class Settings
     public string? DatabasePath { get; set; }
     /// <summary>Root directories to scan per console (Key = console name).</summary>
     public Dictionary<string, string> ConsoleLibraryPaths { get; set; } = new();
+
+    /// <summary>More ROM folders per console id, scanned together with the primary one.</summary>
+    public Dictionary<string, List<string>> ConsoleExtraLibraryPaths { get; set; } = new();
     /// <summary>Per console id: emulator executable and arguments template (see EmulatorLauncher).</summary>
     public Dictionary<string, EmulatorSettings> Emulators { get; set; } = new();
 

@@ -26,12 +26,14 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
 {
     private readonly Type _consoleType = typeof(T);
     private readonly IServiceProvider _serviceProvider;
-    private LibraryWatcher? _watcher;
+    private readonly List<LibraryWatcher> _watchers = [];
+    private readonly ILibraryRoots _roots;
 
     public ConsoleViewModel(string consoleName, IServiceProvider serviceProvider)
         : base(consoleName, serviceProvider.GetService<ImageCache>())
     {
         _serviceProvider = serviceProvider;
+        _roots = serviceProvider.GetService<ILibraryRoots>() ?? new LibraryRoots();
         RefreshRequirements();
         using var scope = serviceProvider.CreateScope();
         var manager = scope.ServiceProvider.GetService<ConsoleManager<T>>();
@@ -183,9 +185,8 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
             var cached = await scanner.LoadCachedAsync(libraryKey, ct);
             ShowRoms(cached);
 
-            if (!MainViewModel.RomPaths.TryGetValue(_consoleType, out string? romPath)
-                || string.IsNullOrEmpty(romPath)
-                || !Directory.Exists(romPath))
+            var roots = _roots.GetRoots(_consoleType);
+            if (!roots.Any(Directory.Exists))
             {
                 StatusMessage = cached.Count > 0
                     ? $"{cached.Count} ROMs (cached) — ROM folder not found"
@@ -203,8 +204,8 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
                 if (p.CurrentFile is not null)
                     StatusMessage = $"Scanning {p.Processed + 1}/{p.Total}: {Path.GetFileName(p.CurrentFile)}";
             });
-            var roms = await scanner.ScanAsync(manager, libraryKey, romPath, fullRescan, progress, ct,
-                Settings.Instance.GetScanOptions(ConsoleName, romPath));
+            var roms = await scanner.ScanAsync(manager, libraryKey, roots, fullRescan, progress, ct,
+                root => Settings.Instance.GetScanOptions(ConsoleName, root));
             ShowRoms(roms);
             StatusMessage = scanner.Unrecognized.Count == 0
                 ? $"Loaded {Roms.Count} ROMs"
@@ -218,7 +219,7 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
                 var scan = LibraryScanCompleted.Diff(ConsoleName, cached, roms);
                 _ = Task.Run(() => plugins.NotifyScanCompletedAsync(scan, p => Settings.Instance.IsPluginEnabled(p.PluginName)), CancellationToken.None);
             }
-            EnsureWatcher(romPath, manager.RomParserExecutor.GetSupportedExtensions());
+            EnsureWatchers(roots, manager.RomParserExecutor.GetSupportedExtensions());
         }
         catch (OperationCanceledException)
         {
@@ -239,23 +240,29 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
         }
     }
 
-    // Rescan (incrementally) when files change under the ROM folder.
-    private void EnsureWatcher(string romPath, IEnumerable<string> extensions)
+    // Rescan (incrementally) when files change under any of the ROM folders.
+    private void EnsureWatchers(IReadOnlyList<string> roots, IEnumerable<string> extensions)
     {
-        if (_watcher?.Root == romPath) return;
-        _watcher?.Dispose();
-        _watcher = null;
-        try
+        var wanted = roots.Where(Directory.Exists).ToList();
+        if (_watchers.Select(w => w.Root).SequenceEqual(wanted)) return;
+        foreach (var w in _watchers) w.Dispose();
+        _watchers.Clear();
+        var exts = extensions.ToList();
+        foreach (var root in wanted)
         {
-            _watcher = new LibraryWatcher(romPath, extensions);
-            _watcher.Changed += () => Dispatcher.UIThread.Post(() =>
+            try
             {
-                if (!IsLoading) _ = LoadData();
-            });
-        }
-        catch (Exception ex)
-        {
-            FileUtils.Log($"[{ConsoleName}] Folder watcher unavailable: {ex.Message}");
+                var watcher = new LibraryWatcher(root, exts);
+                watcher.Changed += () => Dispatcher.UIThread.Post(() =>
+                {
+                    if (!IsLoading) _ = LoadData();
+                });
+                _watchers.Add(watcher);
+            }
+            catch (Exception ex)
+            {
+                FileUtils.Log($"[{ConsoleName}] Folder watcher unavailable for {root}: {ex.Message}");
+            }
         }
     }
 

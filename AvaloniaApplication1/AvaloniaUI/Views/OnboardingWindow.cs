@@ -121,7 +121,6 @@ public sealed class OnboardingWindow : Window
                 Settings.Instance.ConsoleLibraryPaths.Remove(kv.Key);
         }
         Settings.Instance.Save();
-        MainViewModel.ReloadRomPaths();
     }
 
     // ── Step 0: Welcome ──────────────────────────────────────────────────

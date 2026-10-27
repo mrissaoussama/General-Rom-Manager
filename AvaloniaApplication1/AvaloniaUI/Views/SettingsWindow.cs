@@ -160,6 +160,22 @@ public sealed class SettingsWindow : Window
                 var result = await Dialogs.PickFolderAsync(this, $"Select {capturedName} ROM folder");
                 if (result != null) capturedBox.Text = result;
             }, status: MakePathStatus(capturedBox)));
+
+            // More folders for the same console, scanned as one library.
+            var extraBox = MakeTextBox(string.Join("; ", settings.ConsoleExtraLibraryPaths.GetValueOrDefault(capturedName) ?? []), w: 300);
+            extraBox.Watermark = "More folders, separated by ';'";
+            extraBox.TextChanged += (_, _) =>
+            {
+                var extra = (extraBox.Text ?? "").Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+                if (extra.Count == 0) settings.ConsoleExtraLibraryPaths.Remove(capturedName);
+                else settings.ConsoleExtraLibraryPaths[capturedName] = extra;
+            };
+            sp.Children.Add(MakeLabeledPathRow("", extraBox, "Add…", async () =>
+            {
+                var result = await Dialogs.PickFolderAsync(this, $"Add a {capturedName} ROM folder");
+                if (result != null)
+                    extraBox.Text = string.IsNullOrWhiteSpace(extraBox.Text) ? result : $"{extraBox.Text}; {result}";
+            }));
         }
 
         sp.Children.Add(MakeSeparator());
@@ -795,7 +811,6 @@ public sealed class SettingsWindow : Window
         saveBtn.Click += (_, _) =>
         {
             Settings.Instance.Save();
-            MainViewModel.ReloadRomPaths(); // pick up any path changes immediately
 
             // Push Switch URL/path overrides to the shared configuration
             var s = Settings.Instance;

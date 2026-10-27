@@ -47,6 +47,39 @@ public sealed class LibraryScannerTests : IDisposable
     }
 
     [Fact]
+    public async Task ScanAsync_SeveralRoots_FormOneLibrary_AndAnOfflineRootKeepsItsRows()
+    {
+        var second = Directory.CreateTempSubdirectory().FullName;
+        try
+        {
+            File.WriteAllText(Path.Combine(_root, "A.nsp"), "a");
+            File.WriteAllText(Path.Combine(second, "B.nsp"), "b");
+            var scanner = new LibraryScanner(_db);
+            var ct = TestContext.Current.CancellationToken;
+
+            var roms = await scanner.ScanAsync(_manager, "Switch", [_root, second], false, null, ct, _ => ScanOptions.Default);
+            roms.Select(r => r.TitleID).Should().BeEquivalentTo(["A", "B"]);
+
+            // The second drive goes offline: B stays (from the cache), nothing is re-parsed.
+            var offline = second + "-offline";
+            Directory.Move(second, offline);
+            try
+            {
+                roms = await scanner.ScanAsync(_manager, "Switch", [_root, second], false, null, ct, _ => ScanOptions.Default);
+                roms.Select(r => r.TitleID).Should().BeEquivalentTo(["A", "B"]);
+                _db.LibraryFiles.Count().Should().Be(2);
+                _parser.Calls.Should().Be(2);
+            }
+            finally { Directory.Move(offline, second); }
+
+            // Removed from the folder list (not offline): its rows go.
+            roms = await scanner.ScanAsync(_manager, "Switch", [_root], false, null, ct, _ => ScanOptions.Default);
+            roms.Should().ContainSingle().Which.TitleID.Should().Be("A");
+        }
+        finally { Directory.Delete(second, true); }
+    }
+
+    [Fact]
     public async Task ScanAsync_SkipsExcludedFolders()
     {
         File.WriteAllText(Path.Combine(_root, "A.nsp"), "a");

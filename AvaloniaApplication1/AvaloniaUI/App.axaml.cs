@@ -51,6 +51,7 @@ public partial class App : Application
                 // Shared utilities
                 services.AddScoped<RomHashRepository>();
                 services.AddScoped<LibraryScanner>();
+                services.AddSingleton<ILibraryRoots, LibraryRoots>();
                 services.AddSingleton(_ =>
                 {
                     var http = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(15) };

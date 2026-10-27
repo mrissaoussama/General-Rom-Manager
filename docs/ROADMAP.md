@@ -38,7 +38,9 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
       sites. Done first: log file writes are serialised (parallel parsing lost ~30% of lines) and fall back
       to a per-user path when config.json has no log path (every write used to fail).
 - [ ] One `IOptionsMonitor<AppOptions>` from config.json + settings.json, saved through `ISettingsStore`.
-- [ ] `MainViewModel.RomPaths` (static) → `ILibraryRootsService`; several roots per console.
+- [x] `MainViewModel.RomPaths` (static) → `ILibraryRoots` (DI singleton, reads settings on each call, no reload
+      step); several folders per console scanned as one library, one watcher each; an offline folder keeps
+      its cached rows; adding a folder for a configured console offers "Add as another folder".
 
 ### B.3 Domain [P2]
 - [x] Replace reflection `RomUtils.CopyNonNullProperties` with `Rom.MergeFrom(Rom other)`: explicit for `Rom`
