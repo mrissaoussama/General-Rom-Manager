@@ -84,6 +84,12 @@ public sealed class PluginOption
 /// Scoped service bag passed to every plugin during initialisation and execution.
 /// Plugins must only use this object to access app services — they must NOT take
 /// a hard dependency on any concrete type from RomManagerShared.
+/// <para>
+/// Capabilities are handed out by permission: <see cref="CreateHttpClient"/> needs Network, files outside
+/// the data folder need FileSystem, <see cref="StartProcess"/> needs ExternalProcess, and database services
+/// from <see cref="Services"/> need Database. Plugins run in-process, so this is not a sandbox: the
+/// approval prompt is the trust boundary, and these checks keep a plugin to what it declared.
+/// </para>
 /// </summary>
 public interface IPluginContext
 {
@@ -110,6 +116,31 @@ public interface IPluginContext
 
     /// <summary>Read-only access to the current selection in the ROM list.</summary>
     IReadOnlyList<Rom> SelectedRoms { get; }
+
+    /// <summary>The permissions the user approved for this plugin.</summary>
+    IReadOnlySet<PluginPermission> GrantedPermissions { get; }
+
+    /// <summary>An <see cref="HttpClient"/> for the plugin. Requires <see cref="PluginPermission.Network"/>.</summary>
+    /// <exception cref="PluginPermissionException">Network was not approved.</exception>
+    HttpClient CreateHttpClient();
+
+    /// <summary>
+    /// Opens a file. Paths inside <see cref="PluginDataDirectory"/> are always allowed (relative paths resolve
+    /// there); anything else requires <see cref="PluginPermission.FileSystem"/>.
+    /// </summary>
+    /// <exception cref="PluginPermissionException">The path is outside the data folder and FileSystem was not approved.</exception>
+    Stream OpenFile(string path, FileMode mode, FileAccess access);
+
+    /// <summary>Starts an external program. Requires <see cref="PluginPermission.ExternalProcess"/>.</summary>
+    /// <exception cref="PluginPermissionException">ExternalProcess was not approved.</exception>
+    System.Diagnostics.Process? StartProcess(System.Diagnostics.ProcessStartInfo startInfo);
+}
+
+/// <summary>Thrown when a plugin uses a capability the user did not approve.</summary>
+public sealed class PluginPermissionException(string pluginName, PluginPermission permission)
+    : InvalidOperationException($"Plugin '{pluginName}' needs the {permission} permission for this.")
+{
+    public PluginPermission Permission { get; } = permission;
 }
 
 // ──────────────────────────────────────────────────────────────────────────────

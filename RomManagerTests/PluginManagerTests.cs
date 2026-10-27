@@ -49,7 +49,7 @@ public sealed class PluginManagerTests : IDisposable
         await first.LoadPluginsAsync(_dir, askForApproval: true);
 
         first.Plugins.Should().ContainSingle().Which.PluginName.Should().Be("GameMetadataFetcher");
-        asked!.Permissions.Should().BeEquivalentTo([PluginPermission.Network, PluginPermission.FileSystem]);
+        asked!.Permissions.Should().BeEquivalentTo([PluginPermission.Network]);
 
         // Reloading the same folder does not load the plugin twice.
         await first.LoadPluginsAsync(_dir, askForApproval: true);

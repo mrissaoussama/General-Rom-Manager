@@ -22,7 +22,7 @@ namespace SamplePlugin;
 [Plugin("GameMetadataFetcher", "1.0.0",
     Description = "Fetches game metadata from the RAWG API",
     Author = "RomManager Sample",
-    Permissions = [PluginPermission.Network, PluginPermission.FileSystem])]
+    Permissions = [PluginPermission.Network])] // its config lives in the plugin data folder: no FileSystem needed
 public sealed class GameMetadataPlugin : IPlugin
 {
     // ── IPlugin identity ──────────────────────────────────────────────────
@@ -33,8 +33,7 @@ public sealed class GameMetadataPlugin : IPlugin
 
     public IReadOnlyList<string> SupportedConsoles => []; // all consoles
 
-    public IReadOnlyList<PluginPermission> RequiredPermissions =>
-        [PluginPermission.Network, PluginPermission.FileSystem];
+    public IReadOnlyList<PluginPermission> RequiredPermissions => [PluginPermission.Network];
 
     public IReadOnlyList<PluginOption> Options =>
     [
@@ -53,7 +52,7 @@ public sealed class GameMetadataPlugin : IPlugin
     ];
 
     // ── Private state ─────────────────────────────────────────────────────
-    private static readonly HttpClient _http = new();
+    private HttpClient? _http;
     private string _apiKey = string.Empty;
     private ILogger _logger = null!;
 
@@ -62,14 +61,15 @@ public sealed class GameMetadataPlugin : IPlugin
     public async Task InitializeAsync(IPluginContext context)
     {
         _logger = context.Logger;
+        _http = context.CreateHttpClient(); // granted because Network is declared and approved
 
-        // Load config (API key)
+        // Load config (API key). OpenFile needs no FileSystem permission inside the plugin data folder.
         if (File.Exists(context.ConfigFilePath))
         {
             try
             {
-                var cfg = await File.ReadAllTextAsync(context.ConfigFilePath);
-                var doc = System.Text.Json.JsonDocument.Parse(cfg);
+                await using var stream = context.OpenFile(context.ConfigFilePath, FileMode.Open, FileAccess.Read);
+                var doc = await System.Text.Json.JsonDocument.ParseAsync(stream);
                 _apiKey = doc.RootElement.TryGetProperty("ApiKey", out var v) ? v.GetString() ?? "" : "";
             }
             catch (Exception ex)
@@ -80,10 +80,8 @@ public sealed class GameMetadataPlugin : IPlugin
         else
         {
             // Write a template config
-            Directory.CreateDirectory(context.PluginDataDirectory);
-            await File.WriteAllTextAsync(
-                context.ConfigFilePath,
-                """{ "ApiKey": "YOUR_RAWG_API_KEY_HERE" }""");
+            await using var stream = context.OpenFile(context.ConfigFilePath, FileMode.Create, FileAccess.Write);
+            await stream.WriteAsync("""{ "ApiKey": "YOUR_RAWG_API_KEY_HERE" }"""u8.ToArray());
             _logger.LogInformation("Created template config at {Path}", context.ConfigFilePath);
         }
     }
@@ -115,7 +113,7 @@ public sealed class GameMetadataPlugin : IPlugin
             try
             {
                 var url = $"https://api.rawg.io/api/games?key={_apiKey}&search={Uri.EscapeDataString(title)}&page_size=1";
-                var response = await _http.GetFromJsonAsync<RawgSearchResponse>(url);
+                var response = await _http!.GetFromJsonAsync<RawgSearchResponse>(url);
                 if (response?.Results.Count > 0)
                     results.Add(response.Results[0]);
             }
@@ -184,7 +182,7 @@ public sealed class GameMetadataPlugin : IPlugin
 
     public ValueTask DisposeAsync()
     {
-        _http.Dispose();
+        _http?.Dispose();
         return ValueTask.CompletedTask;
     }
 

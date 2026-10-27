@@ -37,21 +37,26 @@ internal sealed class PluginLoadContext : AssemblyLoadContext
 // Default IPluginContext implementation
 // ──────────────────────────────────────────────────────────────────────────────
 
-internal sealed class DefaultPluginContext : IPluginContext
+internal sealed class DefaultPluginContext : IPluginContext, IDisposable
 {
     private readonly IServiceScope _scope;
     private readonly Func<object, string, Task> _showUI;
+    private readonly string _pluginName;
 
     public DefaultPluginContext(
         IServiceProvider rootProvider,
         ILogger logger,
+        string pluginName,
+        IEnumerable<PluginPermission> granted,
         string pluginDataDirectory,
         string configFilePath,
         IReadOnlyList<Rom> selectedRoms,
         Func<object, string, Task> showUI)
     {
         _scope = rootProvider.CreateScope();
-        Services = _scope.ServiceProvider;
+        _pluginName = pluginName;
+        GrantedPermissions = granted.ToHashSet();
+        Services = new PermissionFilteredServiceProvider(_scope.ServiceProvider, GrantedPermissions);
         Logger = logger;
         PluginDataDirectory = pluginDataDirectory;
         ConfigFilePath = configFilePath;
@@ -64,11 +69,70 @@ internal sealed class DefaultPluginContext : IPluginContext
     public string PluginDataDirectory { get; }
     public string ConfigFilePath { get; }
     public IReadOnlyList<Rom> SelectedRoms { get; }
+    public IReadOnlySet<PluginPermission> GrantedPermissions { get; }
 
     public Task ShowPluginUIAsync(object avaloniaControl, string title)
         => _showUI(avaloniaControl, title);
 
+    private void Demand(PluginPermission permission)
+    {
+        if (!GrantedPermissions.Contains(permission))
+            throw new PluginPermissionException(_pluginName, permission);
+    }
+
+    public HttpClient CreateHttpClient()
+    {
+        Demand(PluginPermission.Network);
+        var client = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
+        client.DefaultRequestHeaders.UserAgent.ParseAdd($"RomManager-Plugin/{PluginApi.Version}");
+        return client;
+    }
+
+    public Stream OpenFile(string path, FileMode mode, FileAccess access)
+    {
+        var full = Path.GetFullPath(path, PluginDataDirectory);
+        if (!IsInside(full, PluginDataDirectory)) Demand(PluginPermission.FileSystem);
+        if (access != FileAccess.Read) Directory.CreateDirectory(Path.GetDirectoryName(full)!);
+        return new FileStream(full, mode, access, access == FileAccess.Read ? FileShare.Read : FileShare.None);
+    }
+
+    public System.Diagnostics.Process? StartProcess(System.Diagnostics.ProcessStartInfo startInfo)
+    {
+        Demand(PluginPermission.ExternalProcess);
+        return System.Diagnostics.Process.Start(startInfo);
+    }
+
+    internal static bool IsInside(string fullPath, string folder)
+    {
+        var root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder)) + Path.DirectorySeparatorChar;
+        return fullPath.StartsWith(root, OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
+    }
+
     public void Dispose() => _scope.Dispose();
+}
+
+/// <summary>
+/// Hides services a plugin has no permission for: database types (EF contexts and
+/// <c>RomManagerShared.Base.Database</c>) need Database, HTTP types need Network.
+/// </summary>
+internal sealed class PermissionFilteredServiceProvider(IServiceProvider inner, IReadOnlySet<PluginPermission> granted)
+    : IServiceProvider
+{
+    public object? GetService(Type serviceType) =>
+        RequiredPermission(serviceType) is { } needed && !granted.Contains(needed) ? null : inner.GetService(serviceType);
+
+    internal static PluginPermission? RequiredPermission(Type type)
+    {
+        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+            type = type.GetGenericArguments()[0];
+        if (typeof(Microsoft.EntityFrameworkCore.DbContext).IsAssignableFrom(type)
+            || type.Namespace?.StartsWith("RomManagerShared.Base.Database", StringComparison.Ordinal) == true
+            || type.Namespace?.StartsWith("Microsoft.EntityFrameworkCore", StringComparison.Ordinal) == true)
+            return PluginPermission.Database;
+        if (typeof(HttpClient).IsAssignableFrom(type) || type.Namespace == "System.Net.Http")
+            return PluginPermission.Network;
+        return null;
+    }
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -257,6 +321,8 @@ public sealed class PluginManager : IAsyncDisposable
             var context = new DefaultPluginContext(
                 _rootServices,
                 pluginLogger,
+                attr.Name,
+                attr.Permissions,
                 pluginDataDir,
                 configFile,
                 selectedRoms,
@@ -290,14 +356,17 @@ public sealed class PluginManager : IAsyncDisposable
 
         var pluginLogger = _loggerFactory.CreateLogger(entry.Plugin.GetType().FullName ?? pluginName);
 
+        var attr = entry.Plugin.GetType().GetCustomAttribute<PluginAttribute>();
         var pluginDataDir = Path.Combine(
             RomManagerShared.Configuration.RomManagerConfiguration.GetBaseFolderPath(),
             "Plugins",
-            pluginName);
+            attr?.Name ?? pluginName);
 
-        var context = new DefaultPluginContext(
+        using var context = new DefaultPluginContext(
             _rootServices,
             pluginLogger,
+            pluginName,
+            attr?.Permissions ?? [],
             pluginDataDir,
             Path.Combine(pluginDataDir, "config.json"),
             selectedRoms ?? [],

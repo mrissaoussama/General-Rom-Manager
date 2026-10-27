@@ -7,6 +7,9 @@
     <GenerateRuntimeConfigurationFiles>True</GenerateRuntimeConfigurationFiles>
   </PropertyGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="RomManagerTests" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="CHDSharp" />
     <PackageReference Include="Ryujinx.LibHac" />
     <ProjectReference Include="..\SkyEditor.IO\SkyEditor.IO.csproj" />

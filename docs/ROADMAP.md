@@ -95,8 +95,9 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
 
 ## Phase F: Plugins
 
-- [ ] **[P1]** Capability-scoped context: `IPluginContext` hands out an `HttpClient` only with `Network`,
-      file access only inside the plugin data folder unless `FileSystem` was approved.
+- [x] **[P1]** Capability-scoped context: `IPluginContext.CreateHttpClient` needs `Network`, `OpenFile` outside
+      the plugin data folder needs `FileSystem`, `StartProcess` needs `ExternalProcess`, and `Services` hides
+      database services without `Database` (`PluginPermissionException`). Cooperative, not a sandbox.
 - [ ] Separate `RomManager.Plugins.Abstractions` assembly (contract only) so plugins stop referencing
       all of RomManagerShared; version it with `PluginApi.Version`.
 - [ ] Plugin hooks: scan finished, rom added/removed.

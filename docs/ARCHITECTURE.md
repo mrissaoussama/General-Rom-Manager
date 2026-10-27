@@ -68,7 +68,7 @@ DTOs and hashes have their own tables. `MigrationTests` and CI check for pending
 | Requirements | `IHasRequirements` → `ConsoleRequirement` (keys, dirs, DB files) | Surfaced in UI/onboarding |
 | Context actions | `IHasContextMenuActions`, `IConsoleRomAction`, `UniversalRomActions` | |
 | Missing updates | `IMissingUpdateReporter` (Switch: `SwitchUpdateChecker` + versions.json) | Console page report + dashboard total |
-| Plugins | `PluginManager`: collectible `AssemblyLoadContext`, `[Plugin(Permissions = ...)]`, `PluginApiVersion`, approvals pinned to SHA-256 | Permissions are approved, not sandboxed |
+| Plugins | `PluginManager`: collectible `AssemblyLoadContext`, `[Plugin(Permissions = ...)]`, `PluginApiVersion`, approvals pinned to SHA-256 | Permissions are approved, not sandboxed; `IPluginContext` hands out HTTP, files outside the data folder, processes and DB services only for approved permissions |
 | Downloads | `FileDownloader` (`[ResourceDownload]` methods) | |
 | External tools | Optional, user-supplied (cdecrypt, xextool) under `<BaseDirectory>/Tools` | ADR 0002: no binaries in the repo |
 

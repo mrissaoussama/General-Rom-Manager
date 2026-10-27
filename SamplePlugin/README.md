@@ -21,10 +21,18 @@ to fetch game metadata for selected ROMs.
    Replace `YOUR_RAWG_API_KEY_HERE` with your actual key.
 5. Restart RomManager. The options will appear when you right-click a ROM.
 
+## Permissions
+
+Declare every permission in `[Plugin(Permissions = ...)]`; the user approves them before the plugin
+loads, and `IPluginContext` refuses capabilities that were not approved (`PluginPermissionException`).
+Plugins run in-process, so this is not a sandbox: it keeps an approved plugin to what it declared.
+
 ## Building a Plugin
 
 ```csharp
-[Plugin("MyPlugin", "1.0.0", Description = "Does something cool")]
+[assembly: PluginApiVersion(PluginApi.Version)]
+
+[Plugin("MyPlugin", "1.0.0", Description = "Does something cool", Permissions = [PluginPermission.Network])]
 public sealed class MyPlugin : IPlugin
 {
     public string PluginName        => "MyPlugin";
@@ -45,8 +53,11 @@ public sealed class MyPlugin : IPlugin
     {
         // ctx.SelectedRoms — the ROMs the user right-clicked
         // ctx.ShowPluginUIAsync(avaloniaControl, "Window Title") — show UI
-        // ctx.Services — DI service locator
+        // ctx.Services — DI service locator (database services only with Database)
         // ctx.Logger — MEL logger pre-scoped to this plugin
+        // ctx.CreateHttpClient() — needs Network
+        // ctx.OpenFile(path, mode, access) — free inside ctx.PluginDataDirectory, else needs FileSystem
+        // ctx.StartProcess(startInfo) — needs ExternalProcess
     }
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
