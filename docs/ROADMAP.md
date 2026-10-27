@@ -24,8 +24,10 @@ Legend: **[P0]** = data-safety or correctness, **[P1]** = high value, **[P2]** =
 - [x] Move to the `.slnx` format (`dotnet sln migrate`) and list only the live projects (Android/Browser heads left out; ParserHarness added).
 - [x] Root `Directory.Build.props` with the shared settings (`Nullable`, `LangVersion latest`) and
       `Directory.Packages.props` for central package management (Android/Browser heads opt out).
-- [ ] `TreatWarningsAsErrors` for new projects and `AnalysisLevel latest` (needs the Shared warning
-      backlog handled first).
+- [x] `TreatWarningsAsErrors` for every project except RomManagerShared (warning backlog) and the
+      unmaintained Android/Browser heads.
+- [ ] `AnalysisLevel latest` and warnings-as-errors for RomManagerShared once its ~1,200 warnings
+      (mostly CS8618 in vendored 3DS/ISO2GOD code) are cleared.
 - [x] CI: a GitHub Actions workflow on windows-latest that builds Desktop and runs the tests.
 
 ## Phase 1: Dependencies and frameworks (1–2 days)
@@ -55,8 +57,7 @@ Legend: **[P0]** = data-safety or correctness, **[P1]** = high value, **[P2]** =
       10.0.x. Confirm with `dotnet nuget why <proj> System.Security.Cryptography.Xml`.
 - [x] Fix the existing warnings (the UI projects build clean): move `OpenFolderDialog`/`OpenFileDialog` to
       `TopLevel.StorageProvider`, and fix the nullability warnings in `ConsoleViewModel.cs:371-427`.
-- [ ] Remove `Microsoft.NETCore.Platforms` from the root `Directory.Build.props` once DiscUtils is
-      replaced (it only existed to work around DiscUtils' old transitive dependencies).
+- [x] Remove `Microsoft.NETCore.Platforms` from the root `Directory.Build.props` (DiscUtils replaced).
 
 ## Phase 2: Data safety and correctness bugs (2–3 days)
 

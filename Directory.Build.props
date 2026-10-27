@@ -1,7 +1,11 @@
 <Project>
   <PropertyGroup>
-    <!-- Shared defaults; a project can still override them (SkyEditor.IO pins LangVersion 8). -->
+    <!-- Shared defaults; a project can still override them. -->
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
+    <!-- New warnings fail the build. RomManagerShared opts out until its warning backlog is cleared.
+         Package vulnerability advisories stay warnings so a new advisory does not break unrelated builds. -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>
   </PropertyGroup>
 </Project>

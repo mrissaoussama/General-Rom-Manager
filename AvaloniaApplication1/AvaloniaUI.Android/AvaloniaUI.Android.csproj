@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <!-- Unmaintained head: keeps its own package versions. -->
     <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
     <OutputType>Exe</OutputType>
