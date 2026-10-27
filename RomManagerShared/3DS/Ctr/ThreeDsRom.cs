@@ -6,7 +6,6 @@ using RomManagerShared.Base;
 using SkyEditor.IO.Binary;
 using SkyEditor.IO.FileSystem;
 using SkyEditor.IO.FileSystem.Internal;
-using SkyEditor.Utilities.AsyncFor;
 using System.Text;
 using System.Text.RegularExpressions;
 namespace DotNet3dsToolkit;
@@ -183,81 +182,6 @@ public class ThreeDsRom : IExtendedFileSystem, IDisposable
     }    public NcchPartition? GetPartitionOrDefault(int partitionIndex)
     {
         return Partitions.Length > partitionIndex ? Partitions[partitionIndex] : null;
-    }    public async Task ExtractFiles(string directoryName, IFileSystem fileSystem, ProgressReportToken? progressReportToken = null)
-    {
-        List<ProcessingProgressedToken>? extractionProgressedTokens = null;
-        if (progressReportToken != null)
-        {
-            extractionProgressedTokens = [];
-            progressReportToken.IsIndeterminate = false;
-        }        void onExtractionTokenProgressed(object sender, EventArgs e)
-        {
-            if (progressReportToken != null)
-            {
-                progressReportToken.Progress = (float)extractionProgressedTokens.Select(t => t.ProcessedFileCount).Sum() / extractionProgressedTokens.Select(t => t.TotalFileCount).Sum();
-            }
-        }        if (!fileSystem.DirectoryExists(directoryName))
-        {
-            fileSystem.CreateDirectory(directoryName);
-        }        var tasks = new List<Task>();
-        for (int i = 0; i < Partitions.Length; i++)
-        {
-            var partitionIndex = i; // Prevents race conditions with i changing inside Task.Run's
-            var partition = GetPartitionOrDefault(i);            if (partition == null)
-            {
-                continue;
-            }            if (partition.ExeFs != null)
-            {
-                ProcessingProgressedToken? exefsExtractionProgressedToken = null;
-                if (exefsExtractionProgressedToken != null && extractionProgressedTokens != null)
-                {
-                    exefsExtractionProgressedToken = new ProcessingProgressedToken();
-                    exefsExtractionProgressedToken.FileCountChanged += onExtractionTokenProgressed;
-                    extractionProgressedTokens.Add(exefsExtractionProgressedToken);
-                }
-                tasks.Add(partition.ExeFs.ExtractFiles(Path.Combine(directoryName, GetExeFsDirectoryName(partitionIndex)), fileSystem, exefsExtractionProgressedToken));
-            }            if (partition.Header != null)
-            {
-                ProcessingProgressedToken? exefsExtractionProgressedToken = null;
-                if (exefsExtractionProgressedToken != null && extractionProgressedTokens != null)
-                {
-                    exefsExtractionProgressedToken = new ProcessingProgressedToken
-                    {
-                        TotalFileCount = 1
-                    };
-                    exefsExtractionProgressedToken.FileCountChanged += onExtractionTokenProgressed;
-                    extractionProgressedTokens.Add(exefsExtractionProgressedToken);
-                }
-                tasks.Add(Task.Run(() =>
-                {
-                    fileSystem.WriteAllBytes(Path.Combine(directoryName, GetHeaderFileName(partitionIndex)), partition.Header.ToBinary().ReadArray());
-                    exefsExtractionProgressedToken?.IncrementProcessedFileCount();
-                }));
-            }            if (partition.ExHeader != null)
-            {
-                ProcessingProgressedToken? exefsExtractionProgressedToken = null;
-                if (exefsExtractionProgressedToken != null && extractionProgressedTokens != null)
-                {
-                    exefsExtractionProgressedToken = new ProcessingProgressedToken
-                    {
-                        TotalFileCount = 1
-                    };
-                    exefsExtractionProgressedToken.FileCountChanged += onExtractionTokenProgressed;
-                    extractionProgressedTokens.Add(exefsExtractionProgressedToken);
-                }
-                tasks.Add(Task.Run(() =>
-                {
-                    fileSystem.WriteAllBytes(Path.Combine(directoryName, GetExHeaderFileName(partitionIndex)), partition.ExHeader.ToByteArray());
-                    exefsExtractionProgressedToken?.IncrementProcessedFileCount();
-                }));
-            }        }        await Task.WhenAll(tasks);        if (progressReportToken != null)
-        {
-            progressReportToken.Progress = 1;
-            progressReportToken.IsCompleted = true;
-        }
-    }    public async Task ExtractFiles(string directoryName, ProgressReportToken? progressReportToken = null)
-    {
-        await ExtractFiles(directoryName, this.CurrentFileSystem, progressReportToken);
     }    public string GetRomFsDirectoryName(int partitionId)
     {
         return Container == null

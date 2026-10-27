@@ -2,7 +2,6 @@
 #nullable disable warnings
 using SkyEditor.IO.Binary;
 using SkyEditor.IO.FileSystem;
-using SkyEditor.Utilities.AsyncFor;
 using System.Security.Cryptography;
 using System.Text;
 namespace DotNet3dsToolkit.Ctr;
@@ -53,11 +52,11 @@ public class ExeFs
         {
             exefs.Files.Add(Path.GetFileName(file), null);
         }
-        await files.RunAsyncForEach(file =>
+        foreach (var file in files)
         {
             exefs.Files[Path.GetFileName(file)] = new ExeFsEntry(fileSystem.ReadAllBytes(file));
             progressReportToken?.IncrementProcessedFileCount();
-        }).ConfigureAwait(false);        return exefs;
+        }        return exefs;
     }    public ExeFs()
     {
         Files = new Dictionary<string, ExeFsEntry?>(StringComparer.OrdinalIgnoreCase);
@@ -103,10 +102,11 @@ public class ExeFs
         }        if (!fileSystem.DirectoryExists(directoryName))
         {
             fileSystem.CreateDirectory(directoryName);
-        }        await Files.RunAsyncForEach((KeyValuePair<string, ExeFsEntry> file) =>
+        }        foreach (var file in Files)
         {
             fileSystem.WriteAllBytes(Path.Combine(directoryName, file.Key), file.Value.RawData);            progressReportToken?.IncrementProcessedFileCount();
-        }).ConfigureAwait(false);
+        }
+        await Task.CompletedTask;
     }    /// <summary>
     /// Turns the executable file system into its binary representation
     /// </summary>

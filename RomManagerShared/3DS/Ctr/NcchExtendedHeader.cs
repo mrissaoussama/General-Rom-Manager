@@ -1,7 +1,6 @@
 ﻿// Vendored code: nullable warnings are not fixed here.
 #nullable disable warnings
 using SkyEditor.IO.Binary;
-using SkyEditor.Utilities.AsyncFor;
 using System.Security.Cryptography;
 using System.Text;
 namespace DotNet3dsToolkit.Ctr;
@@ -26,10 +25,10 @@ public class NcchExtendedHeader
             DataCodeSetInfo = await CodeSetInfo.Load(data.Slice(0x30, 0xC)),
             BssSize = await data.ReadInt32Async(0x3C)
         };        var moduleIds = new long[48];
-        await AsyncFor.For(0, 48 - 1, async i =>
+        for (int i = 0; i < 48; i++)
         {
             moduleIds[i] = await data.ReadInt64Async(0x40 + (i * 8));
-        });
+        }
         header.DependencyModuleIds = moduleIds;        header.SystemInformation = await SystemInfo.Load(data.Slice(0x1C0, 0x40));
         header.LocalSystemCapabilities = await Arm11LocalSystemCapabilities.Load(data.Slice(0x200, 0x170));
         header.KernelCapabilities = await Arm11KernelCapabilities.Load(data.Slice(0x370, 0x80));
@@ -164,10 +163,10 @@ public class NcchExtendedHeader
                 Priority = await data.ReadByteAsync(0xF),
                 ResourceLimitDescriptors = await data.ReadArrayAsync(0x10, 0x20),
                 StorageInformation = await StorageInfo.Load(data.Slice(0x30, 0x20)),            };            var accessControl = new long[32];
-            await AsyncFor.For(0, 32 - 1, async i =>
-            {
-                accessControl[i] = await data.ReadInt64Async(0x50 + (8 * i));
-            });
+            for (int i = 0; i < 32; i++)
+        {
+            accessControl[i] = await data.ReadInt64Async(0x50 + (8 * i));
+        }
             capabilities.ServiceAccessControl = accessControl;
             capabilities.ExtendedServiceAccessControl = [await data.ReadInt64Async(0x150), await data.ReadInt64Async(0x158)];
             capabilities.Reserved = await data.ReadArrayAsync(0x160, 0xF);
@@ -340,10 +339,10 @@ public class NcchExtendedHeader
         {
             var capabilities = new Arm11KernelCapabilities();
             var descriptors = new int[28];
-            await AsyncFor.For(0, 28 - 1, async i =>
-            {
-                descriptors[i] = await data.ReadInt32Async(i * 4);
-            });
+            for (int i = 0; i < 28; i++)
+        {
+            descriptors[i] = await data.ReadInt32Async(i * 4);
+        }
             capabilities.Descriptors = descriptors;
             capabilities.Reserved = await data.ReadArrayAsync(0x70, 0x10);
             return capabilities;

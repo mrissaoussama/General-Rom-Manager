@@ -13,8 +13,8 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
 
 - [x] **[P1]** Clear the remaining RomManagerShared warnings and treat warnings as errors there too
       (the whole solution now builds with zero warnings).
-- [ ] Remove `SkyEditor.Utilities.AsyncFor` (old netstandard package used by the vendored 3DS toolkit for
-      `ProgressReportToken` and parallel loops). Replace with plain loops and a small progress type.
+- [x] Removed `SkyEditor.Utilities.AsyncFor`: plain loops in the vendored 3DS toolkit; the unused
+      `ThreeDsRom.ExtractFiles` (its only `ProgressReportToken` user) is gone.
 - [x] `ItemsRepeater` 11.1.5 and `DataGrid` 11.3.13 are the newest 11.x releases (next step is Avalonia 12).
 - [ ] Decide on the Android/Browser heads: delete them (recommended; unmaintained since net9) or
       retarget and add them to the solution.

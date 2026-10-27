@@ -24,7 +24,6 @@
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" />
 		<PackageReference Include="Microsoft.Extensions.Hosting" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
-		<PackageReference Include="SkyEditor.Utilities.AsyncFor" />
 		<PackageReference Include="System.IO.Hashing" />
 	</ItemGroup>
 </Project>
