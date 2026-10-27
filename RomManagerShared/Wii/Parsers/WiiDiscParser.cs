@@ -3,8 +3,11 @@ using RomManagerShared.Interfaces;
 using RomManagerShared.Utils;
 namespace RomManagerShared.Wii.Parsers;
 
-public class WiiDiscParser : IRomParser<WiiConsole>
+public class WiiDiscParser : IRomParser<WiiConsole>, IContentSniffer
 {
+    public bool CanParse(string path, ReadOnlySpan<byte> header) =>
+        !FileMagic.HasExtension(path, "iso") || FileMagic.IsWiiDisc(header);
+
     public List<string> Extensions { get; set; } = ["iso", "ciso", "rvz", "wia"];
 
     public Task<List<Rom>> ProcessFile(string path)

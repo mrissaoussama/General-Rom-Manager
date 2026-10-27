@@ -3,8 +3,10 @@ using RomManagerShared.Interfaces;
 using RomManagerShared.Utils;
 namespace RomManagerShared.PS4.Parsers;
 
-public class PS4PKGParser : IRomParser<PS4Console>
+public class PS4PKGParser : IRomParser<PS4Console>, IContentSniffer
 {
+    public bool CanParse(string path, ReadOnlySpan<byte> header) => FileMagic.IsPs4Pkg(header);
+
     public List<string> Extensions { get; set; } = ["pkg"];
 
     public Task<List<Rom>> ProcessFile(string path)

@@ -3,8 +3,12 @@ using RomManagerShared.Interfaces;
 using RomManagerShared.Utils;
 namespace RomManagerShared.GameCube.Parsers;
 
-public class GameCubeDiscParser : IRomParser<GameCubeConsole>
+public class GameCubeDiscParser : IRomParser<GameCubeConsole>, IContentSniffer
 {
+    // Plain images start with the disc header; ciso/rvz/wia are containers and checked when opened.
+    public bool CanParse(string path, ReadOnlySpan<byte> header) =>
+        !FileMagic.HasExtension(path, "iso", "gcm") || FileMagic.IsGameCubeDisc(header);
+
     public List<string> Extensions { get; set; } = ["iso", "gcm", "ciso", "rvz", "wia"];
 
     public Task<List<Rom>> ProcessFile(string path)

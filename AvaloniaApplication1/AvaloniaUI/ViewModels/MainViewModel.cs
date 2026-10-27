@@ -258,18 +258,23 @@ public partial class MainViewModel : ViewModelBase
     {
         var consoles = ConsoleModules.Descriptors;
         Dictionary<Type, IReadOnlyCollection<string>> extensions = [];
-        using (var scope = _serviceProvider.CreateScope())
-            foreach (var d in consoles)
-                try
+        Dictionary<Type, RomManagerShared.IRomParserExecutor> executors = [];
+        using var scope = _serviceProvider.CreateScope();
+        foreach (var d in consoles)
+            try
+            {
+                if (scope.ServiceProvider.GetService(typeof(RomManagerShared.RomParserExecutor<>).MakeGenericType(d.ConsoleType))
+                    is RomManagerShared.IRomParserExecutor executor)
                 {
-                    var executor = scope.ServiceProvider.GetService(typeof(RomManagerShared.RomParserExecutor<>).MakeGenericType(d.ConsoleType));
-                    if (executor?.GetType().GetMethod("GetSupportedExtensions")?.Invoke(executor, null) is IEnumerable<string> exts)
-                        extensions[d.ConsoleType] = exts.ToList();
+                    executors[d.ConsoleType] = executor;
+                    extensions[d.ConsoleType] = executor.GetSupportedExtensions();
                 }
-                catch (Exception ex) { FileUtils.Log($"[AddFolder] {d.Id}: {ex.Message}"); }
+            }
+            catch (Exception ex) { FileUtils.Log($"[AddFolder] {d.Id}: {ex.Message}"); }
 
         IReadOnlyList<ConsoleDetector.Guess> guesses;
-        try { guesses = await Task.Run(() => ConsoleDetector.Rank(ConsoleDetector.SampleFiles(folder), extensions)); }
+        try { guesses = await Task.Run(() => ConsoleDetector.Rank(ConsoleDetector.SampleFiles(folder), extensions,
+            (console, path, header) => executors[console].MightParse(path, header))); }
         catch (Exception ex)
         {
             StatusMessage = $"Cannot read {folder}: {ex.Message}";

@@ -14,7 +14,7 @@ public sealed record UnrecognizedFile(string Path, string Reason);
 public sealed class LibraryScanner(AppDbContext db)
 {
     /// <summary>Bump when parser output changes so cached entries get re-parsed.</summary>
-    public const int ScanVersion = 15;
+    public const int ScanVersion = 16;
     private const int SaveBatchSize = 25;
     /// <summary>Files parsed concurrently. Kept low: most libraries live on HDDs or network shares.</summary>
     public int MaxParallelism { get; init; } = 4;
@@ -67,13 +67,13 @@ public sealed class LibraryScanner(AppDbContext db)
 
             // Parsing is I/O bound and parallel; enrichment and saving share the DbContext, so stay sequential.
             var parsedBatch = await Task.WhenAll(batch.Select(i =>
-                Task.Run(() => ParseDiagnostics.CaptureAsync(() => manager.RomParserExecutor.ExecuteParsers(files[i])), ct)));
+                Task.Run(() => manager.RomParserExecutor.ParseAsync(files[i], ct), ct)));
             for (int b = 0; b < batch.Length; b++)
             {
                 var path = files[batch[b]];
-                var roms = await manager.EnrichAsync(parsedBatch[b].Result);
+                var roms = await manager.EnrichAsync(parsedBatch[b].Roms);
                 slots[batch[b]] = roms;
-                errors[batch[b]] = roms.Count == 0 ? ParseDiagnostics.Summarize(parsedBatch[b].Messages) : null;
+                errors[batch[b]] = roms.Count == 0 ? parsedBatch[b].UnidentifiedReason : null;
 
                 if (!cached.TryGetValue(path, out var entry))
                 {

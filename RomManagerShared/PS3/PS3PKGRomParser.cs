@@ -5,8 +5,10 @@ using RomManagerShared.Utils.PKGUtils;
 
 namespace RomManagerShared.PS3.Parsers;
 
-public class PS3PKGRomParser : IRomParser<PS3Console>
+public class PS3PKGRomParser : IRomParser<PS3Console>, IContentSniffer
 {
+    public bool CanParse(string path, ReadOnlySpan<byte> header) => FileMagic.IsPkg3(header);
+
     public PS3PKGRomParser()
     {
         Extensions = ["pkg"];

@@ -5,8 +5,12 @@ using RomManagerShared.Utils;
 namespace RomManagerShared.PS1.Parsers;
 
 /// <summary>Reads the serial from SYSTEM.CNF. Cue sheets point at the data track; loose track bins are not indexed.</summary>
-public class PS1DiscParser : IRomParser<PS1Console>
+public class PS1DiscParser : IRomParser<PS1Console>, IContentSniffer
 {
+    // A 2352-byte-sector image renamed to .iso has no PVD at 0x8000 and is still tried.
+    public bool CanParse(string path, ReadOnlySpan<byte> header) =>
+        !FileMagic.HasExtension(path, "iso") || FileMagic.IsoSystemId(header) is not { } id || id.StartsWith("PLAYSTATION", StringComparison.Ordinal);
+
     public List<string> Extensions { get; set; } = ["cue", "iso", "chd"];
 
     public Task<List<Rom>> ProcessFile(string path)

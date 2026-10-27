@@ -4,8 +4,12 @@ using RomManagerShared.Interfaces;
 using RomManagerShared.Utils;
 namespace RomManagerShared.PSP.Parsers;
 
-public class PSPRomParser : IRomParser<PSPConsole>
+public class PSPRomParser : IRomParser<PSPConsole>, IContentSniffer
 {
+    // Only an ISO 9660 image that names another system is ruled out.
+    public bool CanParse(string path, ReadOnlySpan<byte> header) =>
+        !FileMagic.HasExtension(path, "iso") || FileMagic.IsoSystemId(header) is null or "PSP GAME";
+
     private const string SfoPath = @"PSP_GAME\PARAM.SFO";
     private const string IconPath = @"PSP_GAME\ICON0.PNG";
 

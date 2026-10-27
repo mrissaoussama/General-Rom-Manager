@@ -26,11 +26,12 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
 ## Phase B: Architecture
 
 ### B.1 Parser contract [P1]
-- [ ] `ValueTask<ParseResult> ParseAsync(RomFileContext ctx, CancellationToken ct)` with roms, diagnostics
-      and an "unidentified" reason. Adapter keeps old `IRomParser<T>` parsers working while they move.
-- [ ] Content sniffing: `CanParse(ReadOnlySpan<byte> header)` so `.iso`/`.pkg`/`.bin` pick the right
-      console in mixed folders.
-- [ ] Parsers honour cancellation (long CHD/ISO reads).
+- [x] `RomParserExecutor.ParseAsync(file, ct)` returns a `ParseResult` (roms, diagnostics, unidentified
+      reason); `IRomParser<T>.ProcessFile(path, ct)` is a default method, so existing parsers work unchanged.
+- [x] Content sniffing: `IContentSniffer.CanParse(path, header)` + `FileMagic` (PSN/PS4 packages, GameCube/Wii
+      discs, PSP/PlayStation ISOs). Used by the executor and by the add-folder console detector.
+- [ ] Parsers honour cancellation inside long reads (CHD/ISO): the executor stops between parsers; the
+      parsers themselves still need to override `ProcessFile(path, ct)`.
 
 ### B.2 Static state [P1]
 - [ ] `FileUtils.Log` → `ILogger<T>` (keep `ParseDiagnostics` by capturing through a logger scope).

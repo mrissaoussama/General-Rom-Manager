@@ -5,8 +5,10 @@ using RomManagerShared.Utils.PKGUtils;
 
 namespace RomManagerShared.PSP.Parsers;
 
-public class PSPPKGRomParser : IRomParser<PSPConsole>
+public class PSPPKGRomParser : IRomParser<PSPConsole>, IContentSniffer
 {
+    public bool CanParse(string path, ReadOnlySpan<byte> header) => FileMagic.IsPkg3(header);
+
     public PSPPKGRomParser()
     {
         Extensions = ["pkg"];
