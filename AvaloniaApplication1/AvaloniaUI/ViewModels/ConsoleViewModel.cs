@@ -63,10 +63,11 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
         try
         {
             using var scope = _serviceProvider.CreateScope();
-            if (scope.ServiceProvider.GetService<ConsoleManager<T>>() is not IMissingUpdateReporter { HasVersionDatabase: true } reporter)
+            // Online checks (PS4) run only when asked for, never for the dashboard total.
+            if (scope.ServiceProvider.GetService<ConsoleManager<T>>() is not IMissingUpdateReporter { HasVersionDatabase: true, IsOnline: false } reporter)
                 return null;
             var library = Roms.Select(r => r.RomSource).ToList();
-            return await Task.Run(() => reporter.FindMissingUpdates(library).Count);
+            return (await reporter.FindMissingUpdatesAsync(library)).Count;
         }
         catch (Exception ex)
         {
@@ -106,8 +107,7 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
         {
             if (!reporter.HasVersionDatabase)
             {
-                if (!await Dialogs.ConfirmAsync("Missing updates",
-                        "The version database has not been downloaded yet. Download it now?", "Download"))
+                if (!await Dialogs.ConfirmAsync("Missing updates", reporter.SetupPrompt, reporter.IsOnline ? "Allow" : "Download"))
                     return;
                 StatusMessage = "Downloading version database...";
                 await reporter.DownloadVersionDatabaseAsync();
@@ -120,7 +120,7 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
 
             StatusMessage = "Checking for missing updates...";
             var library = Roms.Select(r => r.RomSource).ToList();
-            var missing = await Task.Run(() => reporter.FindMissingUpdates(library));
+            var missing = await reporter.FindMissingUpdatesAsync(library);
             StatusMessage = missing.Count == 0 ? "All games are up to date" : $"{missing.Count} game(s) have newer updates";
             var summary = missing.Count == 0
                 ? "Every game in the library has its latest update."

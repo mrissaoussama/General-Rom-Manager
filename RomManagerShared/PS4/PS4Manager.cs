@@ -4,7 +4,7 @@ using RomManagerShared.PS4.Parsers;
 using RomManagerShared.Utils;
 namespace RomManagerShared.PS4;
 
-public class PS4Manager : ConsoleManager<PS4Console>, IRomMissingContentChecker
+public class PS4Manager : ConsoleManager<PS4Console>, IRomMissingContentChecker, IMissingUpdateReporter
 {
  
     public List<List<Rom>> GroupedRomList { get; set; }
@@ -15,6 +15,30 @@ RomParserExecutor<PS4Console> romParserExecutor)
     {
         GroupedRomList=[]; Checker = new();
     }
+    // ── IMissingUpdateReporter: Sony's update server, opt-in ──────────────
+    public bool HasVersionDatabase => PS4UpdateChecker.OnlineAllowed;
+
+    public string SetupPrompt =>
+        "Checking PS4 updates asks Sony's update server about each game in the library (one request per game). Allow it for this session? (Settings can allow it permanently.)";
+
+    public bool IsOnline => true;
+
+    public Task DownloadVersionDatabaseAsync()
+    {
+        PS4UpdateChecker.OnlineAllowed = true;
+        return Task.CompletedTask;
+    }
+
+    public IReadOnlyList<MissingUpdate> FindMissingUpdates(IReadOnlyList<Rom> library) =>
+        FindMissingUpdatesAsync(library).GetAwaiter().GetResult();
+
+    public async Task<IReadOnlyList<MissingUpdate>> FindMissingUpdatesAsync(IReadOnlyList<Rom> library, CancellationToken ct = default)
+    {
+        if (!PS4UpdateChecker.OnlineAllowed) return [];
+        using var http = PS4UpdateChecker.CreateClient();
+        return await PS4UpdateChecker.FindMissingAsync(library, (url, token) => PS4UpdateChecker.FetchAsync(http, url, token), ct);
+    }
+
     public void LoadGroupRomList()
     {
         GroupedRomList = PS4Utils.GroupRomList(RomList);

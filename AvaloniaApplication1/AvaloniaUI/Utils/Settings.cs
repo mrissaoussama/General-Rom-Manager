@@ -103,6 +103,9 @@ public class Settings
 
     /// <summary>Ask GitHub for a newer RomManager at startup (installed copies only). Off by default: it is a network call.</summary>
     public bool CheckForAppUpdates { get; set; }
+
+    /// <summary>Let "Missing updates" on the PS4 page ask Sony's update server (one request per game).</summary>
+    public bool AllowPs4OnlineUpdateCheck { get; set; }
     /// <summary>Hash whole disc images for Redump matching; null = use config.json.</summary>
     public bool? HashDiscImages { get; set; }
 

@@ -82,7 +82,8 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
 - [ ] XCI parsing test with a homebrew XCI fixture.
 - [x] Switch missing-DLC report (`SwitchDlcChecker`): DLC IDs in the already-downloaded titledb whose base game
       (DLC ID − 0x1000, low 13 bits cleared) is in the library; no extra download (`cnmts.json` not needed).
-- [ ] PS4 update check without PS4_Tools (Sony's public update XML), behind a network opt-in.
+- [x] PS4 missing updates from Sony's update XML (`PS4UpdateChecker`; HMAC-keyed URL, TLS pinned to Sony's
+      private root), opt-in per session or in Settings; never run for the dashboard total.
 
 ## Phase D: UI and UX
 

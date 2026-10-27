@@ -71,6 +71,7 @@ public partial class App : Application
 
         RomViewModel.CoverCache = _host.Services.GetRequiredService<ImageCache>();
         RomManagerShared.Utils.Dat.DiscHashing.UserOverride = Settings.Instance.HashDiscImages;
+        RomManagerShared.PS4.PS4UpdateChecker.OnlineAllowed = Settings.Instance.AllowPs4OnlineUpdateCheck;
 
         // Core-library logging (AppLog) goes through the host's providers.
         RomManagerShared.Logging.AppLog.Factory = _host.Services.GetRequiredService<ILoggerFactory>();
