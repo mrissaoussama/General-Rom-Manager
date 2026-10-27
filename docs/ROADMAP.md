@@ -34,7 +34,9 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
       parsers themselves still need to override `ProcessFile(path, ct)`.
 
 ### B.2 Static state [P1]
-- [ ] `FileUtils.Log` → `ILogger<T>` (keep `ParseDiagnostics` by capturing through a logger scope).
+- [ ] `FileUtils.Log` → `ILogger<T>` (keep `ParseDiagnostics` by capturing through a logger scope); 180 call
+      sites. Done first: log file writes are serialised (parallel parsing lost ~30% of lines) and fall back
+      to a per-user path when config.json has no log path (every write used to fail).
 - [ ] One `IOptionsMonitor<AppOptions>` from config.json + settings.json, saved through `ISettingsStore`.
 - [ ] `MainViewModel.RomPaths` (static) → `ILibraryRootsService`; several roots per console.
 

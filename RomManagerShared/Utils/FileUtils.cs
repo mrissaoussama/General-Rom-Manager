@@ -14,15 +14,22 @@ public class FileUtils
 
     public static List<string> ExcludedFolders;
 
+    /// <summary>Tests point the log somewhere private.</summary>
+    internal static string? LogFilePathOverride { get; set; }
+
+    // config.json's ErrorLogs, or a per-user fallback when the config is missing (it used to be "", so every write failed).
     private static string GetLogFilePath()
     {
-        try { return RomManagerConfiguration.GetErrorLogPath(); }
-        catch
+        if (LogFilePathOverride is { } path) return path;
+        try
         {
-            return Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "GeneralRomManager", "Logs", "errors.log");
+            var configured = RomManagerConfiguration.GetErrorLogPath();
+            if (!string.IsNullOrWhiteSpace(configured)) return configured;
         }
+        catch { /* fall through */ }
+        return Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "GeneralRomManager", "Logs", "errors.log");
     }
 
     static FileUtils()
@@ -129,11 +136,15 @@ public class FileUtils
         // Do NOT forward to Logger here — FileUtilsLoggerProvider already bridges
         // Microsoft.Extensions.Logging → FileUtils.Log(), so calling Logger here
         // would create an infinite feedback loop.
+        // Parsers log in parallel; unsynchronised appends collide on the file and the losers were dropped.
         try
         {
             var logFilePath = GetLogFilePath();
-            Directory.CreateDirectory(Path.GetDirectoryName(logFilePath)!);
-            File.AppendAllText(logFilePath, entry + Environment.NewLine);
+            lock (_logFileLock)
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(logFilePath)!);
+                File.AppendAllText(logFilePath, entry + Environment.NewLine);
+            }
         }
         catch { /* swallow — don't let logging failures crash the app */ }
     }
@@ -150,6 +161,7 @@ public class FileUtils
     public static string LogFilePath => GetLogFilePath();
 
     private static readonly List<string> _recentLogs = [];
+    private static readonly object _logFileLock = new();
     /// <summary>
     /// Format bytes to human-readable size
     /// </summary>

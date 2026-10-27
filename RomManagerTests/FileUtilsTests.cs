@@ -23,4 +23,22 @@ public class FileUtilsTests
             File.Delete(path);
         }
     }
+
+    [Fact]
+    public void Log_FromManyThreads_KeepsEveryLine()
+    {
+        var marker = Guid.NewGuid().ToString("N");
+        var log = Path.Combine(Path.GetTempPath(), marker + ".log");
+        FileUtils.LogFilePathOverride = log;
+        try
+        {
+            Parallel.For(0, 200, i => FileUtils.Log($"{marker} {i}"));
+            File.ReadLines(log).Count(l => l.Contains(marker)).Should().Be(200);
+        }
+        finally
+        {
+            FileUtils.LogFilePathOverride = null;
+            File.Delete(log);
+        }
+    }
 }
