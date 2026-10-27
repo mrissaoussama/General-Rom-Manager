@@ -470,6 +470,21 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
         catch (Exception ex) { StatusMessage = $"Export failed: {ex.Message}"; }
     }
 
+    /// <summary>Starts the emulator configured for the rom's console (Settings → Emulators).</summary>
+    [RelayCommand]
+    private void LaunchInEmulator(IReadOnlyList<RomViewModel> roms)
+    {
+        if (roms.FirstOrDefault() is not { } rom) return;
+        var console = rom.Console.Length > 0 ? rom.Console : ConsoleName;
+        if (!Settings.Instance.Emulators.TryGetValue(console, out var emulator) || string.IsNullOrWhiteSpace(emulator.Path))
+        {
+            StatusMessage = $"No emulator set for {console}; add one in Settings → Emulators.";
+            return;
+        }
+        try { EmulatorLauncher.Launch(emulator.Path, emulator.Arguments, rom.Path); }
+        catch (Exception ex) { StatusMessage = $"Could not start the emulator: {ex.Message}"; }
+    }
+
     [RelayCommand]
     private Task ViewProperties(IReadOnlyList<RomViewModel> roms) =>
         roms.FirstOrDefault() is { } r ? Shell.ShowDialogAsync(new PropertiesWindow(r)) : Task.CompletedTask;

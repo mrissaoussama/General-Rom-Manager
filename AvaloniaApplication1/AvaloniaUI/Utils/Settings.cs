@@ -41,6 +41,8 @@ public class Settings
     public string? DatabasePath { get; set; }
     /// <summary>Root directories to scan per console (Key = console name).</summary>
     public Dictionary<string, string> ConsoleLibraryPaths { get; set; } = new();
+    /// <summary>Per console id: emulator executable and arguments template (see EmulatorLauncher).</summary>
+    public Dictionary<string, EmulatorSettings> Emulators { get; set; } = new();
 
     // ── File Organiser ────────────────────────────────────────────────────
     /// <summary>Default rename format string, e.g. "{TitleName} [{Region}] [v{Version}]".</summary>
@@ -144,4 +146,10 @@ public class Settings
             PluginSettings.Add(new PluginSetting { PluginName = pluginName, Enabled = enabled });
         Save();
     }
+}
+
+public sealed class EmulatorSettings
+{
+    public string Path { get; set; } = "";
+    public string Arguments { get; set; } = RomManagerShared.Utils.EmulatorLauncher.DefaultArguments;
 }

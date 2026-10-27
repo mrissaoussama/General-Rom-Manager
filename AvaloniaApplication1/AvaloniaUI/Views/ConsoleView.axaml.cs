@@ -163,6 +163,7 @@ public partial class ConsoleView : UserControl
 
         _menu.Items.Add(Item("Show in folder", vm.RevealInExplorerCommand, single));
         _menu.Items.Add(Item("Open with default app", vm.OpenWithDefaultAppCommand, single));
+        _menu.Items.Add(Item("Launch in emulator", vm.LaunchInEmulatorCommand, single));
         _menu.Items.Add(new Separator());
         _menu.Items.Add(Item("Copy title ID" + n, vm.CopyTitleIdsCommand));
         _menu.Items.Add(Item("Copy title" + n, vm.CopyTitlesCommand));

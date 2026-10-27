@@ -86,7 +86,8 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
       for the filtered rows (`LibraryExporter`; CSV is formula-safe).
 - [ ] 1G1R ("one game, one ROM") selection from DATs with a region priority list, feeding the move/delete
       previews.
-- [ ] Per-console emulator launch (path + arguments), beyond "Open with default app".
+- [x] Per-console emulator launch: Settings → Emulators (path + arguments with {rom}/{dir}/{name}),
+      "Launch in emulator" in the rom context menu.
 - [ ] Convert/compress through user-supplied tools (chdman, DolphinTool, nsz) as queued operations
       (ADR 0002: optional tools, never bundled).
 

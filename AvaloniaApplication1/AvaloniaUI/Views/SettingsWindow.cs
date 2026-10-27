@@ -164,6 +164,33 @@ public sealed class SettingsWindow : Window
 
         sp.Children.Add(MakeSeparator());
 
+        // ── Emulators ─────────────────────────────────────────────────────
+        sp.Children.Add(MakeLabel("Emulators", fontSize: 14, bold: true));
+        sp.Children.Add(MakeLabel(
+            "Used by \"Launch in emulator\". Arguments: {rom} full path, {dir} its folder, {name} file name. Default: \"{rom}\"",
+            fontSize: 11, muted: true));
+        foreach (var consoleName in knownConsoles)
+        {
+            var id = consoleName;
+            settings.Emulators.TryGetValue(id, out var current);
+            var exeBox = MakeTextBox(current?.Path ?? "", w: 300);
+            var argsBox = MakeTextBox(current?.Arguments ?? RomManagerShared.Utils.EmulatorLauncher.DefaultArguments, w: 160);
+            void Store()
+            {
+                if (string.IsNullOrWhiteSpace(exeBox.Text)) { settings.Emulators.Remove(id); return; }
+                settings.Emulators[id] = new EmulatorSettings { Path = exeBox.Text!, Arguments = argsBox.Text ?? "" };
+            }
+            exeBox.TextChanged += (_, _) => Store();
+            argsBox.TextChanged += (_, _) => Store();
+            sp.Children.Add(MakeLabeledPathRow(id, exeBox, "Browse…", async () =>
+            {
+                var exe = await Dialogs.PickFileAsync(this, $"Emulator for {id}", "Programs", "exe", "*");
+                if (exe != null) exeBox.Text = exe;
+            }, extraButton: argsBox));
+        }
+
+        sp.Children.Add(MakeSeparator());
+
         // ── File Organiser ────────────────────────────────────────────────
         sp.Children.Add(MakeLabel("File Organiser", fontSize: 14, bold: true));
 
