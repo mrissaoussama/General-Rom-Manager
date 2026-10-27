@@ -155,7 +155,6 @@
                         <TextBlock Classes="hint" Text="Everything RomManager fetches from the internet. Scanning itself never goes online." />
                         <CheckBox Content="Download box art (libretro-thumbnails, title databases)" IsChecked="{Binding DownloadBoxArt}" />
                         <CheckBox Content="Download missing title databases on startup (titledb, WikiBrew)" IsChecked="{Binding AutoDownloadMissingDbs}" />
-                        <CheckBox Content="PS4 missing updates: ask Sony's update server (one request per game)" IsChecked="{Binding AllowPs4OnlineUpdateCheck}" />
                         <CheckBox Content="Check GitHub for a newer RomManager on startup (installed copies)" IsChecked="{Binding CheckForAppUpdates}" />
 
                         <TextBlock Classes="heading" Text="Downloads and DATs" />
@@ -173,32 +172,44 @@
                         </StackPanel>
                         <TextBlock Classes="hint" Text="{Binding DatOverview}" />
 
-                        <TextBlock Classes="heading" Text="Switch keys" />
-                        <TextBlock Classes="hint" Text="{Binding KeysDirectory, StringFormat='Read from {0}. Only counts are shown, never key values.'}" />
-                        <ItemsControl ItemsSource="{Binding KeyStatus}">
+                        <TextBlock Classes="heading" Text="Consoles" />
+                        <TextBlock Classes="hint" Text="Options of the installed console modules." IsVisible="{Binding HasConsoleGroups}" />
+                        <ItemsControl ItemsSource="{Binding ConsoleGroups}">
                             <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="vm:StatusLine">
-                                    <TextBlock Text="{Binding Text}" Foreground="{Binding Brush}" />
+                                <DataTemplate x:DataType="vm:ConsoleOptionsGroup">
+                                    <StackPanel Spacing="2" Margin="0,4">
+                                        <DockPanel>
+                                            <Button DockPanel.Dock="Right" Content="Refresh" Classes="small" Command="{Binding RefreshStatusCommand}" />
+                                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                        </DockPanel>
+                                        <ItemsControl ItemsSource="{Binding Status}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:StatusLine">
+                                                    <TextBlock Text="{Binding Text}" Foreground="{Binding Brush}" FontSize="12" />
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        <ItemsControl ItemsSource="{Binding Fields}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:PluginSettingField">
+                                                    <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,2" ToolTip.Tip="{Binding Descriptor.Description}">
+                                                        <TextBlock Classes="label" Text="{Binding Descriptor.Label}" IsVisible="{Binding !IsBoolean}" />
+                                                        <TextBox Text="{Binding Value}" Width="420" IsVisible="{Binding IsText}"
+                                                                 PlaceholderText="{Binding Descriptor.Description}" AutomationProperties.Name="{Binding Descriptor.Label}" />
+                                                        <TextBox Text="{Binding Value}" Width="300" PasswordChar="•" IsVisible="{Binding IsSecret}"
+                                                                 AutomationProperties.Name="{Binding Descriptor.Label}" />
+                                                        <CheckBox IsChecked="{Binding BoolValue}" IsVisible="{Binding IsBoolean}"
+                                                                  Content="{Binding Descriptor.Label}" />
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                        <Button Content="Refresh" Classes="small" Command="{Binding RefreshKeysCommand}" />
 
-                        <TextBlock Classes="heading" Text="Overrides" />
-                        <TextBlock Classes="hint" Text="Leave blank to use the defaults from config.json." />
-                        <StackPanel Orientation="Horizontal" Spacing="4">
-                            <TextBlock Classes="label" Text="Switch TitleDB URL" />
-                            <TextBox Text="{Binding SwitchTitleDbUrl}" Width="420" PlaceholderText="https://raw.githubusercontent.com/blawar/titledb/master/" />
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Spacing="4">
-                            <TextBlock Classes="label" Text="Switch versions URL" />
-                            <TextBox Text="{Binding SwitchVersionsUrl}" Width="420" PlaceholderText="https://raw.githubusercontent.com/blawar/titledb/master/versions.json" />
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Spacing="4">
-                            <TextBlock Classes="label" Text="Switch TitleDB folder" />
-                            <TextBox Text="{Binding SwitchTitleDbPath.Value}" Width="320" PlaceholderText="titledb" />
-                            <TextBlock Classes="status" Text="{Binding SwitchTitleDbPath.Status.Text}" Foreground="{Binding SwitchTitleDbPath.Status.Brush}" />
-                        </StackPanel>
+                        <TextBlock Classes="heading" Text="Folders" />
                         <StackPanel Orientation="Horizontal" Spacing="4">
                             <TextBlock Classes="label" Text="Plugins folder" />
                             <TextBox Text="{Binding PluginsDirectory.Value}" Width="320" />

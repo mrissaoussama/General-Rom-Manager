@@ -1,4 +1,3 @@
-using RomManagerShared.Switch.Configuration;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Microsoft.EntityFrameworkCore;
@@ -73,7 +72,8 @@ public partial class App : Application
         covers.AllowDownloads = Settings.Instance.DownloadBoxArt;
         RomViewModel.CoverCache = covers;
         RomManagerShared.Utils.Dat.DiscHashing.UserOverride = Settings.Instance.HashDiscImages;
-        RomManagerShared.PS4.PS4UpdateChecker.OnlineAllowed = Settings.Instance.AllowPs4OnlineUpdateCheck;
+        if (ConsoleOptionsStore.MigrateLegacy(Settings.Instance)) Settings.Instance.Save();
+        ConsoleOptionsStore.ApplyAll(_host.Services.GetServices<IConsoleOptions>(), Settings.Instance);
 
         // Core-library logging (AppLog) goes through the host's providers.
         RomManagerShared.Logging.AppLog.Factory = _host.Services.GetRequiredService<ILoggerFactory>();
@@ -116,8 +116,6 @@ public partial class App : Application
             // Apply persisted theme before the first window opens
             ApplyThemeFromSettings();
 
-            // Push user URL/path overrides from Settings → SwitchConfiguration
-            ApplySwitchConfigOverrides();
 
             var scope = _host.Services.CreateScope();
             var mainVm = new MainViewModel(scope.ServiceProvider) { Updater = new VelopackUpdater() };
@@ -234,14 +232,4 @@ public partial class App : Application
         RequestedThemeVariant = variant;
     }
 
-    private static void ApplySwitchConfigOverrides()
-    {
-        var s = Settings.Instance;
-        if (!string.IsNullOrWhiteSpace(s.SwitchTitleDBPathOverride))
-            SwitchConfiguration.TitleDBPathOverride = s.SwitchTitleDBPathOverride;
-        if (!string.IsNullOrWhiteSpace(s.SwitchTitleDBUrlOverride))
-            SwitchConfiguration.TitleDBUrlOverride = s.SwitchTitleDBUrlOverride;
-        if (!string.IsNullOrWhiteSpace(s.SwitchVersionsUrlOverride))
-            SwitchConfiguration.VersionsUrlOverride = s.SwitchVersionsUrlOverride;
-    }
 }

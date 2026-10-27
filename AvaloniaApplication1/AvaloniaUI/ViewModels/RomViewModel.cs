@@ -1,6 +1,5 @@
 // csharp - AvaloniaApplication1/AvaloniaUI/ViewModels/RomViewModel.cs
 
-using RomManagerShared.Switch;
 
 namespace AvaloniaUI.ViewModels;
 

@@ -97,6 +97,8 @@ public static class ConsoleModules
             services.AddScoped(typeof(IRomOrganizer), organizer);
         foreach (var resources in types.Where(t => typeof(IDownloadableResources).IsAssignableFrom(t)))
             services.AddSingleton(typeof(IDownloadableResources), resources);
+        foreach (var options in types.Where(t => typeof(IConsoleOptions).IsAssignableFrom(t)))
+            services.AddSingleton(typeof(IConsoleOptions), options);
 
         foreach (var console in ConsoleTypes)
         {

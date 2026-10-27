@@ -1,4 +1,4 @@
-﻿namespace AvaloniaUI.ViewModels;
+namespace AvaloniaUI.ViewModels;
 
 /// <summary>Shell: navigation (dashboard + one page per console), menus and the bottom panels.</summary>
 public partial class MainViewModel : ViewModelBase
@@ -345,7 +345,8 @@ public partial class MainViewModel : ViewModelBase
     private async Task OpenSettings()
     {
         await Dialogs.ShowAsync(new SettingsViewModel(Settings.Instance, _serviceProvider.GetService<PluginManager>(),
-            ConsoleViewModels, () => DownloadMissingDatabasesAsync(showPanel: true)));
+            ConsoleViewModels, () => DownloadMissingDatabasesAsync(showPanel: true),
+            consoleOptions: _serviceProvider.GetServices<IConsoleOptions>()));
         ScheduleRescans(Settings.Instance.RescanIntervalHours);
         // Paths may have changed (LibraryRoots reads Settings on every call).
         var added = await SyncConsolesAsync();

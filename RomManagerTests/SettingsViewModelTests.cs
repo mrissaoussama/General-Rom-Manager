@@ -1,6 +1,7 @@
 using AvaloniaUI.Utils;
 using AvaloniaUI.ViewModels;
 using AwesomeAssertions;
+using RomManagerShared.Base;
 
 namespace RomManagerTests;
 
@@ -114,5 +115,44 @@ public class SettingsViewModelTests
         vm.Apply();
 
         settings.RescanIntervalHours.Should().Be(hours);
+    }
+
+    private sealed class FakeOptions : RomManagerShared.Interfaces.IConsoleOptions
+    {
+        public IReadOnlyDictionary<string, string>? Applied { get; private set; }
+        public string Title => "Fake";
+        public IReadOnlyList<PluginSettingDescriptor> Options =>
+            [new("Url", "URL", Default: "https://default"), new("Online", "Online", PluginSettingKind.Boolean, "false")];
+        public void Apply(IReadOnlyDictionary<string, string> values) => Applied = values;
+    }
+
+    [Fact]
+    public void ConsoleOptions_AreEditedSavedAndApplied()
+    {
+        var options = new FakeOptions();
+        var settings = new Settings();
+        var vm = new SettingsViewModel(settings, persist: _ => { }, consoleOptions: [options]);
+        var group = vm.ConsoleGroups.Should().ContainSingle().Subject;
+        group.Fields[0].Value.Should().Be("https://default");
+
+        group.Fields[0].Value = "https://mine";
+        group.Fields[1].BoolValue = true;
+        vm.Apply();
+
+        settings.ConsoleOptions["FakeOptions"].Should().Equal(new Dictionary<string, string> { ["Url"] = "https://mine", ["Online"] = "true" });
+        options.Applied!["Online"].Should().Be("true");
+    }
+
+    [Fact]
+    public void LegacySwitchAndPs4Settings_MoveIntoConsoleOptions()
+    {
+        var settings = new Settings { SwitchTitleDBUrlOverride = "https://mirror/", AllowPs4OnlineUpdateCheck = true };
+
+        ConsoleOptionsStore.MigrateLegacy(settings).Should().BeTrue();
+
+        settings.ConsoleOptions["SwitchOptions"]["TitleDbUrl"].Should().Be("https://mirror/");
+        settings.ConsoleOptions["PS4Options"]["OnlineUpdateCheck"].Should().Be("true");
+        settings.SwitchTitleDBUrlOverride.Should().BeNull();
+        ConsoleOptionsStore.MigrateLegacy(settings).Should().BeFalse();
     }
 }

@@ -1,5 +1,4 @@
 using Avalonia.Styling;
-using RomManagerShared.Switch.Configuration;
 
 namespace AvaloniaUI.ViewModels;
 
@@ -21,7 +20,8 @@ public sealed partial class SettingsViewModel : DialogViewModel
     private readonly string _initialTheme;
 
     public SettingsViewModel(Settings settings, PluginManager? plugins = null, IEnumerable<ConsoleViewModelBase>? consoles = null,
-        Func<Task<int>>? downloadTitleDatabases = null, Action<Settings>? persist = null)
+        Func<Task<int>>? downloadTitleDatabases = null, Action<Settings>? persist = null,
+        IEnumerable<IConsoleOptions>? consoleOptions = null)
     {
         _settings = settings;
         _persist = persist ?? (s => s.Save());
@@ -38,21 +38,18 @@ public sealed partial class SettingsViewModel : DialogViewModel
         _renameFormat = settings.RenameFormatString;
         _autoDownloadMissingDbs = settings.AutoDownloadMissingDBs;
         _checkForAppUpdates = settings.CheckForAppUpdates;
-        _allowPs4OnlineUpdateCheck = settings.AllowPs4OnlineUpdateCheck;
         _downloadBoxArt = settings.DownloadBoxArt;
         _rescanIntervalHours = settings.RescanIntervalHours > 0 ? settings.RescanIntervalHours.ToString() : "";
         _hashDiscImages = RomManagerShared.Utils.Dat.DiscHashing.Enabled;
-        _switchTitleDbUrl = settings.SwitchTitleDBUrlOverride ?? "";
-        _switchVersionsUrl = settings.SwitchVersionsUrlOverride ?? "";
-        SwitchTitleDbPath = new PathField(settings.SwitchTitleDBPathOverride ?? "", "Not set (default)");
 
         Consoles = [.. ConsoleModules.Descriptors.Select(d => new ConsoleSettingsRow(d, settings))];
         Tools = [.. ConversionTools.All.Select(t => new ToolPathRow(t, settings.ToolPaths.GetValueOrDefault(t.Id, "")))];
         ColumnGroups = [.. BuildColumnGroups()];
         LoadPlugins();
         DatDirectory = SafeDatDirectory();
-        KeysDirectory = RomManagerShared.Switch.SwitchKeyStatus.DefaultKeysDirectory;
-        _ = RefreshKeysAsync();
+        ConsoleGroups = [.. (consoleOptions ?? []).OrderBy(o => o.Title, StringComparer.OrdinalIgnoreCase)
+            .Select(o => new ConsoleOptionsGroup(o, ConsoleOptionsStore.Values(o, settings)))];
+        foreach (var group in ConsoleGroups) _ = group.RefreshStatusCommand.ExecuteAsync(null);
     }
 
     public override string Title => "Settings";
@@ -141,7 +138,6 @@ public sealed partial class SettingsViewModel : DialogViewModel
 
     [ObservableProperty] private bool _autoDownloadMissingDbs;
     [ObservableProperty] private bool _checkForAppUpdates;
-    [ObservableProperty] private bool _allowPs4OnlineUpdateCheck;
     [ObservableProperty] private bool _downloadBoxArt;
     [ObservableProperty] private string _rescanIntervalHours;
     [ObservableProperty] private bool _hashDiscImages;
@@ -195,44 +191,11 @@ public sealed partial class SettingsViewModel : DialogViewModel
         }
     }
 
-    // ── Switch keys and overrides ─────────────────────────────────────────
+    // ── Console modules ───────────────────────────────────────────────────
 
-    public string KeysDirectory { get; }
-    public ObservableCollection<StatusLine> KeyStatus { get; } = [];
-    [ObservableProperty] private string _switchTitleDbUrl;
-    [ObservableProperty] private string _switchVersionsUrl;
-    public PathField SwitchTitleDbPath { get; }
-
-    // Only counts are shown, never key values.
-    [RelayCommand]
-    private async Task RefreshKeys()
-    {
-        RomManagerShared.Switch.SwitchKeyStatus status;
-        try { status = await Task.Run(RomManagerShared.Switch.SwitchKeyStatus.ReadDefault); }
-        catch (Exception ex)
-        {
-            AppLog.Warn($"[Settings] Key status check failed: {ex.GetType().Name}");
-            return;
-        }
-        KeyStatus.Clear();
-        var prod = status.ProdKeys;
-        if (!prod.Exists) KeyStatus.Add(StatusLine.Bad("prod.keys: Not found (required for NSP/XCI)"));
-        else if (prod.Error is not null) KeyStatus.Add(StatusLine.Bad($"prod.keys: Found, could not be read ({prod.Error})"));
-        else
-        {
-            var master = status.HighestMasterKey is { } mk
-                ? $", highest master_key_{mk:x2}" + (status.FirmwareHint is { } fw ? $" (firmware {fw}+)" : "")
-                : ", no master keys";
-            var text = $"prod.keys: Found, {prod.KeyCount} keys{master}";
-            KeyStatus.Add(prod.KeyCount > 0 ? StatusLine.Ok(text) : StatusLine.Bad(text));
-        }
-        var title = status.TitleKeys;
-        if (!title.Exists) KeyStatus.Add(StatusLine.Neutral("title.keys: Not found (optional)"));
-        else if (title.Error is not null) KeyStatus.Add(StatusLine.Bad($"title.keys: Found, could not be read ({title.Error})"));
-        else KeyStatus.Add(StatusLine.Ok($"title.keys: Found, {title.KeyCount} title keys"));
-    }
-
-    private Task RefreshKeysAsync() => RefreshKeysCommand.ExecuteAsync(null);
+    /// <summary>Options and status each console module offers (Switch title databases and keys, PS4 updates…).</summary>
+    public IReadOnlyList<ConsoleOptionsGroup> ConsoleGroups { get; }
+    public bool HasConsoleGroups => ConsoleGroups.Count > 0;
 
     // ── Columns ───────────────────────────────────────────────────────────
 
@@ -317,7 +280,7 @@ public sealed partial class SettingsViewModel : DialogViewModel
     // ── Save / cancel ─────────────────────────────────────────────────────
 
     /// <summary>Writes the draft into <see cref="Settings"/>, saves it and applies what is live (theme, compact
-    /// mode, columns, Redump hashing, Switch overrides).</summary>
+    /// mode, columns, Redump hashing, console module options).</summary>
     public void Apply()
     {
         var s = _settings;
@@ -331,13 +294,11 @@ public sealed partial class SettingsViewModel : DialogViewModel
         s.RenameFormatString = RenameFormat;
         s.AutoDownloadMissingDBs = AutoDownloadMissingDbs;
         s.CheckForAppUpdates = CheckForAppUpdates;
-        s.AllowPs4OnlineUpdateCheck = AllowPs4OnlineUpdateCheck;
         s.DownloadBoxArt = DownloadBoxArt;
         s.RescanIntervalHours = int.TryParse(RescanIntervalHours, out var hours) && hours > 0 ? hours : 0;
         s.HashDiscImages = HashDiscImages;
-        s.SwitchTitleDBUrlOverride = NullIfBlank(SwitchTitleDbUrl);
-        s.SwitchVersionsUrlOverride = NullIfBlank(SwitchVersionsUrl);
-        s.SwitchTitleDBPathOverride = NullIfBlank(SwitchTitleDbPath.Value);
+        foreach (var group in ConsoleGroups)
+            s.ConsoleOptions[ConsoleOptionsStore.Key(group.Options)] = group.Fields.ToDictionary(f => f.Descriptor.Key, f => f.Value);
         foreach (var group in ColumnGroups)
             s.VisibleColumns[group.ConsoleName] = [.. group.Columns.Where(c => c.IsVisible).Select(c => c.PropName)];
         foreach (var plugin in Plugins.Where(p => !p.IsRevoked))
@@ -352,11 +313,8 @@ public sealed partial class SettingsViewModel : DialogViewModel
         _persist(s);
 
         RomManagerShared.Utils.Dat.DiscHashing.UserOverride = s.HashDiscImages;
-        RomManagerShared.PS4.PS4UpdateChecker.OnlineAllowed = s.AllowPs4OnlineUpdateCheck;
         if (RomViewModel.CoverCache is { } covers) covers.AllowDownloads = s.DownloadBoxArt;
-        SwitchConfiguration.TitleDBUrlOverride = s.SwitchTitleDBUrlOverride;
-        SwitchConfiguration.VersionsUrlOverride = s.SwitchVersionsUrlOverride;
-        SwitchConfiguration.TitleDBPathOverride = s.SwitchTitleDBPathOverride;
+        ConsoleOptionsStore.ApplyAll(ConsoleGroups.Select(g => g.Options), s);
         Settings.RaiseCompactModeChanged();
         foreach (var group in ColumnGroups) Settings.RaiseColumnsChanged(group.ConsoleName);
     }
@@ -553,5 +511,28 @@ public sealed partial class PluginSettingField(PluginSettingDescriptor descripto
     {
         get => bool.TryParse(Value, out var b) && b;
         set => Value = value ? "true" : "false";
+    }
+}
+
+/// <summary>One console module's block in Settings → Consoles.</summary>
+public sealed partial class ConsoleOptionsGroup(IConsoleOptions options, IReadOnlyDictionary<string, string> values) : ObservableObject
+{
+    public IConsoleOptions Options { get; } = options;
+    public string Title => Options.Title;
+    public IReadOnlyList<PluginSettingField> Fields { get; } =
+        [.. options.Options.Select(d => new PluginSettingField(d, values.GetValueOrDefault(d.Key, d.Default)))];
+    public ObservableCollection<StatusLine> Status { get; } = [];
+
+    [RelayCommand]
+    private async Task RefreshStatus()
+    {
+        try
+        {
+            var lines = await Options.GetStatusAsync();
+            Status.Clear();
+            foreach (var line in lines)
+                Status.Add(line.Ok switch { true => StatusLine.Ok(line.Text), false => StatusLine.Bad(line.Text), null => StatusLine.Neutral(line.Text) });
+        }
+        catch (Exception ex) { AppLog.Warn($"[{Title}] status: {ex.Message}"); }
     }
 }

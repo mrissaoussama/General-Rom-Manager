@@ -107,7 +107,10 @@ public class Settings
     /// <summary>Ask GitHub for a newer RomManager at startup (installed copies only). Off by default: it is a network call.</summary>
     public bool CheckForAppUpdates { get; set; }
 
-    /// <summary>Let "Missing updates" on the PS4 page ask Sony's update server (one request per game).</summary>
+    /// <summary>Console module options (Settings → Consoles), keyed by the module's options type name.</summary>
+    public Dictionary<string, Dictionary<string, string>> ConsoleOptions { get; set; } = new();
+
+    /// <summary>Pre-module setting, moved into <see cref="ConsoleOptions"/> on load.</summary>
     public bool AllowPs4OnlineUpdateCheck { get; set; }
 
     /// <summary>Download box art (libretro-thumbnails, title databases) for the cover view and details.</summary>
@@ -116,6 +119,7 @@ public class Settings
     public bool? HashDiscImages { get; set; }
 
     // ── Config URL / path overrides (user can override config.json defaults) ──
+    // Pre-module settings, moved into ConsoleOptions["SwitchOptions"] on load.
     /// <summary>Override for Switch TitleDB base URL.</summary>
     public string? SwitchTitleDBUrlOverride { get; set; }
     /// <summary>Override for Switch versions URL.</summary>
@@ -165,4 +169,48 @@ public class ConsoleScanSettings
     public int? Parallelism { get; set; }
     /// <summary>Folder names or relative paths to skip.</summary>
     public List<string> ExcludedFolders { get; set; } = [];
+}
+
+/// <summary>Stores and applies <see cref="IConsoleOptions"/> values (Settings → Consoles).</summary>
+public static class ConsoleOptionsStore
+{
+    public static string Key(IConsoleOptions options) => options.GetType().Name;
+
+    /// <summary>Stored values with defaults for anything unset.</summary>
+    public static IReadOnlyDictionary<string, string> Values(IConsoleOptions options, Settings settings)
+    {
+        var stored = settings.ConsoleOptions.GetValueOrDefault(Key(options));
+        return options.Options.ToDictionary(d => d.Key, d => stored?.GetValueOrDefault(d.Key) ?? d.Default);
+    }
+
+    public static void ApplyAll(IEnumerable<IConsoleOptions> all, Settings settings)
+    {
+        foreach (var options in all)
+        {
+            try { options.Apply(Values(options, settings)); }
+            catch (Exception ex) { AppLog.Warn($"[{Key(options)}] {ex.Message}"); }
+        }
+    }
+
+    /// <summary>Moves settings from before console modules (Switch overrides, PS4 online check) into ConsoleOptions.</summary>
+    public static bool MigrateLegacy(Settings s)
+    {
+        var changed = false;
+        if (s.SwitchTitleDBUrlOverride is not null || s.SwitchVersionsUrlOverride is not null || s.SwitchTitleDBPathOverride is not null)
+        {
+            var sw = s.ConsoleOptions.TryGetValue("SwitchOptions", out var v) ? v : s.ConsoleOptions["SwitchOptions"] = [];
+            if (s.SwitchTitleDBUrlOverride is { } url) sw.TryAdd("TitleDbUrl", url);
+            if (s.SwitchVersionsUrlOverride is { } versions) sw.TryAdd("VersionsUrl", versions);
+            if (s.SwitchTitleDBPathOverride is { } path) sw.TryAdd("TitleDbPath", path);
+            s.SwitchTitleDBUrlOverride = s.SwitchVersionsUrlOverride = s.SwitchTitleDBPathOverride = null;
+            changed = true;
+        }
+        if (s.AllowPs4OnlineUpdateCheck)
+        {
+            (s.ConsoleOptions.TryGetValue("PS4Options", out var v) ? v : s.ConsoleOptions["PS4Options"] = []).TryAdd("OnlineUpdateCheck", "true");
+            s.AllowPs4OnlineUpdateCheck = false;
+            changed = true;
+        }
+        return changed;
+    }
 }
