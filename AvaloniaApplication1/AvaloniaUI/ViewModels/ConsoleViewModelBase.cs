@@ -111,12 +111,12 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
 
     private static IBrush ManufacturerBrush(string manufacturer) => manufacturer switch
     {
-        "Nintendo" => new SolidColorBrush(Color.FromRgb(0xC6, 0x28, 0x28)),
-        "Sony" => new SolidColorBrush(Color.FromRgb(0x1F, 0x4E, 0xA8)),
-        "Microsoft" => new SolidColorBrush(Color.FromRgb(0x2E, 0x7D, 0x32)),
-        "Sega" => new SolidColorBrush(Color.FromRgb(0x15, 0x65, 0xC0)),
-        "NEC" => new SolidColorBrush(Color.FromRgb(0xEF, 0x6C, 0x00)),
-        _ => new SolidColorBrush(Color.FromRgb(0x61, 0x61, 0x61)),
+        "Nintendo" => new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Color.FromRgb(0xC6, 0x28, 0x28)),
+        "Sony" => new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Color.FromRgb(0x1F, 0x4E, 0xA8)),
+        "Microsoft" => new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Color.FromRgb(0x2E, 0x7D, 0x32)),
+        "Sega" => new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Color.FromRgb(0x15, 0x65, 0xC0)),
+        "NEC" => new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Color.FromRgb(0xEF, 0x6C, 0x00)),
+        _ => new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Color.FromRgb(0x61, 0x61, 0x61)),
     };
     public int RomCount => Roms.Count;
     public bool ShowEmptyState => !IsLoading && Roms.Count == 0;

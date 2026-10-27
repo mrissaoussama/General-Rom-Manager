@@ -15,7 +15,27 @@ using RomManagerShared.Base;
 using RomManagerShared.Base.Library;
 using RomManagerShared.Interfaces;
 
+[assembly: AssemblyFixture(typeof(RomManagerTests.HeadlessSession))]
+
 namespace RomManagerTests;
+
+/// <summary>
+/// One headless Avalonia session for the whole test run, started before any test: Avalonia 12 binds its UI
+/// thread to the first thread that touches it, so a view-model test creating a brush first would otherwise
+/// leave the headless tests on the wrong thread.
+/// </summary>
+public sealed class HeadlessSession : IDisposable
+{
+    private static readonly Lazy<HeadlessUnitTestSession> Session =
+        new(() => HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApp), AvaloniaTestIsolationLevel.PerAssembly));
+
+    public static HeadlessUnitTestSession Instance => Session.Value;
+
+    // The first dispatch sets the platform up on the session's thread, before any other test can claim it.
+    public HeadlessSession() => Instance.Dispatch(() => { }, CancellationToken.None).GetAwaiter().GetResult();
+
+    public void Dispose() { }
+}
 
 /// <summary>Avalonia app for headless tests: the real theme and view locator, none of App's startup work.</summary>
 public sealed class HeadlessTestApp : Application
@@ -39,11 +59,8 @@ public sealed class HeadlessTestApp : Application
 /// <summary>Renders real views on the headless platform. All UI work runs on the session's UI thread.</summary>
 public sealed class HeadlessUiTests
 {
-    private static readonly Lazy<HeadlessUnitTestSession> Session =
-        new(() => HeadlessUnitTestSession.StartNew(typeof(HeadlessTestApp), AvaloniaTestIsolationLevel.PerAssembly));
-
     private static Task Ui(Action action) =>
-        Session.Value.Dispatch(action, TestContext.Current.CancellationToken);
+        HeadlessSession.Instance.Dispatch(action, TestContext.Current.CancellationToken);
 
     private sealed class TestConsoleViewModel() : ConsoleViewModelBase("Test", null)
     {
@@ -64,7 +81,10 @@ public sealed class HeadlessUiTests
     {
         var window = (Window)TopLevel.GetTopLevel(button)!;
         window.UpdateLayout();
+        // Hit testing works on the rendered scene, so render a frame first.
+        Avalonia.Headless.AvaloniaHeadlessPlatform.ForceRenderTimerTick();
         var center = button.TranslatePoint(new Point(button.Bounds.Width / 2, button.Bounds.Height / 2), window)!.Value;
+        window.MouseMove(center);
         window.MouseDown(center, MouseButton.Left);
         window.MouseUp(center, MouseButton.Left);
         Dispatcher.UIThread.RunJobs();
@@ -260,7 +280,7 @@ public sealed class HeadlessUiTests
         if (Environment.GetEnvironmentVariable("SCREENSHOTS") != "1") return;
         var dir = Path.Combine(Path.GetDirectoryName(caller)!, "..", "docs", "screenshots");
         Directory.CreateDirectory(dir);
-        frame!.Save(Path.Combine(dir, name + ".png"));
+        frame!.Save(Path.Combine(dir, name + ".png"), new Avalonia.Media.Imaging.PngBitmapEncoderOptions());
     }
 
     [Fact]

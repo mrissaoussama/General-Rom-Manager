@@ -76,8 +76,11 @@ public sealed partial class SettingsViewModel : DialogViewModel
 
     private static void ApplyTheme(string key)
     {
-        if (Application.Current is { } app)
-            app.RequestedThemeVariant = key switch { "Dark" => ThemeVariant.Dark, "Light" => ThemeVariant.Light, _ => ThemeVariant.Default };
+        if (Application.Current is not { } app) return;
+        var variant = key switch { "Dark" => ThemeVariant.Dark, "Light" => ThemeVariant.Light, _ => ThemeVariant.Default };
+        // The application belongs to the UI thread (Avalonia 12 enforces it).
+        if (Dispatcher.UIThread.CheckAccess()) app.RequestedThemeVariant = variant;
+        else Dispatcher.UIThread.Post(() => app.RequestedThemeVariant = variant);
     }
 
     [RelayCommand]
@@ -411,8 +414,8 @@ public sealed partial class PathField : ObservableObject
 /// <summary>A line of status text with its colour.</summary>
 public sealed record StatusLine(string Text, IBrush Brush)
 {
-    private static readonly IBrush OkBrush = new SolidColorBrush(Color.FromRgb(0x2E, 0x9E, 0x44));
-    private static readonly IBrush BadBrush = new SolidColorBrush(Color.FromRgb(0xD3, 0x3A, 0x2F));
+    private static readonly IBrush OkBrush = new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Color.FromRgb(0x2E, 0x9E, 0x44));
+    private static readonly IBrush BadBrush = new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Color.FromRgb(0xD3, 0x3A, 0x2F));
 
     public static StatusLine Ok(string text) => new(text, OkBrush);
     public static StatusLine Bad(string text) => new(text, BadBrush);

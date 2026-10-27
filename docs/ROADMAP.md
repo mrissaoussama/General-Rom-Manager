@@ -15,12 +15,14 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
       (the whole solution now builds with zero warnings).
 - [x] Removed `SkyEditor.Utilities.AsyncFor`: plain loops in the vendored 3DS toolkit; the unused
       `ThreeDsRom.ExtractFiles` (its only `ProgressReportToken` user) is gone.
-- [x] `ItemsRepeater` 11.1.5 and `DataGrid` 11.3.13 are the newest 11.x releases (next step is Avalonia 12).
+- [x] `ItemsRepeater` and `DataGrid` follow Avalonia 12.
 - [x] Android/Browser heads deleted (unmaintained since net9; recoverable from git history).
 - [x] Dependabot for NuGet (grouped) and GitHub Actions.
 - [x] Code coverage in CI (`Microsoft.Testing.Extensions.CodeCoverage`, Cobertura artifact; ~43% lines).
 - [x] CI builds and tests on windows, ubuntu and macos (test paths made portable).
-- [ ] Avalonia 12 (after phase D's dialog work).
+- [x] Avalonia 12.1.4 (DataGrid 12.1.2, ItemsRepeater 12.0.0). Avalonia.Diagnostics has no v12 and was dropped.
+      v12 binds the UI thread strictly: view-model brushes are immutable, the theme preview posts to the UI
+      thread, and the headless test session starts before any other test.
 
 ## Phase B: Architecture
 
