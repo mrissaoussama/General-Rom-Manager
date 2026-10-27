@@ -57,7 +57,9 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
       folders and every rom of a shared file (it used to move only the marker file back).
 - [x] **[P0]** Delete moves files to the Recycle Bin (fixed drives) / Trash (macOS, freedesktop on Linux);
       files that cannot be trashed are only deleted after a second, explicit confirmation.
-- [ ] **[P1]** Persist the operation journal so undo survives a restart.
+- [x] **[P1]** Persist the operation journal so undo survives a restart (`OperationJournal`, `journal.json`
+      next to the database; clearing finished operations forgets their entries). Single-rom rename undo
+      now restores folder-format roms too.
 - [x] **[P1]** Redump for multi-track discs: PS1/PS2 `.cue` and Dreamcast `.gdi` sets match by their first
       track. (CHD's internal SHA-1 covers the whole compressed image and cannot match Redump's per-track
       hashes; matching CHDs needs decompression.)

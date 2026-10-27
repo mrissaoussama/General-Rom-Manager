@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
 using RomManagerShared.Base.Database;
 using RomManagerShared.Utils;
@@ -15,75 +16,53 @@ public sealed class RomOperationService
 
     public OperationQueue Queue => _queue;
 
-    public RomOperationService(OperationQueue queue, IServiceProvider services)
+    private readonly OperationJournal? _journal;
+    private readonly ConcurrentDictionary<int, Guid> _journalOps = [];
+
+    public RomOperationService(OperationQueue queue, IServiceProvider services, OperationJournal? journal = null)
     {
         _queue = queue ?? throw new ArgumentNullException(nameof(queue));
         _services = services ?? throw new ArgumentNullException(nameof(services));
+        _journal = journal;
+        _queue.OperationsCleared += ops =>
+        {
+            // Clearing the list forgets the undo history too.
+            foreach (var op in ops)
+                if (_journalOps.TryRemove(op.Id, out var id)) _journal?.Remove(id);
+        };
     }
 
     // ── Rename ────────────────────────────────────────────────────────────
 
     /// <summary>
     /// Enqueue a rename operation for a single ROM using the given format template.
-    /// Returns the queued operation. Supports undo (reverts to original filename).
+    /// Supports undo (reverts to the original file or folder name), also after a restart.
     /// </summary>
-    public QueuedOperation EnqueueRename(Rom rom, string formatString)
-    {
-        var originalPath = rom.Path;
-        var fileName = Path.GetFileName(originalPath);
-
-        return _queue.Enqueue(new QueuedOperation
-        {
-            Name = $"Rename: {fileName}",
-            Description = $"Rename using template: {formatString}",
-            Category = "Rename",
-            ExecuteAsync = async (ct, progress) =>
+    public QueuedOperation EnqueueRename(Rom rom, string formatString) =>
+        EnqueuePathOperation([rom], $"Rename: {Path.GetFileName(rom.Path)}", $"Rename using template: {formatString}", "Rename",
+            async ct =>
             {
-                var results = await FileRenamer.RenameFilesAsync(new[] { rom }, formatString, ct: ct);
+                var results = await FileRenamer.RenameFilesAsync([rom], formatString, ct: ct);
                 var result = results.FirstOrDefault();
                 if (result is not null && !result.Success)
                     throw new InvalidOperationException(result.ErrorMessage ?? "Rename failed");
-                progress.Report(100);
-            },
-            UndoAsync = async ct =>
-            {
-                if (rom.Path != originalPath && File.Exists(rom.Path))
-                {
-                    File.Move(rom.Path, originalPath!);
-                    rom.Path = originalPath;
-                }
-                await Task.CompletedTask;
-            },
-        });
-    }
+            });
 
     /// <summary>
     /// Enqueue a bulk rename operation for multiple ROMs.
     /// Supports undo (reverts all renames).
     /// </summary>
-    public QueuedOperation EnqueueBulkRename(IReadOnlyList<Rom> roms, string formatString)
-    {
-        // Capture original paths for undo
-        var originalPaths = roms.Select(r => (r, r.Path)).ToList(); // not a dictionary: Rom equality depends on Path
-
-        return _queue.Enqueue(new QueuedOperation
-        {
-            Name = $"Rename {roms.Count} ROM(s)",
-            Description = $"Rename using template: {formatString}",
-            Category = "Rename",
-            ExecuteAsync = async (ct, progress) =>
+    public QueuedOperation EnqueueBulkRename(IReadOnlyList<Rom> roms, string formatString) =>
+        EnqueuePathOperation(roms, $"Rename {roms.Count} ROM(s)", $"Rename using template: {formatString}", "Rename",
+            async ct =>
             {
                 var results = await FileRenamer.RenameFilesAsync(roms, formatString, ct: ct);
                 int ok = results.Count(r => r.Success && r.Changed);
                 int fail = results.Count(r => !r.Success);
-                progress.Report(100);
                 FileUtils.Log($"[Rename] Done: {ok} renamed, {fail} failed.");
                 if (fail > 0 && ok == 0)
                     throw new InvalidOperationException($"All {fail} rename(s) failed.");
-            },
-            UndoAsync = ct => Task.Run(() => RestorePaths(originalPaths, ct), ct),
-        });
-    }
+            });
 
     // ── Move ──────────────────────────────────────────────────────────────
 
@@ -91,61 +70,142 @@ public sealed class RomOperationService
     /// Enqueue a move operation that relocates ROMs to a target directory.
     /// Supports undo (moves files back to their original locations).
     /// </summary>
-    public QueuedOperation EnqueueMove(IReadOnlyList<Rom> roms, string targetRoot, string? commonSourceRoot = null)
-    {
-        // Capture original paths for undo
-        var originalPaths = roms.Select(r => (r, r.Path)).ToList(); // not a dictionary: Rom equality depends on Path
-
-        return _queue.Enqueue(new QueuedOperation
-        {
-            Name = $"Move {roms.Count} ROM(s) → {Path.GetFileName(targetRoot.TrimEnd(Path.DirectorySeparatorChar))}",
-            Description = $"Move to: {targetRoot}",
-            Category = "Move",
-            ExecuteAsync = async (ct, progress) =>
+    public QueuedOperation EnqueueMove(IReadOnlyList<Rom> roms, string targetRoot, string? commonSourceRoot = null) =>
+        EnqueuePathOperation(roms,
+            $"Move {roms.Count} ROM(s) → {Path.GetFileName(targetRoot.TrimEnd(Path.DirectorySeparatorChar))}",
+            $"Move to: {targetRoot}", "Move",
+            async ct =>
             {
-                var mover = new RomMover(targetRoot);
-                var results = await mover.MoveFilesAsync(roms, commonSourceRoot, ct);
+                var results = await new RomMover(targetRoot).MoveFilesAsync(roms, commonSourceRoot, ct);
                 int ok = results.Count(r => r.Success && r.Changed);
                 int fail = results.Count(r => !r.Success);
-                progress.Report(100);
                 FileUtils.Log($"[Move] Done: {ok} moved, {fail} failed.");
                 if (fail > 0 && ok == 0)
                     throw new InvalidOperationException($"All {fail} move(s) failed.");
+            });
+
+    // Rename and move share undo: remember where every rom was, journal the moves that put it back.
+    private QueuedOperation EnqueuePathOperation(IReadOnlyList<Rom> roms, string name, string description,
+        string category, Func<CancellationToken, Task> execute)
+    {
+        var originalPaths = roms.Select(r => (r, r.Path)).ToList(); // not a dictionary: Rom equality depends on Path
+        JournalEntry? entry = null;
+        QueuedOperation? op = null;
+
+        op = new QueuedOperation
+        {
+            Name = name,
+            Description = description,
+            Category = category,
+            ExecuteAsync = async (ct, progress) =>
+            {
+                try
+                {
+                    await execute(ct);
+                }
+                finally
+                {
+                    // Also after a partial failure: whatever did move can be put back.
+                    var plan = BuildRestorePlan(originalPaths);
+                    if (plan.Count > 0 && _journal is not null)
+                    {
+                        entry = _journal.Add(name, category, plan);
+                        _journalOps[op!.Id] = entry.Id;
+                    }
+                }
+                progress.Report(100);
             },
-            UndoAsync = ct => Task.Run(() => RestorePaths(originalPaths, ct), ct),
-        });
+            UndoAsync = ct => Task.Run(() =>
+            {
+                RestorePaths(originalPaths, ct);
+                if (entry is not null) _journal?.Remove(entry.Id);
+            }, ct),
+        };
+        return _queue.Enqueue(op);
+    }
+
+    /// <summary>Re-adds journaled operations from earlier sessions to the queue as undoable.</summary>
+    public void RestoreJournal()
+    {
+        if (_journal is null) return;
+        foreach (var entry in _journal.Entries)
+        {
+            var op = new QueuedOperation
+            {
+                Name = entry.Name,
+                Description = "From an earlier session",
+                Category = entry.Category,
+                ExecuteAsync = (_, _) => Task.CompletedTask,
+                UndoAsync = ct => Task.Run(() =>
+                {
+                    ApplyRestorePlan(entry.Undo, ct);
+                    _journal.Remove(entry.Id);
+                }, ct),
+            };
+            _journalOps[op.Id] = entry.Id;
+            _queue.AddCompleted(op, entry.CompletedAt);
+        }
     }
 
     /// <summary>
-    /// Undo for rename/move: puts each file or folder back once and fixes every rom that points into it.
-    /// Folder-format roms move as their whole folder, never just the marker file the parser opened.
+    /// The moves that put every changed rom back. Each file or folder appears once; folder-format roms
+    /// move as their whole folder, never just the marker file the parser opened.
     /// </summary>
-    public static void RestorePaths(IEnumerable<(Rom Rom, string? Original)> originalPaths, CancellationToken ct = default)
+    public static List<PathMove> BuildRestorePlan(IEnumerable<(Rom Rom, string? Original)> originalPaths)
     {
-        var changed = originalPaths
+        var plan = new List<PathMove>();
+        var units = originalPaths
             .Where(p => p.Original is not null && p.Rom.Path is not null && p.Rom.Path != p.Original)
-            .GroupBy(p => p.Rom.IsFolderFormat ? RomUtils.GetRomBaseFolder(p.Rom) : p.Rom.Path!, StringComparer.OrdinalIgnoreCase)
-            .ToList();
-        foreach (var unit in changed)
+            .GroupBy(p => p.Rom.IsFolderFormat ? RomUtils.GetRomBaseFolder(p.Rom) : p.Rom.Path!, StringComparer.OrdinalIgnoreCase);
+        foreach (var unit in units)
         {
-            ct.ThrowIfCancellationRequested();
             var (rom, original) = unit.First();
-            if (Directory.Exists(unit.Key))
+            if (rom.IsFolderFormat && !string.Equals(unit.Key, rom.Path, StringComparison.OrdinalIgnoreCase))
             {
                 // The marker file's path inside the folder is the same before and after the move.
                 var inside = Path.GetRelativePath(unit.Key, rom.Path!);
                 var originalFolder = original![..^inside.Length].TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-                Directory.CreateDirectory(Path.GetDirectoryName(originalFolder)!);
-                RomMover.MoveDirectoryVerified(unit.Key, originalFolder, ct);
-                foreach (var (r, _) in unit)
-                    r.Path = Path.Combine(originalFolder, Path.GetRelativePath(unit.Key, r.Path!));
+                plan.Add(new PathMove(unit.Key, originalFolder, true));
             }
-            else if (File.Exists(unit.Key))
+            else
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(original!)!);
-                File.Move(unit.Key, original!);
-                foreach (var (r, o) in unit) r.Path = o;
+                plan.Add(new PathMove(unit.Key, original!, Directory.Exists(unit.Key)));
             }
+        }
+        return plan;
+    }
+
+    /// <summary>Moves files and folders back. Entries whose current location no longer exists are skipped.</summary>
+    public static void ApplyRestorePlan(IEnumerable<PathMove> plan, CancellationToken ct = default)
+    {
+        foreach (var move in plan)
+        {
+            ct.ThrowIfCancellationRequested();
+            if (move.IsDirectory ? !Directory.Exists(move.From) : !File.Exists(move.From))
+            {
+                FileUtils.Log($"[Undo] '{move.From}' is gone; not restoring it to '{move.To}'.");
+                continue;
+            }
+            Directory.CreateDirectory(Path.GetDirectoryName(move.To)!);
+            if (move.IsDirectory) RomMover.MoveDirectoryVerified(move.From, move.To, ct);
+            else File.Move(move.From, move.To);
+        }
+    }
+
+    /// <summary>Undo for rename/move: applies <see cref="BuildRestorePlan"/> and points every rom back.</summary>
+    public static void RestorePaths(IEnumerable<(Rom Rom, string? Original)> originalPaths, CancellationToken ct = default)
+    {
+        var list = originalPaths.ToList();
+        var plan = BuildRestorePlan(list);
+        ApplyRestorePlan(plan, ct);
+        foreach (var (rom, original) in list)
+        {
+            if (rom.Path is null || original is null) continue;
+            var move = plan.FirstOrDefault(m => m.IsDirectory
+                ? rom.Path.StartsWith(m.From + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
+                : string.Equals(rom.Path, m.From, StringComparison.OrdinalIgnoreCase));
+            if (move is null) continue;
+            rom.Path = move.IsDirectory ? Path.Combine(move.To, Path.GetRelativePath(move.From, rom.Path)) : original;
         }
     }
 

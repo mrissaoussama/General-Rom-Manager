@@ -31,8 +31,9 @@ public partial class MainViewModel : ViewModelBase
     public MainViewModel(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
-        OperationService = new RomOperationService(Operations, serviceProvider);
+        OperationService = new RomOperationService(Operations, serviceProvider, CreateJournal());
         OperationsPanel = new OperationsViewModel(Operations);
+        OperationService.RestoreJournal();
         Dashboard = new DashboardViewModel(ConsoleViewModels, c => SelectedPage = c);
         Library = new LibraryViewModel(ConsoleViewModels, ScanAllAsync, serviceProvider.GetService<ImageCache>())
         {
@@ -41,6 +42,17 @@ public partial class MainViewModel : ViewModelBase
         Library.OperationQueued += () => SelectedBottomTab = OperationsTab;
         Pages.Add(Dashboard);
         SelectedPage = Dashboard;
+    }
+
+    // Undo history lives next to the database so it survives clearing the cache.
+    private static OperationJournal? CreateJournal()
+    {
+        try
+        {
+            var db = RomManagerConfiguration.GetSqliteDBPath();
+            return string.IsNullOrEmpty(db) ? null : new OperationJournal(Path.Combine(Path.GetDirectoryName(db)!, "journal.json"));
+        }
+        catch { return null; }
     }
 
     /// <summary>Rebuilds RomPaths from config.json and Settings (Settings wins).</summary>

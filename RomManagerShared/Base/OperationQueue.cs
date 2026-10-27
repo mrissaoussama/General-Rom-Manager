@@ -61,6 +61,9 @@ public sealed class OperationQueue
     /// <summary>Fired whenever any operation changes state.</summary>
     public event Action<QueuedOperation>? OperationStateChanged;
 
+    /// <summary>Fired with the operations dropped by <see cref="ClearFinished"/>.</summary>
+    public event Action<IReadOnlyList<QueuedOperation>>? OperationsCleared;
+
     public OperationQueue(int maxConcurrent = 1)
     {
         _semaphore = new SemaphoreSlim(maxConcurrent, maxConcurrent);
@@ -78,6 +81,17 @@ public sealed class OperationQueue
         lock (_lock) _operations.Add(op);
         OperationStateChanged?.Invoke(op);
         _ = RunAsync(op);
+        return op;
+    }
+
+    /// <summary>Adds an operation that already finished (e.g. restored from the journal) without running it.</summary>
+    public QueuedOperation AddCompleted(QueuedOperation op, DateTime completedAt)
+    {
+        op.State = OperationState.Completed;
+        op.ProgressPercent = 100;
+        op.CompletedAt = completedAt;
+        lock (_lock) _operations.Add(op);
+        OperationStateChanged?.Invoke(op);
         return op;
     }
 
@@ -140,7 +154,13 @@ public sealed class OperationQueue
     /// <summary>Remove all finished operations from the list.</summary>
     public void ClearFinished()
     {
-        lock (_lock) _operations.RemoveAll(o => o.IsFinished);
+        List<QueuedOperation> removed;
+        lock (_lock)
+        {
+            removed = _operations.Where(o => o.IsFinished).ToList();
+            _operations.RemoveAll(o => o.IsFinished);
+        }
+        if (removed.Count > 0) OperationsCleared?.Invoke(removed);
     }
 
     /// <summary>Serialisable snapshot of current queue state.</summary>
