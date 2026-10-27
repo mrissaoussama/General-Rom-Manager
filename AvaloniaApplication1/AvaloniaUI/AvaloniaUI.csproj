@@ -10,6 +10,17 @@
         <AvaloniaResource Include="Assets\**" />
     </ItemGroup>
 
+    <!-- UI text (English). Strings.Designer.cs is generated at build time; AXAML uses {x:Static res:Strings.Key}. -->
+    <ItemGroup>
+        <EmbeddedResource Update="Resources\Strings.resx">
+            <StronglyTypedLanguage>C#</StronglyTypedLanguage>
+            <StronglyTypedNamespace>AvaloniaUI.Resources</StronglyTypedNamespace>
+            <StronglyTypedClassName>Strings</StronglyTypedClassName>
+            <StronglyTypedFileName>$(IntermediateOutputPath)Strings.Designer.cs</StronglyTypedFileName>
+            <PublicClass>true</PublicClass>
+        </EmbeddedResource>
+    </ItemGroup>
+
     <ItemGroup>
         <PackageReference Include="Avalonia" />
         <PackageReference Include="Avalonia.Controls.ItemsRepeater" />

@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:res="using:AvaloniaUI.Resources"
              xmlns:vm="using:AvaloniaUI.ViewModels"
              x:Class="AvaloniaUI.Views.MainView"
              x:DataType="vm:MainViewModel">
@@ -13,30 +14,30 @@
 
     <DockPanel>
         <Menu DockPanel.Dock="Top">
-            <MenuItem Header="_File">
-                <MenuItem Header="_Settings…" InputGesture="Ctrl+OemComma" Command="{Binding OpenSettingsCommand}" />
+            <MenuItem Header="{x:Static res:Strings.Main_File}">
+                <MenuItem Header="{x:Static res:Strings.Main_Settings}" InputGesture="Ctrl+OemComma" Command="{Binding OpenSettingsCommand}" />
                 <Separator />
-                <MenuItem Header="E_xit" Command="{Binding ExitCommand}" />
+                <MenuItem Header="{x:Static res:Strings.Main_EXit}" Command="{Binding ExitCommand}" />
             </MenuItem>
-            <MenuItem Header="_View">
-                <MenuItem Header="_Dashboard" InputGesture="Ctrl+D" Command="{Binding ShowDashboardCommand}" />
-                <MenuItem Header="_Log" InputGesture="Ctrl+L" Command="{Binding ShowLogCommand}" />
+            <MenuItem Header="{x:Static res:Strings.Main_View}">
+                <MenuItem Header="{x:Static res:Strings.Main_Dashboard2}" InputGesture="Ctrl+D" Command="{Binding ShowDashboardCommand}" />
+                <MenuItem Header="{x:Static res:Strings.Main_Log2}" InputGesture="Ctrl+L" Command="{Binding ShowLogCommand}" />
                 <Separator />
-                <MenuItem Header="_Theme">
-                    <MenuItem Header="_System" Command="{Binding SetThemeCommand}" CommandParameter="Default" />
-                    <MenuItem Header="_Light" Command="{Binding SetThemeCommand}" CommandParameter="Light" />
-                    <MenuItem Header="_Dark" Command="{Binding SetThemeCommand}" CommandParameter="Dark" />
+                <MenuItem Header="{x:Static res:Strings.Main_Theme}">
+                    <MenuItem Header="{x:Static res:Strings.Main_System}" Command="{Binding SetThemeCommand}" CommandParameter="Default" />
+                    <MenuItem Header="{x:Static res:Strings.Main_Light}" Command="{Binding SetThemeCommand}" CommandParameter="Light" />
+                    <MenuItem Header="{x:Static res:Strings.Main_Dark}" Command="{Binding SetThemeCommand}" CommandParameter="Dark" />
                 </MenuItem>
-                <MenuItem Header="_Compact rows" Command="{Binding ToggleCompactModeCommand}" />
+                <MenuItem Header="{x:Static res:Strings.Main_CompactRows}" Command="{Binding ToggleCompactModeCommand}" />
             </MenuItem>
-            <MenuItem Header="_Library">
-                <MenuItem Header="_Scan all" InputGesture="F5" Command="{Binding RefreshCommand}" />
-                <MenuItem Header="_Full rescan of all consoles" InputGesture="Shift+F5" Command="{Binding RescanAllCommand}" />
-                <MenuItem Header="_Download missing databases" Command="{Binding CheckForUpdatesCommand}" />
-                <MenuItem Header="_Export library…" Command="{Binding ExportLibraryCommand}" />
+            <MenuItem Header="{x:Static res:Strings.Main_Library}">
+                <MenuItem Header="{x:Static res:Strings.Main_ScanAll}" InputGesture="F5" Command="{Binding RefreshCommand}" />
+                <MenuItem Header="{x:Static res:Strings.Main_FullRescanOfAllConsoles}" InputGesture="Shift+F5" Command="{Binding RescanAllCommand}" />
+                <MenuItem Header="{x:Static res:Strings.Main_DownloadMissingDatabases}" Command="{Binding CheckForUpdatesCommand}" />
+                <MenuItem Header="{x:Static res:Strings.Main_ExportLibrary}" Command="{Binding ExportLibraryCommand}" />
             </MenuItem>
-            <MenuItem Header="_Help">
-                <MenuItem Header="Check for _app updates…" Command="{Binding CheckForAppUpdateCommand}" />
+            <MenuItem Header="{x:Static res:Strings.Main_Help}">
+                <MenuItem Header="{x:Static res:Strings.Main_CheckForAppUpdates}" Command="{Binding CheckForAppUpdateCommand}" />
             </MenuItem>
         </Menu>
 
@@ -54,7 +55,7 @@
                      SelectedItem="{Binding SelectedPage, Mode=TwoWay}">
                 <ListBox.DataTemplates>
                     <DataTemplate DataType="vm:DashboardViewModel">
-                        <TextBlock Text="Dashboard" FontWeight="SemiBold" />
+                        <TextBlock Text="{x:Static res:Strings.Main_Dashboard}" FontWeight="SemiBold" />
                     </DataTemplate>
                     <DataTemplate DataType="vm:ConsoleViewModelBase">
                         <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto">
@@ -80,12 +81,12 @@
             <GridSplitter Grid.Row="1" Grid.Column="2" ResizeDirection="Rows" />
 
             <TabControl Grid.Row="2" Grid.Column="2" Classes="panel" SelectedIndex="{Binding SelectedBottomTab}">
-                <TabItem Header="Log">
+                <TabItem Header="{x:Static res:Strings.Main_Log}">
                     <DockPanel>
                         <StackPanel DockPanel.Dock="Top" Classes="toolbar">
-                            <Button Content="Reload" Command="{Binding Log.ReloadCommand}" />
-                            <Button Content="Copy" Command="{Binding Log.CopyCommand}" />
-                            <Button Content="Open file" Command="{Binding Log.OpenFileCommand}" />
+                            <Button Content="{x:Static res:Strings.Main_Reload}" Command="{Binding Log.ReloadCommand}" />
+                            <Button Content="{x:Static res:Strings.Main_Copy}" Command="{Binding Log.CopyCommand}" />
+                            <Button Content="{x:Static res:Strings.Main_OpenFile}" Command="{Binding Log.OpenFileCommand}" />
                         </StackPanel>
                         <ListBox x:Name="LogList" Classes="log" ItemsSource="{Binding Log.Lines}">
                             <ListBox.ItemTemplate>
@@ -97,25 +98,25 @@
                     </DockPanel>
                 </TabItem>
 
-                <TabItem Header="Operations">
+                <TabItem Header="{x:Static res:Strings.Main_Operations}">
                     <DockPanel>
                         <StackPanel DockPanel.Dock="Top" Classes="toolbar">
-                            <Button Content="Clear finished" Command="{Binding OperationsPanel.ClearFinishedCommand}" />
-                            <Button Content="Cancel all" Command="{Binding OperationsPanel.CancelAllCommand}" />
+                            <Button Content="{x:Static res:Strings.Main_ClearFinished}" Command="{Binding OperationsPanel.ClearFinishedCommand}" />
+                            <Button Content="{x:Static res:Strings.Main_CancelAll}" Command="{Binding OperationsPanel.CancelAllCommand}" />
                         </StackPanel>
                         <Panel>
-                            <TextBlock Text="No operations queued." Opacity="0.5" Margin="8"
+                            <TextBlock Text="{x:Static res:Strings.Main_NoOperationsQueued}" Opacity="0.5" Margin="8"
                                        IsVisible="{Binding OperationsPanel.IsEmpty}" />
                             <ItemsControl ItemsSource="{Binding OperationsPanel.Items}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="vm:OperationItemViewModel">
                                         <DockPanel Margin="6,2">
                                             <TextBlock DockPanel.Dock="Left" Text="{Binding State}" Width="80" Opacity="0.7" />
-                                            <Button DockPanel.Dock="Right" Content="Cancel" Classes="small"
+                                            <Button DockPanel.Dock="Right" Content="{x:Static res:Strings.Common_Cancel}" Classes="small"
                                                     IsVisible="{Binding CanCancel}"
                                                     Command="{Binding $parent[ItemsControl].((vm:OperationsViewModel)DataContext).CancelCommand}"
                                                     CommandParameter="{Binding}" />
-                                            <Button DockPanel.Dock="Right" Content="Undo" Classes="small"
+                                            <Button DockPanel.Dock="Right" Content="{x:Static res:Strings.Main_Undo}" Classes="small"
                                                     IsVisible="{Binding CanUndo}"
                                                     Command="{Binding $parent[ItemsControl].((vm:OperationsViewModel)DataContext).UndoCommand}"
                                                     CommandParameter="{Binding}" />
@@ -130,12 +131,12 @@
                     </DockPanel>
                 </TabItem>
 
-                <TabItem Header="Downloads">
+                <TabItem Header="{x:Static res:Strings.Main_Downloads}">
                     <DockPanel>
                         <StackPanel DockPanel.Dock="Top" Classes="toolbar">
-                            <Button Content="Pause all" Command="{Binding DownloadManager.PauseAllCommand}" />
-                            <Button Content="Resume all" Command="{Binding DownloadManager.ResumeAllCommand}" />
-                            <Button Content="Clear completed" Command="{Binding DownloadManager.ClearCompletedCommand}" />
+                            <Button Content="{x:Static res:Strings.Main_PauseAll}" Command="{Binding DownloadManager.PauseAllCommand}" />
+                            <Button Content="{x:Static res:Strings.Main_ResumeAll}" Command="{Binding DownloadManager.ResumeAllCommand}" />
+                            <Button Content="{x:Static res:Strings.Main_ClearCompleted}" Command="{Binding DownloadManager.ClearCompletedCommand}" />
                         </StackPanel>
                         <ItemsControl ItemsSource="{Binding DownloadManager.Downloads}">
                             <ItemsControl.ItemTemplate>
@@ -145,7 +146,7 @@
                                         <TextBlock Grid.Column="1" Text="{Binding Status}" />
                                         <TextBlock Grid.Column="2" Text="{Binding ProgressText}" />
                                         <TextBlock Grid.Column="3" Text="{Binding SpeedText}" />
-                                        <Button Grid.Column="4" Content="Cancel" Classes="small"
+                                        <Button Grid.Column="4" Content="{x:Static res:Strings.Common_Cancel}" Classes="small"
                                                 Command="{Binding CancelCommand}" IsVisible="{Binding CanPause}" />
                                     </Grid>
                                 </DataTemplate>

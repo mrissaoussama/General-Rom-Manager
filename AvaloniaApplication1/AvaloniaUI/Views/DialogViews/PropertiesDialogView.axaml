@@ -1,10 +1,11 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:res="using:AvaloniaUI.Resources"
              xmlns:vm="using:AvaloniaUI.ViewModels"
              x:Class="AvaloniaUI.Views.DialogViews.PropertiesDialogView"
              x:DataType="vm:PropertiesDialogViewModel">
     <DockPanel>
-        <Button DockPanel.Dock="Bottom" Content="Close" IsCancel="True" IsDefault="True" HorizontalAlignment="Right"
+        <Button DockPanel.Dock="Bottom" Content="{x:Static res:Strings.Properties_Close}" IsCancel="True" IsDefault="True" HorizontalAlignment="Right"
                 Margin="0,10,0,0" Command="{Binding CancelCommand}" />
         <ScrollViewer>
             <ItemsControl ItemsSource="{Binding Rows}">

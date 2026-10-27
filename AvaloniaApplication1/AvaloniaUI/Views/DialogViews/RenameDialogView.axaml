@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:res="using:AvaloniaUI.Resources"
              xmlns:vm="using:AvaloniaUI.ViewModels"
              x:Class="AvaloniaUI.Views.DialogViews.RenameDialogView"
              x:DataType="vm:RenameDialogViewModel"
@@ -15,9 +16,9 @@
         </DataTemplate>
     </UserControl.Resources>
     <StackPanel Spacing="8">
-        <TextBlock Text="Template" FontWeight="SemiBold" />
-        <TextBox Text="{Binding Template}" CaretIndex="{Binding CaretIndex, Mode=TwoWay}" AutomationProperties.Name="Template" />
-        <TextBlock Text="General" Opacity="0.7" />
+        <TextBlock Text="{x:Static res:Strings.Rename_Template}" FontWeight="SemiBold" />
+        <TextBox Text="{Binding Template}" CaretIndex="{Binding CaretIndex, Mode=TwoWay}" AutomationProperties.Name="{x:Static res:Strings.Rename_Template}" />
+        <TextBlock Text="{x:Static res:Strings.Common_General}" Opacity="0.7" />
         <ItemsControl ItemsSource="{Binding General}" ItemsPanel="{StaticResource Wrap}" ItemTemplate="{StaticResource Chip}" />
         <TextBlock Text="{Binding ConsoleName}" Opacity="0.7" IsVisible="{Binding HasConsolePlaceholders}" />
         <ItemsControl ItemsSource="{Binding ConsolePlaceholders}" ItemsPanel="{StaticResource Wrap}"
@@ -26,8 +27,8 @@
         <ListBox ItemsSource="{Binding PreviewRows}" MaxHeight="260"
                  FontFamily="Cascadia Mono, Consolas, monospace" FontSize="11" />
         <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-            <Button Content="Cancel" IsCancel="True" Command="{Binding CancelCommand}" />
-            <Button Content="Rename" IsDefault="True" Command="{Binding ConfirmCommand}" />
+            <Button Content="{x:Static res:Strings.Common_Cancel}" IsCancel="True" Command="{Binding CancelCommand}" />
+            <Button Content="{x:Static res:Strings.Rename_Rename}" IsDefault="True" Command="{Binding ConfirmCommand}" />
         </StackPanel>
     </StackPanel>
 </UserControl>

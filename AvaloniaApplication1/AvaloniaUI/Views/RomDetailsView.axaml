@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:res="using:AvaloniaUI.Resources"
              xmlns:vm="using:AvaloniaUI.ViewModels"
              xmlns:imaging="using:Avalonia.Media.Imaging"
              x:Class="AvaloniaUI.Views.RomDetailsView"
@@ -32,11 +33,11 @@
             </ItemsControl.ItemTemplate>
         </ItemsControl>
 
-        <TextBlock Text="{Binding BaseGame, StringFormat='Base game: {0}'}" Classes="muted" Margin="0,6,0,0"
+        <TextBlock Text="{Binding BaseGame, StringFormat={x:Static res:Strings.RomDetails_BaseGame0}}" Classes="muted" Margin="0,6,0,0"
                    IsVisible="{Binding BaseGame, Converter={x:Static ObjectConverters.IsNotNull}}" />
 
         <StackPanel IsVisible="{Binding Description, Converter={x:Static ObjectConverters.IsNotNull}}">
-            <TextBlock Text="Description" Classes="section" />
+            <TextBlock Text="{x:Static res:Strings.RomDetails_Description}" Classes="section" />
             <SelectableTextBlock Text="{Binding Description}" TextWrapping="Wrap" Opacity="0.85" />
         </StackPanel>
 
@@ -58,7 +59,7 @@
         </ItemsControl>
 
         <StackPanel IsVisible="{Binding HasHashes}">
-            <TextBlock Text="Hashes" Classes="section" />
+            <TextBlock Text="{x:Static res:Strings.RomDetails_Hashes}" Classes="section" />
             <ItemsControl ItemsSource="{Binding Hashes}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:DetailRow">

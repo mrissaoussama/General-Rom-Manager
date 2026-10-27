@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:res="using:AvaloniaUI.Resources"
              xmlns:vm="using:AvaloniaUI.ViewModels"
              xmlns:views="using:AvaloniaUI.Views"
              x:Class="AvaloniaUI.Views.ConsoleView"
@@ -7,9 +8,9 @@
     <DockPanel>
         <Border DockPanel.Dock="Top" Classes="banner" IsVisible="{Binding HasOfflineFolders}">
             <DockPanel>
-                <Button DockPanel.Dock="Right" Content="Remove folder…" Classes="small" Margin="8,0,0,0"
+                <Button DockPanel.Dock="Right" Content="{x:Static res:Strings.Console_RemoveFolder}" Classes="small" Margin="8,0,0,0"
                         Command="{Binding RemoveOfflineFoldersCommand}"
-                        ToolTip.Tip="For folders that are gone for good; no files are touched" />
+                        ToolTip.Tip="{x:Static res:Strings.Console_ForFoldersThatAreGoneForGoodNoFilesAreTouched}" />
                 <TextBlock Text="{Binding OfflineText}" TextWrapping="Wrap" VerticalAlignment="Center" />
             </DockPanel>
         </Border>
@@ -21,50 +22,50 @@
         <!-- Header: name + actions + filter -->
         <DockPanel DockPanel.Dock="Top" Margin="10,8,10,4" LastChildFill="False">
             <TextBlock DockPanel.Dock="Left" Text="{Binding DisplayName}" Classes="h2" VerticalAlignment="Center" />
-            <TextBlock DockPanel.Dock="Left" Text="{Binding RomCount, StringFormat='{}{0:N0} ROMs'}"
+            <TextBlock DockPanel.Dock="Left" Text="{Binding RomCount, StringFormat={x:Static res:Strings.Common_0N0ROMs}}"
                        Classes="muted" VerticalAlignment="Center" Margin="10,0,0,0" />
 
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6">
-                <TextBox x:Name="SearchBox" Width="220" PlaceholderText="Filter (Ctrl+F)" Text="{Binding SearchText}" />
-                <ToggleButton Content="Cards" IsChecked="{Binding IsCardView}" ToolTip.Tip="Show covers instead of the table" />
-                <ToggleButton Content="Group" IsChecked="{Binding IsGrouped}" IsEnabled="{Binding !IsCardView}"
-                              ToolTip.Tip="Group updates and DLC under their game" />
-                <Button x:Name="ColumnsButton" Content="Columns" />
-                <Button Content="Export…" Command="{Binding ExportShownCommand}" ToolTip.Tip="Save the rows shown (after filters) as CSV or JSON" />
-                <Button Content="Verify" Command="{Binding VerifyCommand}"
-                        ToolTip.Tip="Which dumps match your DATs exactly, and which do not" />
-                <Button Content="Duplicates…" Command="{Binding ResolveDuplicatesCommand}" IsVisible="{Binding HasDuplicates}"
-                        ToolTip.Tip="Keep one file of each rom stored more than once and move the other copies" />
+                <TextBox x:Name="SearchBox" Width="220" PlaceholderText="{x:Static res:Strings.Console_FilterCtrlF}" Text="{Binding SearchText}" />
+                <ToggleButton Content="{x:Static res:Strings.Console_Cards}" IsChecked="{Binding IsCardView}" ToolTip.Tip="{x:Static res:Strings.Console_ShowCoversInsteadOfTheTable}" />
+                <ToggleButton Content="{x:Static res:Strings.Console_Group}" IsChecked="{Binding IsGrouped}" IsEnabled="{Binding !IsCardView}"
+                              ToolTip.Tip="{x:Static res:Strings.Console_GroupUpdatesAndDLCUnderTheirGame}" />
+                <Button x:Name="ColumnsButton" Content="{x:Static res:Strings.Common_Columns}" />
+                <Button Content="{x:Static res:Strings.Console_Export}" Command="{Binding ExportShownCommand}" ToolTip.Tip="{x:Static res:Strings.Console_SaveTheRowsShownAfterFiltersAsCSVOrJSON}" />
+                <Button Content="{x:Static res:Strings.Console_Verify}" Command="{Binding VerifyCommand}"
+                        ToolTip.Tip="{x:Static res:Strings.Console_WhichDumpsMatchYourDATsExactlyAndWhichDoNot}" />
+                <Button Content="{x:Static res:Strings.Console_Duplicates}" Command="{Binding ResolveDuplicatesCommand}" IsVisible="{Binding HasDuplicates}"
+                        ToolTip.Tip="{x:Static res:Strings.Console_KeepOneFileOfEachRomStoredMoreThanOnceAndMoveThe}" />
                 <Button Content="1G1R…" Command="{Binding OneGameOneRomCommand}"
-                        ToolTip.Tip="One game, one ROM: keep the best version of each game by region priority and move the others" />
-                <Button Content="Missing updates" Command="{Binding CheckMissingUpdatesCommand}"
-                        IsVisible="{Binding CanCheckUpdates}" ToolTip.Tip="List games with a newer update than the one in the library" />
-                <Button Content="Missing DLC" Command="{Binding CheckMissingDlcCommand}"
-                        IsVisible="{Binding CanCheckDlc}" ToolTip.Tip="List DLC the title database knows for your games that the library lacks" />
-                <Button Content="Scan" Command="{Binding LoadDataCommand}" ToolTip.Tip="Scan for new or changed files" />
-                <Button Content="Full rescan" Command="{Binding RescanCommand}" ToolTip.Tip="Re-read every file, ignoring the cache" />
+                        ToolTip.Tip="{x:Static res:Strings.Console_OneGameOneROMKeepTheBestVersionOfEachGameByRegio}" />
+                <Button Content="{x:Static res:Strings.Common_MissingUpdates}" Command="{Binding CheckMissingUpdatesCommand}"
+                        IsVisible="{Binding CanCheckUpdates}" ToolTip.Tip="{x:Static res:Strings.Console_ListGamesWithANewerUpdateThanTheOneInTheLibrary}" />
+                <Button Content="{x:Static res:Strings.Console_MissingDLC}" Command="{Binding CheckMissingDlcCommand}"
+                        IsVisible="{Binding CanCheckDlc}" ToolTip.Tip="{x:Static res:Strings.Console_ListDLCTheTitleDatabaseKnowsForYourGamesThatTheL}" />
+                <Button Content="{x:Static res:Strings.Console_Scan}" Command="{Binding LoadDataCommand}" ToolTip.Tip="{x:Static res:Strings.Console_ScanForNewOrChangedFiles}" />
+                <Button Content="{x:Static res:Strings.Console_FullRescan}" Command="{Binding RescanCommand}" ToolTip.Tip="{x:Static res:Strings.Console_ReReadEveryFileIgnoringTheCache}" />
             </StackPanel>
         </DockPanel>
 
         <!-- Filters -->
         <WrapPanel DockPanel.Dock="Top" Margin="10,0,10,6" ItemSpacing="8" LineSpacing="6">
-            <TextBlock Text="Type" VerticalAlignment="Center" Classes="muted" />
+            <TextBlock Text="{x:Static res:Strings.Console_Type}" VerticalAlignment="Center" Classes="muted" />
             <ComboBox ItemsSource="{Binding TypeOptions}" SelectedItem="{Binding TypeFilter}" MinWidth="110" />
-            <TextBlock Text="Region" VerticalAlignment="Center" Classes="muted" Margin="6,0,0,0" />
+            <TextBlock Text="{x:Static res:Strings.Console_Region}" VerticalAlignment="Center" Classes="muted" Margin="6,0,0,0" />
             <ComboBox ItemsSource="{Binding RegionOptions}" SelectedItem="{Binding RegionFilter}" MinWidth="110" />
-            <TextBlock Text="Language" VerticalAlignment="Center" Classes="muted" Margin="6,0,0,0" />
+            <TextBlock Text="{x:Static res:Strings.Console_Language}" VerticalAlignment="Center" Classes="muted" Margin="6,0,0,0" />
             <ComboBox ItemsSource="{Binding LanguageOptions}" SelectedItem="{Binding LanguageFilter}" MinWidth="110" />
-            <TextBlock Text="Format" VerticalAlignment="Center" Classes="muted" Margin="6,0,0,0" />
+            <TextBlock Text="{x:Static res:Strings.Console_Format}" VerticalAlignment="Center" Classes="muted" Margin="6,0,0,0" />
             <ComboBox ItemsSource="{Binding FormatOptions}" SelectedItem="{Binding FormatFilter}" MinWidth="90" />
-            <TextBlock Text="Updates" VerticalAlignment="Center" Classes="muted" Margin="6,0,0,0" />
+            <TextBlock Text="{x:Static res:Strings.Common_Updates}" VerticalAlignment="Center" Classes="muted" Margin="6,0,0,0" />
             <ComboBox ItemsSource="{Binding UpdateOptions}" SelectedItem="{Binding UpdateFilter}" MinWidth="120" />
-            <CheckBox Content="Unnamed only" IsChecked="{Binding UnnamedOnly}" Margin="6,0,0,0"
-                      ToolTip.Tip="ROMs with no title or only their file name as title" />
-            <CheckBox Content="Duplicates" IsChecked="{Binding DuplicatesOnly}"
-                      ToolTip.Tip="Files with the same title ID, type and version as another file" />
-            <Button Content="Clear filters" Classes="small" Command="{Binding ClearFiltersCommand}"
+            <CheckBox Content="{x:Static res:Strings.Console_UnnamedOnly}" IsChecked="{Binding UnnamedOnly}" Margin="6,0,0,0"
+                      ToolTip.Tip="{x:Static res:Strings.Console_ROMsWithNoTitleOrOnlyTheirFileNameAsTitle}" />
+            <CheckBox Content="{x:Static res:Strings.Common_Duplicates}" IsChecked="{Binding DuplicatesOnly}"
+                      ToolTip.Tip="{x:Static res:Strings.Common_FilesWithTheSameTitleIDTypeAndVersionAsAnotherFi}" />
+            <Button Content="{x:Static res:Strings.Console_ClearFilters}" Classes="small" Command="{Binding ClearFiltersCommand}"
                     IsVisible="{Binding IsFiltered}" VerticalAlignment="Center" />
-            <TextBlock Text="{Binding RomsView.Count, StringFormat='{}{0:N0} shown'}" Classes="muted"
+            <TextBlock Text="{Binding RomsView.Count, StringFormat={x:Static res:Strings.Console_0N0Shown}}" Classes="muted"
                        VerticalAlignment="Center" IsVisible="{Binding IsFiltered}" />
         </WrapPanel>
 
@@ -73,7 +74,7 @@
             <ProgressBar Width="120" MinWidth="120" Height="6" MinHeight="6" VerticalAlignment="Center"
                          IsVisible="{Binding IsLoading}" IsIndeterminate="{Binding IsIndeterminate}"
                          Value="{Binding ProgressPercent}" />
-            <Button Content="Cancel" Classes="small" Command="{Binding CancelScanCommand}" IsVisible="{Binding IsLoading}" />
+            <Button Content="{x:Static res:Strings.Common_Cancel}" Classes="small" Command="{Binding CancelScanCommand}" IsVisible="{Binding IsLoading}" />
             <SelectableTextBlock Text="{Binding StatusMessage}" Classes="muted" VerticalAlignment="Center" />
             <Button Content="{Binding UnrecognizedText}" Classes="small" Command="{Binding ShowUnrecognizedCommand}"
                     IsVisible="{Binding UnrecognizedText, Converter={x:Static ObjectConverters.IsNotNull}}" />
@@ -113,7 +114,7 @@
                                             <Panel>
                                                 <TextBlock Text="{Binding Initials}" Classes="initials"
                                                            IsVisible="{Binding Cover, Converter={x:Static ObjectConverters.IsNull}}" />
-                                                <Image Source="{Binding Cover}" Stretch="Uniform" AutomationProperties.Name="Cover" />
+                                                <Image Source="{Binding Cover}" Stretch="Uniform" AutomationProperties.Name="{x:Static res:Strings.Console_Cover}" />
                                             </Panel>
                                         </Border>
                                     </DockPanel>
@@ -125,12 +126,12 @@
 
                 <StackPanel Spacing="8" HorizontalAlignment="Center" VerticalAlignment="Center"
                             IsVisible="{Binding ShowEmptyState}">
-                    <TextBlock Text="{Binding DisplayName, StringFormat='No {0} ROMs yet'}" Classes="h3" HorizontalAlignment="Center" />
-                    <TextBlock Text="Choose the folder that holds your ROMs in Settings, then scan it." Classes="muted" />
+                    <TextBlock Text="{Binding DisplayName, StringFormat={x:Static res:Strings.Console_No0ROMsYet}}" Classes="h3" HorizontalAlignment="Center" />
+                    <TextBlock Text="{x:Static res:Strings.Console_ChooseTheFolderThatHoldsYourROMsInSettingsThenSc}" Classes="muted" />
                     <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
-                        <Button Content="Open Settings…"
+                        <Button Content="{x:Static res:Strings.Common_OpenSettings}"
                                 Command="{Binding $parent[views:MainView].((vm:MainViewModel)DataContext).OpenSettingsCommand}" />
-                        <Button Content="Scan now" Command="{Binding LoadDataCommand}" />
+                        <Button Content="{x:Static res:Strings.Console_ScanNow}" Command="{Binding LoadDataCommand}" />
                     </StackPanel>
                 </StackPanel>
             </Panel>
@@ -139,7 +140,7 @@
 
             <ScrollViewer Grid.Column="2">
                 <Panel>
-                    <TextBlock Text="Select a ROM to see details." Classes="muted" Margin="10"
+                    <TextBlock Text="{x:Static res:Strings.Console_SelectAROMToSeeDetails}" Classes="muted" Margin="10"
                                IsVisible="{Binding Details, Converter={x:Static ObjectConverters.IsNull}}" />
                     <ContentControl Content="{Binding Details}" />
                 </Panel>

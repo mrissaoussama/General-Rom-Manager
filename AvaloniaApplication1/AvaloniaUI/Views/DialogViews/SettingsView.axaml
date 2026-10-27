@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:res="using:AvaloniaUI.Resources"
              xmlns:vm="using:AvaloniaUI.ViewModels"
              x:Class="AvaloniaUI.Views.DialogViews.SettingsView"
              x:DataType="vm:SettingsViewModel"
@@ -28,34 +29,34 @@
 
     <DockPanel>
         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" Margin="0,10,0,0">
-            <Button Content="Cancel" IsCancel="True" Command="{Binding CancelCommand}" />
-            <Button Content="Save" IsDefault="True" Command="{Binding ConfirmCommand}" />
+            <Button Content="{x:Static res:Strings.Common_Cancel}" IsCancel="True" Command="{Binding CancelCommand}" />
+            <Button Content="{x:Static res:Strings.Settings_Save}" IsDefault="True" Command="{Binding ConfirmCommand}" />
         </StackPanel>
 
         <TabControl>
             <!-- ── General ─────────────────────────────────────────────── -->
-            <TabItem Header="General">
+            <TabItem Header="{x:Static res:Strings.Common_General}">
                 <ScrollViewer>
                     <StackPanel Spacing="6" Margin="4,0,16,8">
-                        <TextBlock Classes="heading" Text="Appearance" />
+                        <TextBlock Classes="heading" Text="{x:Static res:Strings.Settings_Appearance}" />
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <TextBlock Classes="label" Text="Colour theme" />
+                            <TextBlock Classes="label" Text="{x:Static res:Strings.Settings_ColourTheme}" />
                             <ComboBox ItemsSource="{x:Static vm:SettingsViewModel.ThemeNames}" SelectedIndex="{Binding ThemeIndex}"
-                                      Width="200" AutomationProperties.Name="Colour theme" />
+                                      Width="200" AutomationProperties.Name="{x:Static res:Strings.Settings_ColourTheme}" />
                         </StackPanel>
-                        <CheckBox Content="Compact mode (smaller row height)" IsChecked="{Binding IsCompactMode}" />
+                        <CheckBox Content="{x:Static res:Strings.Settings_CompactModeSmallerRowHeight}" IsChecked="{Binding IsCompactMode}" />
 
-                        <TextBlock Classes="heading" Text="Database" />
+                        <TextBlock Classes="heading" Text="{x:Static res:Strings.Settings_Database}" />
                         <StackPanel Orientation="Horizontal" Spacing="4">
-                            <TextBlock Classes="label" Text="Database folder" />
-                            <TextBox Text="{Binding DatabasePath.Value}" Width="320" PlaceholderText="config.json default"
-                                     AutomationProperties.Name="Database folder" />
-                            <Button Content="Browse…" Command="{Binding BrowseDatabaseCommand}" />
+                            <TextBlock Classes="label" Text="{x:Static res:Strings.Settings_DatabaseFolder}" />
+                            <TextBox Text="{Binding DatabasePath.Value}" Width="320" PlaceholderText="{x:Static res:Strings.Settings_ConfigJsonDefault}"
+                                     AutomationProperties.Name="{x:Static res:Strings.Settings_DatabaseFolder}" />
+                            <Button Content="{x:Static res:Strings.Common_Browse}" Command="{Binding BrowseDatabaseCommand}" />
                             <TextBlock Classes="status" Text="{Binding DatabasePath.Status.Text}" Foreground="{Binding DatabasePath.Status.Brush}" />
                         </StackPanel>
 
-                        <TextBlock Classes="heading" Text="ROM folders" />
-                        <TextBlock Classes="hint" Text="The folder with each console's ROMs. More folders (separated by ';') are scanned with it as one library." />
+                        <TextBlock Classes="heading" Text="{x:Static res:Strings.Common_ROMFolders}" />
+                        <TextBlock Classes="hint" Text="{x:Static res:Strings.Settings_TheFolderWithEachConsoleSROMsMoreFoldersSeparate}" />
                         <ItemsControl ItemsSource="{Binding Consoles}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="vm:ConsoleSettingsRow">
@@ -63,14 +64,14 @@
                                         <StackPanel Orientation="Horizontal" Spacing="4">
                                             <TextBlock Classes="label" Text="{Binding DisplayName}" />
                                             <TextBox Text="{Binding Primary.Value}" Width="320" AutomationProperties.Name="{Binding DisplayName}" />
-                                            <Button Content="Browse…" CommandParameter="{Binding}"
+                                            <Button Content="{x:Static res:Strings.Common_Browse}" CommandParameter="{Binding}"
                                                     Command="{Binding #Root.((vm:SettingsViewModel)DataContext).BrowseRomFolderCommand}" />
                                             <TextBlock Classes="status" Text="{Binding Primary.Status.Text}" Foreground="{Binding Primary.Status.Brush}" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Spacing="4">
                                             <TextBlock Classes="label" />
-                                            <TextBox Text="{Binding ExtraFolders}" Width="320" PlaceholderText="More folders, separated by ';'" />
-                                            <Button Content="Add…" CommandParameter="{Binding}"
+                                            <TextBox Text="{Binding ExtraFolders}" Width="320" PlaceholderText="{x:Static res:Strings.Settings_MoreFoldersSeparatedBy}" />
+                                            <Button Content="{x:Static res:Strings.Settings_Add}" CommandParameter="{Binding}"
                                                     Command="{Binding #Root.((vm:SettingsViewModel)DataContext).AddRomFolderCommand}" />
                                         </StackPanel>
                                     </StackPanel>
@@ -78,66 +79,66 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
-                        <TextBlock Classes="heading" Text="Emulators" />
-                        <TextBlock Classes="hint" Text="Used by &quot;Launch in emulator&quot;. Arguments: {rom} full path, {dir} its folder, {name} file name." />
+                        <TextBlock Classes="heading" Text="{x:Static res:Strings.Settings_Emulators}" />
+                        <TextBlock Classes="hint" Text="{x:Static res:Strings.Settings_UsedByLaunchInEmulatorArgumentsRomFullPathDirIts}" />
                         <ItemsControl ItemsSource="{Binding Consoles}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="vm:ConsoleSettingsRow">
                                     <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,2">
                                         <TextBlock Classes="label" Text="{Binding DisplayName}" />
-                                        <TextBox Text="{Binding EmulatorPath}" Width="320" PlaceholderText="Program" />
-                                        <Button Content="Browse…" CommandParameter="{Binding}"
+                                        <TextBox Text="{Binding EmulatorPath}" Width="320" PlaceholderText="{x:Static res:Strings.Settings_Program}" />
+                                        <Button Content="{x:Static res:Strings.Common_Browse}" CommandParameter="{Binding}"
                                                 Command="{Binding #Root.((vm:SettingsViewModel)DataContext).BrowseEmulatorCommand}" />
-                                        <TextBox Text="{Binding EmulatorArguments}" Width="140" PlaceholderText="Arguments" />
+                                        <TextBox Text="{Binding EmulatorArguments}" Width="140" PlaceholderText="{x:Static res:Strings.Settings_Arguments}" />
                                     </StackPanel>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
-                        <TextBlock Classes="heading" Text="Scanning" />
+                        <TextBlock Classes="heading" Text="{x:Static res:Strings.Settings_Scanning}" />
                         <StackPanel Orientation="Horizontal" Spacing="4">
-                            <TextBlock Classes="label" Text="Rescan every (hours)" />
-                            <TextBox Text="{Binding RescanIntervalHours}" Width="60" PlaceholderText="off"
-                                     AutomationProperties.Name="Rescan interval in hours" />
-                            <TextBlock Classes="hint" VerticalAlignment="Center" Text="Catches changes the folder watchers miss (drives plugged in later, edits from other machines)." />
+                            <TextBlock Classes="label" Text="{x:Static res:Strings.Settings_RescanEveryHours}" />
+                            <TextBox Text="{Binding RescanIntervalHours}" Width="60" PlaceholderText="{x:Static res:Strings.Settings_Off}"
+                                     AutomationProperties.Name="{x:Static res:Strings.Settings_RescanIntervalInHours}" />
+                            <TextBlock Classes="hint" VerticalAlignment="Center" Text="{x:Static res:Strings.Settings_CatchesChangesTheFolderWatchersMissDrivesPlugged}" />
                         </StackPanel>
-                        <TextBlock Classes="hint" Text="Files read at once (empty: automatic, 1 on network drives, otherwise 4) and folders to skip, separated by ';'. A name (Backups) skips that folder anywhere; a path (Updates/old) is relative to the ROM folder." />
+                        <TextBlock Classes="hint" Text="{x:Static res:Strings.Settings_FilesReadAtOnceEmptyAutomatic1OnNetworkDrivesOth}" />
                         <ItemsControl ItemsSource="{Binding Consoles}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="vm:ConsoleSettingsRow">
                                     <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,2">
                                         <TextBlock Classes="label" Text="{Binding DisplayName}" />
-                                        <TextBox Text="{Binding Parallelism}" Width="60" PlaceholderText="auto" />
-                                        <TextBox Text="{Binding ExcludedFolders}" Width="320" PlaceholderText="Folders to skip" />
+                                        <TextBox Text="{Binding Parallelism}" Width="60" PlaceholderText="{x:Static res:Strings.Settings_Auto}" />
+                                        <TextBox Text="{Binding ExcludedFolders}" Width="320" PlaceholderText="{x:Static res:Strings.Settings_FoldersToSkip}" />
                                     </StackPanel>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
-                        <TextBlock Classes="heading" Text="Conversion tools" />
-                        <TextBlock Classes="hint" Text="Programs you install yourself for &quot;Convert&quot; in the rom menu. Empty: the Tools folder." />
+                        <TextBlock Classes="heading" Text="{x:Static res:Strings.Settings_ConversionTools}" />
+                        <TextBlock Classes="hint" Text="{x:Static res:Strings.Settings_ProgramsYouInstallYourselfForConvertInTheRomMenu}" />
                         <ItemsControl ItemsSource="{Binding Tools}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="vm:ToolPathRow">
                                     <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,2">
                                         <TextBlock Classes="label" Text="{Binding Tool.DisplayName}" />
                                         <TextBox Text="{Binding Path}" Width="320" PlaceholderText="{Binding Placeholder}" />
-                                        <Button Content="Browse…" CommandParameter="{Binding}"
+                                        <Button Content="{x:Static res:Strings.Common_Browse}" CommandParameter="{Binding}"
                                                 Command="{Binding #Root.((vm:SettingsViewModel)DataContext).BrowseToolCommand}" />
                                     </StackPanel>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
-                        <TextBlock Classes="heading" Text="File organiser" />
+                        <TextBlock Classes="heading" Text="{x:Static res:Strings.Settings_FileOrganiser}" />
                         <StackPanel Orientation="Horizontal" Spacing="4">
-                            <TextBlock Classes="label" Text="1G1R region priority" />
-                            <TextBox Text="{Binding RegionPriority}" Width="320" PlaceholderText="USA, World, Europe, Japan" />
+                            <TextBlock Classes="label" Text="{x:Static res:Strings.Settings_1G1RRegionPriority}" />
+                            <TextBox Text="{Binding RegionPriority}" Width="320" PlaceholderText="{x:Static res:Strings.Settings_USAWorldEuropeJapan}" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Spacing="4">
-                            <TextBlock Classes="label" Text="Rename template" />
+                            <TextBlock Classes="label" Text="{x:Static res:Strings.Settings_RenameTemplate}" />
                             <TextBox Text="{Binding RenameFormat}" CaretIndex="{Binding RenameCaret, Mode=TwoWay}" Width="420"
-                                     AutomationProperties.Name="Rename template" />
+                                     AutomationProperties.Name="{x:Static res:Strings.Settings_RenameTemplate}" />
                         </StackPanel>
                         <ItemsControl ItemsSource="{x:Static vm:SettingsViewModel.RenamePlaceholders}" Margin="154,0,0,0">
                             <ItemsControl.ItemsPanel>
@@ -151,35 +152,35 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
-                        <TextBlock Classes="heading" Text="Online" />
-                        <TextBlock Classes="hint" Text="Everything RomManager fetches from the internet. Scanning itself never goes online." />
-                        <CheckBox Content="Download box art (libretro-thumbnails, title databases)" IsChecked="{Binding DownloadBoxArt}" />
-                        <CheckBox Content="Download missing title databases on startup (titledb, WikiBrew)" IsChecked="{Binding AutoDownloadMissingDbs}" />
-                        <CheckBox Content="Check GitHub for a newer RomManager on startup (installed copies)" IsChecked="{Binding CheckForAppUpdates}" />
+                        <TextBlock Classes="heading" Text="{x:Static res:Strings.Common_Online}" />
+                        <TextBlock Classes="hint" Text="{x:Static res:Strings.Settings_EverythingRomManagerFetchesFromTheInternetScanni}" />
+                        <CheckBox Content="{x:Static res:Strings.Settings_DownloadBoxArtLibretroThumbnailsTitleDatabases}" IsChecked="{Binding DownloadBoxArt}" />
+                        <CheckBox Content="{x:Static res:Strings.Settings_DownloadMissingTitleDatabasesOnStartupTitledbWik}" IsChecked="{Binding AutoDownloadMissingDbs}" />
+                        <CheckBox Content="{x:Static res:Strings.Settings_CheckGitHubForANewerRomManagerOnStartupInstalled}" IsChecked="{Binding CheckForAppUpdates}" />
 
-                        <TextBlock Classes="heading" Text="Downloads and DATs" />
-                        <CheckBox Content="Hash disc images for Redump DAT matching (slow on the first scan; results are cached)"
+                        <TextBlock Classes="heading" Text="{x:Static res:Strings.Settings_DownloadsAndDATs}" />
+                        <CheckBox Content="{x:Static res:Strings.Settings_HashDiscImagesForRedumpDATMatchingSlowOnTheFirst}"
                                   IsChecked="{Binding HashDiscImages}" />
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <Button Content="Download title databases" Command="{Binding DownloadTitleDatabasesCommand}"
+                            <Button Content="{x:Static res:Strings.Settings_DownloadTitleDatabases}" Command="{Binding DownloadTitleDatabasesCommand}"
                                     IsEnabled="{Binding CanDownloadTitleDatabases}" />
                             <TextBlock Classes="status" Text="{Binding DownloadStatus}" />
                         </StackPanel>
-                        <TextBlock Classes="hint" Text="{Binding DatDirectory, StringFormat='DAT folder: {0}'}" />
+                        <TextBlock Classes="hint" Text="{Binding DatDirectory, StringFormat={x:Static res:Strings.Settings_DATFolder0}}" />
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <Button Content="Show DAT files per console" Command="{Binding ShowDatOverviewCommand}" />
-                            <Button Content="Open DAT folder" Command="{Binding OpenDatFolderCommand}" />
+                            <Button Content="{x:Static res:Strings.Settings_ShowDATFilesPerConsole}" Command="{Binding ShowDatOverviewCommand}" />
+                            <Button Content="{x:Static res:Strings.Settings_OpenDATFolder}" Command="{Binding OpenDatFolderCommand}" />
                         </StackPanel>
                         <TextBlock Classes="hint" Text="{Binding DatOverview}" />
 
-                        <TextBlock Classes="heading" Text="Consoles" />
-                        <TextBlock Classes="hint" Text="Options of the installed console modules." IsVisible="{Binding HasConsoleGroups}" />
+                        <TextBlock Classes="heading" Text="{x:Static res:Strings.Common_Consoles}" />
+                        <TextBlock Classes="hint" Text="{x:Static res:Strings.Settings_OptionsOfTheInstalledConsoleModules}" IsVisible="{Binding HasConsoleGroups}" />
                         <ItemsControl ItemsSource="{Binding ConsoleGroups}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="vm:ConsoleOptionsGroup">
                                     <StackPanel Spacing="2" Margin="0,4">
                                         <DockPanel>
-                                            <Button DockPanel.Dock="Right" Content="Refresh" Classes="small" Command="{Binding RefreshStatusCommand}" />
+                                            <Button DockPanel.Dock="Right" Content="{x:Static res:Strings.Common_Refresh}" Classes="small" Command="{Binding RefreshStatusCommand}" />
                                             <TextBlock Text="{Binding Title}" FontWeight="SemiBold" VerticalAlignment="Center" />
                                         </DockPanel>
                                         <ItemsControl ItemsSource="{Binding Status}">
@@ -209,11 +210,11 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
-                        <TextBlock Classes="heading" Text="Folders" />
+                        <TextBlock Classes="heading" Text="{x:Static res:Strings.Settings_Folders}" />
                         <StackPanel Orientation="Horizontal" Spacing="4">
-                            <TextBlock Classes="label" Text="Plugins folder" />
+                            <TextBlock Classes="label" Text="{x:Static res:Strings.Settings_PluginsFolder}" />
                             <TextBox Text="{Binding PluginsDirectory.Value}" Width="320" />
-                            <Button Content="Browse…" Command="{Binding BrowsePluginsDirectoryCommand}" />
+                            <Button Content="{x:Static res:Strings.Common_Browse}" Command="{Binding BrowsePluginsDirectoryCommand}" />
                             <TextBlock Classes="status" Text="{Binding PluginsDirectory.Status.Text}" Foreground="{Binding PluginsDirectory.Status.Brush}" />
                         </StackPanel>
                     </StackPanel>
@@ -221,11 +222,11 @@
             </TabItem>
 
             <!-- ── Columns ─────────────────────────────────────────────── -->
-            <TabItem Header="Columns">
+            <TabItem Header="{x:Static res:Strings.Common_Columns}">
                 <ScrollViewer>
                     <StackPanel Spacing="6" Margin="4,0,16,8">
-                        <TextBlock Classes="hint" Text="Columns shown on each console page." />
-                        <TextBlock Classes="hint" Text="No consoles yet: add ROM folders on the General tab first."
+                        <TextBlock Classes="hint" Text="{x:Static res:Strings.Settings_ColumnsShownOnEachConsolePage}" />
+                        <TextBlock Classes="hint" Text="{x:Static res:Strings.Settings_NoConsolesYetAddROMFoldersOnTheGeneralTabFirst}"
                                    IsVisible="{Binding !HasColumnGroups}" />
                         <ItemsControl ItemsSource="{Binding ColumnGroups}">
                             <ItemsControl.ItemTemplate>
@@ -233,7 +234,7 @@
                                     <StackPanel Margin="0,4">
                                         <Border Classes="stat" Padding="8,4" Margin="0,0,0,4">
                                             <DockPanel>
-                                                <Button DockPanel.Dock="Right" Content="Reset to defaults" Classes="small" Command="{Binding ResetCommand}" />
+                                                <Button DockPanel.Dock="Right" Content="{x:Static res:Strings.Settings_ResetToDefaults}" Classes="small" Command="{Binding ResetCommand}" />
                                                 <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" VerticalAlignment="Center" />
                                             </DockPanel>
                                         </Border>
@@ -256,16 +257,16 @@
             </TabItem>
 
             <!-- ── Plugins ─────────────────────────────────────────────── -->
-            <TabItem Header="Plugins">
+            <TabItem Header="{x:Static res:Strings.Settings_Plugins}">
                 <DockPanel Margin="4,0,16,8">
                     <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
-                        <Button Content="Import plugin (.zip)…" Command="{Binding ImportPluginCommand}" />
-                        <Button Content="Open plugins folder" Command="{Binding OpenPluginsFolderCommand}" />
-                        <Button Content="Reload plugins" Command="{Binding ReloadPluginsCommand}" />
+                        <Button Content="{x:Static res:Strings.Settings_ImportPluginZip}" Command="{Binding ImportPluginCommand}" />
+                        <Button Content="{x:Static res:Strings.Settings_OpenPluginsFolder}" Command="{Binding OpenPluginsFolderCommand}" />
+                        <Button Content="{x:Static res:Strings.Settings_ReloadPlugins}" Command="{Binding ReloadPluginsCommand}" />
                         <TextBlock Classes="status" Text="{Binding PluginStatus}" />
                     </StackPanel>
                     <TextBlock DockPanel.Dock="Top" Classes="hint" IsVisible="{Binding !HasPlugins}"
-                               Text="No plugins loaded. Import a .zip, or put a plugin folder in the plugins folder and reload." />
+                               Text="{x:Static res:Strings.Settings_NoPluginsLoadedImportAZipOrPutAPluginFolderInThe}" />
                     <ScrollViewer>
                         <ItemsControl ItemsSource="{Binding Plugins}">
                             <ItemsControl.ItemTemplate>
@@ -295,9 +296,9 @@
                                                         </DataTemplate>
                                                     </ItemsControl.ItemTemplate>
                                                 </ItemsControl>
-                                                <Button Content="Revoke approval" Classes="small" HorizontalAlignment="Left"
+                                                <Button Content="{x:Static res:Strings.Settings_RevokeApproval}" Classes="small" HorizontalAlignment="Left"
                                                         IsEnabled="{Binding !IsRevoked}" CommandParameter="{Binding}"
-                                                        ToolTip.Tip="Ask again before loading this plugin (it stays loaded until restart)"
+                                                        ToolTip.Tip="{x:Static res:Strings.Settings_AskAgainBeforeLoadingThisPluginItStaysLoadedUnti}"
                                                         Command="{Binding #Root.((vm:SettingsViewModel)DataContext).RevokePluginCommand}" />
                                             </StackPanel>
                                         </DockPanel>

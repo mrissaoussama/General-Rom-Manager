@@ -1,16 +1,17 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:res="using:AvaloniaUI.Resources"
              xmlns:vm="using:AvaloniaUI.ViewModels"
              x:Class="AvaloniaUI.Views.DialogViews.OnboardingView"
              x:DataType="vm:OnboardingViewModel"
              x:Name="Root">
     <DockPanel>
         <DockPanel DockPanel.Dock="Bottom" Margin="0,10,0,0">
-            <Button DockPanel.Dock="Right" Content="Finish" IsDefault="True" Command="{Binding ConfirmCommand}"
+            <Button DockPanel.Dock="Right" Content="{x:Static res:Strings.Onboarding_Finish}" IsDefault="True" Command="{Binding ConfirmCommand}"
                     IsVisible="{Binding IsDone}" Width="90" />
-            <Button DockPanel.Dock="Right" Content="Next" IsDefault="{Binding !IsDone}" Command="{Binding NextCommand}"
+            <Button DockPanel.Dock="Right" Content="{x:Static res:Strings.Onboarding_Next}" IsDefault="{Binding !IsDone}" Command="{Binding NextCommand}"
                     IsVisible="{Binding !IsDone}" Width="90" />
-            <Button DockPanel.Dock="Right" Content="Back" Command="{Binding BackCommand}" IsVisible="{Binding CanGoBack}"
+            <Button DockPanel.Dock="Right" Content="{x:Static res:Strings.Onboarding_Back}" Command="{Binding BackCommand}" IsVisible="{Binding CanGoBack}"
                     Width="90" Margin="0,0,8,0" />
             <TextBlock Text="{Binding StepText}" Classes="muted" VerticalAlignment="Center" />
         </DockPanel>
@@ -18,18 +19,18 @@
         <Panel>
             <!-- Welcome -->
             <StackPanel IsVisible="{Binding IsWelcome}" VerticalAlignment="Center" Spacing="16" Margin="32">
-                <TextBlock Text="Welcome to RomManager" Classes="h1" HorizontalAlignment="Center" />
+                <TextBlock Text="{x:Static res:Strings.Onboarding_WelcomeToRomManager}" Classes="h1" HorizontalAlignment="Center" />
                 <TextBlock TextWrapping="Wrap" TextAlignment="Center" Opacity="0.75"
-                           Text="RomManager reads your ROM files to find each game's title, version, region and icon, and helps you rename, move, de-duplicate and convert them." />
+                           Text="{x:Static res:Strings.Onboarding_RomManagerReadsYourROMFilesToFindEachGameSTitleV}" />
                 <TextBlock TextWrapping="Wrap" TextAlignment="Center" Opacity="0.6"
-                           Text="Next, pick the folder that holds each console's ROMs. You can change everything later in Settings." />
+                           Text="{x:Static res:Strings.Onboarding_NextPickTheFolderThatHoldsEachConsoleSROMsYouCan}" />
             </StackPanel>
 
             <!-- ROM folders -->
             <DockPanel IsVisible="{Binding IsFolders}">
                 <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,8">
-                    <TextBlock Text="ROM folders" Classes="h2" />
-                    <TextBlock Classes="muted" TextWrapping="Wrap" Text="Choose a folder for each console you have; leave the others empty." />
+                    <TextBlock Text="{x:Static res:Strings.Common_ROMFolders}" Classes="h2" />
+                    <TextBlock Classes="muted" TextWrapping="Wrap" Text="{x:Static res:Strings.Onboarding_ChooseAFolderForEachConsoleYouHaveLeaveTheOthers}" />
                 </StackPanel>
                 <ScrollViewer>
                     <ItemsControl ItemsSource="{Binding Folders}" Margin="0,0,12,0">
@@ -37,9 +38,9 @@
                             <DataTemplate x:DataType="vm:OnboardingFolder">
                                 <Grid ColumnDefinitions="160,*,Auto,70" Margin="0,2">
                                     <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                                    <TextBox Grid.Column="1" Text="{Binding Path.Value}" PlaceholderText="Folder with ROMs"
+                                    <TextBox Grid.Column="1" Text="{Binding Path.Value}" PlaceholderText="{x:Static res:Strings.Onboarding_FolderWithROMs}"
                                              AutomationProperties.Name="{Binding DisplayName}" />
-                                    <Button Grid.Column="2" Content="Browse…" Margin="4,0" CommandParameter="{Binding}"
+                                    <Button Grid.Column="2" Content="{x:Static res:Strings.Common_Browse}" Margin="4,0" CommandParameter="{Binding}"
                                             Command="{Binding #Root.((vm:OnboardingViewModel)DataContext).BrowseCommand}" />
                                     <TextBlock Grid.Column="3" Text="{Binding Path.Status.Text}" Foreground="{Binding Path.Status.Brush}"
                                                FontSize="11" VerticalAlignment="Center" />
@@ -52,20 +53,20 @@
 
             <!-- Theme -->
             <StackPanel IsVisible="{Binding IsTheme}" VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="12">
-                <TextBlock Text="Theme" Classes="h2" />
+                <TextBlock Text="{x:Static res:Strings.Onboarding_Theme}" Classes="h2" />
                 <ListBox ItemsSource="{Binding ThemeNames}" SelectedIndex="{Binding ThemeIndex}" Width="260"
-                         AutomationProperties.Name="Theme" />
-                <TextBlock Text="Online" Classes="h3" Margin="0,8,0,0" />
-                <CheckBox Content="Download box art for the cover view (libretro-thumbnails)" IsChecked="{Binding DownloadBoxArt}" />
+                         AutomationProperties.Name="{x:Static res:Strings.Onboarding_Theme}" />
+                <TextBlock Text="{x:Static res:Strings.Common_Online}" Classes="h3" Margin="0,8,0,0" />
+                <CheckBox Content="{x:Static res:Strings.Onboarding_DownloadBoxArtForTheCoverViewLibretroThumbnails}" IsChecked="{Binding DownloadBoxArt}" />
                 <TextBlock Classes="muted" TextWrapping="Wrap" MaxWidth="360"
-                           Text="Other online features (title databases, update checks) ask first. Settings → Online lists them all." />
+                           Text="{x:Static res:Strings.Onboarding_OtherOnlineFeaturesTitleDatabasesUpdateChecksAsk}" />
             </StackPanel>
 
             <!-- Done -->
             <StackPanel IsVisible="{Binding IsDone}" VerticalAlignment="Center" Spacing="16" Margin="32">
-                <TextBlock Text="All set" Classes="h1" HorizontalAlignment="Center" />
+                <TextBlock Text="{x:Static res:Strings.Onboarding_AllSet}" Classes="h1" HorizontalAlignment="Center" />
                 <TextBlock TextWrapping="Wrap" TextAlignment="Center" Opacity="0.75"
-                           Text="{Binding ChosenFolders, StringFormat='{}{0} console folder(s) chosen. Click Finish: RomManager scans them now and watches them for changes.'}" />
+                           Text="{Binding ChosenFolders, StringFormat={x:Static res:Strings.Onboarding_0ConsoleFolderSChosenClickFinishRomManagerScansT}}" />
             </StackPanel>
         </Panel>
     </DockPanel>

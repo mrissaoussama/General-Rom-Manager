@@ -1,94 +1,95 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:res="using:AvaloniaUI.Resources"
              xmlns:vm="using:AvaloniaUI.ViewModels"
              xmlns:views="using:AvaloniaUI.Views"
              x:Class="AvaloniaUI.Views.DashboardView"
              x:DataType="vm:DashboardViewModel">
     <ScrollViewer>
         <StackPanel Margin="20" Spacing="18">
-            <TextBlock Text="Library" Classes="h1" />
+            <TextBlock Text="{x:Static res:Strings.Dashboard_Library}" Classes="h1" />
 
             <WrapPanel>
                 <Border Classes="stat">
                     <StackPanel>
                         <TextBlock Classes="stat-value" Text="{Binding TotalRoms, StringFormat='{}{0:N0}'}" />
-                        <TextBlock Classes="stat-label" Text="ROMs" />
+                        <TextBlock Classes="stat-label" Text="{x:Static res:Strings.Dashboard_ROMs}" />
                     </StackPanel>
                 </Border>
                 <Border Classes="stat">
                     <StackPanel>
                         <TextBlock Classes="stat-value" Text="{Binding Games, StringFormat='{}{0:N0}'}" />
-                        <TextBlock Classes="stat-label" Text="Games" />
+                        <TextBlock Classes="stat-label" Text="{x:Static res:Strings.Dashboard_Games}" />
                     </StackPanel>
                 </Border>
                 <Border Classes="stat">
                     <StackPanel>
                         <TextBlock Classes="stat-value" Text="{Binding Updates, StringFormat='{}{0:N0}'}" />
-                        <TextBlock Classes="stat-label" Text="Updates" />
+                        <TextBlock Classes="stat-label" Text="{x:Static res:Strings.Common_Updates}" />
                     </StackPanel>
                 </Border>
                 <Border Classes="stat">
                     <StackPanel>
                         <TextBlock Classes="stat-value" Text="{Binding Dlcs, StringFormat='{}{0:N0}'}" />
-                        <TextBlock Classes="stat-label" Text="DLC" />
+                        <TextBlock Classes="stat-label" Text="{x:Static res:Strings.Dashboard_DLC}" />
                     </StackPanel>
                 </Border>
                 <Border Classes="stat">
                     <StackPanel>
                         <TextBlock Classes="stat-value" Text="{Binding Unidentified, StringFormat='{}{0:N0}'}" />
-                        <TextBlock Classes="stat-label" Text="Without a name" />
+                        <TextBlock Classes="stat-label" Text="{x:Static res:Strings.Dashboard_WithoutAName}" />
                     </StackPanel>
                 </Border>
                 <Border Classes="stat">
                     <StackPanel>
                         <TextBlock Classes="stat-value" Text="{Binding TotalSize}" />
-                        <TextBlock Classes="stat-label" Text="On disk" />
+                        <TextBlock Classes="stat-label" Text="{x:Static res:Strings.Dashboard_OnDisk}" />
                     </StackPanel>
                 </Border>
-                <Border Classes="stat" ToolTip.Tip="Files with the same title ID, type and version as another file">
+                <Border Classes="stat" ToolTip.Tip="{x:Static res:Strings.Common_FilesWithTheSameTitleIDTypeAndVersionAsAnotherFi}">
                     <StackPanel>
                         <TextBlock Classes="stat-value" Text="{Binding Duplicates, StringFormat='{}{0:N0}'}" />
-                        <TextBlock Classes="stat-label" Text="Duplicates" />
+                        <TextBlock Classes="stat-label" Text="{x:Static res:Strings.Common_Duplicates}" />
                     </StackPanel>
                 </Border>
                 <Border Classes="stat" IsVisible="{Binding HasMissingUpdates}"
-                        ToolTip.Tip="Games with a newer update than the newest one in the library (consoles with a version database)">
+                        ToolTip.Tip="{x:Static res:Strings.Dashboard_GamesWithANewerUpdateThanTheNewestOneInTheLibrar}">
                     <StackPanel>
                         <TextBlock Classes="stat-value" Text="{Binding MissingUpdates, StringFormat='{}{0:N0}'}" />
-                        <TextBlock Classes="stat-label" Text="Missing updates" />
+                        <TextBlock Classes="stat-label" Text="{x:Static res:Strings.Common_MissingUpdates}" />
                     </StackPanel>
                 </Border>
-                <Border Classes="stat" ToolTip.Tip="Files with a ROM extension that no parser could read">
+                <Border Classes="stat" ToolTip.Tip="{x:Static res:Strings.Dashboard_FilesWithAROMExtensionThatNoParserCouldRead}">
                     <StackPanel>
                         <TextBlock Classes="stat-value" Text="{Binding NotRecognised, StringFormat='{}{0:N0}'}" />
-                        <TextBlock Classes="stat-label" Text="Not recognised" />
+                        <TextBlock Classes="stat-label" Text="{x:Static res:Strings.Dashboard_NotRecognised}" />
                     </StackPanel>
                 </Border>
             </WrapPanel>
             <StackPanel Orientation="Horizontal" Spacing="8">
-                <TextBlock Text="Scan errors and unrecognised files are written to the log." Classes="muted"
+                <TextBlock Text="{x:Static res:Strings.Dashboard_ScanErrorsAndUnrecognisedFilesAreWrittenToTheLog}" Classes="muted"
                            VerticalAlignment="Center" />
-                <Button Content="Open log" Classes="small"
+                <Button Content="{x:Static res:Strings.Dashboard_OpenLog}" Classes="small"
                         Command="{Binding $parent[views:MainView].((vm:MainViewModel)DataContext).ShowLogCommand}" />
             </StackPanel>
 
             <StackPanel Spacing="4">
-                <TextBlock Text="DAT files" Classes="h3" />
+                <TextBlock Text="{x:Static res:Strings.Dashboard_DATFiles}" Classes="h3" />
                 <TextBlock Text="{Binding DatSummary}" Classes="muted" TextWrapping="Wrap" />
                 <SelectableTextBlock Text="{Binding DatDirectory}" Classes="muted" TextWrapping="Wrap" />
                 <StackPanel Orientation="Horizontal" Spacing="8">
-                    <Button Content="Open folder" Classes="small" Command="{Binding OpenDatFolderCommand}" />
-                    <Button Content="Refresh" Classes="small" Command="{Binding RefreshDatsCommand}" />
-                    <Button Content="Have/miss report…" Classes="small" Command="{Binding ShowDatCoverageCommand}"
-                            ToolTip.Tip="Which games of each DAT set are in the library" />
+                    <Button Content="{x:Static res:Strings.Dashboard_OpenFolder}" Classes="small" Command="{Binding OpenDatFolderCommand}" />
+                    <Button Content="{x:Static res:Strings.Common_Refresh}" Classes="small" Command="{Binding RefreshDatsCommand}" />
+                    <Button Content="{x:Static res:Strings.Dashboard_HaveMissReport}" Classes="small" Command="{Binding ShowDatCoverageCommand}"
+                            ToolTip.Tip="{x:Static res:Strings.Dashboard_WhichGamesOfEachDATSetAreInTheLibrary}" />
                 </StackPanel>
             </StackPanel>
 
-            <TextBlock Text="Consoles" Classes="h2" />
+            <TextBlock Text="{x:Static res:Strings.Common_Consoles}" Classes="h2" />
 
             <StackPanel Spacing="8" IsVisible="{Binding !HasConsoles}">
-                <TextBlock Text="No ROM folders configured yet." />
-                <Button Content="Open Settings…" HorizontalAlignment="Left"
+                <TextBlock Text="{x:Static res:Strings.Dashboard_NoROMFoldersConfiguredYet}" />
+                <Button Content="{x:Static res:Strings.Common_OpenSettings}" HorizontalAlignment="Left"
                         Command="{Binding $parent[views:MainView].((vm:MainViewModel)DataContext).OpenSettingsCommand}" />
             </StackPanel>
 
@@ -105,17 +106,17 @@
                                 CommandParameter="{Binding}">
                             <StackPanel Spacing="4">
                                 <TextBlock Text="{Binding DisplayName}" Classes="h3" />
-                                <TextBlock Text="{Binding RomCount, StringFormat='{}{0:N0} ROMs'}" />
+                                <TextBlock Text="{Binding RomCount, StringFormat={x:Static res:Strings.Common_0N0ROMs}}" />
                                 <TextBlock Text="{Binding StatusMessage}" Classes="muted" TextTrimming="CharacterEllipsis" />
                                 <TextBlock Text="{Binding LastScanText}" Classes="muted" />
-                                <TextBlock Text="{Binding DuplicateCount, StringFormat='{}{0:N0} duplicate file(s)'}" Classes="muted"
+                                <TextBlock Text="{Binding DuplicateCount, StringFormat={x:Static res:Strings.Dashboard_0N0DuplicateFileS}}" Classes="muted"
                                            IsVisible="{Binding HasDuplicates}" />
-                                <TextBlock Text="Folder offline" Classes="warning" IsVisible="{Binding HasOfflineFolders}" />
+                                <TextBlock Text="{x:Static res:Strings.Dashboard_FolderOffline}" Classes="warning" IsVisible="{Binding HasOfflineFolders}" />
                                 <TextBlock Text="{Binding UnrecognizedText}" Classes="muted"
                                            IsVisible="{Binding UnrecognizedText, Converter={x:Static ObjectConverters.IsNotNull}}" />
                                 <ProgressBar IsVisible="{Binding IsLoading}" IsIndeterminate="{Binding IsIndeterminate}"
                                              Value="{Binding ProgressPercent}" Height="4" MinHeight="4" />
-                                <TextBlock Text="Missing requirements" Classes="warning"
+                                <TextBlock Text="{x:Static res:Strings.Dashboard_MissingRequirements}" Classes="warning"
                                            IsVisible="{Binding RequirementsWarning, Converter={x:Static ObjectConverters.IsNotNull}}"
                                            ToolTip.Tip="{Binding RequirementsWarning}" />
                             </StackPanel>

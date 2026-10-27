@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Common_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="ChooseConsole_Add" xml:space="preserve"><value>Add</value></data>
+  <data name="ChooseConsole_Console" xml:space="preserve"><value>Console</value></data>
+  <data name="Common_0N0ROMs" xml:space="preserve"><value>{0:N0} ROMs</value></data>
+  <data name="Common_Browse" xml:space="preserve"><value>Browse…</value></data>
+  <data name="Common_Columns" xml:space="preserve"><value>Columns</value></data>
+  <data name="Common_Consoles" xml:space="preserve"><value>Consoles</value></data>
+  <data name="Common_Duplicates" xml:space="preserve"><value>Duplicates</value></data>
+  <data name="Common_FilesWithTheSameTitleIDTypeAndVersionAsAnotherFi" xml:space="preserve"><value>Files with the same title ID, type and version as another file</value></data>
+  <data name="Common_General" xml:space="preserve"><value>General</value></data>
+  <data name="Common_MissingUpdates" xml:space="preserve"><value>Missing updates</value></data>
+  <data name="Common_Online" xml:space="preserve"><value>Online</value></data>
+  <data name="Common_OpenSettings" xml:space="preserve"><value>Open Settings…</value></data>
+  <data name="Common_ROMFolders" xml:space="preserve"><value>ROM folders</value></data>
+  <data name="Common_Refresh" xml:space="preserve"><value>Refresh</value></data>
+  <data name="Common_Updates" xml:space="preserve"><value>Updates</value></data>
+  <data name="Console_0N0Shown" xml:space="preserve"><value>{0:N0} shown</value></data>
+  <data name="Console_Cards" xml:space="preserve"><value>Cards</value></data>
+  <data name="Console_ChooseTheFolderThatHoldsYourROMsInSettingsThenSc" xml:space="preserve"><value>Choose the folder that holds your ROMs in Settings, then scan it.</value></data>
+  <data name="Console_ClearFilters" xml:space="preserve"><value>Clear filters</value></data>
+  <data name="Console_Cover" xml:space="preserve"><value>Cover</value></data>
+  <data name="Console_Duplicates" xml:space="preserve"><value>Duplicates…</value></data>
+  <data name="Console_Export" xml:space="preserve"><value>Export…</value></data>
+  <data name="Console_FilterCtrlF" xml:space="preserve"><value>Filter (Ctrl+F)</value></data>
+  <data name="Console_ForFoldersThatAreGoneForGoodNoFilesAreTouched" xml:space="preserve"><value>For folders that are gone for good; no files are touched</value></data>
+  <data name="Console_Format" xml:space="preserve"><value>Format</value></data>
+  <data name="Console_FullRescan" xml:space="preserve"><value>Full rescan</value></data>
+  <data name="Console_Group" xml:space="preserve"><value>Group</value></data>
+  <data name="Console_GroupUpdatesAndDLCUnderTheirGame" xml:space="preserve"><value>Group updates and DLC under their game</value></data>
+  <data name="Console_KeepOneFileOfEachRomStoredMoreThanOnceAndMoveThe" xml:space="preserve"><value>Keep one file of each rom stored more than once and move the other copies</value></data>
+  <data name="Console_Language" xml:space="preserve"><value>Language</value></data>
+  <data name="Console_ListDLCTheTitleDatabaseKnowsForYourGamesThatTheL" xml:space="preserve"><value>List DLC the title database knows for your games that the library lacks</value></data>
+  <data name="Console_ListGamesWithANewerUpdateThanTheOneInTheLibrary" xml:space="preserve"><value>List games with a newer update than the one in the library</value></data>
+  <data name="Console_MissingDLC" xml:space="preserve"><value>Missing DLC</value></data>
+  <data name="Console_No0ROMsYet" xml:space="preserve"><value>No {0} ROMs yet</value></data>
+  <data name="Console_OneGameOneROMKeepTheBestVersionOfEachGameByRegio" xml:space="preserve"><value>One game, one ROM: keep the best version of each game by region priority and move the others</value></data>
+  <data name="Console_ROMsWithNoTitleOrOnlyTheirFileNameAsTitle" xml:space="preserve"><value>ROMs with no title or only their file name as title</value></data>
+  <data name="Console_ReReadEveryFileIgnoringTheCache" xml:space="preserve"><value>Re-read every file, ignoring the cache</value></data>
+  <data name="Console_Region" xml:space="preserve"><value>Region</value></data>
+  <data name="Console_RemoveFolder" xml:space="preserve"><value>Remove folder…</value></data>
+  <data name="Console_SaveTheRowsShownAfterFiltersAsCSVOrJSON" xml:space="preserve"><value>Save the rows shown (after filters) as CSV or JSON</value></data>
+  <data name="Console_Scan" xml:space="preserve"><value>Scan</value></data>
+  <data name="Console_ScanForNewOrChangedFiles" xml:space="preserve"><value>Scan for new or changed files</value></data>
+  <data name="Console_ScanNow" xml:space="preserve"><value>Scan now</value></data>
+  <data name="Console_SelectAROMToSeeDetails" xml:space="preserve"><value>Select a ROM to see details.</value></data>
+  <data name="Console_ShowCoversInsteadOfTheTable" xml:space="preserve"><value>Show covers instead of the table</value></data>
+  <data name="Console_Type" xml:space="preserve"><value>Type</value></data>
+  <data name="Console_UnnamedOnly" xml:space="preserve"><value>Unnamed only</value></data>
+  <data name="Console_Verify" xml:space="preserve"><value>Verify</value></data>
+  <data name="Console_WhichDumpsMatchYourDATsExactlyAndWhichDoNot" xml:space="preserve"><value>Which dumps match your DATs exactly, and which do not</value></data>
+  <data name="Dashboard_0N0DuplicateFileS" xml:space="preserve"><value>{0:N0} duplicate file(s)</value></data>
+  <data name="Dashboard_DATFiles" xml:space="preserve"><value>DAT files</value></data>
+  <data name="Dashboard_DLC" xml:space="preserve"><value>DLC</value></data>
+  <data name="Dashboard_FilesWithAROMExtensionThatNoParserCouldRead" xml:space="preserve"><value>Files with a ROM extension that no parser could read</value></data>
+  <data name="Dashboard_FolderOffline" xml:space="preserve"><value>Folder offline</value></data>
+  <data name="Dashboard_Games" xml:space="preserve"><value>Games</value></data>
+  <data name="Dashboard_GamesWithANewerUpdateThanTheNewestOneInTheLibrar" xml:space="preserve"><value>Games with a newer update than the newest one in the library (consoles with a version database)</value></data>
+  <data name="Dashboard_HaveMissReport" xml:space="preserve"><value>Have/miss report…</value></data>
+  <data name="Dashboard_Library" xml:space="preserve"><value>Library</value></data>
+  <data name="Dashboard_MissingRequirements" xml:space="preserve"><value>Missing requirements</value></data>
+  <data name="Dashboard_NoROMFoldersConfiguredYet" xml:space="preserve"><value>No ROM folders configured yet.</value></data>
+  <data name="Dashboard_NotRecognised" xml:space="preserve"><value>Not recognised</value></data>
+  <data name="Dashboard_OnDisk" xml:space="preserve"><value>On disk</value></data>
+  <data name="Dashboard_OpenFolder" xml:space="preserve"><value>Open folder</value></data>
+  <data name="Dashboard_OpenLog" xml:space="preserve"><value>Open log</value></data>
+  <data name="Dashboard_ROMs" xml:space="preserve"><value>ROMs</value></data>
+  <data name="Dashboard_ScanErrorsAndUnrecognisedFilesAreWrittenToTheLog" xml:space="preserve"><value>Scan errors and unrecognised files are written to the log.</value></data>
+  <data name="Dashboard_WhichGamesOfEachDATSetAreInTheLibrary" xml:space="preserve"><value>Which games of each DAT set are in the library</value></data>
+  <data name="Dashboard_WithoutAName" xml:space="preserve"><value>Without a name</value></data>
+  <data name="Main_WindowTitle" xml:space="preserve"><value>RomManager</value></data>
+  <data name="Main_CancelAll" xml:space="preserve"><value>Cancel all</value></data>
+  <data name="Main_CheckForAppUpdates" xml:space="preserve"><value>Check for _app updates…</value></data>
+  <data name="Main_ClearCompleted" xml:space="preserve"><value>Clear completed</value></data>
+  <data name="Main_ClearFinished" xml:space="preserve"><value>Clear finished</value></data>
+  <data name="Main_CompactRows" xml:space="preserve"><value>_Compact rows</value></data>
+  <data name="Main_Copy" xml:space="preserve"><value>Copy</value></data>
+  <data name="Main_Dark" xml:space="preserve"><value>_Dark</value></data>
+  <data name="Main_Dashboard" xml:space="preserve"><value>Dashboard</value></data>
+  <data name="Main_Dashboard2" xml:space="preserve"><value>_Dashboard</value></data>
+  <data name="Main_DownloadMissingDatabases" xml:space="preserve"><value>_Download missing databases</value></data>
+  <data name="Main_Downloads" xml:space="preserve"><value>Downloads</value></data>
+  <data name="Main_EXit" xml:space="preserve"><value>E_xit</value></data>
+  <data name="Main_ExportLibrary" xml:space="preserve"><value>_Export library…</value></data>
+  <data name="Main_File" xml:space="preserve"><value>_File</value></data>
+  <data name="Main_FullRescanOfAllConsoles" xml:space="preserve"><value>_Full rescan of all consoles</value></data>
+  <data name="Main_Help" xml:space="preserve"><value>_Help</value></data>
+  <data name="Main_Library" xml:space="preserve"><value>_Library</value></data>
+  <data name="Main_Light" xml:space="preserve"><value>_Light</value></data>
+  <data name="Main_Log" xml:space="preserve"><value>Log</value></data>
+  <data name="Main_Log2" xml:space="preserve"><value>_Log</value></data>
+  <data name="Main_NoOperationsQueued" xml:space="preserve"><value>No operations queued.</value></data>
+  <data name="Main_OpenFile" xml:space="preserve"><value>Open file</value></data>
+  <data name="Main_Operations" xml:space="preserve"><value>Operations</value></data>
+  <data name="Main_PauseAll" xml:space="preserve"><value>Pause all</value></data>
+  <data name="Main_Reload" xml:space="preserve"><value>Reload</value></data>
+  <data name="Main_ResumeAll" xml:space="preserve"><value>Resume all</value></data>
+  <data name="Main_ScanAll" xml:space="preserve"><value>_Scan all</value></data>
+  <data name="Main_Settings" xml:space="preserve"><value>_Settings…</value></data>
+  <data name="Main_System" xml:space="preserve"><value>_System</value></data>
+  <data name="Main_Theme" xml:space="preserve"><value>_Theme</value></data>
+  <data name="Main_Undo" xml:space="preserve"><value>Undo</value></data>
+  <data name="Main_View" xml:space="preserve"><value>_View</value></data>
+  <data name="Onboarding_0ConsoleFolderSChosenClickFinishRomManagerScansT" xml:space="preserve"><value>{0} console folder(s) chosen. Click Finish: RomManager scans them now and watches them for changes.</value></data>
+  <data name="Onboarding_AllSet" xml:space="preserve"><value>All set</value></data>
+  <data name="Onboarding_Back" xml:space="preserve"><value>Back</value></data>
+  <data name="Onboarding_ChooseAFolderForEachConsoleYouHaveLeaveTheOthers" xml:space="preserve"><value>Choose a folder for each console you have; leave the others empty.</value></data>
+  <data name="Onboarding_DownloadBoxArtForTheCoverViewLibretroThumbnails" xml:space="preserve"><value>Download box art for the cover view (libretro-thumbnails)</value></data>
+  <data name="Onboarding_Finish" xml:space="preserve"><value>Finish</value></data>
+  <data name="Onboarding_FolderWithROMs" xml:space="preserve"><value>Folder with ROMs</value></data>
+  <data name="Onboarding_Next" xml:space="preserve"><value>Next</value></data>
+  <data name="Onboarding_NextPickTheFolderThatHoldsEachConsoleSROMsYouCan" xml:space="preserve"><value>Next, pick the folder that holds each console's ROMs. You can change everything later in Settings.</value></data>
+  <data name="Onboarding_OtherOnlineFeaturesTitleDatabasesUpdateChecksAsk" xml:space="preserve"><value>Other online features (title databases, update checks) ask first. Settings → Online lists them all.</value></data>
+  <data name="Onboarding_RomManagerReadsYourROMFilesToFindEachGameSTitleV" xml:space="preserve"><value>RomManager reads your ROM files to find each game's title, version, region and icon, and helps you rename, move, de-duplicate and convert them.</value></data>
+  <data name="Onboarding_Theme" xml:space="preserve"><value>Theme</value></data>
+  <data name="Onboarding_WelcomeToRomManager" xml:space="preserve"><value>Welcome to RomManager</value></data>
+  <data name="Properties_Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Rename_Rename" xml:space="preserve"><value>Rename</value></data>
+  <data name="Rename_Template" xml:space="preserve"><value>Template</value></data>
+  <data name="RomDetails_BaseGame0" xml:space="preserve"><value>Base game: {0}</value></data>
+  <data name="RomDetails_Description" xml:space="preserve"><value>Description</value></data>
+  <data name="RomDetails_Hashes" xml:space="preserve"><value>Hashes</value></data>
+  <data name="Settings_1G1RRegionPriority" xml:space="preserve"><value>1G1R region priority</value></data>
+  <data name="Settings_Add" xml:space="preserve"><value>Add…</value></data>
+  <data name="Settings_Appearance" xml:space="preserve"><value>Appearance</value></data>
+  <data name="Settings_Arguments" xml:space="preserve"><value>Arguments</value></data>
+  <data name="Settings_AskAgainBeforeLoadingThisPluginItStaysLoadedUnti" xml:space="preserve"><value>Ask again before loading this plugin (it stays loaded until restart)</value></data>
+  <data name="Settings_Auto" xml:space="preserve"><value>auto</value></data>
+  <data name="Settings_CatchesChangesTheFolderWatchersMissDrivesPlugged" xml:space="preserve"><value>Catches changes the folder watchers miss (drives plugged in later, edits from other machines).</value></data>
+  <data name="Settings_CheckGitHubForANewerRomManagerOnStartupInstalled" xml:space="preserve"><value>Check GitHub for a newer RomManager on startup (installed copies)</value></data>
+  <data name="Settings_ColourTheme" xml:space="preserve"><value>Colour theme</value></data>
+  <data name="Settings_ColumnsShownOnEachConsolePage" xml:space="preserve"><value>Columns shown on each console page.</value></data>
+  <data name="Settings_CompactModeSmallerRowHeight" xml:space="preserve"><value>Compact mode (smaller row height)</value></data>
+  <data name="Settings_ConfigJsonDefault" xml:space="preserve"><value>config.json default</value></data>
+  <data name="Settings_ConversionTools" xml:space="preserve"><value>Conversion tools</value></data>
+  <data name="Settings_DATFolder0" xml:space="preserve"><value>DAT folder: {0}</value></data>
+  <data name="Settings_Database" xml:space="preserve"><value>Database</value></data>
+  <data name="Settings_DatabaseFolder" xml:space="preserve"><value>Database folder</value></data>
+  <data name="Settings_DownloadBoxArtLibretroThumbnailsTitleDatabases" xml:space="preserve"><value>Download box art (libretro-thumbnails, title databases)</value></data>
+  <data name="Settings_DownloadMissingTitleDatabasesOnStartupTitledbWik" xml:space="preserve"><value>Download missing title databases on startup (titledb, WikiBrew)</value></data>
+  <data name="Settings_DownloadTitleDatabases" xml:space="preserve"><value>Download title databases</value></data>
+  <data name="Settings_DownloadsAndDATs" xml:space="preserve"><value>Downloads and DATs</value></data>
+  <data name="Settings_Emulators" xml:space="preserve"><value>Emulators</value></data>
+  <data name="Settings_EverythingRomManagerFetchesFromTheInternetScanni" xml:space="preserve"><value>Everything RomManager fetches from the internet. Scanning itself never goes online.</value></data>
+  <data name="Settings_FileOrganiser" xml:space="preserve"><value>File organiser</value></data>
+  <data name="Settings_FilesReadAtOnceEmptyAutomatic1OnNetworkDrivesOth" xml:space="preserve"><value>Files read at once (empty: automatic, 1 on network drives, otherwise 4) and folders to skip, separated by ';'. A name (Backups) skips that folder anywhere; a path (Updates/old) is relative to the ROM folder.</value></data>
+  <data name="Settings_Folders" xml:space="preserve"><value>Folders</value></data>
+  <data name="Settings_FoldersToSkip" xml:space="preserve"><value>Folders to skip</value></data>
+  <data name="Settings_HashDiscImagesForRedumpDATMatchingSlowOnTheFirst" xml:space="preserve"><value>Hash disc images for Redump DAT matching (slow on the first scan; results are cached)</value></data>
+  <data name="Settings_ImportPluginZip" xml:space="preserve"><value>Import plugin (.zip)…</value></data>
+  <data name="Settings_MoreFoldersSeparatedBy" xml:space="preserve"><value>More folders, separated by ';'</value></data>
+  <data name="Settings_NoConsolesYetAddROMFoldersOnTheGeneralTabFirst" xml:space="preserve"><value>No consoles yet: add ROM folders on the General tab first.</value></data>
+  <data name="Settings_NoPluginsLoadedImportAZipOrPutAPluginFolderInThe" xml:space="preserve"><value>No plugins loaded. Import a .zip, or put a plugin folder in the plugins folder and reload.</value></data>
+  <data name="Settings_Off" xml:space="preserve"><value>off</value></data>
+  <data name="Settings_OpenDATFolder" xml:space="preserve"><value>Open DAT folder</value></data>
+  <data name="Settings_OpenPluginsFolder" xml:space="preserve"><value>Open plugins folder</value></data>
+  <data name="Settings_OptionsOfTheInstalledConsoleModules" xml:space="preserve"><value>Options of the installed console modules.</value></data>
+  <data name="Settings_Plugins" xml:space="preserve"><value>Plugins</value></data>
+  <data name="Settings_PluginsFolder" xml:space="preserve"><value>Plugins folder</value></data>
+  <data name="Settings_Program" xml:space="preserve"><value>Program</value></data>
+  <data name="Settings_ProgramsYouInstallYourselfForConvertInTheRomMenu" xml:space="preserve"><value>Programs you install yourself for "Convert" in the rom menu. Empty: the Tools folder.</value></data>
+  <data name="Settings_ReloadPlugins" xml:space="preserve"><value>Reload plugins</value></data>
+  <data name="Settings_RenameTemplate" xml:space="preserve"><value>Rename template</value></data>
+  <data name="Settings_RescanEveryHours" xml:space="preserve"><value>Rescan every (hours)</value></data>
+  <data name="Settings_RescanIntervalInHours" xml:space="preserve"><value>Rescan interval in hours</value></data>
+  <data name="Settings_ResetToDefaults" xml:space="preserve"><value>Reset to defaults</value></data>
+  <data name="Settings_RevokeApproval" xml:space="preserve"><value>Revoke approval</value></data>
+  <data name="Settings_Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Settings_Scanning" xml:space="preserve"><value>Scanning</value></data>
+  <data name="Settings_ShowDATFilesPerConsole" xml:space="preserve"><value>Show DAT files per console</value></data>
+  <data name="Settings_TheFolderWithEachConsoleSROMsMoreFoldersSeparate" xml:space="preserve"><value>The folder with each console's ROMs. More folders (separated by ';') are scanned with it as one library.</value></data>
+  <data name="Settings_USAWorldEuropeJapan" xml:space="preserve"><value>USA, World, Europe, Japan</value></data>
+  <data name="Settings_UsedByLaunchInEmulatorArgumentsRomFullPathDirIts" xml:space="preserve"><value>Used by "Launch in emulator". Arguments: {rom} full path, {dir} its folder, {name} file name.</value></data>
+</root>
