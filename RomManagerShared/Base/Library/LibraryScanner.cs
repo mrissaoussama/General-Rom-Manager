@@ -14,7 +14,7 @@ public sealed record UnrecognizedFile(string Path, string Reason);
 public sealed class LibraryScanner(AppDbContext db)
 {
     /// <summary>Bump when parser output changes so cached entries get re-parsed.</summary>
-    public const int ScanVersion = 16;
+    public const int ScanVersion = 17;
     private const int SaveBatchSize = 25;
 
     /// <summary>Files from the last <see cref="ScanAsync{T}"/> that matched an extension but produced no roms.</summary>

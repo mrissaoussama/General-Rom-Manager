@@ -10,57 +10,6 @@ namespace RomManagerShared.Utils;
 public class RomUtils
 {
     static List<string> processedPaths = [];
-    public static void CopyNonNullProperties(object source, object destination)
-    {
-        if (source == null || destination == null)
-            throw new ArgumentNullException("Source and destination objects must not be null");
-
-        Type sourceType = source.GetType();
-        Type destinationType = destination.GetType();
-
-        PropertyInfo[] sourceProperties = sourceType.GetProperties();
-        PropertyInfo[] destinationProperties = destinationType.GetProperties();
-
-        foreach (var sourceProperty in sourceProperties)
-        {
-            var destinationProperty = destinationProperties.FirstOrDefault(p => p.Name == sourceProperty.Name
-                                                                              && p.PropertyType == sourceProperty.PropertyType
-                                                                              && p.CanWrite);
-
-            if (destinationProperty != null)
-            {
-                object? value = sourceProperty.GetValue(source);
-                if (value != null)
-                {
-                    destinationProperty.SetValue(destination, value);
-                }
-            }
-        }
-    }
-    public static void CopyRomProperties(object source, object destination)
-    {
-        if (source == null || destination == null)
-            throw new ArgumentNullException("Source and destination objects must not be null");
-
-        Type sourceType = source.GetType();
-        Type destinationType = destination.GetType();
-
-        PropertyInfo[] sourceProperties = sourceType.GetProperties();
-        PropertyInfo[] destinationProperties = destinationType.GetProperties();
-
-        foreach (var sourceProperty in sourceProperties)
-        {
-            var destinationProperty = destinationProperties.FirstOrDefault(p => p.Name == sourceProperty.Name
-                                                                              && p.PropertyType == sourceProperty.PropertyType
-                                                                              && p.CanWrite);
-
-            if (destinationProperty != null)
-            {
-                object? value = sourceProperty.GetValue(source);
-                destinationProperty.SetValue(destination, value);
-            }
-        }
-    }
     /// <summary>
     /// Cleans a folder or file name by removing invalid characters.
     /// </summary>
@@ -90,7 +39,8 @@ public class RomUtils
                 }
             }
         }
-    }    public static string GetRomListSize(List<Rom> romList)
+    }
+    public static string GetRomListSize(List<Rom> romList)
     {
         return (romList.Sum(x => x.Size) ?? 0).ToString();
     }
@@ -117,4 +67,4 @@ public class RomUtils
         };
         return folder ?? rom.Path;
     }
-}
+}

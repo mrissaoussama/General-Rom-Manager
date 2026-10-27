@@ -53,7 +53,7 @@ dotnet run --project tools/ParserHarness -- PS4Console "Y:\roms\PS4" 5
    the `LibraryFiles` table, new/changed ones are parsed in parallel and enriched.
 3. `RomParserExecutor<T>.ParseAsync` runs every parser whose `Extensions` contains the file extension
    (skipping `IContentSniffer` parsers that rule out the file's header, see `FileMagic`) and merges results
-   by `TitleID` (`RomUtils.CopyNonNullProperties`).
+   by `TitleID` (`Rom.MergeFrom`).
 4. Results are stored per file in `LibraryFiles` (JSON snapshot + parse error). What parsers log while
    parsing a file becomes its "not recognised" reason (`ParseDiagnostics`).
 

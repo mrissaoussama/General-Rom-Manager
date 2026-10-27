@@ -63,7 +63,7 @@ public class WiiUXmlParser : IRomParser<WiiUConsole>
         if (metadataClass != rom.GetType())
         {
             var metadataInstance = (Rom)Activator.CreateInstance(metadataClass)!;
-            RomUtils.CopyNonNullProperties(rom, metadataInstance);
+            metadataInstance.MergeFrom(rom);
             rom = (Rom)metadataInstance;
         }
         rom.Path = path;

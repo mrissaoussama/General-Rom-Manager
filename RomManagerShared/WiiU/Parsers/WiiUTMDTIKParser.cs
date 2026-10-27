@@ -79,7 +79,7 @@ public class WiiUTMDTIKParser : IRomParser<WiiUConsole>
         if (metadataClass != rom.GetType())
         {
             var typed = (Rom)Activator.CreateInstance(metadataClass)!;
-            RomUtils.CopyNonNullProperties(rom, typed);
+            typed.MergeFrom(rom);
             rom = typed;
         }
 

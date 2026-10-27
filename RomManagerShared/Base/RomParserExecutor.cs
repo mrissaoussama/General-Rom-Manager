@@ -77,7 +77,7 @@ public class RomParserExecutor<T> : IRomParserExecutor where T : GamingConsole
                         parsedrom.TitleID != null && parsedrom.TitleID == m.TitleID);
                     if (existing != null)
                     {
-                        RomUtils.CopyNonNullProperties(parsedrom, existing);
+                        existing.MergeFrom(parsedrom);
                         toMerge.Add(parsedrom);
                     }
                 }

@@ -39,7 +39,9 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
 - [ ] `MainViewModel.RomPaths` (static) → `ILibraryRootsService`; several roots per console.
 
 ### B.3 Domain [P2]
-- [ ] Replace reflection `RomUtils.CopyNonNullProperties` with an explicit `Rom.MergeFrom(Rom other)`.
+- [x] Replace reflection `RomUtils.CopyNonNullProperties` with `Rom.MergeFrom(Rom other)`: explicit for `Rom`
+      fields (lists combined, flags OR-ed, so a second parser no longer clears `IsFolderFormat`); subclass
+      properties via a cached property map.
 - [ ] Narrow `Rom`: platform-only fields move to subclasses.
 - [ ] Align namespaces with folders (mechanical, one PR, no behaviour change).
 - [ ] Split heavy consoles into module assemblies (ADR 0003 step 2: Switch/LibHac, Xbox/ISO2GOD).

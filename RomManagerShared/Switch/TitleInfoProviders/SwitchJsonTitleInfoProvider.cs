@@ -255,7 +255,7 @@ public class SwitchJsonTitleInfoProvider : TitleInfoProvider<SwitchConsole>, ICa
         if (metadataClass != romclasstype)
         {
             var metadataInstance = (Rom)Activator.CreateInstance(metadataClass)!;
-            RomUtils.CopyNonNullProperties(rom, metadataInstance);
+            metadataInstance.MergeFrom(rom);
             rom = metadataInstance;
         }
     }
