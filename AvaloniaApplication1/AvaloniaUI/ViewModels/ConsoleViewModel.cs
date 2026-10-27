@@ -34,7 +34,9 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
         _serviceProvider = serviceProvider;
         RefreshRequirements();
         using var scope = serviceProvider.CreateScope();
-        CanCheckUpdates = scope.ServiceProvider.GetService<ConsoleManager<T>>() is IMissingUpdateReporter;
+        var manager = scope.ServiceProvider.GetService<ConsoleManager<T>>();
+        CanCheckUpdates = manager is IMissingUpdateReporter;
+        CanCheckDlc = manager is IMissingDlcReporter;
     }
 
     public override IReadOnlyList<RomManagerShared.Utils.Dat.DatIndex> GetDatIndexes()
@@ -68,6 +70,29 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
         {
             FileUtils.Log($"[{ConsoleName}] Missing update count failed: {ex.Message}");
             return null;
+        }
+    }
+
+    protected override async Task CheckMissingDlcAsync()
+    {
+        using var scope = _serviceProvider.CreateScope();
+        if (scope.ServiceProvider.GetService<ConsoleManager<T>>() is not IMissingDlcReporter reporter) return;
+        try
+        {
+            StatusMessage = "Checking for missing DLC...";
+            var library = Roms.Select(r => r.RomSource).ToList();
+            var missing = await Task.Run(() => reporter.FindMissingDlcAsync(library));
+            StatusMessage = missing.Count == 0 ? "No missing DLC found" : $"{missing.Count} DLC missing";
+            var summary = missing.Count == 0
+                ? "The title database lists no DLC for your games that the library lacks (or the title database is not downloaded)."
+                : $"{missing.Count} DLC listed in the title database for games in the library are not in the library.";
+            await Dialogs.PreviewAsync("Missing DLC", summary,
+                missing.Select(m => $"{m.Game}: {m.Dlc}  [{m.TitleId}]"), "Close", showCancel: false);
+        }
+        catch (Exception ex)
+        {
+            FileUtils.Log($"[{ConsoleName}] Missing DLC check failed: {ex}");
+            StatusMessage = $"Missing DLC check failed: {ex.Message}";
         }
     }
 

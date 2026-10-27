@@ -68,7 +68,8 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
       track. (CHD's internal SHA-1 covers the whole compressed image and cannot match Redump's per-track
       hashes; matching CHDs needs decompression.)
 - [ ] XCI parsing test with a homebrew XCI fixture.
-- [ ] Switch missing-DLC report (titledb `cnmts.json`).
+- [x] Switch missing-DLC report (`SwitchDlcChecker`): DLC IDs in the already-downloaded titledb whose base game
+      (DLC ID − 0x1000, low 13 bits cleared) is in the library; no extra download (`cnmts.json` not needed).
 - [ ] PS4 update check without PS4_Tools (Sony's public update XML), behind a network opt-in.
 
 ## Phase D: UI and UX

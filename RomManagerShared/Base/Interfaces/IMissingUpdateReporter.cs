@@ -20,3 +20,13 @@ public interface IMissingUpdateReporter
     /// <summary>Checks the whole library (games and update files), not just a selection.</summary>
     IReadOnlyList<MissingUpdate> FindMissingUpdates(IReadOnlyList<Rom> library);
 }
+
+/// <summary>
+/// Implemented by console managers that know which DLC exist for a game. The UI shows a "Missing DLC" report.
+/// Each line is "game title: DLC name [DLC title ID]".
+/// </summary>
+public interface IMissingDlcReporter
+{
+    /// <summary>Loads the title database if needed and lists DLC of library games that the library lacks.</summary>
+    Task<IReadOnlyList<(string Game, string Dlc, string TitleId)>> FindMissingDlcAsync(IReadOnlyList<Rom> library);
+}

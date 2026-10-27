@@ -17,7 +17,8 @@ hash files.
   run in a queue with cancel and undo (undo survives a restart).
 - **Identify**: No-Intro DAT matching for cartridge consoles (by hash), title databases for Switch,
   3DS and Wii U, libretro box art for DAT-matched games, embedded icons and banners.
-- **Switch missing updates**: compares the library against `versions.json` from titledb.
+- **Switch missing updates and DLC**: compares the library against `versions.json` and the title
+  database from titledb.
 - **Plugins**: add context-menu actions and hear about scans; each plugin declares its permissions, needs
   your approval before it runs, and only gets network, files outside its folder, processes and the
   database when it declared them. See [SamplePlugin](SamplePlugin/README.md).

@@ -72,6 +72,14 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
 
     protected virtual Task CheckMissingUpdatesAsync() => Task.CompletedTask;
 
+    /// <summary>True for consoles whose manager can list missing DLC (shows the "Missing DLC" button).</summary>
+    [ObservableProperty] private bool _canCheckDlc;
+
+    [RelayCommand]
+    private Task CheckMissingDlc() => CheckMissingDlcAsync();
+
+    protected virtual Task CheckMissingDlcAsync() => Task.CompletedTask;
+
     /// <summary>Games with a newer update than the library has; null when unsupported or no version database.</summary>
     public virtual Task<int?> CountMissingUpdatesAsync() => Task.FromResult<int?>(null);
 

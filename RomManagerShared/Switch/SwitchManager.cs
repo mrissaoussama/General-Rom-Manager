@@ -5,7 +5,7 @@ using RomManagerShared.Switch.Parsers;
 using RomManagerShared.Utils;
 namespace RomManagerShared.Switch;
 
-public class SwitchManager : ConsoleManager<SwitchConsole>, IMissingUpdateReporter
+public class SwitchManager : ConsoleManager<SwitchConsole>, IMissingUpdateReporter, IMissingDlcReporter
 {
     public List<List<Rom>> GroupedRomList { get; set; }
 
@@ -51,6 +51,17 @@ RomParserExecutor<SwitchConsole> romParserExecutor)
 
     public IReadOnlyList<MissingUpdate> FindMissingUpdates(IReadOnlyList<Rom> library)
         => SwitchUpdateChecker.FindMissing(library, SwitchUpdateChecker.LoadLatestVersions(SwitchConfiguration.GetVersionsPath()));
+
+    // ── IMissingDlcReporter ───────────────────────────────────────────────
+    public async Task<IReadOnlyList<(string Game, string Dlc, string TitleId)>> FindMissingDlcAsync(IReadOnlyList<Rom> library)
+    {
+        var titledb = TitleInfoProviderManager?.TitleInfoProviders.OfType<TitleInfoProviders.SwitchJsonTitleInfoProvider>().FirstOrDefault();
+        if (titledb is null) return [];
+        if (titledb.TitlesDatabase is null) await titledb.LoadTitleDatabaseAsync();
+        if (titledb.TitlesDatabase is not { Count: > 0 } db) return [];
+        return [.. SwitchDlcChecker.FindMissing(library, SwitchDlcChecker.Catalog(db))
+            .Select(m => (m.GameTitle, m.Name ?? "(unnamed DLC)", m.TitleId))];
+    }
 
     public void LoadGroupRomList()
     {
