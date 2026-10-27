@@ -93,8 +93,9 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
       hash matches against every game in the console's DATs).
 - [x] **[P1]** Export the library (CSV/JSON): Library → Export library…, and "Export…" on a console page
       for the filtered rows (`LibraryExporter`; CSV is formula-safe).
-- [ ] 1G1R ("one game, one ROM") selection from DATs with a region priority list, feeding the move/delete
-      previews.
+- [x] 1G1R ("one game, one ROM", `OneGameOneRom`): groups versions by DAT parent (parent/clone DATs) or clean
+      title, keeps the best by region priority (Settings), good dumps and newest revision; "1G1R…" on a console
+      page previews and moves the others (undoable).
 - [x] Per-console emulator launch: Settings → Emulators (path + arguments with {rom}/{dir}/{name}),
       "Launch in emulator" in the rom context menu.
 - [ ] Convert/compress through user-supplied tools (chdman, DolphinTool, nsz) as queued operations

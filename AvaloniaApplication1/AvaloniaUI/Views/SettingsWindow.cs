@@ -225,6 +225,12 @@ public sealed class SettingsWindow : Window
         // ── File Organiser ────────────────────────────────────────────────
         sp.Children.Add(MakeLabel("File Organiser", fontSize: 14, bold: true));
 
+        sp.Children.Add(MakeLabel("1G1R region priority"));
+        sp.Children.Add(MakeLabel("Regions in order of preference, e.g. USA, World, Europe, Japan", fontSize: 11, muted: true));
+        var priorityBox = MakeTextBox(settings.RegionPriority, w: 480);
+        priorityBox.TextChanged += (_, _) => { settings.RegionPriority = priorityBox.Text ?? ""; };
+        sp.Children.Add(priorityBox);
+
         sp.Children.Add(MakeLabel("Rename format string"));
         sp.Children.Add(MakeLabel(
             "Placeholders: {TitleName} {TitleID} {Region} {Version} {DLCCount} {Publisher} {Developer} {ReleaseDate} {Platform}",

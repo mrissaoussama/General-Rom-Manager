@@ -56,6 +56,9 @@ public class Settings
     /// <summary>Default rename format string, e.g. "{TitleName} [{Region}] [v{Version}]".</summary>
     public string RenameFormatString { get; set; } = "{TitleName} [{Region}] [v{Version}]";
 
+    /// <summary>1G1R region priority, e.g. "USA, World, Europe, Japan".</summary>
+    public string RegionPriority { get; set; } = "USA, World, Europe, Japan";
+
     // ── Plugins ───────────────────────────────────────────────────────────
     public List<PluginSetting> PluginSettings { get; set; } = [];
     /// <summary>Directory scanned for plugin DLLs.</summary>

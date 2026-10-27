@@ -18,6 +18,7 @@ public sealed partial class DatIndex
     private readonly Dictionary<string, DatEntry> _bySha1 = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<(string Crc, long Size), DatEntry> _byCrc = [];
     private readonly HashSet<string> _games = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> _parents = new(StringComparer.Ordinal);
 
     /// <summary>Every game (set) name in the loaded DATs.</summary>
     public IReadOnlyCollection<string> Games => _games;
@@ -51,7 +52,11 @@ public sealed partial class DatIndex
             if (reader.Name is "game" or "machine")
             {
                 game = reader.GetAttribute("name");
-                if (game is not null) _games.Add(game);
+                if (game is not null)
+                {
+                    _games.Add(game);
+                    if (reader.GetAttribute("cloneof") is { Length: > 0 } parent) _parents[game] = parent;
+                }
             }
             else if (reader.Name == "rom" && game is not null)
             {
@@ -64,6 +69,11 @@ public sealed partial class DatIndex
             }
         }
     }
+
+    /// <summary>The parent set of a clone (parent/clone DATs), or the game itself.</summary>
+    public string ParentOf(string game) => _parents.GetValueOrDefault(game, game);
+
+    public bool HasCloneInfo => _parents.Count > 0;
 
     public DatEntry? Find(string? sha1, string? crc, long size)
     {

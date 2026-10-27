@@ -76,6 +76,9 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
     public virtual Task<int?> CountMissingUpdatesAsync() => Task.FromResult<int?>(null);
 
     /// <summary>Have/miss against this console's DATs; null when it has no DAT files.</summary>
+    /// <summary>The console's loaded DATs (empty when none).</summary>
+    public virtual IReadOnlyList<RomManagerShared.Utils.Dat.DatIndex> GetDatIndexes() => [];
+
     public virtual Task<RomManagerShared.Utils.Dat.DatCoverage?> GetDatCoverageAsync() =>
         Task.FromResult<RomManagerShared.Utils.Dat.DatCoverage?>(null);
 
@@ -454,6 +457,37 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
             }
             catch (Exception ex) { StatusMessage = $"Delete failed: {ex.Message}"; }
         }
+    }
+
+    /// <summary>
+    /// 1G1R: keeps one version of each game (Settings → region priority) and moves the others to a folder,
+    /// after a preview. The move is an ordinary queued, undoable operation.
+    /// </summary>
+    [RelayCommand]
+    private async Task OneGameOneRom()
+    {
+        if (Operations is null) return;
+        var priority = RomManagerShared.Utils.Dat.OneGameOneRom.ParsePriority(Settings.Instance.RegionPriority);
+        var library = Roms.Select(r => r.RomSource).ToList();
+        var dats = GetDatIndexes();
+        var groups = await Task.Run(() => RomManagerShared.Utils.Dat.OneGameOneRom.Select(library, priority, dats));
+        if (groups.Count == 0)
+        {
+            StatusMessage = "1G1R: every game has a single version";
+            return;
+        }
+        var others = groups.SelectMany(g => g.Others).ToList();
+        var lines = groups.SelectMany(g => new[] { $"{g.Game}: keep {Path.GetFileName(g.Keep.Path)}" }
+            .Concat(g.Others.Select(o => $"    move {Path.GetFileName(o.Path)}")));
+        if (!await Dialogs.PreviewAsync("1G1R",
+                $"{groups.Count} game(s) have several versions. Region priority: {string.Join(", ", priority)} " +
+                $"(Settings → File Organiser). The {others.Count} other version(s) can be moved to a folder.",
+                lines, "Move others…"))
+            return;
+        if (await Dialogs.PickFolderAsync("Move the other versions to") is not { } target) return;
+        var moving = new HashSet<object>(others, ReferenceEqualityComparer.Instance);
+        var rows = Roms.Where(r => moving.Contains(r.RomSource)).ToList();
+        Track(Operations.EnqueueMove(others, target), rows);
     }
 
     /// <summary>Exports the rows that pass the current filters.</summary>

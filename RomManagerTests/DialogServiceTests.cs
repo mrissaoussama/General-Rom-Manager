@@ -131,4 +131,34 @@ public sealed class DialogServiceTests : IDisposable
         vm.ConfirmCommand.Execute(null);
         vm.Confirmed.Should().BeTrue();
     }
+
+    [Fact]
+    public async Task OneGameOneRom_MovesTheOtherVersionsAfterThePreview()
+    {
+        var vm = new TestConsoleViewModel();
+        Game Version(string name, Region region)
+        {
+            var file = Path.Combine(_dir, name + ".gb");
+            File.WriteAllText(file, name);
+            var rom = new Game { Path = file, TitleID = name };
+            rom.AddTitleName("Tetris");
+            rom.AddRegion(region);
+            return rom;
+        }
+        var usa = Version("Tetris (USA)", Region.USA);
+        var jp = Version("Tetris (Japan)", Region.Japan);
+        vm.Show(usa, jp);
+        var queue = new OperationQueue();
+        vm.Operations = new RomOperationService(queue, new ServiceCollection().BuildServiceProvider());
+        _dialogs.Answer = true;
+        _dialogs.Folder = Path.Combine(_dir, "others");
+
+        await vm.OneGameOneRomCommand.ExecuteAsync(null);
+
+        _dialogs.Asked.Should().Equal("1G1R");
+        var op = queue.Operations.Should().ContainSingle().Subject;
+        for (int i = 0; i < 200 && !op.IsFinished; i++) await Task.Delay(20, TestContext.Current.CancellationToken);
+        File.Exists(Path.Combine(_dir, "others", "Tetris (Japan).gb")).Should().BeTrue();
+        File.Exists(usa.Path).Should().BeTrue();
+    }
 }
