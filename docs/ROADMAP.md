@@ -44,7 +44,8 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
 - [ ] Split heavy consoles into module assemblies (ADR 0003 step 2: Switch/LibHac, Xbox/ISO2GOD).
 
 ### B.4 Scanning
-- [ ] Polling fallback for ROM folders on network shares, where `FileSystemWatcher` misses changes.
+- [x] Polling fallback for ROM folders on network drives/UNC paths (every 2 minutes: file count, total
+      size and newest write time of matching files).
 - [ ] Per-root scan settings: parallelism (1 for network/HDD), excluded sub-folders.
 - [x] Hash cache (`Cache/hashes.json`, keyed by path, size and mtime) so Redump matching never re-hashes
       an unchanged disc image when DATs change.

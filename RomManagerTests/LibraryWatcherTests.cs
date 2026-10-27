@@ -39,4 +39,17 @@ public sealed class LibraryWatcherTests : IDisposable
 
         (await WaitAsync(fired, 1000)).Should().BeFalse();
     }
+
+    [Fact]
+    public void Polling_IsOnlyOnForNetworkPathsUnlessForced()
+    {
+        using var local = new LibraryWatcher(_root, ["nsp"]);
+        using var forced = new LibraryWatcher(_root, ["nsp"], pollInterval: TimeSpan.FromMinutes(5));
+
+        local.IsPolling.Should().BeFalse();
+        forced.IsPolling.Should().BeTrue();
+        LibraryWatcher.IsNetworkPath(_root).Should().BeFalse();
+        if (OperatingSystem.IsWindows())
+            LibraryWatcher.IsNetworkPath(@"\\server\share\roms").Should().BeTrue();
+    }
 }
