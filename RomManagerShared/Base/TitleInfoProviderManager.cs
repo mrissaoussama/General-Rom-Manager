@@ -41,7 +41,7 @@ public class TitleInfoProviderManager<T> where T : GamingConsole
             }
             catch (Exception ex)
             {
-                FileUtils.Log($"[{titleInfo.GetType().Name}] {rom.TitleID}: {ex.Message}");
+                AppLog.Warn($"[{titleInfo.GetType().Name}] {rom.TitleID}: {ex.Message}");
             }
         }
         return rom;

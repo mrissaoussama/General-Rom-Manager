@@ -43,7 +43,7 @@ public class PSVitaFolderRomParser : IRomParser<PSVitaConsole>
             }
             catch (Exception ex)
             {
-                FileUtils.Log(ex.Message);
+                AppLog.Warn(ex.Message);
             }
         }
         return Task.FromResult(list);

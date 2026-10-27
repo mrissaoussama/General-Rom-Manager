@@ -45,7 +45,7 @@ public class PSPRomParser : IRomParser<PSPConsole>, IContentSniffer
         }
         catch (Exception ex)
         {
-            FileUtils.Log($"[PSP] {path}: {ex.Message}");
+            AppLog.Warn($"[PSP] {path}: {ex.Message}");
             return Task.FromResult<List<Rom>>([]);
         }
     }

@@ -39,7 +39,7 @@ public class OriginalXboxISORomParser : IRomParser<OriginalXboxConsole>
         }
         catch (Exception ex)
         {
-            FileUtils.Log(ex.Message);
+            AppLog.Warn(ex.Message);
         }
         return Task.FromResult(list);
 

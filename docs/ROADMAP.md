@@ -34,9 +34,9 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
       they can override `ProcessFile(path, ct)` when that changes.
 
 ### B.2 Static state [P1]
-- [ ] `FileUtils.Log` → `ILogger<T>` (keep `ParseDiagnostics` by capturing through a logger scope); 180 call
-      sites. Done first: log file writes are serialised (parallel parsing lost ~30% of lines) and fall back
-      to a per-user path when config.json has no log path (every write used to fail).
+- [x] `FileUtils.Log` → Microsoft.Extensions.Logging: `AppLog.Info/Warn/Error` (category = calling file, level
+      by meaning; 138 warnings, 40 info) through the host's `ILoggerFactory`; `LogFileProvider`/`LogSink` keep the
+      log file, log panel and `ParseDiagnostics`. Log writes are serialised and fall back to a per-user path.
 - [ ] One `IOptionsMonitor<AppOptions>` from config.json + settings.json, saved through `ISettingsStore`.
 - [x] `MainViewModel.RomPaths` (static) → `ILibraryRoots` (DI singleton, reads settings on each call, no reload
       step); several folders per console scanned as one library, one watcher each; an offline folder keeps

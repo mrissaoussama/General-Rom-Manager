@@ -109,7 +109,7 @@ public class FileDownloader
                 }
             }
         }
-        catch (Exception ex) { FileUtils.Log($"GetMissingResources (Switch region): {ex.Message}"); }
+        catch (Exception ex) { AppLog.Warn($"GetMissingResources (Switch region): {ex.Message}"); }
 
         // ── Switch versions.json ──────────────────────────────────────────
         try
@@ -124,7 +124,7 @@ public class FileDownloader
                     FilePaths    = [versionsPath],
                 });
         }
-        catch (Exception ex) { FileUtils.Log($"GetMissingResources (Switch versions): {ex.Message}"); }
+        catch (Exception ex) { AppLog.Warn($"GetMissingResources (Switch versions): {ex.Message}"); }
 
         // ── Switch global titledb ─────────────────────────────────────────
         try
@@ -140,7 +140,7 @@ public class FileDownloader
                     FilePaths    = [globalPath],
                 });
         }
-        catch (Exception ex) { FileUtils.Log($"GetMissingResources (Switch global): {ex.Message}"); }
+        catch (Exception ex) { AppLog.Warn($"GetMissingResources (Switch global): {ex.Message}"); }
 
         // ── WiiU title-DB ─────────────────────────────────────────────────
         try
@@ -155,7 +155,7 @@ public class FileDownloader
                     FilePaths    = [wiiuPath],
                 });
         }
-        catch (Exception ex) { FileUtils.Log($"GetMissingResources (WiiU): {ex.Message}"); }
+        catch (Exception ex) { AppLog.Warn($"GetMissingResources (WiiU): {ex.Message}"); }
 
         // ── 3DS region files ──────────────────────────────────────────────
         try
@@ -180,7 +180,7 @@ public class FileDownloader
                 }
             }
         }
-        catch (Exception ex) { FileUtils.Log($"GetMissingResources (3DS): {ex.Message}"); }
+        catch (Exception ex) { AppLog.Warn($"GetMissingResources (3DS): {ex.Message}"); }
 
         return missing.ToArray();
     }
@@ -208,11 +208,11 @@ public class FileDownloader
                 ZipFile.ExtractToDirectory(localFileName, extractPath, overwriteFiles: true);
             }
 
-            FileUtils.Log($"Downloaded: {localFileName}");
+            AppLog.Info($"Downloaded: {localFileName}");
         }
         catch (Exception ex)
         {
-            FileUtils.Log($"Error downloading {fileUrl}: {ex.Message}");
+            AppLog.Warn($"Error downloading {fileUrl}: {ex.Message}");
         }
     }
     [ResourceDownload("Switch region titledb",  nameof(SwitchConfiguration.GetTitleDBUrl) ,  nameof(SwitchConfiguration.GetTitleDBRegionFiles) , typeof(SwitchConfiguration) )]
@@ -227,14 +227,14 @@ public class FileDownloader
                 var path = Path.Combine(SwitchConfiguration.GetTitleDBPath(), regionFile);
                 if (File.Exists(path) && !overrideExistingFiles)
                 {
-                    FileUtils.Log("skipping " + path);
+                    AppLog.Warn("skipping " + path);
                     continue;
                 }
                 var regionUrl = SwitchConfiguration.GetTitleDBUrl() + regionFile;
 
                 if (!string.IsNullOrEmpty(regionUrl))
                 {
-                    FileUtils.Log("downloading " + regionUrl);
+                    AppLog.Info("downloading " + regionUrl);
                     await FileDownloader.StartFileDownload(regionUrl, path);
 
                 }
@@ -242,7 +242,7 @@ public class FileDownloader
         }
         else
         {
-            FileUtils.Log("No Switch title DB region files specified in the configuration.");
+            AppLog.Info("No Switch title DB region files specified in the configuration.");
         }
     }
     public static async Task DownloadThreeDSRegionFiles(bool overrideFiles = false)
@@ -251,13 +251,13 @@ public class FileDownloader
         var RegionFiles = ThreeDSConfiguration.GetTitleDBRegionFilenames();
         if (RegionFiles == null)
         {
-            FileUtils.Log("Region Files missing in config");
+            AppLog.Warn("Region Files missing in config");
             return;
         }
         string? savePath = ThreeDSConfiguration.GetTitleDBPath();
         if (savePath == null)
         {
-            FileUtils.Log("save path missing in config"); ;
+            AppLog.Warn("save path missing in config"); ;
             return;
         }
         foreach (var regionFile in RegionFiles)
@@ -309,7 +309,7 @@ public class FileDownloader
         }
         catch (Exception ex)
         {
-           FileUtils.Log($"Error downloading HTML content: {ex.Message}");
+           AppLog.Warn($"Error downloading HTML content: {ex.Message}");
         }
         return await Task.FromResult(string.Empty);
     }

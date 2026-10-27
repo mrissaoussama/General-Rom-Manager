@@ -78,13 +78,13 @@ namespace RomManagerShared.Organizers
             {
                 if (rom == null)
                 {
-                    FileUtils.Log("Invalid ROM found. Skipping.");
+                    AppLog.Warn("Invalid ROM found. Skipping.");
                     continue;
                 }
 
                 if (string.IsNullOrEmpty(rom.Path))
                 {
-                    FileUtils.Log("Invalid ROM path. Skipping.");
+                    AppLog.Warn("Invalid ROM path. Skipping.");
                     continue;
                 }
 
@@ -94,7 +94,7 @@ namespace RomManagerShared.Organizers
                 // Skip if the ROM has already been processed or is already in the destination folder
                 if (_processedPaths.Contains(rom.Path) || destinationPath.Equals(rom.Path, StringComparison.OrdinalIgnoreCase))
                 {
-                    FileUtils.Log($"Skipped '{rom.Path}'.");
+                    AppLog.Warn($"Skipped '{rom.Path}'.");
                     continue;
                 }
 

@@ -20,7 +20,7 @@ public class MasterSystemRomParser : IRomParser<MasterSystemConsole>
         }
         catch (Exception ex)
         {
-            FileUtils.Log($"[MasterSystem] {path}: {ex.Message}");
+            AppLog.Warn($"[MasterSystem] {path}: {ex.Message}");
             return Task.FromResult<List<Rom>>([]);
         }
     }

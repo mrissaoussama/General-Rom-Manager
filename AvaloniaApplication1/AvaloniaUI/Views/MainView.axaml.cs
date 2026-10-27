@@ -36,7 +36,7 @@ public partial class MainView : UserControl
             foreach (var folder in folders)
                 await vm.AddLibraryFolderAsync(folder);
         }
-        catch (Exception ex) { FileUtils.Log($"[Drop] {ex}"); }
+        catch (Exception ex) { AppLog.Warn($"[Drop] {ex}"); }
     }
 
     protected override void OnDataContextChanged(EventArgs e)

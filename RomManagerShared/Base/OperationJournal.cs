@@ -55,7 +55,7 @@ public sealed class OperationJournal(string path, int maxEntries = 50)
         }
         catch (Exception ex)
         {
-            FileUtils.Log($"[Journal] {path}: {ex.Message}");
+            AppLog.Warn($"[Journal] {path}: {ex.Message}");
             _entries = [];
         }
         return _entries;
@@ -70,6 +70,6 @@ public sealed class OperationJournal(string path, int maxEntries = 50)
             File.WriteAllText(tmp, JsonSerializer.Serialize(_entries));
             File.Move(tmp, path, overwrite: true);
         }
-        catch (Exception ex) { FileUtils.Log($"[Journal] save failed: {ex.Message}"); }
+        catch (Exception ex) { AppLog.Warn($"[Journal] save failed: {ex.Message}"); }
     }
 }

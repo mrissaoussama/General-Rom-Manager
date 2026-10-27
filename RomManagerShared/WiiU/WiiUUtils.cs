@@ -1,4 +1,7 @@
-﻿using RomManagerShared.Base;using RomManagerShared.Utils;using System.Xml.Linq;namespace RomManagerShared.WiiU;
+﻿using RomManagerShared.Base;
+using RomManagerShared.Utils;
+using System.Xml.Linq;
+namespace RomManagerShared.WiiU;
 
 public class WiiUUtils
 {
@@ -18,7 +21,7 @@ public class WiiUUtils
         }
         else
         {
-            FileUtils.Log($"Unknown title ID format: {titleId}");
+            AppLog.Warn($"Unknown title ID format: {titleId}");
             return null;
         }
     }

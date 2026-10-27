@@ -40,7 +40,7 @@ public class PS3FolderRomParser : IRomParser<PS3Console>
             }
             catch (Exception ex)
             {
-                FileUtils.Log(ex.Message);
+                AppLog.Warn(ex.Message);
 
             }
         }

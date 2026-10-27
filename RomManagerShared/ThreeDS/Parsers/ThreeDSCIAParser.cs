@@ -20,7 +20,7 @@ public class ThreeDSCIAParser : IRomParser<ThreeDSConsole>
         }
         catch (Exception ex)
         {
-            FileUtils.Log($"error reading 3DS file {path}: {ex.Message}. make sure the file is valid and not encrypted");
+            AppLog.Warn($"error reading 3DS file {path}: {ex.Message}. make sure the file is valid and not encrypted");
             return [];
         }
         var titleid = rom.GetTitleID().ToString("X16");

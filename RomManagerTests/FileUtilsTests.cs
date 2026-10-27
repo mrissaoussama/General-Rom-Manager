@@ -29,7 +29,7 @@ public class FileUtilsTests
     {
         var marker = Guid.NewGuid().ToString("N");
         var log = Path.Combine(Path.GetTempPath(), marker + ".log");
-        FileUtils.LogFilePathOverride = log;
+        RomManagerShared.Logging.LogSink.FilePathOverride = log;
         try
         {
             Parallel.For(0, 200, i => FileUtils.Log($"{marker} {i}"));
@@ -37,7 +37,7 @@ public class FileUtilsTests
         }
         finally
         {
-            FileUtils.LogFilePathOverride = null;
+            RomManagerShared.Logging.LogSink.FilePathOverride = null;
             File.Delete(log);
         }
     }

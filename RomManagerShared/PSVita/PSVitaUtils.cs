@@ -29,13 +29,13 @@ public static class PSVitaUtils
                 }
                 else
                 {
-                    FileUtils.Log($"{vpkSfoFilePath} not found in the vpk archive.");
+                    AppLog.Warn($"{vpkSfoFilePath} not found in the vpk archive.");
                     return false;
                 }
             }
             catch (Exception ex)
             {
-                FileUtils.Log(ex.Message);
+                AppLog.Warn(ex.Message);
                 return false;
             }
         }

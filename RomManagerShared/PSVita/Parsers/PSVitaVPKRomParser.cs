@@ -44,12 +44,12 @@ public class PSVitaVPKRomParser : IRomParser<PSVitaConsole>
                 }
                 else
                 {
-                    FileUtils.Log($"{PSVitaUtils.vpkSfoFilePath} not found in the vpk archive.");
+                    AppLog.Warn($"{PSVitaUtils.vpkSfoFilePath} not found in the vpk archive.");
                 }
             }
             catch (Exception ex)
             {
-                FileUtils.Log(ex.Message);
+                AppLog.Warn(ex.Message);
 
             }
         }

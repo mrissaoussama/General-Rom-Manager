@@ -26,3 +26,4 @@ global using RomManagerShared.Base.Library;
 global using RomManagerShared.Configuration;
 global using RomManagerShared.Interfaces;
 global using RomManagerShared.Utils;
+global using RomManagerShared.Logging;

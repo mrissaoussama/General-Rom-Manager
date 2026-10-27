@@ -88,7 +88,7 @@ public sealed partial class RomDetailsViewModel : ViewModelBase, IDisposable
                 Images.Add(bitmap);
                 OnPropertyChanged(nameof(HasImages));
             }
-            catch (Exception ex) { FileUtils.Log($"[Image] {source}: {ex.Message}"); }
+            catch (Exception ex) { AppLog.Warn($"[Image] {source}: {ex.Message}"); }
         }
     }
 

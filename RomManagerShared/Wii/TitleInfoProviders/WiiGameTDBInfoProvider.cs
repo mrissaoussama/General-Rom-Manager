@@ -3,7 +3,8 @@ using RomManagerShared.Interfaces;
 using RomManagerShared.Utils;
 using RomManagerShared.Wii.Configuration;
 using System.Globalization;
-using System.Xml;namespace RomManagerShared.Wii.TitleInfoProviders;
+using System.Xml;
+namespace RomManagerShared.Wii.TitleInfoProviders;
 
 public class WiiGameTDBXmlRomDTO
 {
@@ -21,8 +22,10 @@ public class WiiGameTDBXmlRomDTO
     public string? Synopsis { get; internal set; }
 }
 public class WiiGameTDBInfoProvider : ITitleInfoProvider<WiiConsole>
-{    public string Source { get; set; } = "";
-    public List<WiiGameTDBXmlRomDTO> TitleList { get; private set; } = [];    public async Task LoadTitleDatabaseAsync()
+{
+    public string Source { get; set; } = "";
+    public List<WiiGameTDBXmlRomDTO> TitleList { get; private set; } = [];
+    public async Task LoadTitleDatabaseAsync()
     {
         Source = WiiConfiguration.GetGameTDBPath();
         try
@@ -30,7 +33,8 @@ public class WiiGameTDBInfoProvider : ITitleInfoProvider<WiiConsole>
             if (!File.Exists(Source))
             {
                 var gameTDBPath = WiiConfiguration.GetGameTDBPath();
-                var gameTDBUrl = WiiConfiguration.GetGameTDBUrl();                await FileDownloader.StartFileDownload(gameTDBUrl, gameTDBPath);
+                var gameTDBUrl = WiiConfiguration.GetGameTDBUrl();
+                await FileDownloader.StartFileDownload(gameTDBUrl, gameTDBPath);
             }
             TitleList = [];
             XmlDocument xmlDoc = new();
@@ -43,12 +47,14 @@ public class WiiGameTDBInfoProvider : ITitleInfoProvider<WiiConsole>
                     var romDto = DeserializeGameElement(gameNode);
                     TitleList.Add(romDto);
                 }
-            }        }
+            }
+        }
         catch (Exception ex)
         {
-            FileUtils.Log($"Error loading Wii XML title database: {ex.Message}");
+            AppLog.Warn($"Error loading Wii XML title database: {ex.Message}");
         }
-    }    public async Task<Rom> GetTitleInfo(Rom rom)
+    }
+    public async Task<Rom> GetTitleInfo(Rom rom)
     {
         try
         {
@@ -56,7 +62,8 @@ public class WiiGameTDBInfoProvider : ITitleInfoProvider<WiiConsole>
             {
                 foreach (var romDto in TitleList)
                 {
-                    var titleID = romDto.TitleID;                    if (titleID == rom.TitleID)
+                    var titleID = romDto.TitleID;
+                    if (titleID == rom.TitleID)
                     {
                         rom = MapToIRom(romDto, rom);
                         return rom;
@@ -66,11 +73,14 @@ public class WiiGameTDBInfoProvider : ITitleInfoProvider<WiiConsole>
         }
         catch (Exception ex)
         {
-            FileUtils.Log($"Error getting title info from Wii XML file: {ex.Message}");
-        }        return rom;
-    }    private static WiiGameTDBXmlRomDTO DeserializeGameElement(XmlNode gameNode)
+            AppLog.Warn($"Error getting title info from Wii XML file: {ex.Message}");
+        }
+        return rom;
+    }
+    private static WiiGameTDBXmlRomDTO DeserializeGameElement(XmlNode gameNode)
     {
-        var romDto = new WiiGameTDBXmlRomDTO();        foreach (XmlNode propertyNode in gameNode.ChildNodes)
+        var romDto = new WiiGameTDBXmlRomDTO();
+        foreach (XmlNode propertyNode in gameNode.ChildNodes)
         {
             switch (propertyNode.Name)
             {
@@ -86,12 +96,14 @@ public class WiiGameTDBInfoProvider : ITitleInfoProvider<WiiConsole>
                 case "locale":
                     XmlNode? enLocaleNode = gameNode.SelectSingleNode("locale[@lang='EN']");
                     //look for english title, if it doesn't exist use the first locale
-                    enLocaleNode ??= gameNode.SelectSingleNode("locale");                    if (enLocaleNode != null)
+                    enLocaleNode ??= gameNode.SelectSingleNode("locale");
+                    if (enLocaleNode != null)
                     {
                         romDto.Title = enLocaleNode.SelectSingleNode("title")?.InnerText;
                         romDto.Synopsis = enLocaleNode.SelectSingleNode("synopsis")?.InnerText;
                     }
-                    break;                case "developer":
+                    break;
+                case "developer":
                     romDto.Developer = propertyNode.InnerText;
                     break;
                 case "publisher":
@@ -100,17 +112,23 @@ public class WiiGameTDBInfoProvider : ITitleInfoProvider<WiiConsole>
                 case "date":
                     var yearAttr = propertyNode.Attributes?["year"];
                     var monthAttr = propertyNode.Attributes?["month"];
-                    var dayAttr = propertyNode.Attributes?["day"];                    if (yearAttr != null && monthAttr != null && dayAttr != null &&
+                    var dayAttr = propertyNode.Attributes?["day"];
+                    if (yearAttr != null && monthAttr != null && dayAttr != null &&
                         int.TryParse(yearAttr.Value, out var year) &&
                         int.TryParse(monthAttr.Value, out var month) &&
                         int.TryParse(dayAttr.Value, out var day))
                     {
                         if (string.IsNullOrEmpty(yearAttr.Value))
-                            year = 0000;                        if (string.IsNullOrEmpty(monthAttr.Value))
-                            month = 00;                        if (string.IsNullOrEmpty(dayAttr.Value))
-                            day = 00;                        int releaseDate = (year * 10000) + (month * 100) + day;                        romDto.ReleaseDate = releaseDate;
+                            year = 0000;
+                        if (string.IsNullOrEmpty(monthAttr.Value))
+                            month = 00;
+                        if (string.IsNullOrEmpty(dayAttr.Value))
+                            day = 00;
+                        int releaseDate = (year * 10000) + (month * 100) + day;
+                        romDto.ReleaseDate = releaseDate;
                     }
-                    break;                case "wi-fi":
+                    break;
+                case "wi-fi":
                     break;
                 case "input":
                     var playersAttribute = propertyNode.Attributes?["players"];
@@ -132,24 +150,29 @@ public class WiiGameTDBInfoProvider : ITitleInfoProvider<WiiConsole>
                     }
                     break;
             }
-        }        return romDto;
-    }    private static Rom MapToIRom(WiiGameTDBXmlRomDTO romDto, Rom rom)
+        }
+        return romDto;
+    }
+    private static Rom MapToIRom(WiiGameTDBXmlRomDTO romDto, Rom rom)
     {
         // Set properties from DTO to IRom
         if (romDto.Title is not null) rom.AddTitleName(romDto.Title);
         rom.TitleID = romDto.TitleID;
         rom.Version = romDto.Version?.ToString();
-        rom.AddRegion(Enum.Parse<Region>(romDto.Region));        rom.Publisher = romDto.Publisher;
+        rom.AddRegion(Enum.Parse<Region>(romDto.Region));
+        rom.Publisher = romDto.Publisher;
         rom.AddLanguage(Enum.Parse<Language>(romDto.Languages));
         rom.Developer = romDto.Developer;
         rom.Size = romDto.Size ?? (rom.Path is null ? null : FileUtils.GetFileSize(rom.Path));
         if (romDto.Synopsis is not null) rom.AddDescription(romDto.Synopsis);
-        rom.NumberOfPlayers = romDto.Players;        if (romDto.ReleaseDate != null)
+        rom.NumberOfPlayers = romDto.Players;
+        if (romDto.ReleaseDate != null)
         {
             int releasedate = (int)romDto.ReleaseDate;
             string datestring = releasedate.ToString();
             var dateonly = DateOnly.ParseExact(datestring, "yyyyMMdd", CultureInfo.InvariantCulture);
             rom.ReleaseDate = dateonly;
-        }        return rom;
+        }
+        return rom;
     }
 }

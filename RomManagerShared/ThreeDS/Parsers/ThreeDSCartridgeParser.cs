@@ -19,7 +19,7 @@ public class ThreeDSCartridgeParser : IRomParser<ThreeDSConsole>
             header = ThreeDSCartridgeHeader.TryRead(stream);
         if (header is null)
         {
-            FileUtils.Log($"[3DS] {Path.GetFileName(path)}: no NCSD/NCCH header");
+            AppLog.Info($"[3DS] {Path.GetFileName(path)}: no NCSD/NCCH header");
             return [];
         }
 
@@ -39,7 +39,7 @@ public class ThreeDSCartridgeParser : IRomParser<ThreeDSConsole>
         }
         catch (Exception ex)
         {
-            FileUtils.Log($"[3DS] {Path.GetFileName(path)}: SMDH not readable: {ex.Message}");
+            AppLog.Warn($"[3DS] {Path.GetFileName(path)}: SMDH not readable: {ex.Message}");
         }
         return [game];
     }

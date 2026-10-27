@@ -51,7 +51,7 @@ public class Xbox360XEXRomParser : IRomParser<Xbox360Console>, IHasRequirements
         }
         catch (Exception ex)
         {
-            FileUtils.Log(ex.Message);
+            AppLog.Warn(ex.Message);
         }
         return Task.FromResult(list);
 

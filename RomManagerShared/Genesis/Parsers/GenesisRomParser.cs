@@ -54,7 +54,7 @@ public class GenesisRomParser : IRomParser<GenesisConsole>
         }
         catch (Exception ex)
         {
-            FileUtils.Log($"[Genesis] {path}: {ex.Message}");
+            AppLog.Warn($"[Genesis] {path}: {ex.Message}");
             return Task.FromResult<List<Rom>>([]);
         }
     }

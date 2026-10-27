@@ -109,7 +109,7 @@ public class SwitchJsonTitleInfoProvider : TitleInfoProvider<SwitchConsole>, ICa
             try { Directory.CreateDirectory(Source); }
             catch (Exception ex)
             {
-                FileUtils.Log($"[SwitchTitleDB] Could not create directory '{Source}': {ex.Message}");
+                AppLog.Warn($"[SwitchTitleDB] Could not create directory '{Source}': {ex.Message}");
                 return;
             }
         }
@@ -126,18 +126,18 @@ public class SwitchJsonTitleInfoProvider : TitleInfoProvider<SwitchConsole>, ICa
                         .GroupBy(pair => pair.Key)
                         .ToDictionary(group => group.Key, group => group.First().Value);
             }
-            catch (Exception ex) { FileUtils.Log($"[SwitchTitleDB] Error loading global titledb: {ex.Message}"); }
+            catch (Exception ex) { AppLog.Warn($"[SwitchTitleDB] Error loading global titledb: {ex.Message}"); }
         }
         else
         {
-            FileUtils.Log($"[SwitchTitleDB] Global titledb not found at '{globalJsonPath}'. Run 'Check for Updates' to download.");
+            AppLog.Warn($"[SwitchTitleDB] Global titledb not found at '{globalJsonPath}'. Run 'Check for Updates' to download.");
         }
 
         foreach (var regionFile in SwitchConfiguration.GetTitleDBRegionFiles() ?? [])
         {
             if (string.IsNullOrEmpty(regionFile)) continue;
             var regionPath = Path.Combine(Source, regionFile);
-            if (!File.Exists(regionPath)) { FileUtils.Log($"[SwitchTitleDB] Region file not found: {regionPath}"); continue; }
+            if (!File.Exists(regionPath)) { AppLog.Warn($"[SwitchTitleDB] Region file not found: {regionPath}"); continue; }
             try
             {
                 var jsonContent = await File.ReadAllTextAsync(regionPath);
@@ -148,7 +148,7 @@ public class SwitchJsonTitleInfoProvider : TitleInfoProvider<SwitchConsole>, ICa
                         .GroupBy(pair => pair.Key)
                         .ToDictionary(group => group.Key, group => group.First().Value);
             }
-            catch (Exception ex) { FileUtils.Log($"[SwitchTitleDB] Error loading region file '{regionFile}': {ex.Message}"); }
+            catch (Exception ex) { AppLog.Warn($"[SwitchTitleDB] Error loading region file '{regionFile}': {ex.Message}"); }
         }
 
 
@@ -230,10 +230,10 @@ public class SwitchJsonTitleInfoProvider : TitleInfoProvider<SwitchConsole>, ICa
         }
         catch (Exception ex)
         {
-            FileUtils.Log($"Error getting title info from JSON file: {ex.Message}");
+            AppLog.Warn($"Error getting title info from JSON file: {ex.Message}");
         }
 
-        FileUtils.Log($"Title ID '{rom.TitleID}' not found in db");
+        AppLog.Warn($"Title ID '{rom.TitleID}' not found in db");
 
         if (!existsInDatabase)
         {

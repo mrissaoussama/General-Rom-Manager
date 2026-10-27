@@ -143,7 +143,7 @@ public sealed class OperationQueue
         {
             op.ErrorMessage = $"Undo failed: {ex.Message}";
             op.State = OperationState.Failed;
-            FileUtils.Log($"[OperationQueue] Undo failed for '{op.Name}': {ex.Message}");
+            AppLog.Warn($"[OperationQueue] Undo failed for '{op.Name}': {ex.Message}");
         }
         finally
         {
@@ -221,7 +221,7 @@ public sealed class OperationQueue
         {
             op.State = OperationState.Failed;
             op.ErrorMessage = ex.Message;
-            FileUtils.Log($"[OperationQueue] '{op.Name}' failed: {ex.Message}");
+            AppLog.Warn($"[OperationQueue] '{op.Name}' failed: {ex.Message}");
         }
         finally
         {

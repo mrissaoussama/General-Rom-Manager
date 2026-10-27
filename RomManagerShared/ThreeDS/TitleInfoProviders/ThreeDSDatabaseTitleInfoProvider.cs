@@ -9,10 +9,13 @@ namespace RomManagerShared.ThreeDS.TitleInfoProviders;
 public class ThreeDSDatabaseTitleInfoProvider : TitleInfoProvider<ThreeDSConsole>
 {
     public GenericRepository<ThreeDSJsonDTO> TitlesDatabase { get; set; }
-    public ThreeDSDatabaseTitleInfoProvider(GenericRepository<ThreeDSJsonDTO> repo)
+
+    public ThreeDSDatabaseTitleInfoProvider(GenericRepository<ThreeDSJsonDTO> repo)
     {
         TitlesDatabase = repo;
-    }    public override async Task<Rom> GetTitleInfo(Rom rom)
+    }
+
+    public override async Task<Rom> GetTitleInfo(Rom rom)
     {
         if (rom.TitleID is null) return rom;
         var titleInfoDto = await TitlesDatabase.GetByPropertyAsync(nameof(ThreeDSJsonDTO.TitleID), rom.TitleID);
@@ -27,9 +30,10 @@ public class ThreeDSDatabaseTitleInfoProvider : TitleInfoProvider<ThreeDSConsole
         }
         else
         {
-            FileUtils.Log("rom not found in db");
+            AppLog.Warn("rom not found in db");
         }
-        return rom;
+        return rom;
+
     }
 
    

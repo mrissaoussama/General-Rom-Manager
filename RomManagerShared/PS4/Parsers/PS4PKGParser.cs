@@ -20,7 +20,7 @@ public class PS4PKGParser : IRomParser<PS4Console>, IContentSniffer
         }
         if (pkg.Sfo is not { } sfo)
         {
-            FileUtils.Log($"[PS4] {Path.GetFileName(path)}: no readable param.sfo");
+            AppLog.Info($"[PS4] {Path.GetFileName(path)}: no readable param.sfo");
             return Task.FromResult<List<Rom>>([]);
         }
 

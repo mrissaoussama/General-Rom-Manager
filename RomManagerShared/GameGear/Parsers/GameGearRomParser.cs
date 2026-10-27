@@ -21,7 +21,7 @@ public class GameGearRomParser : IRomParser<GameGearConsole>
         }
         catch (Exception ex)
         {
-            FileUtils.Log($"[GameGear] {path}: {ex.Message}");
+            AppLog.Warn($"[GameGear] {path}: {ex.Message}");
             return Task.FromResult<List<Rom>>([]);
         }
     }

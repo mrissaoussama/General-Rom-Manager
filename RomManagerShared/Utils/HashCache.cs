@@ -57,7 +57,7 @@ public sealed class HashCache(string path)
         }
         catch (Exception ex)
         {
-            FileUtils.Log($"[HashCache] {path}: {ex.Message}");
+            AppLog.Warn($"[HashCache] {path}: {ex.Message}");
             _entries = [];
         }
         _entries = new Dictionary<string, Entry>(_entries, StringComparer.OrdinalIgnoreCase);
@@ -73,6 +73,6 @@ public sealed class HashCache(string path)
             File.WriteAllText(tmp, JsonSerializer.Serialize(_entries));
             File.Move(tmp, path, overwrite: true);
         }
-        catch (Exception ex) { FileUtils.Log($"[HashCache] save failed: {ex.Message}"); }
+        catch (Exception ex) { AppLog.Warn($"[HashCache] save failed: {ex.Message}"); }
     }
 }

@@ -19,7 +19,8 @@ public class ThreeDSJsonTitleInfoProvider :TitleInfoProvider<ThreeDSConsole>,ICa
         TitlesDatabaseRepository = repo;
         var regionspath = ThreeDSConfiguration.GetTitleDBPath();
         Source = regionspath;
-    }    public override async Task LoadTitleDatabaseAsync()
+    }
+    public override async Task LoadTitleDatabaseAsync()
     {
         if (TitlesJson is not null)
         {
@@ -33,17 +34,20 @@ public class ThreeDSJsonTitleInfoProvider :TitleInfoProvider<ThreeDSConsole>,ICa
         var regionfiles = ThreeDSConfiguration.GetTitleDBRegionFilenames();
         if (regionfiles is null || regionfiles.Length == 0)
         {
-            FileUtils.Log("3ds Region files unavailable");
+            AppLog.Warn("3ds Region files unavailable");
             return;
         }
         if (!File.Exists(Source))
             await FileDownloader.DownloadThreeDSRegionFiles();
-        TitlesJson = [];        foreach (var regionFile in regionfiles)
+        TitlesJson = [];
+        foreach (var regionFile in regionfiles)
         {
-            string regionFilePath = Path.Combine(Source, regionFile);            try
+            string regionFilePath = Path.Combine(Source, regionFile);
+            try
             {
                 var jsonContent = await File.ReadAllTextAsync(regionFilePath);
-                var regionTitles = JsonSerializer.Deserialize<List<JsonElement>>(jsonContent);                foreach (var title in regionTitles ?? [])
+                var regionTitles = JsonSerializer.Deserialize<List<JsonElement>>(jsonContent);
+                foreach (var title in regionTitles ?? [])
                 {
                     // Assuming "TitleID" is unique, you can use it as the key
                     var titleId = title.GetProperty("TitleID").GetString();
@@ -53,10 +57,11 @@ public class ThreeDSJsonTitleInfoProvider :TitleInfoProvider<ThreeDSConsole>,ICa
             catch (JsonException ex)
             {
                 // Log the error or handle it as needed
-                FileUtils.Log($"Error deserializing JSON from file '{regionFilePath}': {ex.Message}");
+                AppLog.Warn($"Error deserializing JSON from file '{regionFilePath}': {ex.Message}");
             }
         }
-    }    public async Task SaveToDatabase()
+    }
+    public async Task SaveToDatabase()
     {
         if (TitlesJson is null||TitlesJson.Count == 0)
              return;
@@ -69,11 +74,13 @@ public class ThreeDSJsonTitleInfoProvider :TitleInfoProvider<ThreeDSConsole>,ICa
         await TitlesDatabaseRepository.AddOrUpdateByPropertyRangeAsync(list, typeof(ThreeDSJsonDTO), nameof(ThreeDSJsonDTO.TitleID));
 
 
-    }    public override async Task<Rom> GetTitleInfo(Rom rom)
+    }
+    public override async Task<Rom> GetTitleInfo(Rom rom)
     {
         if (rom.TitleID is not null && TitlesJson is not null && TitlesJson.TryGetValue(rom.TitleID, out var titleInfoElement))
         {
-            ThreeDSJsonDTO titleInfoDto = JsonElementToDto(titleInfoElement);            if (titleInfoDto.Name is not null) rom.AddTitleName(titleInfoDto.Name);
+            ThreeDSJsonDTO titleInfoDto = JsonElementToDto(titleInfoElement);
+            if (titleInfoDto.Name is not null) rom.AddTitleName(titleInfoDto.Name);
             if (rom.Version == null || rom.Version == "0" || int.Parse(rom.Version) < 0)
                 rom.Version = titleInfoDto.Version;
             rom.Publisher = titleInfoDto.Publisher;
@@ -81,7 +88,8 @@ public class ThreeDSJsonTitleInfoProvider :TitleInfoProvider<ThreeDSConsole>,ICa
             rom.Size = titleInfoDto.Size;
         }
 
-        return rom;    }
+        return rom;
+    }
 
     private static ThreeDSJsonDTO JsonElementToDto(JsonElement titleInfoElement)
     {
@@ -106,7 +114,8 @@ public class ThreeDSJsonTitleInfoProvider :TitleInfoProvider<ThreeDSConsole>,ICa
             return name ?? "";
         }
         return "";
-    }   
+    }
+   
 }
 public class ThreeDSJsonDTO:IExternalRomFormat<ThreeDSConsole>
 {

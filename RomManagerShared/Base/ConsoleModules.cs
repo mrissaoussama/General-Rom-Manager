@@ -50,7 +50,7 @@ public static class ConsoleModules
                     if (SafeTypes(asm).Any(t => typeof(GamingConsole).IsAssignableFrom(t)))
                         list.Add(asm);
                 }
-                catch (Exception ex) { FileUtils.Log($"[Modules] {Path.GetFileName(dll)}: {ex.Message}"); }
+                catch (Exception ex) { AppLog.Warn($"[Modules] {Path.GetFileName(dll)}: {ex.Message}"); }
             }
         }
         _assemblies = list;

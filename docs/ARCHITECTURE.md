@@ -62,7 +62,7 @@ DTOs and hashes have their own tables. `MigrationTests` and CI check for pending
 
 | Concern | Implementation | Notes |
 |---|---|---|
-| Logging | static `FileUtils.Log` + `FileUtils.Logger` bridged to MEL | `ParseDiagnostics` captures per-file messages during a scan |
+| Logging | `AppLog` over `ILoggerFactory` (the host's in the app); `LogFileProvider` → `LogSink` (file, log panel) | `ParseDiagnostics` captures per-file messages during a scan; `FileUtils.Log` stays as a shim for plugins |
 | Config | static `RomManagerConfiguration` (config.json) + `Settings.Instance` (settings.json) | Two sources, static access (ROADMAP 3.3) |
 | Operations | `OperationQueue` / `QueuedOperation` with cancel + undo, `RomOperationService` | Rename/move have dry-run previews |
 | Requirements | `IHasRequirements` → `ConsoleRequirement` (keys, dirs, DB files) | Surfaced in UI/onboarding |

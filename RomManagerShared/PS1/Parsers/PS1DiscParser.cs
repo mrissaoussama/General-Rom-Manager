@@ -33,7 +33,7 @@ public class PS1DiscParser : IRomParser<PS1Console>, IContentSniffer
         }
         catch (Exception ex)
         {
-            FileUtils.Log($"[PS1] {path}: {ex.Message}");
+            AppLog.Warn($"[PS1] {path}: {ex.Message}");
             return Task.FromResult<List<Rom>>([]);
         }
     }

@@ -1,36 +1,13 @@
 ﻿using Microsoft.Extensions.Logging;
 using RomManagerShared.Configuration;
+using RomManagerShared.Logging;
 using System.Diagnostics;
 
 namespace RomManagerShared.Utils;
 
 public class FileUtils
 {
-    /// <summary>
-    /// Optional structured logger. When set (wired via DI in App.axaml.cs),
-    /// log messages are forwarded to the ILogger sink in addition to the flat file.
-    /// </summary>
-    public static ILogger? Logger { get; set; }
-
     public static List<string> ExcludedFolders;
-
-    /// <summary>Tests point the log somewhere private.</summary>
-    internal static string? LogFilePathOverride { get; set; }
-
-    // config.json's ErrorLogs, or a per-user fallback when the config is missing (it used to be "", so every write failed).
-    private static string GetLogFilePath()
-    {
-        if (LogFilePathOverride is { } path) return path;
-        try
-        {
-            var configured = RomManagerConfiguration.GetErrorLogPath();
-            if (!string.IsNullOrWhiteSpace(configured)) return configured;
-        }
-        catch { /* fall through */ }
-        return Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "GeneralRomManager", "Logs", "errors.log");
-    }
 
     static FileUtils()
     {
@@ -111,57 +88,25 @@ public class FileUtils
         }
         catch (Exception ex)
         {
-            FileUtils.Log($"Error moving file: {ex.Message}");
+            AppLog.Warn($"Error moving file: {ex.Message}");
         }
     }
-    /// <summary>Fired on the calling thread whenever a new log entry is added.</summary>
-    public static event Action<string>? LogAdded;
-
-    public static void Log(string logText)
+    /// <summary>Fired on the logging thread for every log entry (see <see cref="LogSink"/>).</summary>
+    public static event Action<string>? LogAdded
     {
-        // Keep an in-memory ring-buffer of the last 500 messages for the LogWindow.
-        var entry = $"[{DateTime.Now:HH:mm:ss}] {logText}";
-        ParseDiagnostics.Add(logText);
-        lock (_recentLogs)
-        {
-            _recentLogs.Add(entry);
-            if (_recentLogs.Count > 500)
-                _recentLogs.RemoveAt(0);
-        }
-
-        // Notify subscribers (UI can marshal to dispatcher)
-        LogAdded?.Invoke(entry);
-
-        // Write directly to the flat log file.
-        // Do NOT forward to Logger here — FileUtilsLoggerProvider already bridges
-        // Microsoft.Extensions.Logging → FileUtils.Log(), so calling Logger here
-        // would create an infinite feedback loop.
-        // Parsers log in parallel; unsynchronised appends collide on the file and the losers were dropped.
-        try
-        {
-            var logFilePath = GetLogFilePath();
-            lock (_logFileLock)
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(logFilePath)!);
-                File.AppendAllText(logFilePath, entry + Environment.NewLine);
-            }
-        }
-        catch { /* swallow — don't let logging failures crash the app */ }
+        add => LogSink.LogAdded += value;
+        remove => LogSink.LogAdded -= value;
     }
 
-    /// <summary>
-    /// Thread-safe snapshot of recent log lines (last 500). Used by the Log window.
-    /// </summary>
-    public static IReadOnlyList<string> GetRecentLogs()
-    {
-        lock (_recentLogs) return _recentLogs.ToList();
-    }
+    /// <summary>Logs an informational line. Kept for plugins; the app uses <see cref="AppLog"/>.</summary>
+    public static void Log(string logText) => AppLog.For("FileUtils").LogInformation(logText);
+
+    /// <summary>The last 500 log entries, for the log panel.</summary>
+    public static IReadOnlyList<string> GetRecentLogs() => LogSink.GetRecent();
 
     /// <summary>Path to the active log file.</summary>
-    public static string LogFilePath => GetLogFilePath();
+    public static string LogFilePath => LogSink.FilePath;
 
-    private static readonly List<string> _recentLogs = [];
-    private static readonly object _logFileLock = new();
     /// <summary>
     /// Format bytes to human-readable size
     /// </summary>

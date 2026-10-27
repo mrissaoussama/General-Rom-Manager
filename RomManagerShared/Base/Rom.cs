@@ -391,7 +391,7 @@ public class Rating
         }
         catch (ArgumentException)
         {
-            FileUtils.Log($"Rating Content {ratingContent} not found");
+            AppLog.Warn($"Rating Content {ratingContent} not found");
         }
     }
     public void AddContent(RatingContent content)

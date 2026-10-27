@@ -19,25 +19,25 @@ public class ThreeDSManager : ConsoleManager<ThreeDSConsole>, IRomMissingContent
 
     public Task<List<RomMissingDLCs>> GetMissingDLC()
     {
-        FileUtils.Log("[3DS] GetMissingDLC not yet implemented");
+        AppLog.Warn("[3DS] GetMissingDLC not yet implemented");
         return Task.FromResult(new List<RomMissingDLCs>());
     }
 
     public Task<RomMissingDLCs> GetMissingDLC(Rom rom)
     {
-        FileUtils.Log("[3DS] GetMissingDLC(rom) not yet implemented");
+        AppLog.Warn("[3DS] GetMissingDLC(rom) not yet implemented");
         return Task.FromResult(new RomMissingDLCs());
     }
 
     public Task<List<RomMissingUpdates>> GetMissingUpdates()
     {
-        FileUtils.Log("[3DS] GetMissingUpdates not yet implemented");
+        AppLog.Warn("[3DS] GetMissingUpdates not yet implemented");
         return Task.FromResult(new List<RomMissingUpdates>());
     }
 
     public Task<RomMissingUpdates?> GetMissingUpdates(Rom rom)
     {
-        FileUtils.Log("[3DS] GetMissingUpdates(rom) not yet implemented");
+        AppLog.Warn("[3DS] GetMissingUpdates(rom) not yet implemented");
         return Task.FromResult<RomMissingUpdates?>(null);
     }
 

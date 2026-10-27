@@ -42,7 +42,7 @@ public sealed class ImageCache(string directory, HttpClient http)
         }
         catch (Exception ex)
         {
-            FileUtils.Log($"[Image] {uri}: {ex.Message}");
+            AppLog.Warn($"[Image] {uri}: {ex.Message}");
             return null; // stays cached as a miss for this session
         }
     }

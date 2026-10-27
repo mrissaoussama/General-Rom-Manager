@@ -61,7 +61,7 @@ public static class IconCache
         }
         catch (Exception ex)
         {
-            FileUtils.Log($"[Icon] {console}/{key}: {ex.Message}");
+            AppLog.Warn($"[Icon] {console}/{key}: {ex.Message}");
             return null;
         }
     }

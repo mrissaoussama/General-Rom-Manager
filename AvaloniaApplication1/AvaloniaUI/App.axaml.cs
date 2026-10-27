@@ -33,8 +33,9 @@ public partial class App : Application
             {
                 logging.ClearProviders();
                 logging.AddConsole();
-                // File logging hook: bridge Microsoft.Extensions.Logging into FileUtils
-                logging.AddProvider(new FileUtilsLoggerProvider());
+                logging.SetMinimumLevel(LogLevel.Information);
+                // Log file, log panel and parse diagnostics.
+                logging.AddProvider(new RomManagerShared.Logging.LogFileProvider());
             })
             .ConfigureServices((hostContext, services) =>
             {
@@ -68,15 +69,14 @@ public partial class App : Application
         RomViewModel.CoverCache = _host.Services.GetRequiredService<ImageCache>();
         RomManagerShared.Utils.Dat.DiscHashing.UserOverride = Settings.Instance.HashDiscImages;
 
-        // Wire FileUtils static logger to the DI logger factory
-        var loggerFactory = _host.Services.GetRequiredService<ILoggerFactory>();
-        FileUtils.Logger = loggerFactory.CreateLogger("FileUtils");
+        // Core-library logging (AppLog) goes through the host's providers.
+        RomManagerShared.Logging.AppLog.Factory = _host.Services.GetRequiredService<ILoggerFactory>();
 
         // Create/upgrade the SQLite database before anything queries it.
         using (var dbScope = _host.Services.CreateScope())
         {
             try { dbScope.ServiceProvider.GetRequiredService<AppDbContext>().Database.Migrate(); }
-            catch (Exception ex) { FileUtils.Log($"Database migration failed: {ex.Message}"); }
+            catch (Exception ex) { AppLog.Warn($"Database migration failed: {ex.Message}"); }
         }
 
         // Load plugins asynchronously
@@ -234,27 +234,5 @@ public partial class App : Application
             SwitchConfiguration.TitleDBUrlOverride = s.SwitchTitleDBUrlOverride;
         if (!string.IsNullOrWhiteSpace(s.SwitchVersionsUrlOverride))
             SwitchConfiguration.VersionsUrlOverride = s.SwitchVersionsUrlOverride;
-    }
-}
-
-// ── Minimal ILoggerProvider to route Microsoft.Extensions.Logging → FileUtils ─
-
-internal sealed class FileUtilsLoggerProvider : ILoggerProvider
-{
-    public ILogger CreateLogger(string categoryName) => new FileUtilsLogger(categoryName);
-    public void Dispose() { }
-}
-
-internal sealed class FileUtilsLogger(string categoryName) : ILogger
-{
-    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
-    public bool IsEnabled(LogLevel logLevel) => logLevel >= LogLevel.Warning;
-    public void Log<TState>(LogLevel logLevel, EventId eventId, TState state,
-        Exception? exception, Func<TState, Exception?, string> formatter)
-    {
-        if (!IsEnabled(logLevel)) return;
-        var msg = $"[{logLevel}] [{categoryName}] {formatter(state, exception)}";
-        if (exception is not null) msg += $"\n{exception}";
-        FileUtils.Log(msg);
     }
 }

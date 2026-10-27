@@ -64,14 +64,14 @@ dotnet run --project tools/ParserHarness -- PS4Console "Y:\roms\PS4" 5
   win over config.json for ROM paths. `ILibraryRoots` (`LibraryRoots`) gives each console's folders: the
   primary one plus `ConsoleExtraLibraryPaths`; all are scanned as one library.
 - Switch keys: `%USERPROFILE%\.switch\prod.keys` and `title.keys` (requirement `switch.prod_keys`).
-- Errors log to `GlobalPaths.ErrorLogs` via static `FileUtils.Log` — check it first when a parser
+- Logs go to `GlobalPaths.ErrorLogs` via `AppLog.Info/Warn/Error` (MEL; category = calling file) — check it first when a parser
   "returns 0 roms": exceptions are caught and swallowed per parser.
 
 ## Conventions
 
 - C# latest, nullable enabled, file-scoped namespaces, collection expressions (`[]`).
 - Parsers implement `IRomParser<T>` with lowercase extension list; return `[]` (not null) on failure
-  and log via `FileUtils.Log`. Implement `IHasRequirements` if the parser needs keys/files/tools.
+  and log via `AppLog.Warn`. Implement `IHasRequirements` if the parser needs keys/files/tools.
 - Console-specific ROM properties shown in the grid need `[UiProperty(...)]`.
 - **Open ROM files read-only**: `new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read)`.
   Never bare `FileMode.Open` (requests write + exclusive lock; fails on read-only shares, locks

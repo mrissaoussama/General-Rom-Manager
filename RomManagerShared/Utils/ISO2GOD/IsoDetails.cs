@@ -67,7 +67,7 @@ internal class IsoDetails
         }
         catch (IOException ex)
         {
-            FileUtils.Log(ex.Message);
+            AppLog.Warn(ex.Message);
         }
         return true;
     }
@@ -81,7 +81,7 @@ internal class IsoDetails
         }
         catch (Exception ex)
         {
-            FileUtils.Log(ex.Message);
+            AppLog.Warn(ex.Message);
             return null;
         }
         using (XbeInfo xbeInfo = new(array))
@@ -109,7 +109,7 @@ internal class IsoDetails
                 }
                 catch (Exception ex2)
                 {
-                    FileUtils.Log(ex2.Message);
+                    AppLog.Info(ex2.Message);
                 }
             }
             if (isoDetailsResults.RawThumbnail == null)
@@ -129,7 +129,7 @@ internal class IsoDetails
                     }
                     catch (Exception ex3)
                     {
-                        FileUtils.Log(ex3.Message);
+                        AppLog.Info(ex3.Message);
                     }
                 }
             }
@@ -147,7 +147,7 @@ internal class IsoDetails
         }
         catch (Exception ex)
         {
-            FileUtils.Log(ex.Message);
+            AppLog.Warn(ex.Message);
             return null;
         }
         using (XbeInfo xbeInfo = new(array))
@@ -175,7 +175,7 @@ internal class IsoDetails
                 }
                 catch (Exception ex2)
                 {
-                    FileUtils.Log(ex2.Message);
+                    AppLog.Info(ex2.Message);
                 }
             }
             if (isoDetailsResults.RawThumbnail == null)
@@ -195,7 +195,7 @@ internal class IsoDetails
                     }
                     catch (Exception ex3)
                     {
-                        FileUtils.Log(ex3.Message);
+                        AppLog.Info(ex3.Message);
                     }
                 }
             }
@@ -222,7 +222,7 @@ internal class IsoDetails
         }
         catch (Exception ex)
         {
-            FileUtils.Log(ex.Message);
+            AppLog.Warn(ex.Message);
             return null;
         }
         using (XexInfo xexInfo = new(array))
@@ -278,7 +278,7 @@ internal class IsoDetails
                 }
                 catch (Exception ex)
                 {
-                    FileUtils.Log(ex.Message);
+                    AppLog.Warn(ex.Message);
                 }
             }
             try
@@ -321,7 +321,7 @@ internal class IsoDetails
         }
         catch (Exception ex)
         {
-            FileUtils.Log(ex.Message);
+            AppLog.Warn(ex.Message);
             return null;
         }
         using (XexInfo xexInfo = new(array))
@@ -381,7 +381,7 @@ internal class IsoDetails
                 }
                 catch (Exception ex)
                 {
-                    FileUtils.Log(ex.Message);
+                    AppLog.Warn(ex.Message);
                 }
             }
             try

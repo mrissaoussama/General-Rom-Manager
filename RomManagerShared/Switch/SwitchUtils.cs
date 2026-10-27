@@ -1,5 +1,6 @@
 ﻿using RomManagerShared.Utils;
-using RomManagerShared.Base;namespace RomManagerShared.Switch;
+using RomManagerShared.Base;
+namespace RomManagerShared.Switch;
 
 public class SwitchUtils
 {
@@ -19,19 +20,23 @@ public class SwitchUtils
         }
         else
         {
-            FileUtils.Log($"Unknown title ID format: {titleId}");
+            AppLog.Warn($"Unknown title ID format: {titleId}");
             return null;
         }
     }
     public static List<List<Rom>> GroupRomList(IEnumerable<Rom> romList)
     {
-        Dictionary<string, List<Rom>> romGroups = [];        foreach (var rom in romList)
+        Dictionary<string, List<Rom>> romGroups = [];
+        foreach (var rom in romList)
         {
             if (string.IsNullOrEmpty(rom.TitleID))
-                continue;            string modifiedTitleId = GetIdentifyingTitleID(rom.TitleID);            if (!romGroups.ContainsKey(modifiedTitleId))
+                continue;
+            string modifiedTitleId = GetIdentifyingTitleID(rom.TitleID);
+            if (!romGroups.ContainsKey(modifiedTitleId))
             {
                 romGroups[modifiedTitleId] = [];
-            }            romGroups[modifiedTitleId].Add(rom);
+            }
+            romGroups[modifiedTitleId].Add(rom);
         }
         List<List<Rom>> groupedRomList = new(
   romGroups.Values.Select(group => new List<Rom>(
@@ -39,14 +44,17 @@ public class SwitchUtils
   ))
 );
         return groupedRomList;
-    }    public static string GetIdentifyingTitleID(string titleId)
+    }
+    public static string GetIdentifyingTitleID(string titleId)
     {
         return titleId[..^3];
-    }    public static bool IsHexBetween001AndFFF(string hexValue)
+    }
+    public static bool IsHexBetween001AndFFF(string hexValue)
     {
         int decimalValue;
         return int.TryParse(hexValue, System.Globalization.NumberStyles.HexNumber, null, out decimalValue)
             && decimalValue >= 1
             && decimalValue <= 4095
             && decimalValue != 2048; // Exclude "800"
-    }}
+    }
+}

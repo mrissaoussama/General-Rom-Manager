@@ -31,7 +31,7 @@ public sealed partial class DatIndex
         foreach (var file in datFiles)
         {
             try { index.Add(file); }
-            catch (Exception ex) { FileUtils.Log($"[DAT] {file}: {ex.Message}"); }
+            catch (Exception ex) { AppLog.Warn($"[DAT] {file}: {ex.Message}"); }
         }
         return index;
     }

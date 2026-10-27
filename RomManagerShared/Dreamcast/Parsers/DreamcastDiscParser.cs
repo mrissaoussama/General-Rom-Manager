@@ -39,7 +39,7 @@ public class DreamcastDiscParser : IRomParser<DreamcastConsole>
         }
         catch (Exception ex)
         {
-            FileUtils.Log($"[Dreamcast] {path}: {ex.Message}");
+            AppLog.Warn($"[Dreamcast] {path}: {ex.Message}");
             return Task.FromResult<List<Rom>>([]);
         }
     }

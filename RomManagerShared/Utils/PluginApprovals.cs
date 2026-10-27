@@ -68,7 +68,7 @@ public sealed class PluginApprovalStore(string path)
         }
         catch (Exception ex)
         {
-            FileUtils.Log($"[Plugins] Cannot read {Path}: {ex.Message}");
+            AppLog.Warn($"[Plugins] Cannot read {Path}: {ex.Message}");
             _entries = [];
         }
         return _entries;

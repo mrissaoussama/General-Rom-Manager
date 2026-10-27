@@ -37,7 +37,7 @@ public class NESRomParser : IRomParser<NESConsole>
         }
         catch (Exception ex)
         {
-            FileUtils.Log($"[NES] {path}: {ex.Message}");
+            AppLog.Warn($"[NES] {path}: {ex.Message}");
             return Task.FromResult<List<Rom>>([]);
         }
     }

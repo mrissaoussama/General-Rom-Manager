@@ -35,7 +35,7 @@ public class PS3PKGRomParser : IRomParser<PS3Console>, IContentSniffer
         }
         catch (Exception ex)
         {
-            FileUtils.Log($"[PS3 PKG] {path}: {ex.Message}");
+            AppLog.Warn($"[PS3 PKG] {path}: {ex.Message}");
             return Task.FromResult<List<Rom>>([]);
         }
     }

@@ -25,13 +25,13 @@ public static class PS3Utils
                 }
                 else
                 {
-                    FileUtils.Log($"{vpkSfoFilePath} not found in the vpk archive.");
+                    AppLog.Warn($"{vpkSfoFilePath} not found in the vpk archive.");
                     return false;
                 }
             }
             catch (Exception ex)
             {
-                FileUtils.Log(ex.Message);
+                AppLog.Warn(ex.Message);
                 return false;
             }
         }
@@ -53,4 +53,5 @@ public static class PS3Utils
     public static bool IsPS3SFO(byte[] memoryStream)
     {
         return ParamSfo.Read(memoryStream).Platform == SfoPlatform.PS3;
-    }}
+    }
+}

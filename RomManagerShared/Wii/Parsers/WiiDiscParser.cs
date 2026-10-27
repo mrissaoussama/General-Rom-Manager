@@ -31,7 +31,7 @@ public class WiiDiscParser : IRomParser<WiiConsole>, IContentSniffer
         }
         catch (Exception ex)
         {
-            FileUtils.Log($"[Wii] {path}: {ex.Message}");
+            AppLog.Warn($"[Wii] {path}: {ex.Message}");
             return Task.FromResult<List<Rom>>([]);
         }
     }

@@ -37,13 +37,13 @@ namespace RomManagerShared.PSVita
             DestinationDirectory = destinationDirectory;
             RemoveEmptyFolders = removeEmptyFolders;
             DryRun = dryRun;
-            FileUtils.Log("Starting PS Vita ROM organization");
-            FileUtils.Log($"Source: {SourceDirectory}");
-            FileUtils.Log($"Destination: {DestinationDirectory}");
+            AppLog.Info("Starting PS Vita ROM organization");
+            AppLog.Info($"Source: {SourceDirectory}");
+            AppLog.Info($"Destination: {DestinationDirectory}");
 
             if (DryRun)
             {
-                FileUtils.Log("Running in dry-run mode - no files will be modified");
+                AppLog.Info("Running in dry-run mode - no files will be modified");
             }
 
             // Verify directories and permissions
@@ -81,7 +81,7 @@ namespace RomManagerShared.PSVita
                     // Check if already organized
                     if (IsProperlyOrganized(path, contentType))
                     {
-                        FileUtils.Log($"Skipping already organized content: {path}");
+                        AppLog.Warn($"Skipping already organized content: {path}");
 
                         // Track organized game location for later reference
                         if (contentType == ContentType.Game)
@@ -132,7 +132,7 @@ namespace RomManagerShared.PSVita
                 }
                 catch (Exception ex)
                 {
-                    FileUtils.Log($"Error processing {path}: {ex.Message}");
+                    AppLog.Warn($"Error processing {path}: {ex.Message}");
                 }
             }
 
@@ -143,12 +143,12 @@ namespace RomManagerShared.PSVita
             }
 
             // Log summary
-            FileUtils.Log("Organization complete:");
-            FileUtils.Log($"  Games: {gameCount}");
-            FileUtils.Log($"  Updates: {updateCount}");
-            FileUtils.Log($"  DLCs: {dlcCount}");
-            FileUtils.Log($"  Licenses: {licenseCount}");
-            FileUtils.Log($"  Skipped (already organized): {skippedCount}");
+            AppLog.Info("Organization complete:");
+            AppLog.Info($"  Games: {gameCount}");
+            AppLog.Info($"  Updates: {updateCount}");
+            AppLog.Info($"  DLCs: {dlcCount}");
+            AppLog.Info($"  Licenses: {licenseCount}");
+            AppLog.Warn($"  Skipped (already organized): {skippedCount}");
         }
 
         /// <summary>
@@ -159,7 +159,7 @@ namespace RomManagerShared.PSVita
             // Check source directory
             if (!Directory.Exists(SourceDirectory))
             {
-                FileUtils.Log($"Source directory not found: {SourceDirectory}");
+                AppLog.Warn($"Source directory not found: {SourceDirectory}");
                 return false;
             }
 
@@ -172,7 +172,7 @@ namespace RomManagerShared.PSVita
                 }
                 catch (Exception ex)
                 {
-                    FileUtils.Log($"Failed to create destination directory: {ex.Message}");
+                    AppLog.Warn($"Failed to create destination directory: {ex.Message}");
                     return false;
                 }
             }
@@ -188,7 +188,7 @@ namespace RomManagerShared.PSVita
                 }
                 catch (Exception ex)
                 {
-                    FileUtils.Log($"No write permission to destination: {ex.Message}");
+                    AppLog.Warn($"No write permission to destination: {ex.Message}");
                     return false;
                 }
             }
@@ -197,7 +197,7 @@ namespace RomManagerShared.PSVita
             var drive = new DriveInfo(Path.GetPathRoot(DestinationDirectory) ?? DestinationDirectory);
             if (drive.AvailableFreeSpace < MinFreeSpace)
             {
-                FileUtils.Log($"Insufficient disk space: {FileUtils.FormatFileSize(drive.AvailableFreeSpace)} available");
+                AppLog.Info($"Insufficient disk space: {FileUtils.FormatFileSize(drive.AvailableFreeSpace)} available");
                 return false;
             }
 
@@ -383,7 +383,7 @@ namespace RomManagerShared.PSVita
 
                 if (DryRun)
                 {
-                    FileUtils.Log($"[DRY RUN] Would organize game {titleId} to {appFolder}");
+                    AppLog.Info($"[DRY RUN] Would organize game {titleId} to {appFolder}");
                     return gameFolder;
                 }
 
@@ -393,12 +393,12 @@ namespace RomManagerShared.PSVita
                 // Move content
                 CopyContent(sourcePath, appFolder);
 
-                FileUtils.Log($"Organized game {titleId} to {appFolder}");
+                AppLog.Info($"Organized game {titleId} to {appFolder}");
                 return gameFolder;
             }
             catch (Exception ex)
             {
-                FileUtils.Log($"Failed to organize game {titleId}: {ex.Message}");
+                AppLog.Warn($"Failed to organize game {titleId}: {ex.Message}");
                 return null;
             }
         }
@@ -428,7 +428,7 @@ namespace RomManagerShared.PSVita
 
                 if (DryRun)
                 {
-                    FileUtils.Log($"[DRY RUN] Would organize update {titleId} to {patchFolder}");
+                    AppLog.Info($"[DRY RUN] Would organize update {titleId} to {patchFolder}");
                     return true;
                 }
 
@@ -436,12 +436,12 @@ namespace RomManagerShared.PSVita
                 Directory.CreateDirectory(patchFolder);
                 CopyContent(sourcePath, patchFolder);
 
-                FileUtils.Log($"Organized update {titleId} to {patchFolder}");
+                AppLog.Info($"Organized update {titleId} to {patchFolder}");
                 return true;
             }
             catch (Exception ex)
             {
-                FileUtils.Log($"Failed to organize update {titleId}: {ex.Message}");
+                AppLog.Warn($"Failed to organize update {titleId}: {ex.Message}");
                 return false;
             }
         }
@@ -475,7 +475,7 @@ namespace RomManagerShared.PSVita
 
                 if (DryRun)
                 {
-                    FileUtils.Log($"[DRY RUN] Would organize DLC {titleId} to {dlcFolder}");
+                    AppLog.Info($"[DRY RUN] Would organize DLC {titleId} to {dlcFolder}");
                     return true;
                 }
 
@@ -483,12 +483,12 @@ namespace RomManagerShared.PSVita
                 Directory.CreateDirectory(dlcFolder);
                 CopyContent(sourcePath, dlcFolder);
 
-                FileUtils.Log($"Organized DLC {titleId} to {dlcFolder}");
+                AppLog.Info($"Organized DLC {titleId} to {dlcFolder}");
                 return true;
             }
             catch (Exception ex)
             {
-                FileUtils.Log($"Failed to organize DLC {titleId}: {ex.Message}");
+                AppLog.Warn($"Failed to organize DLC {titleId}: {ex.Message}");
                 return false;
             }
         }
@@ -518,7 +518,7 @@ namespace RomManagerShared.PSVita
 
                 if (DryRun)
                 {
-                    FileUtils.Log($"[DRY RUN] Would organize license {titleId} to {licenseFolder}");
+                    AppLog.Info($"[DRY RUN] Would organize license {titleId} to {licenseFolder}");
                     return true;
                 }
 
@@ -541,12 +541,12 @@ namespace RomManagerShared.PSVita
                     CopyContent(sourcePath, licenseFolder);
                 }
 
-                FileUtils.Log($"Organized license {titleId} to {licenseFolder}");
+                AppLog.Info($"Organized license {titleId} to {licenseFolder}");
                 return true;
             }
             catch (Exception ex)
             {
-                FileUtils.Log($"Failed to organize license {titleId}: {ex.Message}");
+                AppLog.Warn($"Failed to organize license {titleId}: {ex.Message}");
                 return false;
             }
         }
@@ -647,7 +647,7 @@ namespace RomManagerShared.PSVita
                 {
                     if (FileUtils.AreFilesEqual(source, destFile))
                     {
-                        FileUtils.Log($"Skipping identical file: {Path.GetFileName(source)}");
+                        AppLog.Warn($"Skipping identical file: {Path.GetFileName(source)}");
                         return;
                     }
                     destFile = GetUniqueFilePath(destFile);
@@ -669,7 +669,7 @@ namespace RomManagerShared.PSVita
                 {
                     if (FileUtils.AreFilesEqual(file, destFile))
                     {
-                        FileUtils.Log($"Skipping identical file: {fileName}");
+                        AppLog.Warn($"Skipping identical file: {fileName}");
                         continue;
                     }
                     destFile = GetUniqueFilePath(destFile);
@@ -705,11 +705,11 @@ namespace RomManagerShared.PSVita
                 try
                 {
                     Directory.Delete(directory);
-                    FileUtils.Log($"Removed empty directory: {directory}");
+                    AppLog.Info($"Removed empty directory: {directory}");
                 }
                 catch (Exception ex)
                 {
-                    FileUtils.Log($"Could not remove directory: {ex.Message}");
+                    AppLog.Warn($"Could not remove directory: {ex.Message}");
                 }
             }
         }

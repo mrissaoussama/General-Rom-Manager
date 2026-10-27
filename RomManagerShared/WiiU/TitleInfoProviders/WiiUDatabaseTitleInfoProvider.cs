@@ -9,10 +9,13 @@ namespace RomManagerShared.WiiU.TitleInfoProviders;
 public class WiiUDatabaseTitleInfoProvider : TitleInfoProvider<WiiUConsole>
 {
     public GenericRepository<WiiUWikiBrewTitleDTO> TitlesDatabase { get; set; }
-    public WiiUDatabaseTitleInfoProvider(GenericRepository<WiiUWikiBrewTitleDTO> repo)
+
+    public WiiUDatabaseTitleInfoProvider(GenericRepository<WiiUWikiBrewTitleDTO> repo)
     {
         TitlesDatabase = repo;
-    }    public override async Task<Rom> GetTitleInfo(Rom rom)
+    }
+
+    public override async Task<Rom> GetTitleInfo(Rom rom)
     {
 
         // Disc images only expose a product code.
@@ -28,9 +31,10 @@ public class WiiUDatabaseTitleInfoProvider : TitleInfoProvider<WiiUConsole>
         }
         else
         {
-            FileUtils.Log("rom not found in db");
+            AppLog.Warn("rom not found in db");
         }
-        return rom;
+        return rom;
+
     }
 
    

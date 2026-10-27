@@ -52,7 +52,7 @@ public class WiiUTMDTIKParser : IRomParser<WiiUConsole>
             }
             else
             {
-                FileUtils.Log($"[WiiU] cdecrypt not found at '{tool}'");
+                AppLog.Warn($"[WiiU] cdecrypt not found at '{tool}'");
             }
         }
 

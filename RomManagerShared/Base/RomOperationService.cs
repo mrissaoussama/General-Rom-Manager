@@ -59,7 +59,7 @@ public sealed class RomOperationService
                 var results = await FileRenamer.RenameFilesAsync(roms, formatString, ct: ct);
                 int ok = results.Count(r => r.Success && r.Changed);
                 int fail = results.Count(r => !r.Success);
-                FileUtils.Log($"[Rename] Done: {ok} renamed, {fail} failed.");
+                AppLog.Warn($"[Rename] Done: {ok} renamed, {fail} failed.");
                 if (fail > 0 && ok == 0)
                     throw new InvalidOperationException($"All {fail} rename(s) failed.");
             });
@@ -79,7 +79,7 @@ public sealed class RomOperationService
                 var results = await new RomMover(targetRoot).MoveFilesAsync(roms, commonSourceRoot, ct);
                 int ok = results.Count(r => r.Success && r.Changed);
                 int fail = results.Count(r => !r.Success);
-                FileUtils.Log($"[Move] Done: {ok} moved, {fail} failed.");
+                AppLog.Warn($"[Move] Done: {ok} moved, {fail} failed.");
                 if (fail > 0 && ok == 0)
                     throw new InvalidOperationException($"All {fail} move(s) failed.");
             });
@@ -183,7 +183,7 @@ public sealed class RomOperationService
             ct.ThrowIfCancellationRequested();
             if (move.IsDirectory ? !Directory.Exists(move.From) : !File.Exists(move.From))
             {
-                FileUtils.Log($"[Undo] '{move.From}' is gone; not restoring it to '{move.To}'.");
+                AppLog.Warn($"[Undo] '{move.From}' is gone; not restoring it to '{move.To}'.");
                 continue;
             }
             Directory.CreateDirectory(Path.GetDirectoryName(move.To)!);
@@ -235,13 +235,13 @@ public sealed class RomOperationService
                     {
                         var output = await ToolConverter.ConvertAsync(tool, exePath, input, ct);
                         lock (created) created.Add(output);
-                        FileUtils.Log($"[Convert] {Path.GetFileName(input)} → {Path.GetFileName(output)}");
+                        AppLog.Info($"[Convert] {Path.GetFileName(input)} → {Path.GetFileName(output)}");
                     }
                     catch (Exception ex) when (ex is not OperationCanceledException)
                     {
                         failed++;
                         firstError ??= ex.Message;
-                        FileUtils.Log($"[Convert] {input}: {ex.Message}");
+                        AppLog.Warn($"[Convert] {input}: {ex.Message}");
                     }
                     progress.Report(++done * 100.0 / inputs.Count);
                 }
@@ -292,18 +292,18 @@ public sealed class RomOperationService
                         await SaveHashesToDbAsync(hashes);
 
                         var hashStr = hashes.FirstOrDefault()?.Value ?? "(none)";
-                        FileUtils.Log($"[Hash] {rom.Titles?.FirstOrDefault()?.Value ?? rom.TitleID}: {hashStr}");
+                        AppLog.Info($"[Hash] {rom.Titles?.FirstOrDefault()?.Value ?? rom.TitleID}: {hashStr}");
                     }
                     catch (Exception ex)
                     {
-                        FileUtils.Log($"[Hash] Error for '{rom.Path}': {ex.Message}");
+                        AppLog.Warn($"[Hash] Error for '{rom.Path}': {ex.Message}");
                     }
 
                     done++;
                     progress.Report(roms.Count > 0 ? (double)done / roms.Count * 100 : 100);
                 }
 
-                FileUtils.Log($"[Hash] Finished calculating hashes for {done}/{roms.Count} ROM(s).");
+                AppLog.Info($"[Hash] Finished calculating hashes for {done}/{roms.Count} ROM(s).");
             },
         });
     }
@@ -320,7 +320,7 @@ public sealed class RomOperationService
         }
         catch (Exception ex)
         {
-            FileUtils.Log($"[Hash] DB save failed: {ex.Message}");
+            AppLog.Warn($"[Hash] DB save failed: {ex.Message}");
         }
     }
 
@@ -346,7 +346,7 @@ public sealed class RomOperationService
 
                 if (groups.Count == 0)
                 {
-                    FileUtils.Log("[FindDuplicates] No duplicates found.");
+                    AppLog.Info("[FindDuplicates] No duplicates found.");
                     onResults?.Invoke(groups);
                     return;
                 }
@@ -355,10 +355,10 @@ public sealed class RomOperationService
                 {
                     var names = string.Join(", ", g.Roms.Select(r =>
                         r.Titles?.FirstOrDefault()?.Value ?? r.TitleID ?? "?"));
-                    FileUtils.Log($"[FindDuplicates] Group '{g.GroupKey}' ({g.MatchedBy}): {names}");
+                    AppLog.Info($"[FindDuplicates] Group '{g.GroupKey}' ({g.MatchedBy}): {names}");
                 }
 
-                FileUtils.Log($"[FindDuplicates] Found {groups.Count} duplicate group(s), " +
+                AppLog.Info($"[FindDuplicates] Found {groups.Count} duplicate group(s), " +
                              $"{groups.Sum(g => g.Redundant.Count)} redundant ROM(s).");
                 onResults?.Invoke(groups);
                 await Task.CompletedTask;

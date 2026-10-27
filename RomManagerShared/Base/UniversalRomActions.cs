@@ -24,7 +24,7 @@ public sealed class FindDuplicatesAction : ConsoleRomActionBase
         var groups = detector.FindDuplicates(selectedRoms);
         if (groups.Count == 0)
         {
-            FileUtils.Log("[FindDuplicates] No duplicates found.");
+            AppLog.Info("[FindDuplicates] No duplicates found.");
             return;
         }
 
@@ -32,10 +32,10 @@ public sealed class FindDuplicatesAction : ConsoleRomActionBase
         {
             var names = string.Join(", ", g.Roms.Select(r =>
                 r.Titles?.FirstOrDefault()?.Value ?? r.TitleID ?? "?"));
-            FileUtils.Log($"[FindDuplicates] Group '{g.GroupKey}' ({g.MatchedBy}): {names}");
+            AppLog.Info($"[FindDuplicates] Group '{g.GroupKey}' ({g.MatchedBy}): {names}");
         }
 
-        FileUtils.Log($"[FindDuplicates] Found {groups.Count} duplicate group(s), {groups.Sum(g => g.Redundant.Count)} redundant ROM(s).");
+        AppLog.Info($"[FindDuplicates] Found {groups.Count} duplicate group(s), {groups.Sum(g => g.Redundant.Count)} redundant ROM(s).");
         await Task.CompletedTask;
     }
 }
@@ -58,7 +58,7 @@ public sealed class RenameRomsAction : ConsoleRomActionBase
         int skip = results.Count(r => !r.Changed);
         int fail = results.Count(r => !r.Success);
 
-        FileUtils.Log($"[Rename] Done: {ok} renamed, {skip} unchanged, {fail} failed.");
+        AppLog.Warn($"[Rename] Done: {ok} renamed, {skip} unchanged, {fail} failed.");
     }
 }
 
@@ -98,15 +98,15 @@ public sealed class CalculateHashesAction : ConsoleRomActionBase
                 if (repo is not null && hashes.Count > 0)
                 {
                     try { await repo.AddIfNewRange(hashes); }
-                    catch (Exception dbEx) { FileUtils.Log($"[Hash] DB save failed for '{rom.Path}': {dbEx.Message}"); }
+                    catch (Exception dbEx) { AppLog.Warn($"[Hash] DB save failed for '{rom.Path}': {dbEx.Message}"); }
                 }
 
                 var hashStr = rom.Hashes?.FirstOrDefault()?.Value ?? "(none)";
-                FileUtils.Log($"[Hash] {rom.Titles?.FirstOrDefault()?.Value ?? rom.TitleID}: {hashStr}");
+                AppLog.Info($"[Hash] {rom.Titles?.FirstOrDefault()?.Value ?? rom.TitleID}: {hashStr}");
             }
             catch (Exception ex)
             {
-                FileUtils.Log($"[Hash] Error for '{rom.Path}': {ex.Message}");
+                AppLog.Warn($"[Hash] Error for '{rom.Path}': {ex.Message}");
             }
         }
     }

@@ -46,7 +46,7 @@ public class WiiUWudWuxParser : IRomParser<WiiUConsole>
         }
         catch (Exception ex)
         {
-            FileUtils.Log($"[WiiU disc] {path}: {ex.Message}");
+            AppLog.Warn($"[WiiU disc] {path}: {ex.Message}");
             return Task.FromResult<List<Rom>>([]);
         }
     }

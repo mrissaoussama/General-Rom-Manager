@@ -89,7 +89,7 @@ public partial class MainViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            FileUtils.Log($"[Consoles] Failed to load console list: {ex}");
+            AppLog.Warn($"[Consoles] Failed to load console list: {ex}");
         }
         finally
         {
@@ -246,7 +246,7 @@ public partial class MainViewModel : ViewModelBase
                     extensions[d.ConsoleType] = executor.GetSupportedExtensions();
                 }
             }
-            catch (Exception ex) { FileUtils.Log($"[AddFolder] {d.Id}: {ex.Message}"); }
+            catch (Exception ex) { AppLog.Warn($"[AddFolder] {d.Id}: {ex.Message}"); }
 
         IReadOnlyList<ConsoleDetector.Guess> guesses;
         try { guesses = await Task.Run(() => ConsoleDetector.Rank(ConsoleDetector.SampleFiles(folder), extensions,

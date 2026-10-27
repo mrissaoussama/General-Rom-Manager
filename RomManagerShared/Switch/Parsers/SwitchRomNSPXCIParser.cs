@@ -67,7 +67,7 @@ public class SwitchRomNSPXCIParser : IRomParser<SwitchConsole>, IHasRequirements
 
         if (string.IsNullOrEmpty(prodPath) || !File.Exists(prodPath))
         {
-            FileUtils.Log($"[SwitchNSPXCI] prod.keys not found at '{prodPath}' — parser disabled.");
+            AppLog.Warn($"[SwitchNSPXCI] prod.keys not found at '{prodPath}' — parser disabled.");
             return null;
         }
 
@@ -81,7 +81,7 @@ public class SwitchRomNSPXCIParser : IRomParser<SwitchConsole>, IHasRequirements
         }
         catch (Exception ex)
         {
-            FileUtils.Log($"[SwitchNSPXCI] Failed to load keys: {ex.Message}");
+            AppLog.Warn($"[SwitchNSPXCI] Failed to load keys: {ex.Message}");
             return null;
         }
     }
@@ -96,7 +96,7 @@ public class SwitchRomNSPXCIParser : IRomParser<SwitchConsole>, IHasRequirements
         var keyset = EnsureKeyset();
         if (keyset is null)
         {
-            FileUtils.Log($"[SwitchNSPXCI] Skipping '{System.IO.Path.GetFileName(path)}' — no valid keyset.");
+            AppLog.Warn($"[SwitchNSPXCI] Skipping '{System.IO.Path.GetFileName(path)}' — no valid keyset.");
             return Task.FromResult<List<Rom>>([]);
         }
 
@@ -117,7 +117,7 @@ public class SwitchRomNSPXCIParser : IRomParser<SwitchConsole>, IHasRequirements
         }
         catch (Exception ex)
         {
-            FileUtils.Log($"[SwitchNSPXCI] {path}: {ex.Message}");
+            AppLog.Warn($"[SwitchNSPXCI] {path}: {ex.Message}");
         }
         return Task.FromResult(roms);
     }
@@ -186,7 +186,7 @@ public class SwitchRomNSPXCIParser : IRomParser<SwitchConsole>, IHasRequirements
         }
         catch (Exception ex)
         {
-            FileUtils.Log($"[SwitchNSPXCI] icon {title.Id:X16}: {ex.Message}");
+            AppLog.Warn($"[SwitchNSPXCI] icon {title.Id:X16}: {ex.Message}");
             return null;
         }
     }
@@ -210,7 +210,7 @@ public class SwitchRomNSPXCIParser : IRomParser<SwitchConsole>, IHasRequirements
             }
             catch (Exception ex)
             {
-                FileUtils.Log($"[SwitchNSPXCI] {path} {entry.Name}: {ex.Message}");
+                AppLog.Warn($"[SwitchNSPXCI] {path} {entry.Name}: {ex.Message}");
             }
         }
     }
@@ -237,7 +237,7 @@ public class SwitchRomNSPXCIParser : IRomParser<SwitchConsole>, IHasRequirements
             }
             catch (Exception ex)
             {
-                FileUtils.Log($"[SwitchNSPXCI] Bad ticket {entry.FullPath}: {ex.Message}");
+                AppLog.Warn($"[SwitchNSPXCI] Bad ticket {entry.FullPath}: {ex.Message}");
             }
         }
     }

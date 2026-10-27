@@ -87,7 +87,7 @@ public partial class RomViewModel : ViewModelBase
             _cover = bitmap;
             OnPropertyChanged(nameof(Cover));
         }
-        catch (Exception ex) { FileUtils.Log($"[Image] {source}: {ex.Message}"); }
+        catch (Exception ex) { AppLog.Warn($"[Image] {source}: {ex.Message}"); }
     }
     public string GetPropertyValue(string key)
     {

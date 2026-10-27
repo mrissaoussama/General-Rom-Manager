@@ -70,7 +70,7 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
         }
         catch (Exception ex)
         {
-            FileUtils.Log($"[{ConsoleName}] Missing update count failed: {ex.Message}");
+            AppLog.Warn($"[{ConsoleName}] Missing update count failed: {ex.Message}");
             return null;
         }
     }
@@ -93,7 +93,7 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
         }
         catch (Exception ex)
         {
-            FileUtils.Log($"[{ConsoleName}] Missing DLC check failed: {ex}");
+            AppLog.Warn($"[{ConsoleName}] Missing DLC check failed: {ex}");
             StatusMessage = $"Missing DLC check failed: {ex.Message}";
         }
     }
@@ -131,7 +131,7 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
         }
         catch (Exception ex)
         {
-            FileUtils.Log($"[{ConsoleName}] Missing update check failed: {ex}");
+            AppLog.Warn($"[{ConsoleName}] Missing update check failed: {ex}");
             StatusMessage = $"Missing update check failed: {ex.Message}";
         }
     }
@@ -213,7 +213,7 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
             Unrecognized = scanner.Unrecognized;
             LastScanned = DateTime.Now;
             if (scanner.Unrecognized.Count > 0)
-                FileUtils.Log($"[{ConsoleName}] Not recognised:{Environment.NewLine}  " + string.Join(Environment.NewLine + "  ", scanner.Unrecognized.Select(u => $"{u.Path}: {u.Reason}")));
+                AppLog.Info($"[{ConsoleName}] Not recognised:{Environment.NewLine}  " + string.Join(Environment.NewLine + "  ", scanner.Unrecognized.Select(u => $"{u.Path}: {u.Reason}")));
             if (_serviceProvider.GetService<PluginManager>() is { Plugins.Count: > 0 } plugins)
             {
                 var scan = LibraryScanCompleted.Diff(ConsoleName, cached, roms);
@@ -227,7 +227,7 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
         }
         catch (Exception ex)
         {
-            FileUtils.Log($"[{ConsoleName}] LoadData failed: {ex}");
+            AppLog.Warn($"[{ConsoleName}] LoadData failed: {ex}");
             StatusMessage = $"Error: {ex.Message}";
         }
         finally
@@ -261,7 +261,7 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
             }
             catch (Exception ex)
             {
-                FileUtils.Log($"[{ConsoleName}] Folder watcher unavailable for {root}: {ex.Message}");
+                AppLog.Warn($"[{ConsoleName}] Folder watcher unavailable for {root}: {ex.Message}");
             }
         }
     }

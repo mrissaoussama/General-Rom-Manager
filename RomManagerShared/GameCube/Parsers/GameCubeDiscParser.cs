@@ -33,7 +33,7 @@ public class GameCubeDiscParser : IRomParser<GameCubeConsole>, IContentSniffer
         }
         catch (Exception ex)
         {
-            FileUtils.Log($"[GameCube] {path}: {ex.Message}");
+            AppLog.Warn($"[GameCube] {path}: {ex.Message}");
             return Task.FromResult<List<Rom>>([]);
         }
     }

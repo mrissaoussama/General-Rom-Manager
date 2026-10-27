@@ -549,7 +549,7 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
         catch (Exception ex)
         {
             StatusMessage = $"Action failed: {ex.Message}";
-            FileUtils.Log($"[Action] '{action.Name}' failed: {ex.Message}");
+            AppLog.Warn($"[Action] '{action.Name}' failed: {ex.Message}");
         }
     }
 

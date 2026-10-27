@@ -25,7 +25,7 @@ public class PCEngineRomParser : IRomParser<PCEngineConsole>
         }
         catch (Exception ex)
         {
-            FileUtils.Log($"[PCEngine] {path}: {ex.Message}");
+            AppLog.Warn($"[PCEngine] {path}: {ex.Message}");
             return Task.FromResult<List<Rom>>([]);
         }
     }

@@ -18,8 +18,9 @@ RomParserExecutor<WiiUConsole> romParserExecutor)
         GroupedRomList = [];
         var titlesPath = WiiUConfiguration.GetTitleDBPath();
         if (titlesPath == null)
-            FileUtils.Log("WiiU titles path not found");
-          }
+            AppLog.Warn("WiiU titles path not found");
+      
+    }
     public override async Task Setup()
     {
         List<Task> tasks =
@@ -29,10 +30,12 @@ RomParserExecutor<WiiUConsole> romParserExecutor)
         ];
         await Task.WhenAll(tasks);
     }
-    public void LoadGroupRomList()
+
+    public void LoadGroupRomList()
     {
         //GroupedRomList = WiiUUtils.GroupRomList(RomList);
-    }    public List<string> GetSupportedExtensions()
+    }
+    public List<string> GetSupportedExtensions()
     {
         if (RomParserExecutor.Parsers.Count == 0)
         {
@@ -53,4 +56,4 @@ RomParserExecutor<WiiUConsole> romParserExecutor)
             .ToList();
         return group;
     }
-}
+}

@@ -46,7 +46,7 @@ public class RomParserExecutor<T> : IRomParserExecutor where T : GamingConsole
         if (compatibleParsers.Any(p => p is IContentSniffer) && File.Exists(file))
         {
             try { header = FileMagic.ReadHeader(file); }
-            catch (Exception ex) { FileUtils.Log($"file '{file}': cannot read header: {ex.Message}"); }
+            catch (Exception ex) { AppLog.Warn($"file '{file}': cannot read header: {ex.Message}"); }
         }
 
         foreach (var parser in compatibleParsers)
@@ -54,7 +54,7 @@ public class RomParserExecutor<T> : IRomParserExecutor where T : GamingConsole
             ct.ThrowIfCancellationRequested();
             if (header is not null && parser is IContentSniffer sniffer && !sniffer.CanParse(file, header))
             {
-                FileUtils.Log($"{Path.GetFileName(file)}: not a {typeof(T).Name.Replace("Console", "")} file ({parser.GetType().Name})");
+                AppLog.Info($"{Path.GetFileName(file)}: not a {typeof(T).Name.Replace("Console", "")} file ({parser.GetType().Name})");
                 continue;
             }
 
@@ -90,7 +90,7 @@ public class RomParserExecutor<T> : IRomParserExecutor where T : GamingConsole
             }
             catch (Exception ex)
             {
-                FileUtils.Log($"file '{file}' threw exception {ex.Message}.{Environment.NewLine}");
+                AppLog.Warn($"file '{file}' threw exception {ex.Message}.{Environment.NewLine}");
             }
         }
         return mergedRomList;

@@ -52,25 +52,25 @@ RomParserExecutor<PS4Console> romParserExecutor)
 
     public Task<List<RomMissingUpdates>> GetMissingUpdates()
     {
-        FileUtils.Log("[PS4] GetMissingUpdates not yet implemented");
+        AppLog.Warn("[PS4] GetMissingUpdates not yet implemented");
         return Task.FromResult(new List<RomMissingUpdates>());
     }
 
     public Task<RomMissingUpdates?> GetMissingUpdates(Rom rom)
     {
-        FileUtils.Log("[PS4] GetMissingUpdates(rom) not yet implemented");
+        AppLog.Warn("[PS4] GetMissingUpdates(rom) not yet implemented");
         return Task.FromResult<RomMissingUpdates?>(null);
     }
 
     public Task<List<RomMissingDLCs>> GetMissingDLC()
     {
-        FileUtils.Log("[PS4] GetMissingDLC not yet implemented");
+        AppLog.Warn("[PS4] GetMissingDLC not yet implemented");
         return Task.FromResult(new List<RomMissingDLCs>());
     }
 
     Task<RomMissingDLCs> IRomMissingContentChecker.GetMissingDLC(Rom rom)
     {
-        FileUtils.Log("[PS4] GetMissingDLC(rom) not yet implemented");
+        AppLog.Warn("[PS4] GetMissingDLC(rom) not yet implemented");
         return Task.FromResult(new RomMissingDLCs());
     }
 

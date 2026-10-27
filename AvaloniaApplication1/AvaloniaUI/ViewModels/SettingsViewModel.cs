@@ -179,7 +179,7 @@ public sealed partial class SettingsViewModel : DialogViewModel
         }
         catch (Exception ex)
         {
-            FileUtils.Log($"[Settings] Title DB download failed: {ex.Message}");
+            AppLog.Warn($"[Settings] Title DB download failed: {ex.Message}");
             DownloadStatus = "Check failed (see log)";
         }
     }
@@ -200,7 +200,7 @@ public sealed partial class SettingsViewModel : DialogViewModel
         try { status = await Task.Run(RomManagerShared.Switch.SwitchKeyStatus.ReadDefault); }
         catch (Exception ex)
         {
-            FileUtils.Log($"[Settings] Key status check failed: {ex.GetType().Name}");
+            AppLog.Warn($"[Settings] Key status check failed: {ex.GetType().Name}");
             return;
         }
         KeyStatus.Clear();
@@ -286,7 +286,7 @@ public sealed partial class SettingsViewModel : DialogViewModel
         }
         catch (Exception ex)
         {
-            FileUtils.Log($"[Settings] Plugin reload failed: {ex}");
+            AppLog.Warn($"[Settings] Plugin reload failed: {ex}");
             PluginStatus = $"Reload failed: {ex.Message}";
         }
         LoadPlugins();

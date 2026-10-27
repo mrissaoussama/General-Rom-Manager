@@ -33,12 +33,12 @@ internal static class Shell
             else
                 OpenWithDefaultApp(Path.GetDirectoryName(path)!);
         }
-        catch (Exception ex) { FileUtils.Log($"Cannot reveal '{path}': {ex.Message}"); }
+        catch (Exception ex) { AppLog.Warn($"Cannot reveal '{path}': {ex.Message}"); }
     }
 
     public static void OpenWithDefaultApp(string path)
     {
         try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(path) { UseShellExecute = true }); }
-        catch (Exception ex) { FileUtils.Log($"Cannot open '{path}': {ex.Message}"); }
+        catch (Exception ex) { AppLog.Warn($"Cannot open '{path}': {ex.Message}"); }
     }
 }
