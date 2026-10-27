@@ -23,7 +23,7 @@ namespace SamplePlugin;
     Description = "Fetches game metadata from the RAWG API",
     Author = "RomManager Sample",
     Permissions = [PluginPermission.Network])] // its config lives in the plugin data folder: no FileSystem needed
-public sealed class GameMetadataPlugin : IPlugin
+public sealed class GameMetadataPlugin : IPlugin, ILibraryHooks
 {
     // ── IPlugin identity ──────────────────────────────────────────────────
     public string PluginName        => "GameMetadataFetcher";
@@ -84,6 +84,15 @@ public sealed class GameMetadataPlugin : IPlugin
             await stream.WriteAsync("""{ "ApiKey": "YOUR_RAWG_API_KEY_HERE" }"""u8.ToArray());
             _logger.LogInformation("Created template config at {Path}", context.ConfigFilePath);
         }
+    }
+
+    // ILibraryHooks: called after every scan of a console this plugin supports.
+    public Task OnScanCompletedAsync(LibraryScanCompleted scan, IPluginContext context)
+    {
+        if (scan.Added.Count > 0 || scan.Removed.Count > 0)
+            context.Logger.LogInformation("{Console}: {Added} rom(s) added, {Removed} removed",
+                scan.Console, scan.Added.Count, scan.Removed.Count);
+        return Task.CompletedTask;
     }
 
     public async Task ExecuteAsync(int optionIndex, IPluginContext context)

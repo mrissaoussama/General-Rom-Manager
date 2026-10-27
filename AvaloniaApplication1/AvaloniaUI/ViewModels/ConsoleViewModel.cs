@@ -182,6 +182,11 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
             LastScanned = DateTime.Now;
             if (scanner.Unrecognized.Count > 0)
                 FileUtils.Log($"[{ConsoleName}] Not recognised:{Environment.NewLine}  " + string.Join(Environment.NewLine + "  ", scanner.Unrecognized.Select(u => $"{u.Path}: {u.Reason}")));
+            if (_serviceProvider.GetService<PluginManager>() is { Plugins.Count: > 0 } plugins)
+            {
+                var scan = LibraryScanCompleted.Diff(ConsoleName, cached, roms);
+                _ = Task.Run(() => plugins.NotifyScanCompletedAsync(scan, p => Settings.Instance.IsPluginEnabled(p.PluginName)), CancellationToken.None);
+            }
             EnsureWatcher(romPath, manager.RomParserExecutor.GetSupportedExtensions());
         }
         catch (OperationCanceledException)

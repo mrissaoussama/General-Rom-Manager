@@ -354,25 +354,47 @@ public sealed class PluginManager : IAsyncDisposable
         var entry = found
             ?? throw new InvalidOperationException($"Plugin '{pluginName}' is not loaded.");
 
-        var pluginLogger = _loggerFactory.CreateLogger(entry.Plugin.GetType().FullName ?? pluginName);
+        using var context = CreateContext(entry.Plugin, selectedRoms ?? []);
+        await entry.Plugin.ExecuteAsync(optionIndex, context);
+    }
 
-        var attr = entry.Plugin.GetType().GetCustomAttribute<PluginAttribute>();
-        var pluginDataDir = Path.Combine(
-            RomManagerShared.Configuration.RomManagerConfiguration.GetBaseFolderPath(),
-            "Plugins",
-            attr?.Name ?? pluginName);
+    /// <summary>
+    /// Tells every loaded <see cref="ILibraryHooks"/> plugin for the console that a scan finished. Each plugin
+    /// runs in turn; one that throws is logged and does not stop the others.
+    /// </summary>
+    /// <param name="isEnabled">Skips plugins the user switched off.</param>
+    public async Task NotifyScanCompletedAsync(LibraryScanCompleted scan, Func<IPlugin, bool>? isEnabled = null)
+    {
+        foreach (var plugin in GetPluginsForConsole(scan.Console).OfType<ILibraryHooks>().ToList())
+        {
+            var p = (IPlugin)plugin;
+            if (isEnabled is not null && !isEnabled(p)) continue;
+            try
+            {
+                using var context = CreateContext(p, []);
+                await plugin.OnScanCompletedAsync(scan, context);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Plugin {Name} failed in OnScanCompletedAsync", p.PluginName);
+            }
+        }
+    }
 
-        using var context = new DefaultPluginContext(
+    private DefaultPluginContext CreateContext(IPlugin plugin, IReadOnlyList<Rom> selectedRoms)
+    {
+        var attr = plugin.GetType().GetCustomAttribute<PluginAttribute>();
+        var name = attr?.Name ?? plugin.PluginName;
+        var pluginDataDir = Path.Combine(RomManagerShared.Configuration.RomManagerConfiguration.GetBaseFolderPath(), "Plugins", name);
+        return new DefaultPluginContext(
             _rootServices,
-            pluginLogger,
-            pluginName,
+            _loggerFactory.CreateLogger(plugin.GetType().FullName ?? name),
+            name,
             attr?.Permissions ?? [],
             pluginDataDir,
             Path.Combine(pluginDataDir, "config.json"),
-            selectedRoms ?? [],
+            selectedRoms,
             ShowPluginUICallback ?? ((_, _) => Task.CompletedTask));
-
-        await entry.Plugin.ExecuteAsync(optionIndex, context);
     }
 
     // ── Query helpers ──────────────────────────────────────────────────────

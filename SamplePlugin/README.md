@@ -21,6 +21,11 @@ to fetch game metadata for selected ROMs.
    Replace `YOUR_RAWG_API_KEY_HERE` with your actual key.
 5. Restart RomManager. The options will appear when you right-click a ROM.
 
+## Library hooks
+
+Also implement `ILibraryHooks` to hear about scans: `OnScanCompletedAsync` gets the console, every rom, and
+the roms added or removed since the library was last shown. It runs off the UI thread after each scan.
+
 ## Permissions
 
 Declare every permission in `[Plugin(Permissions = ...)]`; the user approves them before the plugin

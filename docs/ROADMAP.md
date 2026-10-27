@@ -103,7 +103,7 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
       database services without `Database` (`PluginPermissionException`). Cooperative, not a sandbox.
 - [ ] Separate `RomManager.Plugins.Abstractions` assembly (contract only) so plugins stop referencing
       all of RomManagerShared; version it with `PluginApi.Version`.
-- [ ] Plugin hooks: scan finished, rom added/removed.
+- [x] Plugin hooks: `ILibraryHooks.OnScanCompletedAsync` with the roms added/removed by each scan.
 - [ ] `dotnet new` template for plugins.
 
 ## Phase G: Testing and release

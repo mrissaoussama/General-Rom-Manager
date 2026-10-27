@@ -144,6 +144,36 @@ public sealed class PluginPermissionException(string pluginName, PluginPermissio
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
+// Library hooks
+// ──────────────────────────────────────────────────────────────────────────────
+
+/// <summary>A finished scan of one console's library. Roms are keyed by path, type and title ID.</summary>
+public sealed record LibraryScanCompleted(string Console, IReadOnlyList<Rom> Roms, IReadOnlyList<Rom> Added, IReadOnlyList<Rom> Removed)
+{
+    /// <summary>Compares the library before and after a scan.</summary>
+    public static LibraryScanCompleted Diff(string console, IEnumerable<Rom> before, IReadOnlyList<Rom> after)
+    {
+        static string Key(Rom r) => $"{r.Path?.ToUpperInvariant()}|{r.GetType().Name}|{r.TitleID}";
+        var old = before.ToLookup(Key);
+        var now = after.Select(Key).ToHashSet();
+        return new LibraryScanCompleted(console, after,
+            [.. after.Where(r => !old.Contains(Key(r)))],
+            [.. old.Where(g => !now.Contains(g.Key)).SelectMany(g => g)]);
+    }
+}
+
+/// <summary>
+/// Optional for plugins: implement next to <see cref="IPlugin"/> to hear about library changes. Called for
+/// the consoles in <see cref="IPlugin.SupportedConsoles"/> (all when empty), off the UI thread.
+/// </summary>
+public interface ILibraryHooks
+{
+    /// <summary>A scan of <see cref="LibraryScanCompleted.Console"/> finished; Added/Removed are relative to the
+    /// library shown before it.</summary>
+    Task OnScanCompletedAsync(LibraryScanCompleted scan, IPluginContext context);
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
 // Core plugin interface
 // ──────────────────────────────────────────────────────────────────────────────
 
