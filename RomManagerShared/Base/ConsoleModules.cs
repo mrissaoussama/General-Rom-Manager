@@ -114,7 +114,6 @@ public static class ConsoleModules
 
         foreach (var console in ConsoleTypes)
         {
-            services.AddScoped(typeof(GenericRepository<>).MakeGenericType(console));
             services.AddScoped(typeof(RomParserExecutor<>).MakeGenericType(console));
             services.AddScoped(typeof(TitleInfoProviderManager<>).MakeGenericType(console));
 
@@ -137,14 +136,6 @@ public static class ConsoleModules
             else
                 services.AddScoped(managerType);
         }
-
-        // Providers may depend on GenericRepository<SomeDto>; register every closed repository a constructor asks for.
-        var repoOpen = typeof(GenericRepository<>);
-        foreach (var repo in types.SelectMany(t => t.GetConstructors()).SelectMany(c => c.GetParameters())
-                     .Select(p => p.ParameterType)
-                     .Where(p => p.IsGenericType && p.GetGenericTypeDefinition() == repoOpen)
-                     .Distinct())
-            services.AddScoped(repo);
 
         foreach (var module in Modules)
             module.Register(services);

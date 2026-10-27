@@ -56,23 +56,6 @@ public class RomHashRepository
         return RomHashes.FirstOrDefault(rh => rh.Id == id);
     }
 
-    // Method to get a collection of RomHashes by Rom ID
-    public IEnumerable<RomHash> GetRomHashesByRomId(int romId)
-    {
-        return _context.Roms.Include(r => r.Hashes).First(r => r.Id == romId).Hashes ?? [];
-    }
-
-    // Method to get a collection of RomHashes by Title ID
-    public IEnumerable<RomHash> GetRomHashesByTitleId(string titleId)
-    {
-        var roms = _context.Roms
-                      .Where(r => r.TitleID == titleId);
-
-        var hashes = roms.SelectMany(r => r.Hashes ?? new List<RomHash>()); // Flatten the list of hashes from all ROMs
-
-        return hashes.ToList();
-    }
-
     // Method to get a RomHash by its Value
     public RomHash? GetRomHashByValue(string value)
     {

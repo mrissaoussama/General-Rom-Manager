@@ -9,14 +9,12 @@ using RomManagerShared.WiiU;
 using System.Text.Json;
 namespace RomManagerShared.ThreeDS.TitleInfoProviders;
 
-public class ThreeDSJsonTitleInfoProvider :TitleInfoProvider<ThreeDSConsole>,ICanSaveToDB
+public class ThreeDSJsonTitleInfoProvider  : TitleInfoProvider<ThreeDSConsole>
 {
     public Dictionary<string, JsonElement>? TitlesJson { get; set; }
-    public GenericRepository<ThreeDSJsonDTO> TitlesDatabaseRepository { get; set; }
 
-    public ThreeDSJsonTitleInfoProvider(GenericRepository<ThreeDSJsonDTO> repo)
+    public ThreeDSJsonTitleInfoProvider()
     {
-        TitlesDatabaseRepository = repo;
         var regionspath = ThreeDSConfiguration.GetTitleDBPath();
         Source = regionspath;
     }
@@ -60,20 +58,6 @@ public class ThreeDSJsonTitleInfoProvider :TitleInfoProvider<ThreeDSConsole>,ICa
                 AppLog.Warn($"Error deserializing JSON from file '{regionFilePath}': {ex.Message}");
             }
         }
-    }
-    public async Task SaveToDatabase()
-    {
-        if (TitlesJson is null||TitlesJson.Count == 0)
-             return;
-        List<ThreeDSJsonDTO> list = new();
-        foreach (var title in TitlesJson)
-        {
-            list.Add(JsonElementToDto(title.Value));
-
-        }
-        await TitlesDatabaseRepository.AddOrUpdateByPropertyRangeAsync(list, typeof(ThreeDSJsonDTO), nameof(ThreeDSJsonDTO.TitleID));
-
-
     }
     public override async Task<Rom> GetTitleInfo(Rom rom)
     {

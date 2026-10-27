@@ -20,7 +20,7 @@ public class MigrationTests
 
                 db.Database.GetPendingMigrations().Should().BeEmpty();
                 db.Database.HasPendingModelChanges().Should().BeFalse();
-                db.Roms.Count().Should().Be(0);
+                db.LibraryFiles.Count().Should().Be(0);
             }
         }
         finally

@@ -7,11 +7,11 @@ using RomManagerShared.Utils;
 namespace RomManagerShared.Base.Database;
 
 // ──────────────────────────────────────────────────────────────────────────────
-// AppDbContext — core configuration
-// Platform DbSets live in the AppDbContext.*.cs partial files.
+// AppDbContext — the library (one row per file, roms as JSON snapshots) and computed hashes.
+// Nothing console-specific: console modules can be added or removed without schema changes.
 // ──────────────────────────────────────────────────────────────────────────────
 
-public partial class AppDbContext : DbContext, IUnitOfWork
+public class AppDbContext : DbContext, IUnitOfWork
 {
     // ── Constructors ───────────────────────────────────────────────────────
 
@@ -23,8 +23,6 @@ public partial class AppDbContext : DbContext, IUnitOfWork
 
     // ── Shared / cross-platform sets ─────────────────────────────────────
 
-    public DbSet<Rom> Roms { get; set; } = null!;
-    public DbSet<Rating> Ratings { get; set; } = null!;
     public DbSet<RomHash> RomHashes { get; set; } = null!;
     public DbSet<RomHashProperty> RomHashProperties { get; set; } = null!;
     public DbSet<LibraryFile> LibraryFiles { get; set; } = null!;
@@ -68,44 +66,12 @@ public partial class AppDbContext : DbContext, IUnitOfWork
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // Base hierarchy — use TPH (Table-Per-Hierarchy)
-        modelBuilder.Entity<Rom>()
-            .HasDiscriminator<string>("RomType")
-            .HasValue<Rom>("Rom")
-            .HasValue<Game>("Game")
-            .HasValue<Update>("Update")
-            .HasValue<DLC>("DLC")
-            .HasValue<Homebrew>("Homebrew");
-
-        // Game → Updates / DLCs relationships
-        modelBuilder.Entity<DLC>()
-            .HasOne(dlc => dlc.RelatedGame)
-            .WithMany(game => game.DLCs)
-            .HasForeignKey("RelatedGameId")
-            .OnDelete(DeleteBehavior.SetNull);
-
-        modelBuilder.Entity<Update>()
-            .HasOne(update => update.RelatedGame)
-            .WithMany(game => game.Updates)
-            .HasForeignKey("RelatedGameId")
-            .OnDelete(DeleteBehavior.SetNull);
-
         modelBuilder.Entity<LibraryFile>()
             .HasIndex(f => new { f.Console, f.Path })
             .IsUnique();
 
-        // Platform-specific model configurations are in partial methods
-        ConfigureNintendoModels(modelBuilder);
-        ConfigureSonyModels(modelBuilder);
-        ConfigureMicrosoftModels(modelBuilder);
-
         base.OnModelCreating(modelBuilder);
     }
-
-    // Partial configuration hooks — implemented in their respective files
-    partial void ConfigureNintendoModels(ModelBuilder modelBuilder);
-    partial void ConfigureSonyModels(ModelBuilder modelBuilder);
-    partial void ConfigureMicrosoftModels(ModelBuilder modelBuilder);
 
     // ── IUnitOfWork ───────────────────────────────────────────────────────
 

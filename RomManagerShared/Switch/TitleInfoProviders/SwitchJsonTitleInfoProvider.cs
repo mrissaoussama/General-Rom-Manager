@@ -82,15 +82,10 @@ public class SwitchJsonRomDTO : IExternalRomFormat<SwitchConsole>
     [JsonPropertyName("screenshots")]
     public List<string>? Images { get; set; }
 }
-public class SwitchJsonTitleInfoProvider : TitleInfoProvider<SwitchConsole>, ICanSaveToDB
+public class SwitchJsonTitleInfoProvider : TitleInfoProvider<SwitchConsole>
 {
-    public GenericRepository<SwitchJsonRomDTO> TitlesDatabaseRepository { get; set; }
 
     public Dictionary<string, JsonElement>? TitlesDatabase { get; set; }
-    public SwitchJsonTitleInfoProvider(GenericRepository<SwitchJsonRomDTO> repo)
-    {
-        TitlesDatabaseRepository = repo;
-    }
     public override async Task LoadTitleDatabaseAsync()
     {
         await FileDownloader.DownloadSwitchGlobalTitleDBFile();
@@ -153,45 +148,6 @@ public class SwitchJsonTitleInfoProvider : TitleInfoProvider<SwitchConsole>, ICa
 
 
     }
-    public async Task SaveToDatabase()
-    {
-        if (TitlesDatabase is null || TitlesDatabase.Count == 0)
-            return;
-
-        var duplicates = new List<SwitchJsonRomDTO>(); // List to store items with duplicate TitleID
-        var frequencies = new Dictionary<string, int>(); // Dictionary to keep track of TitleID frequencies
-
-        foreach (var title in TitlesDatabase)
-        {
-            var jsonString = title.Value.GetRawText();
-            var romDto = JsonSerializer.Deserialize<SwitchJsonRomDTO>(jsonString);
-            if (romDto is not null)
-            {
-                if (romDto.TitleID is not null)
-                {
-                    if (frequencies.ContainsKey(romDto.TitleID))
-                    frequencies[romDto.TitleID]++;
-                else
-                    frequencies[romDto.TitleID] = 1;
-              
-
-                // Add to duplicates list if TitleID occurs more than once
-                if (frequencies[romDto.TitleID] > 1)
-                    duplicates.Add(romDto);  }
-            }
-        }
-
-        // Filter list to include only items with duplicate TitleID values
-        var list = TitlesDatabase.Values
-            .Select(title => JsonSerializer.Deserialize<SwitchJsonRomDTO>(title.GetRawText()))
-            .Where(romDto => romDto != null && romDto.TitleID!=null && frequencies.ContainsKey(romDto.TitleID) && frequencies[romDto.TitleID] > 1)
-            .Select(romDto => romDto!)
-            .ToList();
-
-        // Call AddOrUpdateByPropertyRangeAsync with the filtered list
-        await TitlesDatabaseRepository.AddOrUpdateByPropertyRangeAsync(list, typeof(SwitchJsonRomDTO), nameof(SwitchJsonRomDTO.TitleID));
-    }
-
     public async override Task<Rom> GetTitleInfo(Rom rom)
     {
         // Not loaded yet (Setup skipped or download failed), or nothing to look up.

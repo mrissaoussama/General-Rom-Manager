@@ -10,24 +10,13 @@ using System.Collections.Generic;
 using RomManagerShared.Base.Interfaces;
 namespace RomManagerShared.WiiU.TitleInfoProviders;
 
-public class WiiUWikiBrewTitleInfoProvider : TitleInfoProvider<WiiUConsole>,ICanSaveToDB
+public class WiiUWikiBrewTitleInfoProvider : TitleInfoProvider<WiiUConsole>
 {
-    public GenericRepository<WiiUWikiBrewTitleDTO> TitlesDatabaseRepository { get; set; }
-    public WiiUWikiBrewTitleInfoProvider(GenericRepository<WiiUWikiBrewTitleDTO> repo)
-    {
-        TitlesDatabaseRepository = repo;
-    }
     public override  Task LoadTitleDatabaseAsync()
     {
        return WiiUWikiBrewScraper.ScrapeTitles();
     }
-    public async Task SaveToDatabase()
-    {
-        if (WiiUWikiBrewScraper.titles is null || WiiUWikiBrewScraper.titles.Count == 0)
-            return;
-        await TitlesDatabaseRepository.AddOrUpdateByPropertyRangeAsync(WiiUWikiBrewScraper.titles, typeof(WiiUWikiBrewTitleDTO), nameof(WiiUWikiBrewTitleDTO.TitleID));
-
-    }    public override async Task<Rom> GetTitleInfo(Rom rom)
+    public override async Task<Rom> GetTitleInfo(Rom rom)
     {
         WiiUWikiBrewTitleDTO? title = WiiUWikiBrewScraper.titles?.FirstOrDefault(x =>
                 (rom.TitleID != null && x.TitleID == rom.TitleID) ||
