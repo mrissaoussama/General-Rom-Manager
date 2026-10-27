@@ -17,6 +17,9 @@ public abstract partial class DialogViewModel : ViewModelBase
 
     protected virtual bool CanConfirm() => true;
 
+    /// <summary>Called by the hosting window once it has closed (by a button, Escape or the title bar).</summary>
+    public virtual void OnClosed() { }
+
     [RelayCommand(CanExecute = nameof(CanConfirm))]
     private void Confirm()
     {

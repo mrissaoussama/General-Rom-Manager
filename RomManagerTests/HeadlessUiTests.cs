@@ -242,5 +242,19 @@ public sealed class HeadlessUiTests
 
         nes.IsCardView = true; // same window: the ViewLocator keeps one view per page
         Capture(table, "console-cards");
+
+        var settings = new SettingsViewModel(new AvaloniaUI.Utils.Settings(), consoles: [nes, gb], persist: _ => { });
+        var settingsWindow = new DialogWindow(settings);
+        settingsWindow.Show();
+        Find<SettingsView>(settingsWindow).Should().NotBeNull();
+        Capture(settingsWindow, "settings");
+        var tabs = Find<TabControl>(settingsWindow);
+        tabs.SelectedIndex = 1;
+        settingsWindow.UpdateLayout();
+        Find<CheckBox>(settingsWindow, c => c.Content as string == "Title").IsChecked.Should().BeTrue();
+        tabs.SelectedIndex = 2;
+        settingsWindow.UpdateLayout();
+        Find<Button>(settingsWindow, b => b.Content as string == "Reload plugins").Should().NotBeNull();
+        settingsWindow.Close();
     });
 }

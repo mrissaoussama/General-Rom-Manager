@@ -12,5 +12,6 @@ public partial class DialogWindow : Window
         if (double.IsNaN(vm.Height)) SizeToContent = SizeToContent.Height;
         else Height = vm.Height;
         vm.CloseRequested += Close;
+        Closed += (_, _) => vm.OnClosed();
     }
 }

@@ -36,6 +36,8 @@ public sealed class DialogServiceTests : IDisposable
         public Task<string?> AskRenameTemplateAsync(IReadOnlyList<Rom> roms, IEnumerable<string> consoleProperties, string consoleName, string template) =>
             Task.FromResult<string?>(null);
         public Task<string?> PickFolderAsync(string title) => Task.FromResult(Folder);
+        public Task<string?> PickFileAsync(string title, string filterName, params string[] extensions) => Task.FromResult(Folder);
+        public Task<bool> ShowAsync(DialogViewModel dialog) => Task.FromResult(Answer);
         public Task<string?> PickSaveFileAsync(string title, string suggestedName, params (string Name, string Extension)[] types) =>
             Task.FromResult<string?>(null);
         public Task ShowWindowAsync(Avalonia.Controls.Window window) => Task.CompletedTask;

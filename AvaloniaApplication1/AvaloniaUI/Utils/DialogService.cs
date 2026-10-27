@@ -20,6 +20,11 @@ public interface IDialogService
 
     Task<string?> PickFolderAsync(string title);
 
+    Task<string?> PickFileAsync(string title, string filterName, params string[] extensions);
+
+    /// <summary>Shows any <see cref="DialogViewModel"/>; true when the user confirmed.</summary>
+    Task<bool> ShowAsync(DialogViewModel dialog);
+
     /// <summary>Save dialog offering each (name, extension) pair as a file type; null when cancelled.</summary>
     Task<string?> PickSaveFileAsync(string title, string suggestedName, params (string Name, string Extension)[] types);
 
@@ -39,7 +44,7 @@ public sealed class AvaloniaDialogService : IDialogService
     private static Window? Owner => Shell.MainWindow;
 
     /// <summary>Shows <paramref name="vm"/> in a <see cref="DialogWindow"/>; false when there is no main window.</summary>
-    public static async Task<bool> ShowAsync(DialogViewModel vm)
+    public async Task<bool> ShowAsync(DialogViewModel vm)
     {
         if (Owner is not { } owner) return false;
         await new DialogWindow(vm).ShowDialog(owner);
@@ -70,6 +75,9 @@ public sealed class AvaloniaDialogService : IDialogService
 
     public Task<string?> PickFolderAsync(string title) =>
         Owner is { } owner ? Dialogs.PickFolderAsync(owner, title) : Task.FromResult<string?>(null);
+
+    public Task<string?> PickFileAsync(string title, string filterName, params string[] extensions) =>
+        Owner is { } owner ? Dialogs.PickFileAsync(owner, title, filterName, extensions) : Task.FromResult<string?>(null);
 
     public Task<string?> PickSaveFileAsync(string title, string suggestedName, params (string Name, string Extension)[] types) =>
         Owner is { } owner ? Dialogs.SaveFileAsync(owner, title, suggestedName, types) : Task.FromResult<string?>(null);

@@ -79,7 +79,9 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
 
 - [x] **[P1]** `IDialogService` (`DialogService.Current`, faked in tests); confirm, preview, properties, rename and
       choose-console dialogs are AXAML views hosted by `DialogWindow`.
-- [ ] Settings and Onboarding as AXAML views (still built in code; shown through `IDialogService.ShowWindowAsync`).
+- [x] Settings as an AXAML view (`SettingsViewModel` + `SettingsView`). It edits a draft: Cancel used to keep
+      every edit in memory (saved by the next unrelated save); plugin reload refreshes the list in place.
+- [ ] Onboarding as an AXAML view.
 - [x] Settings: toggle Redump hashing (settings.json overrides config.json).
 - [x] Settings: scan parallelism and excluded folders.
 - [x] Settings: DAT overview per console (sets and game counts, on request) and "Open DAT folder".

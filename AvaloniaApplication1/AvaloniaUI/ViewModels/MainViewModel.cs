@@ -289,9 +289,8 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private async Task OpenSettings()
     {
-        var win = new SettingsWindow(_serviceProvider.GetService<PluginManager>(), ConsoleViewModels,
-            () => DownloadMissingDatabasesAsync(showPanel: true));
-        await Dialogs.ShowWindowAsync(win);
+        await Dialogs.ShowAsync(new SettingsViewModel(Settings.Instance, _serviceProvider.GetService<PluginManager>(),
+            ConsoleViewModels, () => DownloadMissingDatabasesAsync(showPanel: true)));
         // Paths may have changed (LibraryRoots reads Settings on every call).
         var added = await SyncConsolesAsync();
         foreach (var c in ConsoleViewModels) c.RefreshRequirements();
