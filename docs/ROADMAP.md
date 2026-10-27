@@ -37,7 +37,12 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
 - [x] `FileUtils.Log` → Microsoft.Extensions.Logging: `AppLog.Info/Warn/Error` (category = calling file, level
       by meaning; 138 warnings, 40 info) through the host's `ILoggerFactory`; `LogFileProvider`/`LogSink` keep the
       log file, log panel and `ParseDiagnostics`. Log writes are serialised and fall back to a per-user path.
-- [ ] One `IOptionsMonitor<AppOptions>` from config.json + settings.json, saved through `ISettingsStore`.
+- [x] `ISettingsStore` (`JsonSettingsStore`): atomic saves (a crash used to be able to truncate settings.json),
+      a corrupt file is kept as `settings.corrupt-*.json` instead of being replaced by defaults on the next save,
+      and new installs keep settings in `%AppData%/RomManager` (an update replacing the program folder would
+      have wiped them; an existing settings.json next to the exe is still used).
+- [ ] Fold config.json into the same options model (`IOptionsMonitor<AppOptions>`); `RomManagerConfiguration`
+      is still static.
 - [x] `MainViewModel.RomPaths` (static) → `ILibraryRoots` (DI singleton, reads settings on each call, no reload
       step); several folders per console scanned as one library, one watcher each; an offline folder keeps
       its cached rows; adding a folder for a configured console offers "Add as another folder".

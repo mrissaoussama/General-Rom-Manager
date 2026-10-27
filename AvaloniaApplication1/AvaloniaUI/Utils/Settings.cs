@@ -12,8 +12,6 @@ public class PluginSetting
 
 public class Settings
 {
-    private static readonly string _settingsPath =
-        Path.Combine(AppContext.BaseDirectory, "settings.json");
 
     // ── Column Visibility ─────────────────────────────────────────────────
     public Dictionary<string, List<string>> VisibleColumns { get; set; } = new();
@@ -113,45 +111,17 @@ public class Settings
     /// <summary>Override for Switch TitleDB local path (relative to BaseFolder).</summary>
     public string? SwitchTitleDBPathOverride { get; set; }
 
-    // ── Singleton ────────────────────────────────────────────────────────
-    public static Settings Instance { get; private set; } = Load();
+    // ── Storage ──────────────────────────────────────────────────────────
+    /// <summary>Where settings live; the app's store unless replaced (tests).</summary>
+    public static ISettingsStore Store { get; set; } = new JsonSettingsStore(JsonSettingsStore.DefaultPath());
 
-    public static Settings Load()
-    {
-        try
-        {
-            if (File.Exists(_settingsPath))
-            {
-                var json = File.ReadAllText(_settingsPath);
-                var settings = JsonSerializer.Deserialize<Settings>(json) ?? new Settings();
-                Instance = settings;
-                return settings;
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error loading settings: {ex.Message}");
-        }
+    public static Settings Instance => Store.Current;
 
-        Instance = new Settings();
-        return Instance;
-    }
+    /// <summary>Re-reads the settings file.</summary>
+    public static Settings Load() => Store.Reload();
 
-    public void Save()
-    {
-        try
-        {
-            var json = JsonSerializer.Serialize(this, new JsonSerializerOptions
-            {
-                WriteIndented = true
-            });
-            File.WriteAllText(_settingsPath, json);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error saving settings: {ex.Message}");
-        }
-    }
+    /// <summary>Saves this object (normally <see cref="Instance"/>) to the store.</summary>
+    public void Save() => Store.Save(this);
 
     public bool IsPluginEnabled(string pluginName)
         => PluginSettings.FirstOrDefault(p =>

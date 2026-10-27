@@ -60,7 +60,8 @@ dotnet run --project tools/ParserHarness -- PS4Console "Y:\roms\PS4" 5
 
 - `AvaloniaUI/config.json` (copied to output): `GlobalPaths` (BaseDirectory, Database, logs, plugins,
   cache) and per-console `RomPath`, tool paths, TitleDB URLs. Loaded via `RomManagerConfiguration`.
-- `settings.json` next to the exe (`Settings.Instance`): user overrides (paths, columns, theme). Settings
+- `settings.json` (`Settings.Instance`, via `ISettingsStore`/`JsonSettingsStore`): next to the exe if one is there
+  (portable), else `%AppData%/RomManager/`. Atomic saves; a corrupt file is kept aside. User overrides (paths, columns, theme). Settings
   win over config.json for ROM paths. `ILibraryRoots` (`LibraryRoots`) gives each console's folders: the
   primary one plus `ConsoleExtraLibraryPaths`; all are scanned as one library.
 - Switch keys: `%USERPROFILE%\.switch\prod.keys` and `title.keys` (requirement `switch.prod_keys`).
