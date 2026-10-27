@@ -10,8 +10,10 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
 ## Phase A: Dependencies and build
 
 - [x] Microsoft.Extensions / EF Core / System.IO.Hashing 10.0.13 → 10.0.14.
-- [ ] **[P1]** `Ryujinx.LibHac` 0.20.0 is unlisted on nuget.org (Ryujinx ended in 2024). It still restores, but
-      plan a fallback: pin the package in a local feed or vendor the parts we use (NCA/PFS0/XCI, keys).
+- [x] **[P1]** `Ryujinx.LibHac` 0.20.0 is unlisted on nuget.org (Ryujinx ended in 2024). Fallback: `nuget.config`
+      adds the repo-local feed `nuget-local/`, filled by `tools/pin-packages.ps1` from the NuGet cache (SHA-512
+      checked; `.nupkg` git-ignored). Restoring from that feed alone was checked. Vendoring is the next step only if
+      the package ever stops restoring.
 - [ ] Linux and macOS CI have not run since the headless UI tests and Avalonia 12 landed; check them on the
       next push (Skia needs fontconfig on Linux runners).
 
