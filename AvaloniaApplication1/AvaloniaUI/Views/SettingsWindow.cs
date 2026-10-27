@@ -191,6 +191,30 @@ public sealed class SettingsWindow : Window
 
         sp.Children.Add(MakeSeparator());
 
+        // ── Conversion tools ──────────────────────────────────────────────
+        sp.Children.Add(MakeLabel("Conversion tools", fontSize: 14, bold: true));
+        sp.Children.Add(MakeLabel(
+            "Programs you supply for \"Convert\" in the rom menu (not included with RomManager). Empty: the Tools folder.",
+            fontSize: 11, muted: true));
+        foreach (var tool in ConversionTools.All)
+        {
+            var t = tool;
+            var box = MakeTextBox(settings.ToolPaths.GetValueOrDefault(t.Id, ""), w: 300);
+            box.Watermark = t.ResolvePath(null);
+            box.TextChanged += (_, _) =>
+            {
+                if (string.IsNullOrWhiteSpace(box.Text)) settings.ToolPaths.Remove(t.Id);
+                else settings.ToolPaths[t.Id] = box.Text!;
+            };
+            sp.Children.Add(MakeLabeledPathRow(t.DisplayName, box, "Browse…", async () =>
+            {
+                var exe = await Dialogs.PickFileAsync(this, t.DisplayName, "Programs", "exe", "*");
+                if (exe != null) box.Text = exe;
+            }));
+        }
+
+        sp.Children.Add(MakeSeparator());
+
         // ── Scanning ──────────────────────────────────────────────────────
         sp.Children.Add(MakeLabel("Scanning", fontSize: 14, bold: true));
         sp.Children.Add(MakeLabel(

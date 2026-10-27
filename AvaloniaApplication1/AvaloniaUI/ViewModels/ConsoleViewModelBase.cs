@@ -512,6 +512,17 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
         catch (Exception ex) { StatusMessage = $"Export failed: {ex.Message}"; }
     }
 
+    /// <summary>Conversions that apply to some of <paramref name="roms"/> and whose program is present.</summary>
+    public static IReadOnlyList<ConversionTool> AvailableConversions(IReadOnlyList<RomViewModel> roms) =>
+        [.. ConversionTools.All.Where(t => roms.Any(r => t.Accepts(r.Path)) && File.Exists(Settings.Instance.ToolPath(t)))];
+
+    /// <summary>Queues a conversion of the selected files (originals are kept).</summary>
+    public void Convert(ConversionTool tool, IReadOnlyList<RomViewModel> roms)
+    {
+        if (Operations is null) return;
+        Track(Operations.EnqueueConvert([.. roms.Select(r => r.RomSource)], tool, Settings.Instance.ToolPath(tool)), roms);
+    }
+
     /// <summary>Starts the emulator configured for the rom's console (Settings → Emulators).</summary>
     [RelayCommand]
     private void LaunchInEmulator(IReadOnlyList<RomViewModel> roms)

@@ -209,6 +209,53 @@ public sealed class RomOperationService
         }
     }
 
+    // ── Convert ───────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Converts each rom's file with a user-supplied tool (chdman, DolphinTool, …). Originals are kept; the
+    /// output lands next to them. Undo deletes the files the conversion created.
+    /// </summary>
+    public QueuedOperation EnqueueConvert(IReadOnlyList<Rom> roms, ConversionTool tool, string exePath)
+    {
+        var inputs = roms.Where(r => !r.IsFolderFormat && r.Path is not null && tool.Accepts(r.Path))
+            .Select(r => r.Path!).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        var created = new List<string>();
+        return _queue.Enqueue(new QueuedOperation
+        {
+            Name = $"Convert {inputs.Count} file(s) → {tool.DisplayName}",
+            Category = "Convert",
+            ExecuteAsync = async (ct, progress) =>
+            {
+                int done = 0, failed = 0;
+                string? firstError = null;
+                foreach (var input in inputs)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    try
+                    {
+                        var output = await ToolConverter.ConvertAsync(tool, exePath, input, ct);
+                        lock (created) created.Add(output);
+                        FileUtils.Log($"[Convert] {Path.GetFileName(input)} → {Path.GetFileName(output)}");
+                    }
+                    catch (Exception ex) when (ex is not OperationCanceledException)
+                    {
+                        failed++;
+                        firstError ??= ex.Message;
+                        FileUtils.Log($"[Convert] {input}: {ex.Message}");
+                    }
+                    progress.Report(++done * 100.0 / inputs.Count);
+                }
+                if (failed > 0 && failed == inputs.Count)
+                    throw new InvalidOperationException($"All {failed} conversion(s) failed: {firstError}");
+            },
+            UndoAsync = ct => Task.Run(() =>
+            {
+                lock (created)
+                    foreach (var file in created.Where(File.Exists)) File.Delete(file);
+            }, ct),
+        });
+    }
+
     // ── Hash Calculation ──────────────────────────────────────────────────
 
     /// <summary>

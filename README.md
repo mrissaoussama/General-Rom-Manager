@@ -15,6 +15,8 @@ hash files.
 - **Organise**: rename with a preview of old → new names, move with a preview, delete, hash
   (CRC32/MD5/SHA1), duplicate detection, 1G1R (keep one version per game by region priority); operations
   run in a queue with cancel and undo (undo survives a restart).
+- **Convert**: CHD, RVZ, CSO and NSZ through chdman, DolphinTool, maxcso or nsz that you install
+  yourself (Settings → Conversion tools); originals are kept.
 - **Identify**: No-Intro DAT matching for cartridge consoles (by hash), title databases for Switch,
   3DS and Wii U, libretro box art for DAT-matched games, embedded icons and banners.
 - **Switch missing updates and DLC**: compares the library against `versions.json` and the title

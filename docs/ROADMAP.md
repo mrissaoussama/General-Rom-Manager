@@ -100,8 +100,10 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
       page previews and moves the others (undoable).
 - [x] Per-console emulator launch: Settings → Emulators (path + arguments with {rom}/{dir}/{name}),
       "Launch in emulator" in the rom context menu.
-- [ ] Convert/compress through user-supplied tools (chdman, DolphinTool, nsz) as queued operations
-      (ADR 0002: optional tools, never bundled).
+- [x] Convert/compress through user-supplied tools (`ConversionTools`: chdman CD/DVD → CHD, DolphinTool → RVZ,
+      maxcso → CSO, nsz → NSZ) as queued, cancellable operations: the tool runs in `Cache/Temp/<guid>`, the
+      result is moved next to the original (kept; never overwritten), undo deletes the outputs. Tool paths in
+      Settings → Conversion tools; "Convert" appears in the rom menu when a tool is present.
 
 ## Phase F: Plugins
 

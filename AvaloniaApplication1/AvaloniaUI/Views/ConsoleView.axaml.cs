@@ -222,6 +222,18 @@ public partial class ConsoleView : UserControl
         _menu.Items.Add(Item("Rename…" + n, vm.RenameCommand, gesture: "F2"));
         _menu.Items.Add(Item("Move to…" + n, vm.MoveCommand));
         _menu.Items.Add(Item("Properties…", vm.ViewPropertiesCommand, single));
+        if (ConsoleViewModelBase.AvailableConversions(sel) is { Count: > 0 } conversions)
+        {
+            var convert = new MenuItem { Header = "Convert" + n };
+            foreach (var tool in conversions)
+            {
+                var item = new MenuItem { Header = tool.DisplayName };
+                ToolTip.SetTip(item, $"Keeps the original; writes .{tool.OutputExtension} next to it");
+                item.Click += (_, _) => vm.Convert(tool, sel);
+                convert.Items.Add(item);
+            }
+            _menu.Items.Add(convert);
+        }
         _menu.Items.Add(new Separator());
         _menu.Items.Add(Item("Delete" + n, vm.DeleteCommand, gesture: "Delete"));
 

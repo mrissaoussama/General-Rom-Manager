@@ -44,6 +44,11 @@ public class Settings
     /// <summary>Per console id: emulator executable and arguments template (see EmulatorLauncher).</summary>
     public Dictionary<string, EmulatorSettings> Emulators { get; set; } = new();
 
+    /// <summary>Paths of user-supplied conversion tools by <see cref="ConversionTool.Id"/>; unset: Tools folder.</summary>
+    public Dictionary<string, string> ToolPaths { get; set; } = new();
+
+    public string ToolPath(ConversionTool tool) => tool.ResolvePath(ToolPaths.GetValueOrDefault(tool.Id));
+
     /// <summary>Per-console scan settings, keyed by console id.</summary>
     public Dictionary<string, ConsoleScanSettings> ScanSettings { get; set; } = new();
 
