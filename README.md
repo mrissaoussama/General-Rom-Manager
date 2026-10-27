@@ -54,8 +54,13 @@ Screenshots are rendered by the headless UI tests with sample data (`SCREENSHOTS
 
 ## Install
 
-Download the archive for your platform from the releases page and unpack it anywhere. It contains
-one self-contained executable and `config.json`; no .NET install is needed.
+From the releases page:
+
+- **Windows**: `RomManager-win-Setup.exe` (installs per user, updates itself) or `RomManager-win-Portable.zip`.
+- **Linux**: the `.AppImage`. **macOS**: the `.pkg`.
+
+Help → Check for app updates installs newer releases; Settings can also check at startup (off by default).
+Builds are not code-signed yet, so Windows SmartScreen and macOS Gatekeeper will warn on first start.
 
 To build from source you need the .NET 10 SDK:
 
@@ -65,20 +70,20 @@ dotnet run --project AvaloniaApplication1/AvaloniaUI.Desktop
 
 ## Setup
 
-1. On first start, the setup wizard asks for a base folder and your ROM folders. You can also drop a
-   folder onto the window; RomManager guesses the console from the file extensions.
+1. On first start, the setup wizard asks for your ROM folders. You can also drop a folder onto the
+   window; RomManager guesses the console from the files. A console can have several folders.
 2. **Switch keys** (optional, for full Switch metadata): put `prod.keys` and `title.keys` in
    `%USERPROFILE%\.switch\` (Windows) or `~/.switch/`. Settings shows whether they were found but never
    displays key values.
 3. **Title databases** (optional): Settings → "Download title databases" fetches the Switch and Wii U
    title lists and the Switch `versions.json`.
-4. **No-Intro DATs** (optional): copy DAT files into the folder shown on the dashboard
-   (`Data/DAT` by default). They are applied on the next scan. Redump DATs for PlayStation, PS2, PSP, GameCube,
-   Wii and Dreamcast match `.iso`/`.gcm` images and `.cue`/`.gdi` sets when `"Dats": { "HashDiscImages": true }` is set in
-   `config.json` (off by default: hashing DVD images is slow).
+4. **DATs** (optional): copy No-Intro DAT files into the DAT folder (Settings → Open DAT folder). They are
+   applied on the next scan. Redump DATs for PlayStation, PS2, PSP, GameCube, Wii and Dreamcast match disc
+   images when Settings → "Hash disc images" is on (slow on the first scan; results are cached).
 
-Paths and tool locations live in `config.json`; your own choices are saved to `settings.json` next to
-the executable and take precedence.
+Data (database, cache, logs) goes to `%AppData%/GeneralRomManager` unless `GlobalPaths.BaseDirectory` is set.
+Your choices are saved to `settings.json` in the same folder (or next to the executable, if one is there).
+Developers can keep personal paths in `AvaloniaApplication1/AvaloniaUI/config.local.json` (git-ignored).
 
 ## Documentation
 

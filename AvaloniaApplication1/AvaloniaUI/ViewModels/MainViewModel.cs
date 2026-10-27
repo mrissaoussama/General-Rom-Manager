@@ -172,6 +172,40 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private Task CheckForUpdates() => DownloadMissingDatabasesAsync(showPanel: true);
 
+    /// <summary>Set by the app; null in tests and design mode.</summary>
+    public IAppUpdater? Updater { get; set; }
+
+    /// <summary>Checks GitHub for a newer RomManager and offers to install it.</summary>
+    [RelayCommand]
+    public async Task CheckForAppUpdate() => await CheckForAppUpdateAsync(quiet: false);
+
+    /// <param name="quiet">Startup check: say nothing unless there is an update.</param>
+    public async Task CheckForAppUpdateAsync(bool quiet)
+    {
+        if (Updater is not { IsInstalled: true } updater)
+        {
+            if (!quiet) StatusMessage = "Updates are available for installed copies only (this one runs from a folder).";
+            return;
+        }
+        try
+        {
+            if (await updater.CheckAsync() is not { } version)
+            {
+                if (!quiet) StatusMessage = "RomManager is up to date";
+                return;
+            }
+            if (!await Dialogs.ConfirmAsync("Update available", $"RomManager {version} is available. Download it and restart now?", "Update"))
+                return;
+            StatusMessage = $"Downloading RomManager {version}…";
+            await updater.DownloadAndRestartAsync(new Progress<int>(p => StatusMessage = $"Downloading RomManager {version}… {p}%"));
+        }
+        catch (Exception ex)
+        {
+            AppLog.Warn($"Update check failed: {ex.Message}");
+            if (!quiet) StatusMessage = $"Update check failed: {ex.Message}";
+        }
+    }
+
     /// <summary>Queues downloads for missing DB files. Returns the number queued, or -1 if the check failed.</summary>
     private async Task<int> DownloadMissingDatabasesAsync(bool showPanel)
     {

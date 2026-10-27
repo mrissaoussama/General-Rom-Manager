@@ -162,4 +162,40 @@ public sealed class DialogServiceTests : IDisposable
         File.Exists(Path.Combine(_dir, "others", "Tetris (Japan).gb")).Should().BeTrue();
         File.Exists(usa.Path).Should().BeTrue();
     }
+
+    private sealed class FakeUpdater(string? version, bool installed = true) : IAppUpdater
+    {
+        public bool IsInstalled => installed;
+        public bool Applied { get; private set; }
+        public Task<string?> CheckAsync(CancellationToken ct = default) => Task.FromResult(version);
+        public Task DownloadAndRestartAsync(IProgress<int>? progress = null) { Applied = true; return Task.CompletedTask; }
+    }
+
+    [Theory]
+    [InlineData(true, true)]
+    [InlineData(false, false)]
+    public async Task AppUpdate_AsksBeforeInstalling(bool answer, bool applied)
+    {
+        var updater = new FakeUpdater("2.0.0");
+        var vm = new MainViewModel(new ServiceCollection().BuildServiceProvider()) { Updater = updater };
+        _dialogs.Answer = answer;
+
+        await vm.CheckForAppUpdateAsync(quiet: true);
+
+        _dialogs.Asked.Should().Equal("Update available");
+        updater.Applied.Should().Be(applied);
+    }
+
+    [Fact]
+    public async Task AppUpdate_NothingToDoWhenUpToDateOrNotInstalled()
+    {
+        var vm = new MainViewModel(new ServiceCollection().BuildServiceProvider()) { Updater = new FakeUpdater(null) };
+        await vm.CheckForAppUpdateAsync(quiet: false);
+        vm.StatusMessage.Should().Be("RomManager is up to date");
+
+        vm.Updater = new FakeUpdater("2.0.0", installed: false);
+        await vm.CheckForAppUpdateAsync(quiet: false);
+        vm.StatusMessage.Should().Contain("installed copies only");
+        _dialogs.Asked.Should().BeEmpty();
+    }
 }

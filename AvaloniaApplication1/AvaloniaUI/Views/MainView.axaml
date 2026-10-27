@@ -35,6 +35,9 @@
                 <MenuItem Header="_Download missing databases" Command="{Binding CheckForUpdatesCommand}" />
                 <MenuItem Header="_Export library…" Command="{Binding ExportLibraryCommand}" />
             </MenuItem>
+            <MenuItem Header="_Help">
+                <MenuItem Header="Check for _app updates…" Command="{Binding CheckForAppUpdateCommand}" />
+            </MenuItem>
         </Menu>
 
         <Border DockPanel.Dock="Bottom" Classes="statusbar">

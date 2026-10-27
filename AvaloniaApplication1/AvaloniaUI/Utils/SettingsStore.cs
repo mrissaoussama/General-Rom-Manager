@@ -40,7 +40,7 @@ public sealed class JsonSettingsStore(string path) : ISettingsStore
     {
         var portable = System.IO.Path.Combine(AppContext.BaseDirectory, "settings.json");
         if (File.Exists(portable)) return portable;
-        return System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "RomManager", "settings.json");
+        return System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "GeneralRomManager", "settings.json");
     }
 
     public Settings Reload()

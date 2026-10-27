@@ -138,7 +138,9 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
       `tools/ParserHarness --json`.
 - [x] Headless UI tests (Avalonia.Headless, `HeadlessUiTests`): dialogs clicked with a real pointer, the
       dashboard, and the console page's grid.
-- [ ] Velopack installers and auto-update; macOS `.app` bundle; code signing.
+- [x] Velopack: the release workflow builds Setup.exe + portable zip (Windows), AppImage (Linux), .app/.pkg
+      (macOS) and the update feed; Help → Check for app updates (and an opt-in startup check) installs newer
+      releases. Code signing runs when the `WIN_SIGN_PARAMS` / `MAC_SIGN_*` secrets are set (none yet).
 
 ---
 

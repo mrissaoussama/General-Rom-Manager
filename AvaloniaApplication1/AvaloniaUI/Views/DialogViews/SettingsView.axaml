@@ -147,6 +147,7 @@
 
                         <TextBlock Classes="heading" Text="Downloads and DATs" />
                         <CheckBox Content="Download missing title databases on startup" IsChecked="{Binding AutoDownloadMissingDbs}" />
+                        <CheckBox Content="Check GitHub for a newer RomManager on startup (installed copies)" IsChecked="{Binding CheckForAppUpdates}" />
                         <CheckBox Content="Hash disc images for Redump DAT matching (slow on the first scan; results are cached)"
                                   IsChecked="{Binding HashDiscImages}" />
                         <StackPanel Orientation="Horizontal" Spacing="8">

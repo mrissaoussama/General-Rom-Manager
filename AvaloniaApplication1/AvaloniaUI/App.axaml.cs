@@ -117,7 +117,7 @@ public partial class App : Application
             ApplySwitchConfigOverrides();
 
             var scope = _host.Services.CreateScope();
-            var mainVm = new MainViewModel(scope.ServiceProvider);
+            var mainVm = new MainViewModel(scope.ServiceProvider) { Updater = new VelopackUpdater() };
             var s = Settings.Instance;
             desktop.MainWindow = new MainWindow
             {
@@ -136,6 +136,8 @@ public partial class App : Application
                     await DialogService.Current.ShowAsync(new OnboardingViewModel(Settings.Instance));
                 // Cached libraries show immediately; only new/changed files are parsed.
                 await mainVm.RefreshCommand.ExecuteAsync(null);
+                if (Settings.Instance.CheckForAppUpdates)
+                    await mainVm.CheckForAppUpdateAsync(quiet: true);
             };
 
             // Persist window size on close

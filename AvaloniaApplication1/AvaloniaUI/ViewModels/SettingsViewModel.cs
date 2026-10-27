@@ -37,6 +37,7 @@ public sealed partial class SettingsViewModel : DialogViewModel
         _regionPriority = settings.RegionPriority;
         _renameFormat = settings.RenameFormatString;
         _autoDownloadMissingDbs = settings.AutoDownloadMissingDBs;
+        _checkForAppUpdates = settings.CheckForAppUpdates;
         _hashDiscImages = RomManagerShared.Utils.Dat.DiscHashing.Enabled;
         _switchTitleDbUrl = settings.SwitchTitleDBUrlOverride ?? "";
         _switchVersionsUrl = settings.SwitchVersionsUrlOverride ?? "";
@@ -133,6 +134,7 @@ public sealed partial class SettingsViewModel : DialogViewModel
     // ── Downloads, DATs ───────────────────────────────────────────────────
 
     [ObservableProperty] private bool _autoDownloadMissingDbs;
+    [ObservableProperty] private bool _checkForAppUpdates;
     [ObservableProperty] private bool _hashDiscImages;
     [ObservableProperty] private string _downloadStatus = "";
     [ObservableProperty] private string _datOverview = "";
@@ -319,6 +321,7 @@ public sealed partial class SettingsViewModel : DialogViewModel
         s.RegionPriority = RegionPriority;
         s.RenameFormatString = RenameFormat;
         s.AutoDownloadMissingDBs = AutoDownloadMissingDbs;
+        s.CheckForAppUpdates = CheckForAppUpdates;
         s.HashDiscImages = HashDiscImages;
         s.SwitchTitleDBUrlOverride = NullIfBlank(SwitchTitleDbUrl);
         s.SwitchVersionsUrlOverride = NullIfBlank(SwitchVersionsUrl);

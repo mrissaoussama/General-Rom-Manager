@@ -33,14 +33,26 @@ jobs:
           version="${GITHUB_REF_NAME#v}"
           dotnet publish AvaloniaApplication1/AvaloniaUI.Desktop/AvaloniaUI.Desktop.csproj \
             -c Release -r ${{ matrix.rid }} -p:Version="$version" -o "publish/RomManager-$version-${{ matrix.rid }}"
-      - name: Archive
+      - name: Package (Velopack)
         shell: bash
+        env:
+          # Optional code signing; packages are unsigned when these secrets are not set.
+          WIN_SIGN_PARAMS: ${{ secrets.WIN_SIGN_PARAMS }}
+          MAC_SIGN_APP_IDENTITY: ${{ secrets.MAC_SIGN_APP_IDENTITY }}
+          MAC_SIGN_INSTALL_IDENTITY: ${{ secrets.MAC_SIGN_INSTALL_IDENTITY }}
         run: |
-          cd publish
-          dir=$(ls)
-          if [[ "${{ matrix.rid }}" == win-* ]]; then 7z a "$dir.zip" "$dir" > /dev/null; else tar czf "$dir.tar.gz" "$dir"; fi
+          version="${GITHUB_REF_NAME#v}"
+          dotnet tool install -g vpk --version 1.2.161
+          exe=RomManager
+          sign=()
+          case "${{ matrix.rid }}" in
+            win-*) exe=RomManager.exe; [[ -n "$WIN_SIGN_PARAMS" ]] && sign=(--signParams "$WIN_SIGN_PARAMS") ;;
+            osx-*) [[ -n "$MAC_SIGN_APP_IDENTITY" ]] && sign=(--signAppIdentity "$MAC_SIGN_APP_IDENTITY" --signInstallIdentity "$MAC_SIGN_INSTALL_IDENTITY") ;;
+          esac
+          # Setup.exe / portable zip on Windows, AppImage on Linux, .app + .pkg on macOS, plus the update feed
+          # that the in-app updater (Help → Check for app updates) reads from this release.
+          vpk pack --packId RomManager --packVersion "$version" --packTitle RomManager \
+            --packDir "publish/RomManager-$version-${{ matrix.rid }}" --mainExe "$exe" --outputDir releases "${sign[@]}"
       - uses: softprops/action-gh-release@v2
         with:
-          files: |
-            publish/*.zip
-            publish/*.tar.gz
+          files: releases/*
