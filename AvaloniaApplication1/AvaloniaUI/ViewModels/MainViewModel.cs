@@ -27,7 +27,7 @@ public partial class MainViewModel : ViewModelBase
     [ObservableProperty] private ViewModelBase? _selectedPage;
     [ObservableProperty] private int _selectedBottomTab;
     [ObservableProperty] private bool _isAnyLoading;
-    [ObservableProperty] private string _statusMessage = "Ready";
+    [ObservableProperty] private string _statusMessage = Strings.Main_Ready;
 
     public MainViewModel(IServiceProvider serviceProvider)
     {

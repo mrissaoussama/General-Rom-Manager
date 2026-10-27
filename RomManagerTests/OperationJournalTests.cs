@@ -1,4 +1,4 @@
-using AwesomeAssertions;
+﻿using AwesomeAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using RomManagerShared.Base;
 using RomManagerShared.Utils;
@@ -112,5 +112,22 @@ public class OperationJournalTests : IDisposable
         op.State.Should().Be(OperationState.Undone);
         rom.Path.Should().Be(Path.Combine(game, "code", "app.xml"));
         File.Exists(rom.Path).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task BulkRename_ThatPartlyFails_CompletesWithAWarning()
+    {
+        var good = new Game { Path = Path.Combine(_root, "a.nsp"), TitleID = "01", Titles = [new() { Value = "Named" }] };
+        var untitled = new Game { Path = Path.Combine(_root, "b.nsp"), TitleID = "02" };
+        File.WriteAllText(good.Path, "a");
+        File.WriteAllText(untitled.Path, "b");
+        var service = new RomOperationService(new OperationQueue(), new ServiceCollection().BuildServiceProvider());
+
+        var op = service.EnqueueBulkRename([good, untitled], "{TitleName}");
+        await WaitFinished(op);
+
+        op.Warning.Should().StartWith("1 of 2 failed").And.Contain(FileRenamer.EmptyNameError);
+        File.Exists(Path.Combine(_root, "Named.nsp")).Should().BeTrue();
+        File.Exists(untitled.Path).Should().BeTrue();
     }
 }

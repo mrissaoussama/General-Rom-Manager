@@ -1,4 +1,4 @@
-namespace AvaloniaUI.ViewModels;
+﻿namespace AvaloniaUI.ViewModels;
 
 /// <summary>Live tail of the application log.</summary>
 public sealed partial class LogViewModel : ViewModelBase
@@ -38,8 +38,10 @@ public sealed partial class OperationItemViewModel(QueuedOperation op) : ViewMod
 {
     public QueuedOperation Operation { get; } = op;
     public string Text => $"[{Operation.Category}] {Operation.Name}"
-        + (string.IsNullOrEmpty(Operation.ErrorMessage) ? "" : $" — {Operation.ErrorMessage}");
-    public string State => Operation.State.ToString();
+        + (string.IsNullOrEmpty(Operation.ErrorMessage) ? "" : $" — {Operation.ErrorMessage}")
+        + (HasWarning ? $" — {Operation.Warning}" : "");
+    public bool HasWarning => Operation.State == OperationState.Completed && !string.IsNullOrEmpty(Operation.Warning);
+    public string State => HasWarning ? Strings.Operations_PartlyDone : Operation.State.ToString();
     public bool IsRunning => Operation.State == OperationState.Running;
     public double Progress => Operation.ProgressPercent;
     public bool CanCancel => Operation.CanCancel;

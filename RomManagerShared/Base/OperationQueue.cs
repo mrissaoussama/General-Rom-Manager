@@ -1,4 +1,4 @@
-using RomManagerShared.Utils;
+﻿using RomManagerShared.Utils;
 
 namespace RomManagerShared.Base;
 
@@ -35,6 +35,9 @@ public sealed class QueuedOperation
     public OperationState State { get; internal set; } = OperationState.Pending;
     public double ProgressPercent { get; internal set; }
     public string? ErrorMessage { get; internal set; }
+
+    /// <summary>Set by the work itself when it finished but part of it failed ("2 of 10 failed: …").</summary>
+    public string? Warning { get; set; }
     public DateTime? StartedAt { get; internal set; }
     public DateTime? CompletedAt { get; internal set; }
 
@@ -112,7 +115,8 @@ public sealed class OperationQueue
     public void Cancel(QueuedOperation op)
     {
         if (!op.CanCancel) return;
-        op.Cts.Cancel();
+        try { op.Cts.Cancel(); }
+        catch (ObjectDisposedException) { return; } // finished meanwhile
         op.State = OperationState.Cancelled;
         op.CompletedAt = DateTime.Now;
         OperationStateChanged?.Invoke(op);
@@ -227,6 +231,7 @@ public sealed class OperationQueue
         {
             op.CompletedAt = DateTime.Now;
             _semaphore.Release();
+            op.Cts.Dispose();
             OperationStateChanged?.Invoke(op);
         }
     }

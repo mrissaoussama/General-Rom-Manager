@@ -13,7 +13,7 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
     [ObservableProperty] private bool _isLoading;
     [ObservableProperty] private bool _isIndeterminate = true;
     [ObservableProperty] private double _progressPercent;
-    [ObservableProperty] private string _statusMessage = "Ready";
+    [ObservableProperty] private string _statusMessage = Strings.Main_Ready;
     [ObservableProperty] private RomViewModel? _selectedRom;
     [ObservableProperty] private RomDetailsViewModel? _details;
     [ObservableProperty] private string _searchText = "";

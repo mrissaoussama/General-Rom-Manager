@@ -46,6 +46,7 @@ public sealed class RomOperationService
                 var result = results.FirstOrDefault();
                 if (result is not null && !result.Success)
                     throw new InvalidOperationException(result.ErrorMessage ?? "Rename failed");
+                return null;
             });
 
     /// <summary>
@@ -57,11 +58,8 @@ public sealed class RomOperationService
             async ct =>
             {
                 var results = await FileRenamer.RenameFilesAsync(roms, formatString, ct: ct);
-                int ok = results.Count(r => r.Success && r.Changed);
-                int fail = results.Count(r => !r.Success);
-                AppLog.Warn($"[Rename] Done: {ok} renamed, {fail} failed.");
-                if (fail > 0 && ok == 0)
-                    throw new InvalidOperationException($"All {fail} rename(s) failed.");
+                return Summarise("Rename", "renamed", results.Count(r => r.Success && r.Changed),
+                    [.. results.Where(r => !r.Success).Select(r => (r.SourcePath, r.ErrorMessage))]);
             });
 
     // ── Move ──────────────────────────────────────────────────────────────
@@ -77,16 +75,28 @@ public sealed class RomOperationService
             async ct =>
             {
                 var results = await new RomMover(targetRoot).MoveFilesAsync(roms, commonSourceRoot, ct);
-                int ok = results.Count(r => r.Success && r.Changed);
-                int fail = results.Count(r => !r.Success);
-                AppLog.Warn($"[Move] Done: {ok} moved, {fail} failed.");
-                if (fail > 0 && ok == 0)
-                    throw new InvalidOperationException($"All {fail} move(s) failed.");
+                return Summarise("Move", "moved", results.Count(r => r.Success && r.Changed),
+                    [.. results.Where(r => !r.Success).Select(r => (r.SourcePath, r.ErrorMessage))]);
             });
+
+    // Logs the outcome. Everything failed: throws (the operation fails). Some failed: the operation's warning.
+    private static string? Summarise(string kind, string verb, int ok, IReadOnlyList<(string Path, string? Error)> failed)
+    {
+        if (failed.Count == 0)
+        {
+            AppLog.Info($"[{kind}] Done: {ok} {verb}.");
+            return null;
+        }
+        foreach (var (path, error) in failed) AppLog.Warn($"[{kind}] {path}: {error}");
+        var first = $"{Path.GetFileName(failed[0].Path)}: {failed[0].Error}";
+        if (ok == 0)
+            throw new InvalidOperationException($"All {failed.Count} failed ({first})");
+        return $"{failed.Count} of {ok + failed.Count} failed ({first})";
+    }
 
     // Rename and move share undo: remember where every rom was, journal the moves that put it back.
     private QueuedOperation EnqueuePathOperation(IReadOnlyList<Rom> roms, string name, string description,
-        string category, Func<CancellationToken, Task> execute)
+        string category, Func<CancellationToken, Task<string?>> execute)
     {
         var originalPaths = roms.Select(r => (r, r.Path)).ToList(); // not a dictionary: Rom equality depends on Path
         JournalEntry? entry = null;
@@ -101,7 +111,7 @@ public sealed class RomOperationService
             {
                 try
                 {
-                    await execute(ct);
+                    op!.Warning = await execute(ct);
                 }
                 finally
                 {
@@ -220,7 +230,8 @@ public sealed class RomOperationService
         var inputs = roms.Where(r => !r.IsFolderFormat && r.Path is not null && tool.Accepts(r.Path))
             .Select(r => r.Path!).Distinct(FileUtils.PathComparer).ToList();
         var created = new List<string>();
-        return _queue.Enqueue(new QueuedOperation
+        QueuedOperation? op = null;
+        op = new QueuedOperation
         {
             Name = $"Convert {inputs.Count} file(s) → {tool.DisplayName}",
             Category = "Convert",
@@ -247,13 +258,16 @@ public sealed class RomOperationService
                 }
                 if (failed > 0 && failed == inputs.Count)
                     throw new InvalidOperationException($"All {failed} conversion(s) failed: {firstError}");
+                if (failed > 0)
+                    op!.Warning = $"{failed} of {inputs.Count} failed ({firstError})";
             },
             UndoAsync = ct => Task.Run(() =>
             {
                 lock (created)
                     foreach (var file in created.Where(File.Exists)) File.Delete(file);
             }, ct),
-        });
+        };
+        return _queue.Enqueue(op);
     }
 
     // ── Hash Calculation ──────────────────────────────────────────────────
