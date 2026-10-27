@@ -43,6 +43,8 @@ public sealed partial class DashboardViewModel : ViewModelBase
             ScheduleRecalculate();
         };
         RefreshDats();
+        // Consoles that already have roms count from the start, not only after their next change.
+        if (consoles.Count > 0) ScheduleRecalculate();
     }
 
     private void OnConsoleChanged(object? sender, PropertyChangedEventArgs e)
@@ -93,7 +95,7 @@ public sealed partial class DashboardViewModel : ViewModelBase
 
     [ObservableProperty] private string _datSummary = "";
 
-    public string DatDirectory => RomManagerShared.Utils.Dat.DatIndex.DatDirectory;
+    public string DatDirectory { get; set; } = RomManagerShared.Utils.Dat.DatIndex.DatDirectory;
 
     [RelayCommand]
     public void RefreshDats()

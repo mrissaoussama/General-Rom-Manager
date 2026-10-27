@@ -5,6 +5,14 @@ folder per console and it reads each file's header or container to find the titl
 region and icon, keeps the library in a local database, and lets you rename, move, de-duplicate and
 hash files.
 
+![Dashboard](docs/screenshots/dashboard.png)
+
+| Table | Cards |
+|---|---|
+| ![Console page, table](docs/screenshots/console-table.png) | ![Console page, cards](docs/screenshots/console-cards.png) |
+
+Screenshots are rendered by the headless UI tests with sample data (`SCREENSHOTS=1 dotnet test`).
+
 ## Features
 
 - **Library**: incremental scans (only new or changed files are parsed), a file watcher per ROM folder,

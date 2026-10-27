@@ -24,11 +24,16 @@ public sealed class HeadlessTestApp : Application
     {
         Styles.Add(new FluentTheme());
         Styles.Add(new StyleInclude(new Uri("avares://RomManagerTests")) { Source = new Uri("avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml") });
+        Styles.Add(new StyleInclude(new Uri("avares://RomManagerTests")) { Source = new Uri("avares://AvaloniaUI/AppStyles.axaml") });
         DataTemplates.Add(new ViewLocator());
     }
 
+    // Skia renders real frames, so tests can also capture screenshots (ScreenshotTests).
     public static AppBuilder BuildAvaloniaApp() =>
-        AppBuilder.Configure<HeadlessTestApp>().UseHeadless(new AvaloniaHeadlessPlatformOptions()).WithInterFont();
+        AppBuilder.Configure<HeadlessTestApp>()
+            .UseSkia()
+            .UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false })
+            .WithInterFont();
 }
 
 /// <summary>Renders real views on the headless platform. All UI work runs on the session's UI thread.</summary>
@@ -45,7 +50,8 @@ public sealed class HeadlessUiTests
         public void Show(params Rom[] roms) => ShowRoms(roms);
         protected override Task LoadAsync(bool fullRescan) => Task.CompletedTask;
         public override IReadOnlyList<(string PropName, string Header, bool UsesDictionaryLookup)> GetColumnDescriptors() =>
-            [("TitleID", "Title ID", false), ("Title", "Title", false)];
+            [("TitleID", "Title ID", false), ("Title", "Title", false), ("RomType", "Type", false),
+             ("Region", "Region", false), ("Version", "Version", false)];
         public override IEnumerable<IConsoleRomAction> GetContextActionsForSelection(IEnumerable<Rom> selectedRoms) => [];
         public override IReadOnlyList<ConsoleRequirement> GetAllRequirements() => [];
     }
@@ -184,5 +190,57 @@ public sealed class HeadlessUiTests
 
         window.KeyPress(Key.End, RawInputModifiers.None, PhysicalKey.End, null);
         Focused().Should().Be("11");
+    });
+
+    // ── Screenshots ──────────────────────────────────────────────────────
+    // Always renders (a cheap check that real frames work); writes docs/screenshots/*.png with SCREENSHOTS=1.
+
+    private static TestConsoleViewModel SampleConsole(Type console, params (string Title, string Id, Region Region)[] games)
+    {
+        var vm = new TestConsoleViewModel();
+        vm.Describe(RomManagerShared.Base.ConsoleModules.Describe(console));
+        vm.Show([.. games.Select(g =>
+        {
+            var rom = new Game { Path = Path.Combine(Path.GetTempPath(), "roms", g.Title + ".bin"), TitleID = g.Id, Version = "1.0", Size = 4L << 20 };
+            rom.AddTitleName(g.Title);
+            rom.AddRegion(g.Region);
+            return (Rom)rom;
+        })]);
+        return vm;
+    }
+
+    private static void Capture(Window window, string name, [System.Runtime.CompilerServices.CallerFilePath] string caller = "")
+    {
+        window.UpdateLayout();
+        var frame = window.CaptureRenderedFrame();
+        frame.Should().NotBeNull();
+        if (Environment.GetEnvironmentVariable("SCREENSHOTS") != "1") return;
+        var dir = Path.Combine(Path.GetDirectoryName(caller)!, "..", "docs", "screenshots");
+        Directory.CreateDirectory(dir);
+        frame!.Save(Path.Combine(dir, name + ".png"));
+    }
+
+    [Fact]
+    public Task Screenshots() => Ui(() =>
+    {
+        var nes = SampleConsole(typeof(NESConsole),
+            ("Star Courier", "A1", Region.USA), ("Pixel Quest", "A2", Region.Europe), ("Lunar Drift", "A3", Region.Japan),
+            ("Tiny Knight", "A4", Region.USA), ("Rocket Mole", "A5", Region.World), ("Neon Garden", "A6", Region.USA));
+        var gb = SampleConsole(typeof(GameBoyConsole),
+            ("Ghost Lantern", "B1", Region.USA), ("Puzzle Pond", "B2", Region.Europe), ("Sky Ferry", "B3", Region.Japan));
+        var vm = new DashboardViewModel([nes, gb], _ => { }) { DatDirectory = Path.Combine("RomManager", "Data", "DAT") };
+        vm.RefreshDats();
+        Dispatcher.UIThread.RunJobs(); // the totals are computed at background priority
+        var dashboard = new Window { Width = 1100, Height = 650, Content = vm };
+        dashboard.Show();
+        vm.TotalRoms.Should().Be(9);
+        Capture(dashboard, "dashboard");
+
+        var table = new Window { Width = 1100, Height = 500, Content = nes };
+        table.Show();
+        Capture(table, "console-table");
+
+        nes.IsCardView = true; // same window: the ViewLocator keeps one view per page
+        Capture(table, "console-cards");
     });
 }

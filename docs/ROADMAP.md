@@ -90,7 +90,8 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
 - [ ] Profile the card view with 5k+ rows on a real library.
 - [x] Keyboard navigation in the card view: arrows, Home/End, PageUp/PageDown (`CardNavigation`); Delete,
       F2 and Alt+Enter act on the focused card.
-- [ ] README screenshots.
+- [x] README screenshots, rendered by `HeadlessUiTests.Screenshots` (Skia, the app's own styles from
+      `AppStyles.axaml`) with `SCREENSHOTS=1`. The dashboard now counts consoles that already have roms.
 - [ ] Localisation (resx) once strings are in AXAML.
 
 ## Phase E: Features
