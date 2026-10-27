@@ -39,9 +39,32 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
     public bool HasDuplicates => _duplicates.Count > 0;
 
     [RelayCommand]
-    private Task ShowUnrecognized() => Shell.ShowDialogAsync(new PreviewWindow("Not recognised",
-        "These files have a matching extension but no parser could read them (wrong console, corrupt, encrypted or missing keys). The reason is what the parsers logged.",
-        Unrecognized.Select(u => $"{u.Path}  —  {u.Reason}"), "Close", showCancel: false));
+    private async Task ShowUnrecognized()
+    {
+        var list = new PreviewWindow("Not recognised",
+            "These files have a matching extension but no parser could read them (wrong console, corrupt, encrypted or missing keys). " +
+            "The reason is what the parsers logged. You can move them out of the ROM folder so they stop showing up here.",
+            Unrecognized.Select(u => $"{u.Path}  —  {u.Reason}"), "Move to folder…");
+        await Shell.ShowDialogAsync(list);
+        if (list.Confirmed) await MoveUnrecognizedAsync();
+    }
+
+    // Moves the unrecognised files elsewhere (keeping their sub-folders) after a preview, then rescans.
+    private async Task MoveUnrecognizedAsync()
+    {
+        if (Unrecognized.Count == 0 || await Shell.PickFolderAsync("Move unrecognised files to") is not { } target) return;
+        var files = Unrecognized.Select(u => new Rom { Path = u.Path }).ToList();
+        var mover = new RomMover(target);
+        var preview = new PreviewWindow("Move unrecognised files", $"{files.Count} file(s) will be moved to {target}.",
+            mover.PreviewMoves(files).Select(m => $"{m.SourcePath}  →  {m.DestinationPath}"), "Move");
+        await Shell.ShowDialogAsync(preview);
+        if (!preview.Confirmed) return;
+        var results = await mover.MoveFilesAsync(files);
+        var failed = results.Count(r => !r.Success);
+        StatusMessage = failed == 0 ? $"Moved {results.Count} file(s) to {target}"
+            : $"Moved {results.Count - failed}, {failed} failed: {results.First(r => !r.Success).ErrorMessage}";
+        await LoadData();
+    }
 
     /// <summary>True for consoles whose manager can report missing updates (shows the "Missing updates" button).</summary>
     [ObservableProperty] private bool _canCheckUpdates;

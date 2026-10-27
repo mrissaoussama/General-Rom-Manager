@@ -70,7 +70,7 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
 - [ ] **[P1]** `IDialogService`; Settings, Onboarding and the preview/properties windows as AXAML views.
 - [ ] Settings: toggle Redump hashing, scan parallelism, manage DAT files (which consoles are covered).
 - [ ] Plugins page: enable/disable, revoke approval, show declared permissions.
-- [ ] Unrecognised files: "Open folder" and "Move to quarantine" actions.
+- [x] Unrecognised files: "Move to folder…" from the list (preview, keeps sub-folders, rescans after).
 - [ ] Profile the card view with 5k+ rows on a real library.
 - [ ] Keyboard navigation in the card view.
 - [ ] README screenshots.
