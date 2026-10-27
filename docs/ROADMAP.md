@@ -45,7 +45,7 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
 ## Phase E: Features
 
 - [ ] XCI parsing test — needs a real XCI (cannot be identified without keys).
-- [ ] Scheduled rescans (e.g. daily) for folders that are not watched (network drives already poll).
+- [x] Scheduled rescans: Settings → Scanning → "Rescan every (hours)".
 
 ## Phase F: Plugins
 

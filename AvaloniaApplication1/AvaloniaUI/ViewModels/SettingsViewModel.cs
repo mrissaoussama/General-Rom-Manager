@@ -40,6 +40,7 @@ public sealed partial class SettingsViewModel : DialogViewModel
         _checkForAppUpdates = settings.CheckForAppUpdates;
         _allowPs4OnlineUpdateCheck = settings.AllowPs4OnlineUpdateCheck;
         _downloadBoxArt = settings.DownloadBoxArt;
+        _rescanIntervalHours = settings.RescanIntervalHours > 0 ? settings.RescanIntervalHours.ToString() : "";
         _hashDiscImages = RomManagerShared.Utils.Dat.DiscHashing.Enabled;
         _switchTitleDbUrl = settings.SwitchTitleDBUrlOverride ?? "";
         _switchVersionsUrl = settings.SwitchVersionsUrlOverride ?? "";
@@ -142,6 +143,7 @@ public sealed partial class SettingsViewModel : DialogViewModel
     [ObservableProperty] private bool _checkForAppUpdates;
     [ObservableProperty] private bool _allowPs4OnlineUpdateCheck;
     [ObservableProperty] private bool _downloadBoxArt;
+    [ObservableProperty] private string _rescanIntervalHours;
     [ObservableProperty] private bool _hashDiscImages;
     [ObservableProperty] private string _downloadStatus = "";
     [ObservableProperty] private string _datOverview = "";
@@ -331,6 +333,7 @@ public sealed partial class SettingsViewModel : DialogViewModel
         s.CheckForAppUpdates = CheckForAppUpdates;
         s.AllowPs4OnlineUpdateCheck = AllowPs4OnlineUpdateCheck;
         s.DownloadBoxArt = DownloadBoxArt;
+        s.RescanIntervalHours = int.TryParse(RescanIntervalHours, out var hours) && hours > 0 ? hours : 0;
         s.HashDiscImages = HashDiscImages;
         s.SwitchTitleDBUrlOverride = NullIfBlank(SwitchTitleDbUrl);
         s.SwitchVersionsUrlOverride = NullIfBlank(SwitchVersionsUrl);

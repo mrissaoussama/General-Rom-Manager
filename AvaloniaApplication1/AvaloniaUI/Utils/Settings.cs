@@ -53,6 +53,9 @@ public class Settings
 
     public string ToolPath(ConversionTool tool) => tool.ResolvePath(ToolPaths.GetValueOrDefault(tool.Id));
 
+    /// <summary>Rescan every console this often (hours); 0 = only on start, on demand and when the watchers fire.</summary>
+    public int RescanIntervalHours { get; set; }
+
     /// <summary>Per-console scan settings, keyed by console id.</summary>
     public Dictionary<string, ConsoleScanSettings> ScanSettings { get; set; } = new();
 

@@ -95,6 +95,12 @@
                         </ItemsControl>
 
                         <TextBlock Classes="heading" Text="Scanning" />
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <TextBlock Classes="label" Text="Rescan every (hours)" />
+                            <TextBox Text="{Binding RescanIntervalHours}" Width="60" Watermark="off"
+                                     AutomationProperties.Name="Rescan interval in hours" />
+                            <TextBlock Classes="hint" VerticalAlignment="Center" Text="Catches changes the folder watchers miss (drives plugged in later, edits from other machines)." />
+                        </StackPanel>
                         <TextBlock Classes="hint" Text="Files read at once (empty: automatic, 1 on network drives, otherwise 4) and folders to skip, separated by ';'. A name (Backups) skips that folder anywhere; a path (Updates/old) is relative to the ROM folder." />
                         <ItemsControl ItemsSource="{Binding Consoles}">
                             <ItemsControl.ItemTemplate>

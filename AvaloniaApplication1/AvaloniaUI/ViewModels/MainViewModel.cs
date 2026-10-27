@@ -130,6 +130,24 @@ public partial class MainViewModel : ViewModelBase
     [RelayCommand]
     private Task RescanAll() => ScanAllAsync(true);
 
+    private Timer? _rescanTimer;
+
+    /// <summary>
+    /// Periodic incremental rescans (Settings → Scanning), for changes the folder watchers miss: drives plugged in
+    /// later, files edited by other machines on a share. Call again after Settings change.
+    /// </summary>
+    public void ScheduleRescans(int hours)
+    {
+        _rescanTimer?.Dispose();
+        _rescanTimer = null;
+        if (hours <= 0) return;
+        var interval = TimeSpan.FromHours(hours);
+        _rescanTimer = new Timer(_ => Dispatcher.UIThread.Post(() =>
+        {
+            if (!IsAnyLoading) _ = ScanAllAsync(false);
+        }), null, interval, interval);
+    }
+
     private async Task ScanAllAsync(bool fullRescan)
     {
         // One console at a time: parsers share the disk.
@@ -327,6 +345,7 @@ public partial class MainViewModel : ViewModelBase
     {
         await Dialogs.ShowAsync(new SettingsViewModel(Settings.Instance, _serviceProvider.GetService<PluginManager>(),
             ConsoleViewModels, () => DownloadMissingDatabasesAsync(showPanel: true)));
+        ScheduleRescans(Settings.Instance.RescanIntervalHours);
         // Paths may have changed (LibraryRoots reads Settings on every call).
         var added = await SyncConsolesAsync();
         foreach (var c in ConsoleViewModels) c.RefreshRequirements();

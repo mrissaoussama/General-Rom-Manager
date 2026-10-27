@@ -139,6 +139,7 @@ public partial class App : Application
                     await DialogService.Current.ShowAsync(new OnboardingViewModel(Settings.Instance));
                 // Cached libraries show immediately; only new/changed files are parsed.
                 await mainVm.RefreshCommand.ExecuteAsync(null);
+                mainVm.ScheduleRescans(Settings.Instance.RescanIntervalHours);
                 if (Settings.Instance.CheckForAppUpdates)
                     await mainVm.CheckForAppUpdateAsync(quiet: true);
             };

@@ -100,4 +100,19 @@ public class SettingsViewModelTests
         await field.Checked;
         field.Status.Text.Should().Be("Not set");
     }
+
+    [Theory]
+    [InlineData("12", 12)]
+    [InlineData("", 0)]
+    [InlineData("-3", 0)]
+    [InlineData("soon", 0)]
+    public void RescanInterval_IsSavedAsHours(string text, int hours)
+    {
+        var (vm, settings, _) = Create();
+        vm.RescanIntervalHours = text;
+
+        vm.Apply();
+
+        settings.RescanIntervalHours.Should().Be(hours);
+    }
 }
