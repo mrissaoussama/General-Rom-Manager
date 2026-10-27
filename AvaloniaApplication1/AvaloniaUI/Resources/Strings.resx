@@ -336,6 +336,16 @@
   <data name="Dialogs_InvalidTemplate" xml:space="preserve"><value>Invalid template: {0}</value></data>
   <data name="Dialogs_OfFileSChange" xml:space="preserve"><value>{0} of {1} file(s) change</value></data>
   <data name="Dialogs_Unchanged" xml:space="preserve"><value>{0}   (unchanged)</value></data>
+  <data name="App_DatabaseResetTitle" xml:space="preserve"><value>Library database</value></data>
+  <data name="App_DatabaseReset" xml:space="preserve"><value>The library database could not be opened, so a new one was created. Your ROM files are not affected: the next scan reads them again.
+
+The old database was kept as
+{0}</value></data>
+  <data name="App_DatabaseUnavailable" xml:space="preserve"><value>The library database
+{0}
+cannot be opened or created: {1}
+
+Scans will not be saved until this is fixed (check that the folder is writable).</value></data>
   <data name="Console_ToolChangedTitle" xml:space="preserve"><value>Program changed</value></data>
   <data name="Console_ToolChanged" xml:space="preserve"><value>{0} at
 {1}

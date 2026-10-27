@@ -1,4 +1,4 @@
-using Avalonia.Controls.ApplicationLifetimes;
+﻿using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -82,11 +82,17 @@ public partial class App : Application
         // Core-library logging (AppLog) goes through the host's providers.
         RomManagerShared.Logging.AppLog.Factory = _host.Services.GetRequiredService<ILoggerFactory>();
 
-        // Create/upgrade the SQLite database before anything queries it.
-        using (var dbScope = _host.Services.CreateScope())
+        // Create/upgrade the SQLite database before anything queries it; a broken one is moved aside and rebuilt.
+        string? brokenDatabase = null;
+        string? databaseError = null;
+        try
         {
-            try { dbScope.ServiceProvider.GetRequiredService<AppDbContext>().Database.Migrate(); }
-            catch (Exception ex) { AppLog.Warn($"Database migration failed: {ex.Message}"); }
+            brokenDatabase = DatabaseStartup.MigrateOrReset(() => new AppDbContext(), AppDbContext.GetDbPath());
+        }
+        catch (Exception ex)
+        {
+            databaseError = ex.Message;
+            AppLog.Error("The library database cannot be opened", ex);
         }
 
         // Load plugins asynchronously
@@ -111,7 +117,7 @@ public partial class App : Application
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Plugin loading failed: {ex.Message}");
+                AppLog.Error("Plugin loading failed", ex);
             }
         });
 
@@ -137,6 +143,11 @@ public partial class App : Application
             // Show onboarding wizard on first run (after the main window has rendered)
             desktop.MainWindow.Opened += async (_, _) =>
             {
+                var databaseNotice = brokenDatabase is not null ? string.Format(Strings.App_DatabaseReset, brokenDatabase)
+                    : databaseError is not null ? string.Format(Strings.App_DatabaseUnavailable, AppDbContext.GetDbPath(), databaseError)
+                    : null;
+                if (databaseNotice is not null)
+                    await DialogService.Current.PreviewAsync(Strings.App_DatabaseResetTitle, databaseNotice, [], Strings.Console_Close, showCancel: false);
                 if (OnboardingViewModel.ShouldShow(Settings.Instance, _host.Services.GetRequiredService<ILibraryRoots>()))
                     await DialogService.Current.ShowAsync(new OnboardingViewModel(Settings.Instance));
                 // Cached libraries show immediately; only new/changed files are parsed.
