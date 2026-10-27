@@ -78,11 +78,11 @@ there is likely pending model drift. The scanned **library is not persisted**.
 | Console | Formats | Status |
 |---|---|---|
 | Switch | nsp, nsz, xci | NSP/NSZ: LibHac with ticket import (names from NACP; DLC names from titledb). Header scan is the fallback without keys. XCI untested |
-| 3DS | cia | OK; updates/DLC have no SMDH, titles come from title DB |
+| 3DS | cia, 3ds/cci, cxi | CIA: TMD + SMDH. Cartridge images: title ID/product code from the NCCH header (works encrypted); SMDH title/icon only for decrypted dumps. Updates/DLC names from title DB |
 | DS / GB / GBC / GBA / SNES / N64 / Saturn(mdf) | header | OK, raw header titles (DS falls back to file name for invalid headers) |
-| PS2 | iso, cso, chd | OK via SYSTEM.CNF, ISO9660 + UDF (CHD via CHDSharp). No ZSO |
+| PS2 | iso, cso, zso, chd | OK via SYSTEM.CNF, ISO9660 + UDF (LTRData.DiscUtils; CHD via CHDSharp) |
 | PS3 | PARAM.SFO folder, pkg | OK (managed PKG reader) |
-| PS4 | pkg | OK (PS4_Tools) |
+| PS4 | pkg | OK (managed reader: plaintext param.sfo, icon0, pic0/pic1) |
 | PSP | iso, cso, pkg | OK (managed SFO + PKG readers) |
 | PS Vita | vpk, sfo | vpk ok |
 | Wii | wbfs, wad, iso, ciso | OK (region from game ID) |
@@ -90,5 +90,7 @@ there is likely pending model drift. The scanned **library is not persisted**.
 | Wii U | wux/wud, tmd, xml | TMD: ID/version without keys. WUD/WUX: product code + region; with the disc key (sibling `.key` or `[32-hex]` in the file name) exact title IDs from the partition table. Names via title DB. Decrypted folders: full metadata. cdecrypt optional, user-supplied |
 | OG Xbox | iso, xbe | OK; icons cached under Cache/OriginalXbox |
 | Xbox 360 | iso, xex | Title ID from XEX header; name/icon only with user-supplied `xextool.exe` |
-| PS1 | cue, iso, chd | Serial from SYSTEM.CNF (2048/2352/2448-byte frames). No PBP |
-| NES, Genesis… | — | Not supported |
+| PS1 | cue, iso, chd, pbp | Serial from SYSTEM.CNF (2048/2352/2448-byte frames); PBP via the PSP parser |
+| NES, SNES, GB/GBC/GBA, N64, Genesis, Master System, Game Gear, PC Engine | header | Header parsers + No-Intro DAT names (user-supplied DATs) |
+| Dreamcast | gdi, chd | IP.BIN (GD-ROM). No CDI |
+| GameCube/Wii | rvz, wia | Disc header from the uncompressed copy |

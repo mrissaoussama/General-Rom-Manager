@@ -1,5 +1,3 @@
-﻿using Param_SFO;
-using PS4_Tools;
 using RomManagerShared.Base;
 using RomManagerShared.Interfaces;
 using RomManagerShared.Utils;
@@ -7,50 +5,44 @@ namespace RomManagerShared.PS4.Parsers;
 
 public class PS4PKGParser : IRomParser<PS4Console>
 {
-    public PS4PKGParser()
-    {
-        Extensions = ["pkg"];
-    }
-    public List<string> Extensions { get; set; }
+    public List<string> Extensions { get; set; } = ["pkg"];
+
     public Task<List<Rom>> ProcessFile(string path)
     {
-        PS4_Tools.PKG.SceneRelated.Unprotected_PKG ps4Pkg;
-        try
+        PS4Pkg pkg;
+        using (var stream = FileUtils.OpenRead(path))
         {
-            PARAM_SFO f = new();            ps4Pkg = PKG.SceneRelated.Read_PKG(path);
+            if (!PS4PkgReader.IsPS4Pkg(stream))
+                return Task.FromResult<List<Rom>>([]); // PS3/PSP/Vita PKGs share the extension
+            pkg = PS4PkgReader.Read(stream);
         }
-        catch (Exception)
+        if (pkg.Sfo is not { } sfo)
         {
-            FileUtils.Log("pkg not valid " + path);
-            return Task.FromResult(Array.Empty<Rom>().ToList()); throw;
+            FileUtils.Log($"[PS4] {Path.GetFileName(path)}: no readable param.sfo");
+            return Task.FromResult<List<Rom>>([]);
         }
-        Rom ps4rom = ps4Pkg.PKG_Type == PS4_Tools.PKG.SceneRelated.PKGType.Patch
-            ? new PS4Update()
-            : ps4Pkg.PKG_Type == PS4_Tools.PKG.SceneRelated.PKGType.Addon ? new PS4DLC() : new PS4Game();
-        ps4rom.ProductCode = ps4Pkg.Content_ID;
-        ps4rom.TitleID = ps4Pkg.Param.TITLEID;
-        ps4rom.Version = ps4Pkg.Param.APP_VER;
-        //ps4rom.Region = ps4Pkg.Region;
-        Param_SFO.PARAM_SFO.Table t = ps4Pkg.Param.Tables.ToList().Where(x => x.Name == "SYSTEM_VER").FirstOrDefault();
-        if (t.Name is not null)
+
+        // CATEGORY: gd = game, gp = patch, ac = add-on content.
+        Rom rom = sfo.Category.ToLowerInvariant() switch
         {
-            long value = Convert.ToInt64(t.Value);
-            ps4rom.MinimumFirmware = PS4Utils.SystemFirmwareLongToString(value);
-        }
-        // icon0.png; keyed by content ID (+ patch suffix) since game, patch and DLC share the title ID.
-        ps4rom.Icon = IconCache.Save("PS4", (ps4Pkg.Content_ID ?? ps4rom.TitleID) + (ps4rom is PS4Update ? "_patch" : ""), ps4Pkg.Icon);        if (ps4Pkg.Image != null)
-        {
-            ps4rom.Thumbnail = BinUtils.ByteArrayToPrefixedString(ps4Pkg.Image);
-        }        if (ps4Pkg.Image2 != null)
-        {
-            ps4rom.AddImage(BinUtils.ByteArrayToPrefixedString(ps4Pkg.Image2));
-        }        ps4rom.Path = path;
-        ps4rom.AddTitleName(ps4Pkg.PS4_Title);
-        ps4rom.Size = FileUtils.GetFileSize(path); // YourSize;
-        ps4rom.IsDemo = false; // YourIsDemo;
-        ps4rom.NumberOfPlayers = 0; // YourNumberOfPlayers;
-        ps4rom.ReleaseDate = new DateOnly(); // YourReleaseDate;
-                                             //  ps4rom.Hash = new byte[0]; // YourHash;
-        List<Rom> list = [ps4rom];        return Task.FromResult(list);
+            "gp" => new PS4Update(),
+            "ac" => new PS4DLC(),
+            _ => new PS4Game(),
+        };
+        rom.ProductCode = pkg.ContentId;
+        rom.TitleID = sfo.TitleId;
+        rom.Version = sfo.AppVersion;
+        rom.MinimumFirmware = sfo.MinimumFirmware;
+        if (sfo.Title is { } title) rom.AddTitleName(title);
+
+        // Keyed by content ID (+ patch suffix) since game, patch and DLC share the title ID.
+        var key = (pkg.ContentId is { Length: > 0 } id ? id : rom.TitleID) + (rom is PS4Update ? "_patch" : "");
+        rom.Icon = IconCache.Save("PS4", key, pkg.Icon0);
+        rom.Thumbnail = IconCache.Save("PS4", key + "_pic0", pkg.Pic0);
+        if (IconCache.Save("PS4", key + "_pic1", pkg.Pic1) is { } pic1)
+            rom.AddImage(pic1);
+        rom.Path = path;
+        rom.Size = FileUtils.GetFileSize(path);
+        return Task.FromResult<List<Rom>>([rom]);
     }
 }

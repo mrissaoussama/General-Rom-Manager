@@ -18,6 +18,31 @@ public sealed class ParamSfo
     public string? GetString(string key) => Entries.TryGetValue(key, out var v) ? v as string : null;
     public int? GetInt(string key) => Entries.TryGetValue(key, out var v) && v is int i ? i : null;
 
+    public string? TitleId => GetString("TITLE_ID");
+    public string? ContentId => GetString("CONTENT_ID");
+    public string? Title => GetString("TITLE");
+    public string Category => GetString("CATEGORY") ?? "";
+    public string? AppVersion => GetString("APP_VER");
+
+    /// <summary>Which system the SFO was written for, from the platform-specific keys it carries.</summary>
+    public SfoPlatform Platform =>
+        Entries.ContainsKey("PS3_SYSTEM_VER") ? SfoPlatform.PS3
+        : Entries.ContainsKey("PSP2_SYSTEM_VER") || Entries.ContainsKey("PSP2_DISP_VER") ? SfoPlatform.PSVita
+        : Entries.ContainsKey("PSP_SYSTEM_VER") ? SfoPlatform.PSP
+        : GetInt("SYSTEM_VER") is not null && (Entries.ContainsKey("APP_TYPE") || Entries.ContainsKey("PUBTOOLINFO")) ? SfoPlatform.PS4
+        : SfoPlatform.Unknown;
+
+    /// <summary>Minimum firmware as "X.YZ" from the packed SYSTEM_VER/PSP2_SYSTEM_VER int, or PS3's "0X.YZ00" string.</summary>
+    public string? MinimumFirmware
+    {
+        get
+        {
+            if ((GetInt("SYSTEM_VER") ?? GetInt("PSP2_SYSTEM_VER")) is { } packed and not 0)
+                return $"{(packed >> 24) & 0xFF:X}.{(packed >> 16) & 0xFF:X2}";
+            return GetString("PS3_SYSTEM_VER") is { Length: >= 5 } ps3 ? ps3[..5].TrimStart('0') : null;
+        }
+    }
+
     public static ParamSfo Read(Stream stream)
     {
         using var ms = new MemoryStream();
@@ -57,3 +82,5 @@ public sealed class ParamSfo
         return new ParamSfo(entries);
     }
 }
+
+public enum SfoPlatform { Unknown, PSP, PS3, PSVita, PS4 }

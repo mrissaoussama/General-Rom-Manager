@@ -1,58 +1,28 @@
-﻿using Param_SFO;
-using RomManagerShared.Base;
-using RomManagerShared.PS4;
+﻿using RomManagerShared.Base;
 using RomManagerShared.PSVita;
+using RomManagerShared.Utils;
 
 namespace RomManagerShared.PSVITA;
 
 public static class PSVitaSFOReader
 {
-    public static Rom? ParseSFO(MemoryStream stream)
+    public static Rom? ParseSFO(MemoryStream stream) => GetData(ParamSfo.Read(stream.ToArray()));
+
+    public static Rom? ParseSFO(byte[] data) => GetData(ParamSfo.Read(data));
+
+    private static Rom? GetData(ParamSfo sfo)
     {
-        Param_SFO.PARAM_SFO sfo = new(stream);
-
-        Rom? psvita = GetData(sfo);
-        return psvita;
-
+        var category = sfo.Category.ToUpperInvariant();
+        Rom? rom = category.Contains("GD") ? new PSVitaGame()
+            : category.Contains("GC") || category.Contains("AC") ? new PSVitaDLC()
+            : category.Contains("GP") ? new PSVitaUpdate()
+            : null;
+        if (rom == null) return null;
+        rom.TitleID = sfo.TitleId;
+        rom.ProductCode = sfo.ContentId;
+        if (sfo.Title is { } title) rom.AddTitleName(title);
+        rom.Version = sfo.AppVersion;
+        rom.MinimumFirmware = sfo.MinimumFirmware;
+        return rom;
     }
-    public static Rom? ParseSFO(byte[] stream)
-    {
-        Param_SFO.PARAM_SFO sfo = new(stream);
-
-        Rom? psvita = GetData(sfo);
-        return psvita;
-
-    }
-
-
-    private static Rom? GetData(PARAM_SFO sfo)
-    {
-
-        Rom? psvitarom = null;
-        if (sfo.Category.ToUpper().Contains("GD"))
-        {
-            psvitarom = new PSVitaGame();
-        }
-        else if (sfo.Category.ToUpper().Contains("GC") || sfo.Category.ToUpper().Contains("AC"))
-        {
-            psvitarom = new PSVitaDLC();
-        }
-        else if (sfo.Category.ToUpper().Contains("GP"))
-        {
-            psvitarom = new PSVitaUpdate();
-        }
-        if (psvitarom == null) return null;
-        psvitarom.TitleID = sfo.TitleID;
-        psvitarom.ProductCode = sfo.ContentID;
-        psvitarom.AddTitleName(sfo.Title);
-        psvitarom.Version = sfo.APP_VER;
-        Param_SFO.PARAM_SFO.Table t = sfo.Tables.ToList().Where(x => x.Name == "SYSTEM_VER").FirstOrDefault();
-        if (t.Name is not null)
-        {
-            long value = Convert.ToInt64(t.Value);
-            psvitarom.MinimumFirmware = PS4Utils.SystemFirmwareLongToString(value);
-        }
-        return psvitarom;
-    }
-
 }

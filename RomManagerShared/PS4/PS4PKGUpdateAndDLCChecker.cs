@@ -10,29 +10,7 @@ public class PS4PKGUpdateAndDLCChecker
         CheckedTitleIDUpdates = [];
         CheckedTitleIDDLC = [];
     }    public List<string> CheckedTitleIDUpdates { get; set; }
-    public List<string> CheckedTitleIDDLC { get; set; }    public async Task<Rom?> CheckForUpdate(Rom ps4rom)
-    {
-        if (CheckedTitleIDUpdates.Contains(ps4rom.TitleID)) { return null; }
-        CheckedTitleIDUpdates.Add(ps4rom.TitleID);
-        //the pkg tools implementation for checking the update is very slow for some reason. 
-        //TODO: try to reimplement it with httpclient instead of webclient
-        var item = PS4_Tools.PKG.Official.CheckForUpdate(ps4rom.TitleID);
-        if (item is not null)
-        {
-            PS4Update update = new()
-            {
-                TitleID = item.Titleid,
-                ProductCode = item.Tag.Package.Content_id,
-                Size = item.Tag.Package.Manifest_item.originalFileSize,
-                Version = item.Tag.Package.Version
-            };
-            update.AddTitleName(item.Tag.Package.Paramsfo.Title);
-            long minfirm = Convert.ToInt64(item.Tag.Package.System_ver);
-            update.MinimumFirmware = PS4Utils.SystemFirmwareLongToString(minfirm);
-            return update;
-        }
-        return null;
-    }
+    public List<string> CheckedTitleIDDLC { get; set; }
     //used to iterate every region to find the correct page.
     //can probably be done with knowing the pkg region then try a country from it, but i'm not sure if this is consistent
     string[] northAmericaRegions = { "en-us", "en-ca" };

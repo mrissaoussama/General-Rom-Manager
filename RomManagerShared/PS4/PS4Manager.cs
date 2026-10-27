@@ -34,25 +34,6 @@ RomParserExecutor<PS4Console> romParserExecutor)
         missingdlc = await Checker.GetMissingDLC(ps4game, RomList, dlclist);
         return missingdlc;
     }
-    public async Task<Rom> GetMissingUpdate(Rom ps4game)
-    {
-        if (ps4game is not PS4Game)
-            return null;
-        Rom? latestUpdate = GetLatestLocalUpdate(ps4game);
-        var onlineUpdate = await Checker.CheckForUpdate(ps4game);
-        if (onlineUpdate != null)
-        {
-            if (latestUpdate is not null && Version.Parse(onlineUpdate.Version) > Version.Parse(((PS4Update)latestUpdate).Version))
-            {
-                return onlineUpdate;
-            }
-        }
-        else
-        {
-            return null;
-        }
-        return onlineUpdate;
-    }
     public Rom? GetLatestLocalUpdate(Rom ps4game)
     {
         List<Rom> relatedUpdates = RomList

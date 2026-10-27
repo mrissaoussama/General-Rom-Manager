@@ -47,11 +47,10 @@ public static class PS3Utils
     }
     public static bool IsPS3SFO(MemoryStream memoryStream)
     {
-        Param_SFO.PARAM_SFO sfo = new(memoryStream);
-        return /*sfo.TitleID.Contains("NP") || */sfo.PlaystationVersion == Param_SFO.PARAM_SFO.Playstation.ps3;
+        var sfo = ParamSfo.Read(memoryStream.ToArray());
+        return sfo.Platform == SfoPlatform.PS3;
     }
     public static bool IsPS3SFO(byte[] memoryStream)
     {
-        Param_SFO.PARAM_SFO sfo = new(memoryStream);
-        return sfo.PlaystationVersion == Param_SFO.PARAM_SFO.Playstation.ps3;
+        return ParamSfo.Read(memoryStream).Platform == SfoPlatform.PS3;
     }}

@@ -12,13 +12,16 @@ namespace DotNet3dsToolkit;
 public class ThreeDsRom : IExtendedFileSystem, IDisposable
 {
     public long GetTitleID()
-    {        return ((CiaFile)Container).TmdMetadata.TitleId;
+    {
+        return Container is CiaFile cia ? cia.TmdMetadata.TitleId : Partitions[0].Header.ProgramId; // cartridge images have no TMD
     }
     public ushort GetTitleVersion()
-    {        return ((CiaFile)Container).TmdMetadata.TitleVersion;
+    {
+        return Container is CiaFile cia ? cia.TmdMetadata.TitleVersion : (ushort)0;
     }
     public long GetSystemVersion()
-    {        return ((CiaFile)Container).TmdMetadata.SystemVersion;
+    {
+        return Container is CiaFile cia ? cia.TmdMetadata.SystemVersion : 0;
     }
     public int GetTitleType()
     {

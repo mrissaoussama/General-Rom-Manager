@@ -94,13 +94,12 @@ public static class PSVitaUtils
     }
     public static bool IsPSVitaSFO(MemoryStream memoryStream)
     {
-        Param_SFO.PARAM_SFO sfo = new(memoryStream);
-        return sfo.TitleID.Contains("PCS") || sfo.PlaystationVersion == Param_SFO.PARAM_SFO.Playstation.psvita;
+        var sfo = ParamSfo.Read(memoryStream.ToArray());
+        return sfo.Platform == SfoPlatform.PSVita || sfo.TitleId?.Contains("PCS") == true;
     }
     public static bool IsPSVitaSFO(byte[] memoryStream)
     {
-        Param_SFO.PARAM_SFO sfo = new(memoryStream);
-        return sfo.PlaystationVersion == Param_SFO.PARAM_SFO.Playstation.psvita;
+        return ParamSfo.Read(memoryStream).Platform == SfoPlatform.PSVita;
     }
     /// <summary>
     /// Reads a rif file and parses the PSVitaLicense data.

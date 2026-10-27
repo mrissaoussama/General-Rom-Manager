@@ -27,18 +27,23 @@ public class ThreeDSCIAParser : IRomParser<ThreeDSConsole>
         Rom game = ThreeDSUtils.GetRomType(titleid);
         game.ProductCode = rom.GetProductCode();
         // Updates/DLC have no SMDH; titles come from title DB providers.
+        ApplySmdh(game, rom, titleid);
+        game.Path = path;
+        game.TitleID = titleid;
+        game.Version = rom.GetTitleVersion().ToString();
+        game.MinimumFirmware = rom.GetSystemVersion().ToString();
+        return [game];
+    }
+
+    /// <summary>Title, description, publisher, region and icon from the SMDH, when the ExeFS has one.</summary>
+    internal static void ApplySmdh(Rom game, ThreeDsRom rom, string titleid)
+    {
         if (rom.GetShortDescription() is { } shortDesc)
             game.AddDescription(shortDesc);
         if (rom.GetLongDescription() is { } longDesc)
             game.AddTitleName(longDesc.Replace("\n", " "));
         game.Publisher = rom.GetPublisher();
-        Region r = rom.GetRegion();
-        game.AddRegion(r);
-        game.Path = path;
-        game.TitleID = titleid;
-        game.Version = rom.GetTitleVersion().ToString();
-        game.MinimumFirmware = rom.GetSystemVersion().ToString();
+        game.AddRegion(rom.GetRegion());
         game.Icon = IconCache.Save("3DS", titleid, rom.GetIconPng());
-        return [game];
     }
 }

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -11,14 +11,6 @@
     <PackageReference Include="Ryujinx.LibHac" />
     <ProjectReference Include="..\SkyEditor.IO\SkyEditor.IO.csproj" />
   </ItemGroup>
-	<ItemGroup>
-		<None Update="Utils\PKGUtils\PARAM.SFO.dll">
-		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-		<None Update="PS4\PS4_Tools.dll">
-		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="LTRData.DiscUtils.Iso9660" />
 		<PackageReference Include="LTRData.DiscUtils.Udf" />
@@ -34,13 +26,5 @@
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
 		<PackageReference Include="SkyEditor.Utilities.AsyncFor" />
 		<PackageReference Include="System.IO.Hashing" />
-	</ItemGroup>
-	<ItemGroup>
-	  <Reference Include="PARAM.SFO">
-	    <HintPath>PS4\PARAM.SFO.dll</HintPath>
-	  </Reference>
-	  <Reference Include="PS4_Tools">
-	    <HintPath>PS4\PS4_Tools.dll</HintPath>
-	  </Reference>
 	</ItemGroup>
 </Project>
