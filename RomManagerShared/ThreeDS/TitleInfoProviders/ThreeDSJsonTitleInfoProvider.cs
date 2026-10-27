@@ -1,11 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using RomManagerShared.Base;
 using RomManagerShared.Base.Database;
 using RomManagerShared.Base.Interfaces;
 using RomManagerShared.Interfaces;
 using RomManagerShared.ThreeDS.Configuration;
 using RomManagerShared.Utils;
-using RomManagerShared.WiiU;
 using System.Text.Json;
 namespace RomManagerShared.ThreeDS.TitleInfoProviders;
 

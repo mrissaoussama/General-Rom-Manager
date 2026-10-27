@@ -1,4 +1,3 @@
-﻿using RomManagerShared.PS3;
 using RomManagerShared.PSVita;
 using RomManagerShared.Utils;
 using System.IO;

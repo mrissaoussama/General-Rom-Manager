@@ -4,6 +4,8 @@ using RomManagerShared.Interfaces;
 using RomManagerShared.MasterSystem;
 using RomManagerShared.PCEngine;
 
+using RomManagerShared.Utils;
+
 namespace RomManagerShared.Utils.Dat;
 
 public class GenesisDatProvider : DatTitleInfoProvider<GenesisConsole>

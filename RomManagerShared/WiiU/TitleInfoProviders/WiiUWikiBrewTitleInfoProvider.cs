@@ -1,11 +1,10 @@
-﻿using RomManagerShared.Base;
+using RomManagerShared.Base;
 using RomManagerShared.Base.Database;
 using RomManagerShared.Interfaces;
 using RomManagerShared.WiiU.Configuration;
 using RomManagerShared.Utils;
 using System.Text.Json;
 using LibHac.Tools.Fs;
-using RomManagerShared.Switch.TitleInfoProviders;
 using System.Collections.Generic;
 using RomManagerShared.Base.Interfaces;
 namespace RomManagerShared.WiiU.TitleInfoProviders;

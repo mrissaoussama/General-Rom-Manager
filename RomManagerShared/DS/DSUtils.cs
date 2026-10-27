@@ -1,25 +1,30 @@
-﻿using RomManagerShared.Base;
-using RomManagerShared.GameBoyAdvance;
+using RomManagerShared.Base;
 using RomManagerShared.Utils;
 namespace RomManagerShared.DS;
 
 public static class DSUtils
 {
-    private static readonly string[] Extensions = ["nds"];    private const int NintendoLogoOffset = 0xC0;    public static bool IsDSRom(string filePath, bool checkExtensionOnly = false)
+    private static readonly string[] Extensions = ["nds"];
+    private const int NintendoLogoOffset = 0xC0;
+    public static bool IsDSRom(string filePath, bool checkExtensionOnly = false)
     {
         string fileName = Path.GetFileName(filePath);
-        string extension = fileName[(fileName.LastIndexOf(".") + 1)..];        if (!Extensions.Contains(extension) && checkExtensionOnly == true)
+        string extension = fileName[(fileName.LastIndexOf(".") + 1)..];
+        if (!Extensions.Contains(extension) && checkExtensionOnly == true)
         {
             return false;
-        }        byte[] buf = new byte[NintendoLogoOffset + GameBoyAdvanceUtils.GameBoyAdvanceNintendoLogo.Length];        using (FileStream fileStream = new(filePath, FileMode.Open, FileAccess.Read))
+        }
+        byte[] buf = new byte[NintendoLogoOffset + NintendoLogo.GameBoyAdvance.Length];
+        using (FileStream fileStream = new(filePath, FileMode.Open, FileAccess.Read))
         {
             int readBytes = fileStream.Read(buf, 0, buf.Length);
-            if (readBytes != NintendoLogoOffset + GameBoyAdvanceUtils.GameBoyAdvanceNintendoLogo.Length)
+            if (readBytes != NintendoLogoOffset + NintendoLogo.GameBoyAdvance.Length)
             {
                 return false;
             }
         }
-        return BinUtils.CompareBytes(buf, GameBoyAdvanceUtils.GameBoyAdvanceNintendoLogo);    }
+        return BinUtils.CompareBytes(buf, NintendoLogo.GameBoyAdvance);
+    }
     public static string GetGameType(char firstCharacter)
     {
         return firstCharacter switch
@@ -123,4 +128,5 @@ public static class DSUtils
             default:
                 break;
         }
-    }}
+    }
+}

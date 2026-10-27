@@ -1,7 +1,7 @@
 using RomManagerShared.Base;
 using RomManagerShared.Utils;
 
-namespace RomManagerShared.MasterSystem;
+namespace RomManagerShared.Utils;
 
 /// <summary>"TMR SEGA" header shared by Master System and Game Gear carts (no title inside).</summary>
 public sealed record SegaTmrHeader(int Offset, string ProductCode, int Version, int RegionCode, ushort Checksum)
@@ -53,5 +53,25 @@ public sealed record SegaTmrHeader(int Offset, string ProductCode, int Version, 
             return new SegaTmrHeader(offset, code, h[0xE] & 0x0F, h[0xF] >> 4, (ushort)(h[0xA] | h[0xB] << 8));
         }
         return null;
+    }
+}
+
+/// <summary>Fields read from the TMR SEGA header (Master System and Game Gear).</summary>
+public abstract class SegaTmrGame : Game
+{
+    [UiProperty(DisplayName = "Region Code")]
+    public string? RegionCode { get; set; }
+
+    [UiProperty(DisplayName = "Header")]
+    public string? HeaderFormat { get; set; }
+
+    public void Apply(SegaTmrHeader? header)
+    {
+        if (header is null) { HeaderFormat = "None"; return; }
+        HeaderFormat = $"TMR SEGA @ 0x{header.Offset:X4}";
+        RegionCode = header.RegionName;
+        ProductCode = header.ProductCode;
+        Version = header.Version.ToString();
+        if (header.Regions.Count > 0) Regions = header.Regions;
     }
 }

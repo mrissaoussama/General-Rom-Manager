@@ -1,6 +1,5 @@
 using RomManagerShared.Base;
 using RomManagerShared.Interfaces;
-using RomManagerShared.PS2;
 using RomManagerShared.Utils;
 namespace RomManagerShared.PS1.Parsers;
 
@@ -28,7 +27,7 @@ public class PS1DiscParser : IRomParser<PS1Console>, IContentSniffer
 
             var game = new PS1Game { TitleID = serial, Path = path, Size = FileUtils.GetFileSize(image) };
             game.AddTitleName(Path.GetFileNameWithoutExtension(path));
-            game.AddRegion(PS2Utils.GetRegionFile(serial) ?? Region.Unknown);
+            game.AddRegion(PlayStationSerial.RegionOf(serial));
             return Task.FromResult<List<Rom>>([game]);
         }
         catch (Exception ex)

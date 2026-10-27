@@ -13,6 +13,9 @@ using RomManagerShared.PCEngine;
 using RomManagerShared.PCEngine.Parsers;
 using RomManagerShared.Utils.Dat;
 
+
+using SegaTmrHeader = RomManagerShared.Utils.SegaTmrHeader;
+
 namespace RomManagerTests;
 
 public sealed class SegaNecTests : IDisposable

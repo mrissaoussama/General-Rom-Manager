@@ -1,10 +1,9 @@
-﻿using RomManagerShared.Base;
+using RomManagerShared.Base;
 using RomManagerShared.Base.Database;
 using RomManagerShared.Base.Interfaces;
 using RomManagerShared.Interfaces;
 using RomManagerShared.Switch.Configuration;
 using RomManagerShared.Utils;
-using RomManagerShared.WiiU;
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
