@@ -27,7 +27,8 @@ public static partial class OneGameOneRom
             .Where(g => g.Count() > 1)
             .Select(g =>
             {
-                var ranked = g.OrderBy(r => Score(r, priority)).ThenBy(r => r.Path, StringComparer.OrdinalIgnoreCase).ToList();
+                var ranked = g.OrderBy(r => Score(r, priority)).ThenByDescending(r => VersionKey.Parse(r.Version))
+                    .ThenBy(r => r.Path, StringComparer.OrdinalIgnoreCase).ToList();
                 return new OneGameOneRomGroup(g.Key, ranked[0], ranked[1..]);
             })
             .OrderBy(g => g.Game, StringComparer.OrdinalIgnoreCase)];
@@ -60,16 +61,15 @@ public static partial class OneGameOneRom
     [GeneratedRegex(@"\(Rev ([0-9A-Z.]+)\)", RegexOptions.IgnoreCase)]
     private static partial Regex Revision();
 
-    // Lower is better: unwanted dumps last, then region priority, then newest revision/version.
-    private static (int Unwanted, int Region, int Revision, int Version) Score(Rom rom, IReadOnlyList<Region> priority)
+    // Lower is better: unwanted dumps last, then region priority, then newest revision (the version comes next).
+    private static (int Unwanted, int Region, int Revision) Score(Rom rom, IReadOnlyList<Region> priority)
     {
         var name = Name(rom) ?? "";
         var regions = rom.Regions is { Count: > 0 } r ? r : DatIndex.RegionsFromName(name);
         var regionRank = regions.Select(x => IndexOf(priority, x)).Where(i => i >= 0).DefaultIfEmpty(priority.Count).Min();
         var unwanted = rom.IsDemo || UnwantedTag().IsMatch(name) ? 1 : 0;
         var rev = Revision().Match(name) is { Success: true } m ? RevisionNumber(m.Groups[1].Value) : 0;
-        var version = int.TryParse(new string((rom.Version ?? "").Where(char.IsDigit).ToArray()), out var v) ? v : 0;
-        return (unwanted, regionRank, -rev, -version);
+        return (unwanted, regionRank, -rev);
     }
 
     private static int IndexOf(IReadOnlyList<Region> list, Region region)

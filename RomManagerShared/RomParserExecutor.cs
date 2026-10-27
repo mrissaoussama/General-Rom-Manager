@@ -38,7 +38,7 @@ public class RomParserExecutor<T> : IRomParserExecutor where T : GamingConsole
     public async Task<List<Rom>> ExecuteParsers(string file, CancellationToken ct)
     {
         List<Rom> mergedRomList = [];
-        var extension = Path.GetExtension(file).Replace(".", "").ToLower();
+        var extension = Path.GetExtension(file).TrimStart('.').ToLowerInvariant();
         var compatibleParsers = Parsers.Where(x => x.Extensions.Contains(extension)).ToList();
 
         // Read the header once, only when a parser can rule the file out from it.
@@ -54,7 +54,7 @@ public class RomParserExecutor<T> : IRomParserExecutor where T : GamingConsole
             ct.ThrowIfCancellationRequested();
             if (header is not null && parser is IContentSniffer sniffer && !sniffer.CanParse(file, header))
             {
-                AppLog.Info($"{Path.GetFileName(file)}: not a {typeof(T).Name.Replace("Console", "")} file ({parser.GetType().Name})");
+                AppLog.Info($"{Path.GetFileName(file)}: not a {ConsoleModules.IdOf(typeof(T))} file ({parser.GetType().Name})");
                 continue;
             }
 
@@ -110,18 +110,8 @@ public class RomParserExecutor<T> : IRomParserExecutor where T : GamingConsole
         return false;
     }
 
-    public List<string> GetSupportedExtensions()
-    {
-        if (Parsers.Count == 0)
-        {
-            return [];
-        }
-        List<string> extensionList = [];
-        foreach (var parser in Parsers)
-        {
-            extensionList.AddRange(parser.Extensions);
-        }
-        return extensionList;
-    }
+    /// <summary>Every extension a parser accepts, once.</summary>
+    public List<string> GetSupportedExtensions() =>
+        [.. Parsers.SelectMany(p => p.Extensions).Distinct(StringComparer.OrdinalIgnoreCase)];
 
 }

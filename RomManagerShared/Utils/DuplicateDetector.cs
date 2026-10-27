@@ -156,18 +156,10 @@ public sealed class DuplicateDetector
     private static IReadOnlyList<Rom> RankGroup(IList<Rom> roms)
     {
         return roms
-            .OrderByDescending(r => ParseVersion(r.Version))
+            .OrderByDescending(r => VersionKey.Parse(r.Version))
             .ThenByDescending(r => r.Regions?.Count ?? 0)
             .ThenByDescending(r => TryGetFileSize(r.Path))
             .ToList();
-    }
-
-    private static double ParseVersion(string? version)
-    {
-        if (string.IsNullOrEmpty(version)) return 0;
-        // Handle "v1.2.3" style
-        string trimmed = version.TrimStart('v', 'V');
-        return double.TryParse(trimmed, out double v) ? v : 0;
     }
 
     private static long TryGetFileSize(string? path)

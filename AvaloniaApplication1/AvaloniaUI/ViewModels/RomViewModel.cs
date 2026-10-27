@@ -1,7 +1,3 @@
-// csharp - AvaloniaApplication1/AvaloniaUI/ViewModels/RomViewModel.cs
-
-
-
 namespace AvaloniaUI.ViewModels;
 
 public partial class RomViewModel : ViewModelBase
@@ -161,7 +157,7 @@ public partial class RomViewModel : ViewModelBase
         if (_rom.Size.HasValue)
             AddProperty("Size", FileUtils.FormatFileSize(_rom.Size.Value));
         if (_rom.ReleaseDate.HasValue)
-            AddProperty("Release Date", _rom.ReleaseDate.Value.ToString("yyyy-MM-dd"));
+            AddProperty("Release Date", _rom.ReleaseDate.Value.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture));
         AddProperty("Publisher", _rom.Publisher ?? "");
         AddProperty("Developer", _rom.Developer ?? "");
         if (_rom.Languages?.Any() == true)

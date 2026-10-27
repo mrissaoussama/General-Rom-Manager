@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using RomManagerShared.Base;
 
 namespace RomManagerShared.Utils;
@@ -185,7 +185,7 @@ public sealed class RomMover
             return new MoveResult(src, dest, true, WasDryRun: true);
 
         // Skip if already there
-        if (string.Equals(src, dest, StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(src, dest, FileUtils.PathComparison))
             return new MoveResult(src, dest, true, false);
 
         try
@@ -208,8 +208,7 @@ public sealed class RomMover
 
     private static string GetUniqueDestPath(string dest, string sourcePath)
     {
-        if (!File.Exists(dest) ||
-            string.Equals(dest, sourcePath, FileUtils.PathComparison))
+        if (string.Equals(dest, sourcePath, FileUtils.PathComparison) || !Exists(dest))
             return dest;
 
         string dir = Path.GetDirectoryName(dest) ?? "";
@@ -218,8 +217,11 @@ public sealed class RomMover
         int i = 1;
         string candidate;
         do { candidate = Path.Combine(dir, $"{name} ({i++}){ext}"); }
-        while (File.Exists(candidate));
+        while (Exists(candidate));
         return candidate;
+
+        // A folder with the file's name is a collision too.
+        static bool Exists(string path) => File.Exists(path) || Directory.Exists(path);
     }
 
     private static string FindCommonRoot(IEnumerable<string> paths)
@@ -232,7 +234,7 @@ public sealed class RomMover
             var parts2 = p.Split(Path.DirectorySeparatorChar);
             int i = 0;
             while (i < parts1.Length && i < parts2.Length &&
-                   string.Equals(parts1[i], parts2[i], StringComparison.OrdinalIgnoreCase)) i++;
+                   string.Equals(parts1[i], parts2[i], FileUtils.PathComparison)) i++;
             common = string.Join(Path.DirectorySeparatorChar, parts1[..i]);
         }
         return common ?? "";

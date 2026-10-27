@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using Avalonia.Data.Converters;
 
 
@@ -311,9 +311,7 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
     private static List<PropertyInfo> GetConsoleSpecificProperties()
     {
         var baseRomProps = typeof(Rom).GetProperties().Select(p => p.Name).ToHashSet();
-        var prefix = typeof(T).Name.Replace("Console", "");
-        return ConsoleModules.AllTypes
-            .Where(t => typeof(Rom).IsAssignableFrom(t) && t.Name.StartsWith(prefix) && !t.IsAbstract)
+        return ConsoleModules.RomTypesOf(typeof(T))
             .SelectMany(t => t.GetProperties()
                 .Where(p => !baseRomProps.Contains(p.Name) && p.GetCustomAttribute<UiPropertyAttribute>(true) is not null)
                 .OrderBy(p => p.GetCustomAttribute<UiPropertyAttribute>(true)!.Order))

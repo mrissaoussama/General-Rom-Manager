@@ -143,7 +143,7 @@ public class WiiUWikiBrewScraper
                     string columnName = columnNames[i];
                     string cellValue = rowData[i];
 
-                    if (columnName.ToLower().Contains("Title ID".ToLower()))
+                    if (columnName.Contains("Title ID", StringComparison.OrdinalIgnoreCase))
                     {
                         title.TitleID = cellValue.Replace("-", "") ;
 

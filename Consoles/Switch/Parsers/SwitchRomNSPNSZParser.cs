@@ -32,7 +32,7 @@ public class SwitchRomNSPNSZParser : IRomParser<SwitchConsole>
                     string extensionData = headerAsString.Substring(Math.Max(0, extensionIndex - 32), 32);
                     extensionData = extensionData[..^16];
                     if (extensionData.All(char.IsAsciiHexDigit))
-                        ExtensionsData.Add(extensionData.ToUpper());
+                        ExtensionsData.Add(extensionData.ToUpperInvariant());
                     extensionIndex = headerAsString.IndexOf(extension, extensionIndex + 1, StringComparison.OrdinalIgnoreCase);
                 }
             }

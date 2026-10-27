@@ -17,7 +17,7 @@ public class PS3FolderRomParser : IRomParser<PS3Console>
     public Task<List<Rom>> ProcessFile(string path)
     {
         List<Rom> list = [];
-        if (Path.GetExtension(path).ToLower().Contains("sfo"))
+        if (Path.GetExtension(path).Equals(".sfo", StringComparison.OrdinalIgnoreCase))
         {
             try
             {

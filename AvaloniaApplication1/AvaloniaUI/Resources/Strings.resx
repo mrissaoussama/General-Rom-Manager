@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
   <resheader name="version"><value>2.0</value></resheader>
@@ -336,6 +336,7 @@
   <data name="Dialogs_InvalidTemplate" xml:space="preserve"><value>Invalid template: {0}</value></data>
   <data name="Dialogs_OfFileSChange" xml:space="preserve"><value>{0} of {1} file(s) change</value></data>
   <data name="Dialogs_Unchanged" xml:space="preserve"><value>{0}   (unchanged)</value></data>
+  <data name="Dialogs_NotRenamed" xml:space="preserve"><value>{0}   (not renamed: {1})</value></data>
   <data name="Main_LooksLikeMatchingFileS" xml:space="preserve"><value>Looks like {0} ({1} matching file(s)).</value></data>
   <data name="Main_NoKnownROMFilesFoundPickTheConsoleManually" xml:space="preserve"><value>No known ROM files found. Pick the console manually.</value></data>
   <data name="Settings_Consoles" xml:space="preserve"><value>Consoles: {0}</value></data>

@@ -23,7 +23,7 @@ public static class LanguageUtils
 {
     public static Language ConvertToLanguage(string languageCode)
     {
-        return languageCode.ToLower() switch
+        return languageCode.ToLowerInvariant() switch
         {
             "en" => Language.English,
             "ja" => Language.Japanese,

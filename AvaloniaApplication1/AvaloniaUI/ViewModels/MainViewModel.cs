@@ -1,4 +1,4 @@
-
+﻿
 namespace AvaloniaUI.ViewModels;
 
 /// <summary>Shell: navigation (dashboard + one page per console), menus and the bottom panels.</summary>
@@ -98,7 +98,7 @@ public partial class MainViewModel : ViewModelBase
         }
         return added;
 
-        static string Name(Type t) => t.Name.Replace("Console", "");
+        static string Name(Type t) => ConsoleModules.Describe(t).Id;
     }
 
     private ConsoleViewModelBase CreateConsole(Type consoleType)

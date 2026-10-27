@@ -13,7 +13,7 @@ public class WiiUXmlParser : IRomParser<WiiUConsole>
     public async Task<List<Rom>> ProcessFile(string path)
     {
         List<Rom> list = [];
-        string extension = Path.GetExtension(path).TrimStart('.').ToLower();
+        string extension = Path.GetExtension(path).TrimStart('.').ToLowerInvariant();
         if (!Extensions.Contains(extension))
         {
             return [];

@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using RomManagerShared.Base.Database;
 using RomManagerShared.Interfaces;
@@ -94,10 +94,33 @@ public static class ConsoleModules
     {
         var module = Modules.FirstOrDefault(m => m.Descriptor.ConsoleType == consoleType);
         if (module is not null) return module.Descriptor;
-        var id = consoleType.Name.Replace("Console", "");
+        var id = IdOf(consoleType);
         return consoleType.GetCustomAttribute<ConsoleInfoAttribute>() is { } info
             ? new ConsoleDescriptor(consoleType, id, info.DisplayName, info.Manufacturer, info.Badge)
             : new ConsoleDescriptor(consoleType, id, id, "", id.Length <= 4 ? id : id[..3]);
+    }
+
+    /// <summary>The default console id: the type name without "Console" (<c>SwitchConsole</c> → <c>Switch</c>).</summary>
+    public static string IdOf(Type consoleType) => consoleType.Name.Replace("Console", "");
+
+    /// <summary>
+    /// The rom types of a console: declared in its module and named after it (<c>SwitchGame</c>, <c>SwitchUpdate</c>).
+    /// The assembly check keeps prefixes apart: Game Boy is not Game Boy Advance, Wii is not Wii U.
+    /// </summary>
+    public static IEnumerable<Type> RomTypesOf(Type consoleType)
+    {
+        var prefix = IdOf(consoleType);
+        return AllTypes.Where(t => typeof(Rom).IsAssignableFrom(t) && !t.IsAbstract
+            && t.Assembly == consoleType.Assembly && t.Name.StartsWith(prefix, StringComparison.Ordinal)
+            && !OtherConsoleClaims(t, consoleType));
+    }
+
+    // Two consoles in one module (Xbox 360 and the original Xbox): the longer matching id wins.
+    private static bool OtherConsoleClaims(Type romType, Type consoleType)
+    {
+        var prefix = IdOf(consoleType);
+        return ConsoleTypes.Any(c => c != consoleType && c.Assembly == consoleType.Assembly
+            && IdOf(c).Length > prefix.Length && romType.Name.StartsWith(IdOf(c), StringComparison.Ordinal));
     }
 
     /// <summary>Every console, sorted by display name.</summary>

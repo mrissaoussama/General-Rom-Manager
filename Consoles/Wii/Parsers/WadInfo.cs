@@ -281,7 +281,7 @@ public class WadInfo
             using CryptoStream crypto = new(memory, cryptor, CryptoStreamMode.Read);
             crypto.ReadExactly(decryptedwater, 0, 10);
         }
-        string water = BitConverter.ToString(decryptedwater).Replace("-", "").ToLower() + " ";
+        string water = BitConverter.ToString(decryptedwater).Replace("-", "").ToLowerInvariant() + " ";
         water = water.Insert(0, fat[2].ToString());
         water = water.Insert(2, fat[2].ToString());
         water = water.Insert(7, fat[2].ToString());

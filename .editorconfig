@@ -1,0 +1,12 @@
+root = true
+
+[*.cs]
+# Culture-sensitive case conversion breaks extension and ID matching under some locales (Turkish "ISO" → "ıso").
+# Use ToLowerInvariant/ToUpperInvariant, or pass a culture when the text is shown to the user.
+dotnet_diagnostic.CA1304.severity = error
+dotnet_diagnostic.CA1311.severity = error
+
+# Vendored code keeps its upstream style.
+[{SkyEditor.IO/**,Consoles/ThreeDS/Ctr/**,Consoles/Xbox/ISO2GOD/**}.cs]
+dotnet_diagnostic.CA1304.severity = none
+dotnet_diagnostic.CA1311.severity = none

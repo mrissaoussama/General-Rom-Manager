@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using RomManagerShared.Base;
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace RomManagerShared.Utils;
@@ -17,7 +18,22 @@ public sealed record RenameResult(
 
 public partial class FileRenamer
 {
-    private static readonly char[] _invalidChars = Path.GetInvalidFileNameChars();
+    // Invalid on Windows and FAT/exFAT (SD cards), whatever OS renames the file: ROMs get copied to those.
+    private static readonly char[] _invalidChars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*',
+        .. Enumerable.Range(0, 32).Select(i => (char)i)];
+
+    // Windows device names: "CON.nsp" cannot be opened there.
+    private static readonly HashSet<string> _reservedNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "CON", "PRN", "AUX", "NUL",
+        "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+        "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+    };
+
+    private const int MaxFileNameLength = 255;
+
+    /// <summary>The error a rename reports when the template gives an empty name.</summary>
+    public const string EmptyNameError = "The template gives an empty file name";
 
     // ── Public API ────────────────────────────────────────────────────────
 
@@ -90,7 +106,9 @@ public partial class FileRenamer
         // The template's extension comes from the marker file; folders have none.
         var name = SanitizeFileName(Path.GetFileNameWithoutExtension(GenerateFileName(roms, formatString)));
         var parent = Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(folder)) ?? "";
-        if (name.Length == 0 || string.Equals(name, Path.GetFileName(folder), StringComparison.Ordinal))
+        if (name.Length == 0)
+            return new RenameResult(folder, folder, false, dryRun, EmptyNameError);
+        if (string.Equals(name, Path.GetFileName(folder), StringComparison.Ordinal))
             return new RenameResult(folder, folder, true, dryRun);
 
         var target = Path.Combine(parent, name);
@@ -121,14 +139,17 @@ public partial class FileRenamer
     {
         // BUG FIX: romGroup.First().Path is already absolute — do NOT combine with directory
         string sourcePath = romGroup.First().Path!;
-        string newFileName = GenerateFileName(romGroup, formatString);
+        string newFileNameSanitized = SanitizeFileName(GenerateFileName(romGroup, formatString));
+
+        // A template whose placeholders are all empty would leave just the extension (".nsp").
+        if (Path.GetFileNameWithoutExtension(newFileNameSanitized).Length == 0)
+            return new RenameResult(sourcePath, sourcePath, false, dryRun, EmptyNameError);
 
         // Nothing to do
-        if (string.Equals(newFileName, Path.GetFileName(sourcePath), StringComparison.Ordinal))
+        if (string.Equals(newFileNameSanitized, Path.GetFileName(sourcePath), StringComparison.Ordinal))
             return new RenameResult(sourcePath, sourcePath, true, dryRun);
 
         string directory = Path.GetDirectoryName(sourcePath) ?? "";
-        string newFileNameSanitized = SanitizeFileName(newFileName);
         string newFilePath = BuildUniqueDestPath(directory, newFileNameSanitized, sourcePath);
 
         if (dryRun)
@@ -160,7 +181,7 @@ public partial class FileRenamer
     /// Supported placeholders:
     ///   {TitleName}, {TitleID}, {Region}, {Version}, {DLCCount},
     ///   {Publisher}, {Developer}, {ReleaseDate}, {Platform}, {ProductCode},
-    ///   {Size}, {Genres}, {Players}, {Type}, {MinFirmware}, {Description}
+    ///   {Size}, {Genres}, {Players}, {Type}, {MinFirmware}, {Description}, {Year}, {Languages}
     /// Bracket variants [v{Version}], [d{DLCCount}], [{Region}] are stripped when empty.
     /// </summary>
     public static string GenerateFileName(IEnumerable<Rom> romGroup, string formatString)
@@ -178,10 +199,20 @@ public partial class FileRenamer
         ReplacePlaceholder(ref fn, "{Platform}",     GetPlatformName(rom));
 
         // Release date — use year only when full date unavailable
-        string relDate = rom.ReleaseDate.HasValue
-            ? rom.ReleaseDate.Value.ToString("yyyy-MM-dd")
-            : "";
+        // Gregorian whatever the user's locale (a Hijri or Thai calendar would give another year).
+        string relDate = rom.ReleaseDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "";
+        ReplacePlaceholders(ref fn, ["[{ReleaseDate}]", "({ReleaseDate})"], relDate.Length == 0 ? "" : null);
         ReplacePlaceholder(ref fn, "{ReleaseDate}", relDate);
+        string year = rom.ReleaseDate?.ToString("yyyy", CultureInfo.InvariantCulture) ?? "";
+        ReplacePlaceholders(ref fn, ["[{Year}]", "({Year})"], year.Length == 0 ? "" : null);
+        ReplacePlaceholder(ref fn, "{Year}", year);
+
+        // Languages ("English,French")
+        string languages = rom.Languages is { Count: > 0 } langs
+            ? string.Join(",", langs.Where(l => l != Language.Unknown).Distinct().Select(l => l.ToString()))
+            : "";
+        ReplacePlaceholders(ref fn, ["[{Languages}]", "({Languages})"], languages.Length == 0 ? "" : null);
+        ReplacePlaceholder(ref fn, "{Languages}", languages);
 
         // Size — formatted human-readable
         string sizeStr = rom.Size.HasValue ? FileUtils.FormatFileSize(rom.Size.Value) : "";
@@ -241,8 +272,10 @@ public partial class FileRenamer
         input = CollapseSpacesRegex().Replace(input, " ").Trim();
     }
 
-    private static void ReplacePlaceholders(ref string input, string[] placeholders, string value)
+    // A null value leaves the placeholders alone (used to drop a bracketed placeholder only when it is empty).
+    private static void ReplacePlaceholders(ref string input, string[] placeholders, string? value)
     {
+        if (value is null) return;
         foreach (var ph in placeholders)
             ReplacePlaceholder(ref input, ph, value);
     }
@@ -297,10 +330,21 @@ public partial class FileRenamer
 
     // ── Helper: sanitize file name ────────────────────────────────────────
 
-    private static string SanitizeFileName(string fileName)
+    /// <summary>
+    /// A name that works on Windows, FAT/exFAT and Unix: invalid characters become '_', trailing dots and spaces
+    /// go (Windows drops them silently), device names get a '_' and the name is cut to 255 characters with its
+    /// extension kept.
+    /// </summary>
+    public static string SanitizeFileName(string fileName)
     {
         string result = new(fileName.Select(c => _invalidChars.Contains(c) ? '_' : c).ToArray());
-        return CollapseSpacesRegex().Replace(result, " ").Trim();
+        result = CollapseSpacesRegex().Replace(result, " ").Trim().TrimEnd('.', ' ');
+        string ext = Path.GetExtension(result);
+        string stem = result[..^ext.Length].TrimEnd('.', ' ');
+        if (_reservedNames.Contains(stem)) stem += "_";
+        if (stem.Length + ext.Length > MaxFileNameLength)
+            stem = stem[..Math.Max(0, MaxFileNameLength - ext.Length)].TrimEnd('.', ' ');
+        return stem + ext;
     }
 
     [GeneratedRegex(@"\s{2,}")]

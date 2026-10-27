@@ -1,4 +1,4 @@
-
+﻿
 namespace AvaloniaUI.ViewModels;
 
 /// <summary>
@@ -92,8 +92,8 @@ public sealed partial class RenameDialogViewModel : DialogViewModel
 {
     private static readonly string[] GeneralPlaceholders =
     [
-        "{TitleName}", "{TitleID}", "{Region}", "{Version}", "{Publisher}", "{Developer}", "{ReleaseDate}",
-        "{Platform}", "{ProductCode}", "{Size}", "{Genres}", "{Players}", "{Type}", "{MinFirmware}", "{DLCCount}",
+        "{TitleName}", "{TitleID}", "{Region}", "{Version}", "{Publisher}", "{Developer}", "{ReleaseDate}", "{Year}",
+        "{Platform}", "{ProductCode}", "{Size}", "{Genres}", "{Players}", "{Languages}", "{Type}", "{MinFirmware}", "{DLCCount}",
     ];
 
     public const int PreviewLimit = 50;
@@ -141,10 +141,12 @@ public sealed partial class RenameDialogViewModel : DialogViewModel
         {
             var results = FileRenamer.PreviewRename(_roms.Take(PreviewLimit), Template);
             foreach (var r in results)
-                PreviewRows.Add(r.SourcePath == r.DestinationPath
+                PreviewRows.Add(!r.Success
+                    ? string.Format(Strings.Dialogs_NotRenamed, Path.GetFileName(r.SourcePath), r.ErrorMessage)
+                    : r.SourcePath == r.DestinationPath
                     ? string.Format(Strings.Dialogs_Unchanged, Path.GetFileName(r.SourcePath))
                     : $"{Path.GetFileName(r.SourcePath)}  →  {Path.GetFileName(r.DestinationPath)}");
-            var changed = results.Count(r => r.SourcePath != r.DestinationPath);
+            var changed = results.Count(r => r.Success && r.SourcePath != r.DestinationPath);
             Summary = string.Format(Strings.Dialogs_OfFileSChange, changed, results.Count) + (_roms.Count > PreviewLimit ? string.Format(Strings.Dialogs_FirstShown, PreviewLimit) : "");
             _valid = true;
         }

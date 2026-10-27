@@ -1,4 +1,4 @@
-using AwesomeAssertions;
+﻿using AwesomeAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using RomManagerShared.Base;
 using RomManagerShared.Base.Library;
@@ -68,5 +68,14 @@ public sealed class ConsoleModulesTests : IDisposable
 
         RomSnapshot.Deserialize(json).Should().ContainSingle().Which.Should().BeOfType<TestModuleGame>()
             .Which.Extra.Should().Be("x");
+    }
+
+    [Fact]
+    public void RomTypesOf_DoesNotMixConsolesThatShareAPrefix()
+    {
+        ConsoleModules.RomTypesOf(typeof(RomManagerShared.GameBoy.GameBoyConsole)).Select(t => t.Name)
+            .Should().Contain("GameBoyGame").And.NotContain("GameBoyAdvanceGame");
+        ConsoleModules.RomTypesOf(typeof(RomManagerShared.Wii.WiiConsole)).Select(t => t.Name)
+            .Should().Contain(["WiiGame", "WiiWadGame"]).And.NotContain(n => n.StartsWith("WiiU"));
     }
 }

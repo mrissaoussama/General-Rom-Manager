@@ -1,4 +1,4 @@
-using AwesomeAssertions;
+﻿using AwesomeAssertions;
 using RomManagerShared.Base;
 using RomManagerShared.Utils;
 
@@ -178,5 +178,20 @@ public class RomMoverTests : IDisposable
         var mover = new RomMover(_tempTarget);
         var results = mover.MoveFiles([]);
         results.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void MoveFiles_TreatsAFolderWithTheFileNameAsACollision()
+    {
+        var src = Path.Combine(_tempSource, "game.nsp");
+        File.WriteAllText(src, "x");
+        Directory.CreateDirectory(Path.Combine(_tempTarget, "game.nsp"));
+        var rom = new Game { Path = src, TitleID = "0100" };
+
+        var result = new RomMover(_tempTarget).MoveFiles([rom]).Should().ContainSingle().Which;
+
+        result.Success.Should().BeTrue();
+        Path.GetFileName(result.DestinationPath).Should().Be("game (1).nsp");
+        File.Exists(result.DestinationPath).Should().BeTrue();
     }
 }
