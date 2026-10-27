@@ -34,6 +34,9 @@ public partial class App : Application
                 logging.ClearProviders();
                 logging.AddConsole();
                 logging.SetMinimumLevel(LogLevel.Information);
+                // Framework chatter (EF Core logs every SQL command at Information) stays out of the log.
+                logging.AddFilter("Microsoft", LogLevel.Warning);
+                logging.AddFilter("System", LogLevel.Warning);
                 // Log file, log panel and parse diagnostics.
                 logging.AddProvider(new RomManagerShared.Logging.LogFileProvider());
             })
