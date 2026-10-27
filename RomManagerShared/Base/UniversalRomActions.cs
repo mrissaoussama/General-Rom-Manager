@@ -1,4 +1,4 @@
-using RomManagerShared.Base;
+﻿using RomManagerShared.Base;
 using RomManagerShared.Base.Database;
 using RomManagerShared.Utils;
 using Microsoft.Extensions.DependencyInjection;
@@ -72,42 +72,9 @@ public sealed class CalculateHashesAction : ConsoleRomActionBase
     public override async Task ExecuteAsync(IEnumerable<Rom> selectedRoms, IServiceProvider services,
         CancellationToken cancellationToken = default)
     {
-        // Resolve DB repository from DI for hash persistence
         RomHashRepository? repo = null;
         try { repo = services.GetService<RomHashRepository>(); }
-        catch { /* swallow if DI not configured */ }
-
-        foreach (var rom in selectedRoms)
-        {
-            if (string.IsNullOrEmpty(rom.Path)) continue;
-            cancellationToken.ThrowIfCancellationRequested();
-
-            try
-            {
-                var hashTypes = new[] { HashTypeEnum.CRC32, HashTypeEnum.MD5, HashTypeEnum.SHA1 };
-                List<RomHash> hashes;
-
-                if (rom.IsFolderFormat && Directory.Exists(rom.Path))
-                    hashes = await HashUtils.CalculateRomFolderHashes(rom, hashTypes);
-                else if (File.Exists(rom.Path))
-                    hashes = await HashUtils.CalculateRomHashes(rom, hashTypes);
-                else
-                    continue;
-
-                // Save to DB if repository is available
-                if (repo is not null && hashes.Count > 0)
-                {
-                    try { await repo.AddIfNewRange(hashes); }
-                    catch (Exception dbEx) { AppLog.Warn($"[Hash] DB save failed for '{rom.Path}': {dbEx.Message}"); }
-                }
-
-                var hashStr = rom.Hashes?.FirstOrDefault()?.Value ?? "(none)";
-                AppLog.Info($"[Hash] {rom.Titles?.FirstOrDefault()?.Value ?? rom.TitleID}: {hashStr}");
-            }
-            catch (Exception ex)
-            {
-                AppLog.Warn($"[Hash] Error for '{rom.Path}': {ex.Message}");
-            }
-        }
+        catch { /* no database in this host */ }
+        await HashUtils.HashRomsAsync([.. selectedRoms], repo is null ? null : hashes => repo.AddIfNewRange(hashes), ct: cancellationToken);
     }
 }

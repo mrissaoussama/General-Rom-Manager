@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using Microsoft.Extensions.DependencyInjection;
 using RomManagerShared.Base.Database;
 using RomManagerShared.Utils;
@@ -270,39 +270,7 @@ public sealed class RomOperationService
             Category = "Tools",
             ExecuteAsync = async (ct, progress) =>
             {
-                var hashTypes = new[] { HashTypeEnum.CRC32, HashTypeEnum.MD5, HashTypeEnum.SHA1 };
-                int done = 0;
-
-                foreach (var rom in roms)
-                {
-                    ct.ThrowIfCancellationRequested();
-                    if (string.IsNullOrEmpty(rom.Path)) continue;
-
-                    try
-                    {
-                        List<RomHash> hashes;
-                        if (rom.IsFolderFormat && Directory.Exists(rom.Path))
-                            hashes = await HashUtils.CalculateRomFolderHashes(rom, hashTypes);
-                        else if (File.Exists(rom.Path))
-                            hashes = await HashUtils.CalculateRomHashes(rom, hashTypes);
-                        else
-                            continue;
-
-                        // Persist to DB
-                        await SaveHashesToDbAsync(hashes);
-
-                        var hashStr = hashes.FirstOrDefault()?.Value ?? "(none)";
-                        AppLog.Info($"[Hash] {rom.Titles?.FirstOrDefault()?.Value ?? rom.TitleID}: {hashStr}");
-                    }
-                    catch (Exception ex)
-                    {
-                        AppLog.Warn($"[Hash] Error for '{rom.Path}': {ex.Message}");
-                    }
-
-                    done++;
-                    progress.Report(roms.Count > 0 ? (double)done / roms.Count * 100 : 100);
-                }
-
+                var done = await HashUtils.HashRomsAsync(roms, SaveHashesToDbAsync, progress, ct);
                 AppLog.Info($"[Hash] Finished calculating hashes for {done}/{roms.Count} ROM(s).");
             },
         });
