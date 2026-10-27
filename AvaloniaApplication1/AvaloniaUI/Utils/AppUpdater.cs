@@ -12,7 +12,10 @@ public interface IAppUpdater
     /// <summary>The newer version, or null when up to date.</summary>
     Task<string?> CheckAsync(CancellationToken ct = default);
 
-    /// <summary>Downloads the update found by <see cref="CheckAsync"/>, then restarts into it.</summary>
+    /// <summary>
+    /// Downloads the update found by <see cref="CheckAsync"/> and arranges for it to be installed, and the app
+    /// restarted, once this process exits. The caller then closes the app normally (so settings are saved).
+    /// </summary>
     Task DownloadAndRestartAsync(IProgress<int>? progress = null);
 }
 
@@ -36,6 +39,6 @@ public sealed class VelopackUpdater : IAppUpdater
     {
         if (_pending is null) return;
         await _manager.DownloadUpdatesAsync(_pending, p => progress?.Report(p));
-        _manager.ApplyUpdatesAndRestart(_pending);
+        _manager.WaitExitThenApplyUpdates(_pending.TargetFullRelease, silent: false, restart: true, []);
     }
 }

@@ -198,6 +198,8 @@ public partial class MainViewModel : ViewModelBase
                 return;
             StatusMessage = $"Downloading RomManager {version}…";
             await updater.DownloadAndRestartAsync(new Progress<int>(p => StatusMessage = $"Downloading RomManager {version}… {p}%"));
+            // A normal exit saves window placement and settings; the update installs and restarts afterwards.
+            Exit();
         }
         catch (Exception ex)
         {
