@@ -297,6 +297,37 @@ public sealed class SettingsWindow : Window
         };
         sp.Children.Add(redumpCheck);
 
+        // DAT overview: loading DATs parses their XML, so only on request.
+        var datDir = RomManagerShared.Utils.Dat.DatIndex.DatDirectory;
+        var datOverview = MakeLabel("", fontSize: 11, muted: true);
+        var datButton = new Button { Content = "Show DAT files per console" };
+        var datFolderButton = new Button { Content = "Open DAT folder" };
+        datFolderButton.Click += (_, _) =>
+        {
+            Directory.CreateDirectory(datDir);
+            Shell.OpenWithDefaultApp(datDir);
+        };
+        datButton.Click += async (_, _) =>
+        {
+            datButton.IsEnabled = false;
+            datOverview.Text = "Loading DATs...";
+            var consoles = (_consoleViewModels ?? []).OfType<ConsoleViewModelBase>().ToList();
+            var lines = await Task.Run(() => consoles.Select(c =>
+            {
+                var indexes = c.GetDatIndexes();
+                return indexes.Count == 0
+                    ? $"{c.DisplayName}: no DAT"
+                    : $"{c.DisplayName}: {indexes.Count} DAT set(s), {indexes.Sum(i => i.Games.Count):N0} games";
+            }).ToList());
+            datOverview.Text = lines.Count == 0
+                ? "No console folders configured."
+                : string.Join(Environment.NewLine, lines);
+            datButton.IsEnabled = true;
+        };
+        sp.Children.Add(MakeLabel($"DAT folder: {datDir}", fontSize: 11, muted: true));
+        sp.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { datButton, datFolderButton } });
+        sp.Children.Add(datOverview);
+
         // Reuses MainViewModel's missing-resource check + download manager.
         var dlStatus = MakeLabel("", fontSize: 11, muted: true);
         dlStatus.VerticalAlignment = VerticalAlignment.Center;

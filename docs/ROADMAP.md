@@ -79,7 +79,7 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
 - [ ] Settings and Onboarding as AXAML views (still built in code; shown through `IDialogService.ShowWindowAsync`).
 - [x] Settings: toggle Redump hashing (settings.json overrides config.json).
 - [x] Settings: scan parallelism and excluded folders.
-- [ ] Settings: DAT file overview per console.
+- [x] Settings: DAT overview per console (sets and game counts, on request) and "Open DAT folder".
 - [x] Plugins page: the enable/disable toggle is now enforced (it was saved but ignored), permissions
       shown, "Revoke approval".
 - [x] Unrecognised files: "Move to folder…" from the list (preview, keeps sub-folders, rescans after).
