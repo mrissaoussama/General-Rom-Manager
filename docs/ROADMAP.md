@@ -30,7 +30,7 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
 - [x] **[P0]** Scanner: a file deleted or moved mid-scan aborted the scan; paths collided by case on Linux.
 - [x] **[P0]** Move, undo, rename, delete and the plugin loader compare paths like the OS; case-only renames apply.
 - [x] In-app update installs after a normal exit (it used to kill the process; window placement was lost).
-- [ ] **[P1]** A ROM folder that is offline keeps its cached rows (v2), but nothing tells the user. Show
+- [x] **[P1]** A ROM folder that is offline keeps its cached rows (v2), but nothing told the user. Show
       offline folders on the console page and the dashboard, with "remove folder" for ones that are gone.
 - [ ] **[P1]** Box art downloads from libretro-thumbnails happen without asking. Make network use explicit:
       one "Online features" section in Settings (box art, title database downloads, PS4 updates, app updates).

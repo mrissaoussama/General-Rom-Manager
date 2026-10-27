@@ -186,7 +186,9 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
             ShowRoms(cached);
 
             var roots = _roots.GetRoots(_consoleType);
-            if (!roots.Any(Directory.Exists))
+            var reachable = await Task.Run(() => roots.Where(Directory.Exists).ToList(), ct); // a share can be slow
+            OfflineFolders = [.. roots.Except(reachable)];
+            if (reachable.Count == 0)
             {
                 StatusMessage = cached.Count > 0
                     ? $"{cached.Count} ROMs (cached) — ROM folder not found"

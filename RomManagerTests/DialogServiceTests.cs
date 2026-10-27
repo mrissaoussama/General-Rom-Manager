@@ -198,4 +198,27 @@ public sealed class DialogServiceTests : IDisposable
         vm.StatusMessage.Should().Contain("installed copies only");
         _dialogs.Asked.Should().BeEmpty();
     }
+
+    [Fact]
+    public async Task RemoveOfflineFolders_DropsThemFromSettings()
+    {
+        var previous = Settings.Store;
+        Settings.Store = new JsonSettingsStore(Path.Combine(_dir, "settings.json"));
+        try
+        {
+            Settings.Instance.ConsoleLibraryPaths["Test"] = "/gone/primary";
+            Settings.Instance.ConsoleExtraLibraryPaths["Test"] = ["/nas/still-here", "/gone/extra"];
+            var vm = new TestConsoleViewModel { OfflineFolders = ["/gone/primary", "/gone/extra"] };
+            vm.OfflineText.Should().Contain("2 folders not reachable");
+            _dialogs.Answer = true;
+
+            await vm.RemoveOfflineFoldersCommand.ExecuteAsync(null);
+
+            Settings.Instance.ConsoleLibraryPaths.Should().NotContainKey("Test");
+            Settings.Instance.ConsoleExtraLibraryPaths["Test"].Should().Equal("/nas/still-here");
+            vm.HasOfflineFolders.Should().BeFalse();
+            new JsonSettingsStore(Path.Combine(_dir, "settings.json")).Current.ConsoleLibraryPaths.Should().NotContainKey("Test");
+        }
+        finally { Settings.Store = previous; }
+    }
 }

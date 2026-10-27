@@ -110,6 +110,7 @@
                                 <TextBlock Text="{Binding LastScanText}" Classes="muted" />
                                 <TextBlock Text="{Binding DuplicateCount, StringFormat='{}{0:N0} duplicate file(s)'}" Classes="muted"
                                            IsVisible="{Binding HasDuplicates}" />
+                                <TextBlock Text="Folder offline" Classes="warning" IsVisible="{Binding HasOfflineFolders}" />
                                 <TextBlock Text="{Binding UnrecognizedText}" Classes="muted"
                                            IsVisible="{Binding UnrecognizedText, Converter={x:Static ObjectConverters.IsNotNull}}" />
                                 <ProgressBar IsVisible="{Binding IsLoading}" IsIndeterminate="{Binding IsIndeterminate}"

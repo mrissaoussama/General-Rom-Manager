@@ -5,6 +5,14 @@
              x:Class="AvaloniaUI.Views.ConsoleView"
              x:DataType="vm:ConsoleViewModelBase">
     <DockPanel>
+        <Border DockPanel.Dock="Top" Classes="banner" IsVisible="{Binding HasOfflineFolders}">
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Content="Remove folder…" Classes="small" Margin="8,0,0,0"
+                        Command="{Binding RemoveOfflineFoldersCommand}"
+                        ToolTip.Tip="For folders that are gone for good; no files are touched" />
+                <TextBlock Text="{Binding OfflineText}" TextWrapping="Wrap" VerticalAlignment="Center" />
+            </DockPanel>
+        </Border>
         <Border DockPanel.Dock="Top" Classes="banner"
                 IsVisible="{Binding RequirementsWarning, Converter={x:Static ObjectConverters.IsNotNull}}">
             <TextBlock Text="{Binding RequirementsWarning}" TextWrapping="Wrap" />

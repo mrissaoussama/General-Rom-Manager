@@ -26,6 +26,41 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
 
     public string? UnrecognizedText => Unrecognized.Count == 0 ? null : $"{Unrecognized.Count} file(s) not recognised";
 
+    /// <summary>Configured ROM folders that could not be reached at the last scan; their roms come from the cache.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(OfflineText), nameof(HasOfflineFolders))]
+    private IReadOnlyList<string> _offlineFolders = [];
+
+    public bool HasOfflineFolders => OfflineFolders.Count > 0;
+
+    public string? OfflineText => OfflineFolders.Count switch
+    {
+        0 => null,
+        1 => $"Folder not reachable: {OfflineFolders[0]}. Its roms are shown from the last scan.",
+        _ => $"{OfflineFolders.Count} folders not reachable ({string.Join(", ", OfflineFolders)}). Their roms are shown from the last scan.",
+    };
+
+    /// <summary>Forgets offline folders that are gone for good (removes them from Settings), then rescans.</summary>
+    [RelayCommand]
+    private async Task RemoveOfflineFolders()
+    {
+        if (OfflineFolders.Count == 0 || !await Dialogs.ConfirmAsync("Remove folders",
+                $"Stop using {string.Join(", ", OfflineFolders)} for {DisplayName}? Their roms leave the library on the next scan; no files are touched.",
+                "Remove"))
+            return;
+        var settings = Settings.Instance;
+        foreach (var folder in OfflineFolders)
+        {
+            if (settings.ConsoleLibraryPaths.TryGetValue(ConsoleName, out var primary) && string.Equals(primary, folder, FileUtils.PathComparison))
+                settings.ConsoleLibraryPaths.Remove(ConsoleName);
+            if (settings.ConsoleExtraLibraryPaths.TryGetValue(ConsoleName, out var extra))
+                extra.RemoveAll(p => string.Equals(p, folder, FileUtils.PathComparison));
+        }
+        settings.Save();
+        OfflineFolders = [];
+        await LoadData();
+    }
+
     /// <summary>When the last scan of this console finished (this session).</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(LastScanText))]
