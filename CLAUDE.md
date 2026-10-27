@@ -4,9 +4,8 @@ Cross-platform ROM library manager (.NET 10 + Avalonia). Scans ROM folders per c
 headers/containers, enriches metadata from title databases, and offers rename/move/dedupe/hash
 actions plus a plugin system.
 
-Docs: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [docs/ROADMAP.md](docs/ROADMAP.md) (v2 plan; v1 in ROADMAP-v1.md) ·
-[docs/decisions/](docs/decisions/) (ADRs). `PROJECT_ANALYSIS.md` at the root is an older snapshot
-(March 2026); ROADMAP supersedes it.
+Docs: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) · [docs/ROADMAP.md](docs/ROADMAP.md) (v3 plan; v1/v2 in ROADMAP-v1.md, ROADMAP-v2.md) ·
+[docs/decisions/](docs/decisions/) (ADRs).
 
 ## Build / run / test
 

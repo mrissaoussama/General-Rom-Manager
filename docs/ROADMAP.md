@@ -21,7 +21,7 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
       Switch (LibHac) and Xbox (ISO2GOD) into module assemblies (ADR 0003 step 2, blocked in v2 on this).
 - [ ] Fold config.json into an options model (`IOptionsMonitor<AppOptions>`); `RomManagerConfiguration` is
       still a static facade read everywhere.
-- [ ] **[P1]** Remove dead code: the PS4 Store scraper (`PS4PKGUpdateAndDLCChecker`, its HtmlAgilityPack use),
+- [x] **[P1]** Removed dead code: the PS4 Store scraper (`PS4PKGUpdateAndDLCChecker`, its HtmlAgilityPack use),
       the never-implemented `IRomMissingContentChecker` (PS4, 3DS stubs that only log "not implemented") and
       `RomMissingUpdates`/`RomMissingDLCs`. `PROJECT_ANALYSIS.md` is stale: delete it.
 
