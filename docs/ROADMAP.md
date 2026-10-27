@@ -113,7 +113,9 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
 - [ ] Separate `RomManager.Plugins.Abstractions` assembly (contract only) so plugins stop referencing
       all of RomManagerShared; version it with `PluginApi.Version`.
 - [x] Plugin hooks: `ILibraryHooks.OnScanCompletedAsync` with the roms added/removed by each scan.
-- [ ] `dotnet new` template for plugins.
+- [x] `dotnet new` template for plugins (`templates/RomManagerPlugin`, short name `rommanager-plugin`). Plugin
+      load contexts now share assemblies the host already loaded, so a plugin shipping `RomManagerShared.dll`
+      loads (it was silently skipped: its `IPlugin` was a different type).
 
 ## Phase G: Testing and release
 

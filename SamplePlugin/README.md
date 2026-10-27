@@ -68,3 +68,14 @@ public sealed class MyPlugin : IPlugin
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }
 ```
+
+## Starting a new plugin
+
+```sh
+dotnet new install ./templates/RomManagerPlugin
+dotnet new rommanager-plugin -n MyPlugin --RomManagerShared ../RomManager/RomManagerShared/RomManagerShared.csproj
+dotnet build MyPlugin
+```
+
+The project compiles against `RomManagerShared` without copying it: RomManager supplies it at runtime
+(a plugin that ships its own copy still loads; the host's copy is used).

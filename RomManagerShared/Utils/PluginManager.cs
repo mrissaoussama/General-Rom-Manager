@@ -22,6 +22,10 @@ internal sealed class PluginLoadContext : AssemblyLoadContext
 
     protected override Assembly? Load(AssemblyName assemblyName)
     {
+        // Contract assemblies the host already loaded (RomManagerShared, logging, DI, Avalonia) must be shared:
+        // a second copy shipped next to the plugin would make its IPlugin a different type.
+        if (Default.Assemblies.Any(a => AssemblyName.ReferenceMatchesDefinition(assemblyName, a.GetName())))
+            return null;
         var path = _resolver.ResolveAssemblyToPath(assemblyName);
         return path is not null ? LoadFromAssemblyPath(path) : null;
     }
