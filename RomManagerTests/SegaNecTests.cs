@@ -1,3 +1,6 @@
+using RomManagerShared.PCEngine.TitleInfoProviders;
+using RomManagerShared.MasterSystem.TitleInfoProviders;
+using RomManagerShared.Genesis.TitleInfoProviders;
 using System.IO.Hashing;
 using System.Security.Cryptography;
 using System.Text;
@@ -15,6 +18,8 @@ using RomManagerShared.Utils.Dat;
 
 
 using SegaTmrHeader = RomManagerShared.Utils.SegaTmrHeader;
+
+using RomManagerShared.GameGear.TitleInfoProviders;
 
 namespace RomManagerTests;
 

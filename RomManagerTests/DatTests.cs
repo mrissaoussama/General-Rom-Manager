@@ -1,3 +1,4 @@
+using RomManagerShared.Nintendo64.TitleInfoProviders;
 using System.IO.Hashing;
 using System.Security.Cryptography;
 using System.Text;
@@ -6,6 +7,8 @@ using RomManagerShared.Base;
 using RomManagerShared.NES;
 using RomManagerShared.NES.Parsers;
 using RomManagerShared.Utils.Dat;
+
+using RomManagerShared.NES.TitleInfoProviders;
 
 namespace RomManagerTests;
 

@@ -3,6 +3,8 @@ using AwesomeAssertions;
 using RomManagerShared.Base;
 using RomManagerShared.Utils.Dat;
 
+using RomManagerShared.PS2.TitleInfoProviders;
+
 namespace RomManagerTests;
 
 public sealed class DiscDatTests : IDisposable
@@ -74,7 +76,7 @@ public sealed class DiscDatTests : IDisposable
         using var cts = new CancellationTokenSource();
         cts.Cancel();
 
-        var act = () => RomManagerShared.Utils.Dat.PS2RedumpProvider.HashAsync(path, cts.Token);
+        var act = () => RomManagerShared.PS2.TitleInfoProviders.PS2RedumpProvider.HashAsync(path, cts.Token);
 
         await act.Should().ThrowAsync<OperationCanceledException>();
     }

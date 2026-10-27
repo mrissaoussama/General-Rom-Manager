@@ -131,38 +131,3 @@ public static class DiscHashing
     public static bool Enabled => UserOverride
         ?? (bool.TryParse(RomManagerConfiguration.Configuration.GetSection("Dats:HashDiscImages").Value, out var v) && v);
 }
-
-// Redump DAT file names: "<Company> - <System> - Datfile (...)".
-
-public class PS1RedumpProvider : DiscDatTitleInfoProvider<PS1Console>
-{
-    // "Sony - PlayStation - Datfile", not PlayStation 2/3/Portable/Vita.
-    protected override bool MatchesDat(string f) =>
-        System.Text.RegularExpressions.Regex.IsMatch(f, @"Sony - PlayStation( -|\s*\(|\.)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-}
-
-public class DreamcastRedumpProvider : DiscDatTitleInfoProvider<DreamcastConsole>
-{
-    protected override bool MatchesDat(string f) => f.Contains("Sega - Dreamcast", StringComparison.OrdinalIgnoreCase);
-}
-
-public class PS2RedumpProvider : DiscDatTitleInfoProvider<PS2Console>
-{
-    protected override bool MatchesDat(string f) => f.Contains("Sony - PlayStation 2", StringComparison.OrdinalIgnoreCase);
-}
-
-public class PSPRedumpProvider : DiscDatTitleInfoProvider<PSPConsole>
-{
-    protected override bool MatchesDat(string f) => f.Contains("Sony - PlayStation Portable", StringComparison.OrdinalIgnoreCase);
-}
-
-public class GameCubeRedumpProvider : DiscDatTitleInfoProvider<GameCubeConsole>
-{
-    protected override bool MatchesDat(string f) => f.Contains("Nintendo - GameCube", StringComparison.OrdinalIgnoreCase);
-}
-
-public class WiiRedumpProvider : DiscDatTitleInfoProvider<WiiConsole>
-{
-    protected override bool MatchesDat(string f) =>
-        f.Contains("Nintendo - Wii", StringComparison.OrdinalIgnoreCase) && !f.Contains("Wii U", StringComparison.OrdinalIgnoreCase);
-}
