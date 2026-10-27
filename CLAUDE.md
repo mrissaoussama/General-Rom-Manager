@@ -75,6 +75,9 @@ dotnet run --project tools/ParserHarness -- PS4Console "Y:\roms\PS4" 5
 - Parsers implement `IRomParser<T>` with lowercase extension list; return `[]` (not null) on failure
   and log via `AppLog.Warn`. Implement `IHasRequirements` if the parser needs keys/files/tools.
 - Console-specific ROM properties shown in the grid need `[UiProperty(...)]`.
+- UI text lives in `AvaloniaUI/Resources/Strings.resx` (English only for now): AXAML uses `{x:Static res:Strings.Key}`,
+  C# `Strings.Key` / `string.Format(Strings.Key, ...)`. Keys that are also data (property names, filter values) stay
+  literal in code and are shown through `Labels.Property`/`Labels.Value`. Log messages stay plain English.
 - **Open ROM files read-only**: `new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read)`.
   Never bare `FileMode.Open` (requests write + exclusive lock; fails on read-only shares, locks
   emulators). Always dispose streams.

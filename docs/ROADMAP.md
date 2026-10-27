@@ -39,7 +39,8 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
 
 ## Phase D: UI and UX
 
-- [ ] **[P1]** Localisation: resx strings with a `{l:Tr}` markup extension; English first, then French.
+- [x] **[P1]** Localisation: UI text in `AvaloniaUI/Resources/Strings.resx` (built-in strongly-typed resources, `{x:Static res:Strings.Key}` in AXAML,
+  `Labels` for property names and filter values). English only for now; a language is a `Strings.<culture>.resx` file.
 - [x] Duplicates…: keeps one file per identical rom (same ID, type and version; a DAT-verified dump or the largest)
       and moves the other copies after a preview (`DuplicateDetector.FindExactCopies`).
 - [x] "Verify" report per console (`DatVerification`): which dumps match a DAT exactly and which do not.
