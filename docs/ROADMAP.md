@@ -145,7 +145,8 @@ These were all reproduced against real files with `tools/ParserHarness`.
 - [x] DAT matching for NES/SNES/GB/GBC/GBA/N64: `Utils/Dat/DatIndex` (streaming Logiqx reader, SHA1 or
   CRC+size) + `DatTitleInfoProvider<T>` (strips iNES/copier headers, normalises N64 byte order) sets the
   No-Intro title, regions, serial and verified hashes. DATs go in `Data/DAT` (`GlobalPaths:Dats`).
-- [ ] Redump DATs for discs (hash the whole image; slow, so opt-in).
+- [x] Redump DATs for discs: PS2/PSP/GameCube/Wii `.iso`/`.gcm`, streamed SHA-1 + CRC32, opt-in via
+  `Dats:HashDiscImages`. Multi-track (PS1 bin/cue, Dreamcast gdi) still open.
 - [x] DAT folder status + "Open folder" on the dashboard.
 - [x] Trigger a rescan of cartridge consoles when DATs change (`IHasDataFingerprint` on DAT providers,
   stored per `LibraryFile`).

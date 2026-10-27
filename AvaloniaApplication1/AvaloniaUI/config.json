@@ -7,6 +7,9 @@
     "ErrorLogs": "Logs\\errors.log",
     "Cache": "Cache"
   },
+  "Dats": {
+    "HashDiscImages": false
+  },
   "Consoles": {
     "N64": {
       "RomPath": "D:\\Roms\\N64"

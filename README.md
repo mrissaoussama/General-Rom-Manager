@@ -60,7 +60,9 @@ dotnet run --project AvaloniaApplication1/AvaloniaUI.Desktop
 3. **Title databases** (optional): Settings → "Download title databases" fetches the Switch and Wii U
    title lists and the Switch `versions.json`.
 4. **No-Intro DATs** (optional): copy DAT files into the folder shown on the dashboard
-   (`Data/DAT` by default). They are applied on the next scan.
+   (`Data/DAT` by default). They are applied on the next scan. Redump DATs for PS2, PSP, GameCube and
+   Wii match whole `.iso`/`.gcm` images when `"Dats": { "HashDiscImages": true }` is set in
+   `config.json` (off by default: hashing DVD images is slow).
 
 Paths and tool locations live in `config.json`; your own choices are saved to `settings.json` next to
 the executable and take precedence.
