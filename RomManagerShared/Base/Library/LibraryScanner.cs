@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using RomManagerShared.Base.Database;
 using RomManagerShared.Interfaces;
 using RomManagerShared.Utils;
@@ -76,48 +76,42 @@ public sealed class LibraryScanner(AppDbContext db)
 
         int processed = files.Count - pending.Count, parsed = 0;
         progress?.Report(new ScanProgress(processed, files.Count, parsed, null));
-        foreach (var batch in pending.Chunk(parallelism))
+
+        // Parsing is I/O bound and runs on a pool of workers; enrichment and saving share the DbContext, so they
+        // take results one at a time as they come in. A slow file only holds up its own worker.
+        await foreach (var (i, parse) in ParseAllAsync(manager.RomParserExecutor, files, pending, parallelism, ct))
         {
-            ct.ThrowIfCancellationRequested();
-            progress?.Report(new ScanProgress(processed, files.Count, parsed, files[batch[0]]));
-
-            // Parsing is I/O bound and parallel; enrichment and saving share the DbContext, so stay sequential.
-            var parsedBatch = await Task.WhenAll(batch.Select(i =>
-                Task.Run(() => manager.RomParserExecutor.ParseAsync(files[i], ct), ct)));
-            for (int b = 0; b < batch.Length; b++)
+            var path = files[i];
+            processed++;
+            // Deleted or moved since the folder was listed (e.g. a copy in progress): the next scan sees it.
+            var info = new FileInfo(path);
+            if (!info.Exists)
             {
-                var path = files[batch[b]];
-                // Deleted or moved since the folder was listed (e.g. a copy in progress): the next scan sees it.
-                var info = new FileInfo(path);
-                if (!info.Exists)
-                {
-                    slots[batch[b]] = [];
-                    gone[batch[b]] = true;
-                    processed++;
-                    continue;
-                }
-                var roms = await manager.EnrichAsync(parsedBatch[b].Roms, ct);
-                slots[batch[b]] = roms;
-                errors[batch[b]] = roms.Count == 0 ? parsedBatch[b].UnidentifiedReason : null;
-
-                if (!cached.TryGetValue(path, out var entry))
-                {
-                    entry = new LibraryFile { Console = console, Path = path };
-                    db.LibraryFiles.Add(entry);
-                    cached[path] = entry;
-                }
-                entry.Size = info.Length;
-                entry.LastWriteUtc = info.LastWriteTimeUtc;
-                entry.ScanVersion = ScanVersion;
-                entry.ScannedUtc = DateTime.UtcNow;
-                entry.DataFingerprint = fingerprint.Length > 0 ? fingerprint : null;
-                entry.RomsJson = RomSnapshot.Serialize(roms);
-                entry.Error = errors[batch[b]];
-                if (++parsed % SaveBatchSize == 0)
-                    await db.SaveChangesAsync(ct);
-                processed++;
+                slots[i] = [];
+                gone[i] = true;
+                progress?.Report(new ScanProgress(processed, files.Count, parsed, path));
+                continue;
             }
-            progress?.Report(new ScanProgress(processed, files.Count, parsed, null));
+            var roms = await manager.EnrichAsync(parse.Roms, ct);
+            slots[i] = roms;
+            errors[i] = roms.Count == 0 ? parse.UnidentifiedReason : null;
+
+            if (!cached.TryGetValue(path, out var entry))
+            {
+                entry = new LibraryFile { Console = console, Path = path };
+                db.LibraryFiles.Add(entry);
+                cached[path] = entry;
+            }
+            entry.Size = info.Length;
+            entry.LastWriteUtc = info.LastWriteTimeUtc;
+            entry.ScanVersion = ScanVersion;
+            entry.ScannedUtc = DateTime.UtcNow;
+            entry.DataFingerprint = fingerprint.Length > 0 ? fingerprint : null;
+            entry.RomsJson = RomSnapshot.Serialize(roms);
+            entry.Error = errors[i];
+            if (++parsed % SaveBatchSize == 0)
+                await db.SaveChangesAsync(ct);
+            progress?.Report(new ScanProgress(processed, files.Count, parsed, path));
         }
 
         var seen = new HashSet<string>(files.Where((_, i) => !gone[i]), FileUtils.PathComparer);
@@ -137,6 +131,53 @@ public sealed class LibraryScanner(AppDbContext db)
         db.LibraryFiles.RemoveRange(cached.Values.Where(f => !seen.Contains(f.Path)));
         await db.SaveChangesAsync(ct);
         return result;
+    }
+
+    /// <summary>
+    /// Parses <paramref name="pending"/> with up to <paramref name="parallelism"/> files at once and yields each
+    /// result as soon as it is ready (not in file order). Stops the workers when the reader stops early.
+    /// </summary>
+    private static async IAsyncEnumerable<(int Index, ParseResult Result)> ParseAllAsync(IRomParserExecutor executor,
+        List<string> files, List<int> pending, int parallelism,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct)
+    {
+        if (pending.Count == 0) yield break;
+        using var stop = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        var channel = System.Threading.Channels.Channel.CreateBounded<(int, ParseResult)>(parallelism * 2);
+        var workers = Task.Run(async () =>
+        {
+            try
+            {
+                await Parallel.ForEachAsync(pending, new ParallelOptions { MaxDegreeOfParallelism = parallelism, CancellationToken = stop.Token },
+                    async (i, token) => await channel.Writer.WriteAsync((i, await executor.ParseAsync(files[i], token)), token));
+                channel.Writer.Complete();
+            }
+            catch (Exception ex) { channel.Writer.Complete(ex); }
+        }, CancellationToken.None);
+
+        try
+        {
+            while (true)
+            {
+                (int, ParseResult) item;
+                try
+                {
+                    if (!await channel.Reader.WaitToReadAsync(ct)) break;
+                    if (!channel.Reader.TryRead(out item)) continue;
+                }
+                catch (System.Threading.Channels.ChannelClosedException ex) when (ex.InnerException is not null)
+                {
+                    System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw(ex.InnerException);
+                    throw;
+                }
+                yield return item;
+            }
+        }
+        finally
+        {
+            stop.Cancel();
+            await workers;
+        }
     }
 
     private static bool IsUnchanged(LibraryFile entry, string path, string fingerprint)

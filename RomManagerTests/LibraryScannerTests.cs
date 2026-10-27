@@ -1,4 +1,4 @@
-using AwesomeAssertions;
+﻿using AwesomeAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using RomManagerShared;
@@ -253,5 +253,42 @@ public sealed class LibraryScannerTests : IDisposable
         psp.Regions.Should().Equal(Region.Europe);
         psp.Titles![0].Value.Should().Be("Aces of War");
         roms[1].Should().BeOfType<Update>();
+    }
+
+    // Waits on a gate for the file named "slow"; every other file parses at once.
+    private sealed class GatedParser(TaskCompletionSource gate) : IRomParser<SwitchConsole>
+    {
+        public List<string> Extensions { get; set; } = ["nsp"];
+        public readonly System.Collections.Concurrent.ConcurrentQueue<string> Parsed = new();
+        public async Task<List<Rom>> ProcessFile(string path)
+        {
+            var name = Path.GetFileNameWithoutExtension(path);
+            if (name == "slow") await gate.Task;
+            Parsed.Enqueue(name);
+            return [new Game { TitleID = name, Path = path }];
+        }
+    }
+
+    [Fact]
+    public async Task ScanAsync_ASlowFileDoesNotHoldUpTheOthers_AndResultsKeepFileOrder()
+    {
+        var names = new[] { "a", "slow", "b", "c", "d", "e", "f" };
+        foreach (var n in names) File.WriteAllText(Path.Combine(_root, n + ".nsp"), n);
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var parser = new GatedParser(gate);
+        var manager = new ConsoleManager<SwitchConsole>(new RomParserExecutor<SwitchConsole>([parser]));
+        var options = new ScanOptions(2, []);
+        var ct = TestContext.Current.CancellationToken;
+
+        var scan = new LibraryScanner(_db).ScanAsync(manager, "Switch", [_root], false, null, ct, _ => options);
+        // With fixed batches of two, "b".."f" waited for "slow"; with a worker pool the other worker takes them all.
+        var deadline = DateTime.UtcNow.AddSeconds(10);
+        while (parser.Parsed.Count < names.Length - 1 && DateTime.UtcNow < deadline)
+            await Task.Delay(10, ct);
+        parser.Parsed.Should().HaveCount(names.Length - 1).And.NotContain("slow");
+        gate.SetResult();
+
+        var roms = await scan;
+        roms.Select(r => r.TitleID).Should().Equal(Directory.GetFiles(_root, "*.nsp").Select(Path.GetFileNameWithoutExtension));
     }
 }

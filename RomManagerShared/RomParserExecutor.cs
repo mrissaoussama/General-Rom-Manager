@@ -8,6 +8,9 @@ public interface IRomParserExecutor
 {
     List<string> GetSupportedExtensions();
 
+    /// <summary>Parses a file and returns the roms with what the parsers logged.</summary>
+    Task<ParseResult> ParseAsync(string file, CancellationToken ct = default);
+
     /// <summary>False when every parser for the file's extension rules the header out.</summary>
     bool MightParse(string path, ReadOnlySpan<byte> header);
 }

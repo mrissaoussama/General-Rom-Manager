@@ -1,4 +1,4 @@
-using RomManagerShared.Base;
+﻿using RomManagerShared.Base;
 using RomManagerShared.Interfaces;
 using RomManagerShared.Switch.Configuration;
 using RomManagerShared.Switch.Parsers;
@@ -49,8 +49,8 @@ RomParserExecutor<SwitchConsole> romParserExecutor)
 
     public Task DownloadVersionDatabaseAsync() => SwitchDownloads.DownloadVersionsFile(overwrite: true);
 
-    public IReadOnlyList<MissingUpdate> FindMissingUpdates(IReadOnlyList<Rom> library)
-        => SwitchUpdateChecker.FindMissing(library, SwitchUpdateChecker.LoadLatestVersions(SwitchConfiguration.GetVersionsPath()));
+    public Task<IReadOnlyList<MissingUpdate>> FindMissingUpdatesAsync(IReadOnlyList<Rom> library, CancellationToken ct = default)
+        => Task.Run<IReadOnlyList<MissingUpdate>>(() => SwitchUpdateChecker.FindMissing(library, SwitchUpdateChecker.LoadLatestVersions(SwitchConfiguration.GetVersionsPath())), ct);
 
     // ── IMissingDlcReporter ───────────────────────────────────────────────
     public async Task<IReadOnlyList<(string Game, string Dlc, string TitleId)>> FindMissingDlcAsync(IReadOnlyList<Rom> library)

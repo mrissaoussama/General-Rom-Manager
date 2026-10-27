@@ -1,4 +1,4 @@
-namespace RomManagerShared.Base;
+﻿namespace RomManagerShared.Base;
 
 /// <summary>A base game whose newest installed version is older than the newest released one.</summary>
 public sealed record MissingUpdate(Rom Game, string InstalledVersion, string LatestVersion)
@@ -24,11 +24,11 @@ public interface IMissingUpdateReporter
     /// <summary>True when every check goes over the network; the dashboard does not count these on its own.</summary>
     bool IsOnline => false;
 
-    /// <summary>Checks the whole library (games and update files), not just a selection.</summary>
-    IReadOnlyList<MissingUpdate> FindMissingUpdates(IReadOnlyList<Rom> library);
-
-    Task<IReadOnlyList<MissingUpdate>> FindMissingUpdatesAsync(IReadOnlyList<Rom> library, CancellationToken ct = default) =>
-        Task.Run(() => FindMissingUpdates(library), ct);
+    /// <summary>
+    /// Checks the whole library (games and update files), not just a selection. Called from the UI thread: an
+    /// implementation that reads files or the network must not block it.
+    /// </summary>
+    Task<IReadOnlyList<MissingUpdate>> FindMissingUpdatesAsync(IReadOnlyList<Rom> library, CancellationToken ct = default);
 }
 
 /// <summary>

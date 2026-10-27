@@ -21,9 +21,6 @@ public class PS4Manager(RomParserExecutor<PS4Console> romParserExecutor)
         return Task.CompletedTask;
     }
 
-    public IReadOnlyList<MissingUpdate> FindMissingUpdates(IReadOnlyList<Rom> library) =>
-        FindMissingUpdatesAsync(library).GetAwaiter().GetResult();
-
     public async Task<IReadOnlyList<MissingUpdate>> FindMissingUpdatesAsync(IReadOnlyList<Rom> library, CancellationToken ct = default)
     {
         if (!PS4UpdateChecker.OnlineAllowed) return [];
