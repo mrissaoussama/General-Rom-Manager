@@ -40,7 +40,7 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
 - [ ] **[P1]** Localisation: resx strings with a `{l:Tr}` markup extension; English first, then French.
 - [x] Duplicates…: keeps one file per identical rom (same ID, type and version; a DAT-verified dump or the largest)
       and moves the other copies after a preview (`DuplicateDetector.FindExactCopies`).
-- [ ] A "Verify" report per console: DAT-verified, unverified and unknown dumps.
+- [x] "Verify" report per console (`DatVerification`): which dumps match a DAT exactly and which do not.
 
 ## Phase E: Features
 

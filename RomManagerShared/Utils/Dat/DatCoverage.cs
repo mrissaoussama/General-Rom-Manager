@@ -9,6 +9,19 @@ public interface IDatSource
     DatIndex? Index { get; }
 }
 
+/// <summary>Library roms split by whether a DAT confirmed their dump.</summary>
+public sealed record DatVerification(IReadOnlyList<Rom> Verified, IReadOnlyList<Rom> Unmatched)
+{
+    /// <summary>Base games and their files only (updates/DLC are not in No-Intro/Redump DATs).</summary>
+    public static DatVerification Compute(IEnumerable<Rom> library)
+    {
+        var games = library.Where(r => r is not Update and not DLC).ToList();
+        return new DatVerification(
+            [.. games.Where(r => r.Hashes?.Any(h => h.IsVerified) == true)],
+            [.. games.Where(r => r.Hashes?.Any(h => h.IsVerified) != true).OrderBy(r => r.Path, StringComparer.OrdinalIgnoreCase)]);
+    }
+}
+
 /// <summary>Which games of a DAT set the library has (matched by verified hash) and which are missing.</summary>
 public sealed record DatCoverage(int Total, IReadOnlyList<string> Have, IReadOnlyList<string> Missing)
 {

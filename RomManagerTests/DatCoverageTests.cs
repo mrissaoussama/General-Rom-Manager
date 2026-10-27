@@ -45,4 +45,17 @@ public class DatCoverageTests
         coverage.Missing.Should().Equal("A");
         DatCoverage.Compute([], []).Should().BeNull();
     }
+
+    [Fact]
+    public void Verification_SplitsVerifiedFromUnmatchedGames()
+    {
+        var good = new Game { Path = "/b.gb", Hashes = [new RomHash { Type = HashTypeEnum.SHA1, Value = "1", IsVerified = true }] };
+        var hack = new Game { Path = "/a.gb", Hashes = [new RomHash { Type = HashTypeEnum.SHA1, Value = "2" }] };
+        var update = new Update { Path = "/u.gb" };
+
+        var result = RomManagerShared.Utils.Dat.DatVerification.Compute([good, hack, update]);
+
+        result.Verified.Should().Equal(good);
+        result.Unmatched.Should().Equal(hack);
+    }
 }

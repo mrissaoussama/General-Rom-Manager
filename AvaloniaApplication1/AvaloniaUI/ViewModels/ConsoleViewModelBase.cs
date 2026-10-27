@@ -533,6 +533,24 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
         Track(Operations.EnqueueMove(others, target), rows);
     }
 
+    /// <summary>Lists which dumps a DAT confirmed and which it did not (bad dumps, hacks, or missing from the DAT).</summary>
+    [RelayCommand]
+    private async Task Verify()
+    {
+        if (GetDatIndexes().Count == 0)
+        {
+            StatusMessage = "No DAT for this console: add No-Intro or Redump DATs to the DAT folder, then scan.";
+            return;
+        }
+        var library = Roms.Select(r => r.RomSource).ToList();
+        var result = await Task.Run(() => RomManagerShared.Utils.Dat.DatVerification.Compute(library));
+        var total = result.Verified.Count + result.Unmatched.Count;
+        await Dialogs.PreviewAsync("Verify",
+            $"{result.Verified.Count:N0} of {total:N0} dump(s) match a DAT entry exactly. These {result.Unmatched.Count:N0} do not " +
+            "(a bad or modified dump, a hack or translation, a format the DAT does not list, or disc images when hashing is off):",
+            result.Unmatched.Select(r => $"{r.Titles?.FirstOrDefault()?.Value ?? "?"}  —  {r.Path}"), "Close", showCancel: false);
+    }
+
     /// <summary>Keeps one file of each set of identical roms and moves the other copies, after a preview (undoable).</summary>
     [RelayCommand]
     private async Task ResolveDuplicates()
