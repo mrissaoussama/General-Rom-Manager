@@ -376,3 +376,6 @@ AvaloniaApplication1/AvaloniaUI.Desktop/*.json
 tools/ParserHarness/*.snapshot.json
 
 .claude/worktrees/
+
+# Personal config overrides (see CLAUDE.md)
+config.local.json

@@ -24,7 +24,9 @@ public static class RomManagerConfiguration
 
         var builder = new ConfigurationBuilder()
             .SetBasePath(basePath)
-            .AddJsonFile(jsonConfigPath, optional: true);
+            .AddJsonFile(jsonConfigPath, optional: true)
+            // Personal overrides (base folder, ROM folders) that stay out of git and releases.
+            .AddJsonFile(Path.ChangeExtension(jsonConfigPath, ".local.json"), optional: true);
 
         Configuration = builder.Build();
         BaseFolder = GetBaseFolderPath();

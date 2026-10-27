@@ -58,8 +58,9 @@ dotnet run --project tools/ParserHarness -- PS4Console "Y:\roms\PS4" 5
 
 ## Configuration
 
-- `AvaloniaUI/config.json` (copied to output): `GlobalPaths` (BaseDirectory, Database, logs, plugins,
-  cache) and per-console `RomPath`, tool paths, TitleDB URLs. Loaded via `RomManagerConfiguration`.
+- `AvaloniaUI/config.json` (copied to output, shipped): `GlobalPaths` (BaseDirectory, empty = `%AppData%/GeneralRomManager`;
+  Database, logs, plugins, cache), TitleDB URLs. Personal values (BaseDirectory, per-console `RomPath`) go in the
+  git-ignored `AvaloniaUI/config.local.json`, layered on top and copied only in Debug. Loaded via `RomManagerConfiguration`.
 - `settings.json` (`Settings.Instance`, via `ISettingsStore`/`JsonSettingsStore`): next to the exe if one is there
   (portable), else `%AppData%/RomManager/`. Atomic saves; a corrupt file is kept aside. User overrides (paths, columns, theme). Settings
   win over config.json for ROM paths. `ILibraryRoots` (`LibraryRoots`) gives each console's folders: the
@@ -88,7 +89,7 @@ dotnet run --project tools/ParserHarness -- PS4Console "Y:\roms\PS4" 5
 
 1. `RomManagerShared/<Name>/`: `<Name>Console : GamingConsole`, `<Name>Game : Rom` (+ Update/DLC),
    `<Name>Manager : ConsoleManager<<Name>Console>` (optional), `Parsers/<X>Parser : IRomParser<<Name>Console>`.
-2. Add `Consoles.<Name>.RomPath` to `config.json`.
+2. Point the console at a folder (Settings, or `Consoles.<Name>.RomPath` in `config.local.json`).
 3. Run `tools/ParserHarness` against real files (use `--snapshot`/`--compare` around parser changes)
    and add a fixture-based test with a synthetic file.
 4. Bump `LibraryScanner.ScanVersion` whenever parser output changes.
