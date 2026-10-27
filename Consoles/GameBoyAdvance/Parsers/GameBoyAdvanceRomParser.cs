@@ -48,8 +48,10 @@ public class GameBoyAdvanceRomParser : IRomParser<GameBoyAdvanceConsole>
                 GameBoyAdvancerom.AddRegion(Region.Italy);
                 GameBoyAdvancerom.AddLanguage(Language.Italian);
                 break;
-        }        GameBoyAdvancerom.Size = FileUtils.GetFileSize(path);
+        }
+        GameBoyAdvancerom.Size = FileUtils.GetFileSize(path);
         GameBoyAdvancerom.Path = path;
-        List<Rom> list = [GameBoyAdvancerom];        return Task.FromResult(list);
+        List<Rom> list = [GameBoyAdvancerom];
+        return Task.FromResult(list);
     }
 }

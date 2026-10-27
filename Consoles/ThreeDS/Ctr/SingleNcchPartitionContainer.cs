@@ -9,9 +9,13 @@ public class SingleNcchPartitionContainer : INcchPartitionContainer, IDisposable
         if (partitionIndex < 0)
         {
             throw new ArgumentOutOfRangeException(nameof(partitionIndex), "Partition index must be 0 or greater");
-        }        Partitions = new NcchPartition[partitionIndex + 1];
+        }
+        Partitions = new NcchPartition[partitionIndex + 1];
         Partitions[partitionIndex] = partition ?? throw new ArgumentNullException(nameof(partition));
-    }    public NcchPartition[] Partitions { get; }    public bool IsDlcContainer => false;    public void Dispose()
+    }
+    public NcchPartition[] Partitions { get; }
+    public bool IsDlcContainer => false;
+    public void Dispose()
     {
         if (Partitions != null)
         {

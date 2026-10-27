@@ -7,4 +7,4 @@ public class Nintendo64Game : Game, INintendo64Rom
     public Nintendo64Game() : base()
     {
     }
-}
+}

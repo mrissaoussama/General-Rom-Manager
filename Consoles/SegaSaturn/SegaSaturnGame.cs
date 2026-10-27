@@ -7,4 +7,4 @@ public class SegaSaturnGame : Game, ISegaSaturnRom
     public SegaSaturnGame() : base()
     {
     }
-}
+}

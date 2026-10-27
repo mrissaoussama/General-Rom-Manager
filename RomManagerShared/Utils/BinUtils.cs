@@ -1,5 +1,6 @@
 ﻿using System.Security.Cryptography;
-using System.Text;namespace RomManagerShared.Utils;
+using System.Text;
+namespace RomManagerShared.Utils;
 
 public static class BinUtils
 {
@@ -24,7 +25,8 @@ public static class BinUtils
     public static string ByteToString(byte[] buff)
     {
         return BitConverter.ToString(buff);
-    }    public static string ByteToHex(byte value)
+    }
+    public static string ByteToHex(byte value)
     {
         return value.ToString("X2");
     }
@@ -39,13 +41,15 @@ public static class BinUtils
         if (a.Length != b.Length)
         {
             return false;
-        }        for (int i = 0; i < a.Length; i++)
+        }
+        for (int i = 0; i < a.Length; i++)
         {
             if (a[i] != b[i])
             {
                 return false;
             }
-        }        return true;
+        }
+        return true;
     }
     //        public static void SaveThumbnail(SwitchGame nspMetaData, string filePath)
     //        {
@@ -80,26 +84,32 @@ public static class BinUtils
     }
     public static byte[] ReadBytes(string filePath, int offset, int length)
     {
-        byte[] bytes;        using (FileStream fileStream = new(filePath, FileMode.Open, FileAccess.Read))
+        byte[] bytes;
+        using (FileStream fileStream = new(filePath, FileMode.Open, FileAccess.Read))
         {
             bytes = new byte[length];
             fileStream.Seek(offset, SeekOrigin.Begin);
             fileStream.ReadExactly(bytes, 0, length);
-        }        return bytes;
+        }
+        return bytes;
     }
     public static string ReadUnicodeString(string filePath, int offset, int length)
     {
-        byte[] unicodeBytes;        using (FileStream fileStream = new(filePath, FileMode.Open, FileAccess.Read))
+        byte[] unicodeBytes;
+        using (FileStream fileStream = new(filePath, FileMode.Open, FileAccess.Read))
         {
             unicodeBytes = new byte[length * 2];
             fileStream.Seek(offset, SeekOrigin.Begin);
             fileStream.ReadExactly(unicodeBytes, 0, length * 2);
-        }        // Assuming little-endian encoding for Unicode
-        string unicodeString = Encoding.Unicode.GetString(unicodeBytes);        // Remove any null characters at the end of the string
+        }
+        // Assuming little-endian encoding for Unicode
+        string unicodeString = Encoding.Unicode.GetString(unicodeBytes);
+        // Remove any null characters at the end of the string
         int nullCharIndex = unicodeString.IndexOf('\0');
         if (nullCharIndex != -1)
         {
             unicodeString = unicodeString[..nullCharIndex];
-        }        return unicodeString;
+        }
+        return unicodeString;
     }
 }

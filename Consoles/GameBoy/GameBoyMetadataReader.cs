@@ -23,12 +23,14 @@ public class GameBoyMetadataReader
     private const int GLOBAL_CHECKSUM_OFFSET = 334; // 0x14E
     public static GameBoyMetadata GetMetadata(string path)
     {
-        byte[] gbaHeader;        using (FileStream fileStream = new(path, FileMode.Open, FileAccess.Read))
+        byte[] gbaHeader;
+        using (FileStream fileStream = new(path, FileMode.Open, FileAccess.Read))
         {
             gbaHeader = new byte[HEADER_LENGTH];
             fileStream.ReadExactly(gbaHeader, 0, HEADER_LENGTH);
         }
-        bool isCgb = (gbaHeader[CGB_FLAG_OFFSET] & (1 << CGB_FLAG_BIT)) != 0;        
+        bool isCgb = (gbaHeader[CGB_FLAG_OFFSET] & (1 << CGB_FLAG_BIT)) != 0;
+        
         // CGB carts shrink the title to 11 bytes when a 4-char game code follows; older carts use all 16.
         string gameCode = BinUtils.AsciiToString(gbaHeader, GAME_CODE_OFFSET, GAME_CODE_LENGTH);
         bool hasGameCode = isCgb && gameCode.Length == GAME_CODE_LENGTH && gameCode.All(c => char.IsAsciiLetterUpper(c) || char.IsAsciiDigit(c));
@@ -36,7 +38,8 @@ public class GameBoyMetadataReader
         string title = BinUtils.AsciiToString(gbaHeader, TITLE_OFFSET, titleLength).TrimEnd('\0', ' ');
         if (!hasGameCode) gameCode = string.Empty;
         string cgbFlag = isCgb ? "CGB" : "Non-CGB"; // Customize this as needed
-        string cgbFlagcode = BinUtils.ByteToHex(gbaHeader[CGB_FLAG_OFFSET]);        string newLicenseeCode = BinUtils.AsciiToString(gbaHeader, NEW_LICENSEE_CODE_OFFSET, NEW_LICENSEE_CODE_LENGTH);
+        string cgbFlagcode = BinUtils.ByteToHex(gbaHeader[CGB_FLAG_OFFSET]);
+        string newLicenseeCode = BinUtils.AsciiToString(gbaHeader, NEW_LICENSEE_CODE_OFFSET, NEW_LICENSEE_CODE_LENGTH);
         string sgbFlag = BinUtils.ByteToHex(gbaHeader[SGB_FLAG_OFFSET]);
         string cartridgeType = BinUtils.ByteToHex(gbaHeader[CARTRIDGE_TYPE_OFFSET]);
         string romSize = BinUtils.ByteToHex(gbaHeader[ROM_SIZE_OFFSET]);
@@ -47,7 +50,8 @@ public class GameBoyMetadataReader
         string headerChecksum = BinUtils.ByteToHex(gbaHeader[HEADER_CHECKSUM_OFFSET]);
         //might be wrong, documentation says it starts from 014E-014F
         byte[] globalChecksum = new byte[2];
-        Array.Copy(gbaHeader, gbaHeader.Length - 2, globalChecksum, 0, 2);        GameBoyMetadata metadata = new()
+        Array.Copy(gbaHeader, gbaHeader.Length - 2, globalChecksum, 0, 2);
+        GameBoyMetadata metadata = new()
         {
             Title = title,
             GameCode = gameCode,
@@ -63,25 +67,30 @@ public class GameBoyMetadataReader
             MaskRomVersionNumber = maskRomVersion,
             HeaderChecksum = headerChecksum,
             StoredGlobalChecksum = globalChecksum
-        };        return metadata;
+        };
+        return metadata;
     }
     public static byte CalculateHeaderChecksum(byte[] romData)
     {
-        byte checksum = 0;        // Iterate through the header bytes 0134-014C
+        byte checksum = 0;
+        // Iterate through the header bytes 0134-014C
         for (int i = TITLE_OFFSET; i <= MASK_ROM_VERSION_NUMBER_OFFSET; i++)
         {
             checksum = (byte)(checksum - romData[i] - 1);
-        }        return checksum;
+        }
+        return checksum;
     }
     public static ushort CalculateGlobalChecksum(byte[] romData)
     {
-        ushort checksum = 0;        // Iterate through all bytes in the ROM data (excluding the checksum bytes)
+        ushort checksum = 0;
+        // Iterate through all bytes in the ROM data (excluding the checksum bytes)
         for (int i = 0; i < romData.Length; i++)
         {
             if (i is not GLOBAL_CHECKSUM_OFFSET and not (GLOBAL_CHECKSUM_OFFSET + 1))
             {
                 checksum += romData[i];
             }
-        }        return checksum;
+        }
+        return checksum;
     }
 }

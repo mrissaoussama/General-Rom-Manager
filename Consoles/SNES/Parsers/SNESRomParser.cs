@@ -13,7 +13,8 @@ public class SNESRomParser : IRomParser<SNESConsole>
     public static IEnumerable<string> GetRegionAndLanguage(Rom DSrom)
     {
         if (DSrom.TitleID is not { Length: >= 3 }) yield break;
-        char lastCharacter = DSrom.TitleID[2];        switch (lastCharacter)
+        char lastCharacter = DSrom.TitleID[2];
+        switch (lastCharacter)
         {
             case 'U':
                 yield return "U";
@@ -34,8 +35,10 @@ public class SNESRomParser : IRomParser<SNESConsole>
         }
         else
         {
-            SNESrom.AddRegion(Region.Europe);        }
+            SNESrom.AddRegion(Region.Europe);
+        }
         SNESrom.Size = FileUtils.GetFileSize(path);
         List<Rom> list = [SNESrom];
         return Task.FromResult(list);
-    }}
+    }
+}

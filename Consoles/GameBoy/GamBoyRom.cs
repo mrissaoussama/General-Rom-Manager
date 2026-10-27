@@ -7,4 +7,4 @@ public class GameBoyGame : Game, IGameBoyRom
     public GameBoyGame() : base()
     {
     }
-}
+}

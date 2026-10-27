@@ -4,7 +4,6 @@ using RomManagerShared.Interfaces;
 using RomManagerShared.WiiU.Configuration;
 using RomManagerShared.Utils;
 using System.Text.Json;
-using LibHac.Tools.Fs;
 using System.Collections.Generic;
 using RomManagerShared.Base.Interfaces;
 namespace RomManagerShared.WiiU.TitleInfoProviders;

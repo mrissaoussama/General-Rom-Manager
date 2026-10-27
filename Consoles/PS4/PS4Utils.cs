@@ -4,12 +4,15 @@ namespace RomManagerShared.PS4;
 
 public class PS4Utils
 {
-    static byte[] PKG_Magic = [127, 67, 78, 84];    public static bool IsPS4PKG(string path)
+    static byte[] PKG_Magic = [127, 67, 78, 84];
+    public static bool IsPS4PKG(string path)
     {
-        FileStream pkgstream = new(path, FileMode.Open, FileAccess.Read);        using BinaryReader binaryReader = new(pkgstream);
+        FileStream pkgstream = new(path, FileMode.Open, FileAccess.Read);
+        using BinaryReader binaryReader = new(pkgstream);
         byte[] a = binaryReader.ReadBytes(4);
         return BinUtils.CompareBytes(a, PKG_Magic);
-    }    public static string SystemFirmwareLongToString(long value)
+    }
+    public static string SystemFirmwareLongToString(long value)
     {
         string hexOutput = String.Format("{0:X}", value);
         if (value != 0)
@@ -19,7 +22,8 @@ public class PS4Utils
         }
         else
             return "0";
-    }    public static string GetTitleIDFromProductCode(string? productCode)
+    }
+    public static string GetTitleIDFromProductCode(string? productCode)
     {
         if (productCode is null) return string.Empty;
         int startIndex = productCode.IndexOf('-') + 1;
@@ -30,13 +34,16 @@ public class PS4Utils
 
     public static List<List<Rom>> GroupRomList(IEnumerable<Rom> romList)
     {
-        Dictionary<string, List<Rom>> romGroups = [];        foreach (var rom in romList)
+        Dictionary<string, List<Rom>> romGroups = [];
+        foreach (var rom in romList)
         {
             if (rom.TitleID is null)
-                continue;            if (!romGroups.ContainsKey(rom.TitleID))
+                continue;
+            if (!romGroups.ContainsKey(rom.TitleID))
             {
                 romGroups[rom.TitleID] = [];
-            }            romGroups[rom.TitleID].Add(rom);
+            }
+            romGroups[rom.TitleID].Add(rom);
         }
         List<List<Rom>> groupedRomList = new(
   romGroups.Values.Select(group => new List<Rom>(

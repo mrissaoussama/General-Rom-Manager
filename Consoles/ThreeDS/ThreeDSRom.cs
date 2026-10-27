@@ -1,4 +1,5 @@
-﻿using RomManagerShared.Base;namespace RomManagerShared.ThreeDS;
+﻿using RomManagerShared.Base;
+namespace RomManagerShared.ThreeDS;
 
 public interface IThreeDSRom { }
 public class ThreeDSGame : Game, IThreeDSRom

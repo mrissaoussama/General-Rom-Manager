@@ -5,6 +5,11 @@ on:
     branches: [master]
   pull_request:
 
+# A newer push to the same branch or pull request supersedes the running build.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     strategy:
@@ -13,8 +18,8 @@ jobs:
         os: [windows-latest, ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
         with:
           global-json-file: global.json
       - name: Build
@@ -23,7 +28,7 @@ jobs:
         run: dotnet test --project RomManagerTests/RomManagerTests.csproj -c Release --no-build --coverage --coverage-output-format cobertura --coverage-output coverage.cobertura.xml
       - name: Upload coverage
         if: matrix.os == 'windows-latest'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: coverage
           path: RomManagerTests/bin/Release/net10.0/TestResults/coverage.cobertura.xml

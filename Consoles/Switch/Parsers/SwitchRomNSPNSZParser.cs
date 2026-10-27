@@ -2,12 +2,14 @@
 using RomManagerShared.Interfaces;
 using RomManagerShared.Utils;
 using System.Text;
-using System.Xml;namespace RomManagerShared.Switch.Parsers;
+using System.Xml;
+namespace RomManagerShared.Switch.Parsers;
 
 public class SwitchRomNSPNSZParser : IRomParser<SwitchConsole>
 {
     public List<string> Extensions { get; set; }
-   private const int HeaderLength = 0xA00;    public SwitchRomNSPNSZParser()
+   private const int HeaderLength = 0xA00;
+    public SwitchRomNSPNSZParser()
     {
         Extensions = ["nsz", "nsp"];
     }
@@ -47,7 +49,8 @@ public class SwitchRomNSPNSZParser : IRomParser<SwitchConsole>
                     string? id = xmlDoc.SelectSingleNode("//Id")?.InnerText.Replace("0x", string.Empty).ToUpper(System.Globalization.CultureInfo.CurrentCulture);
                     string? version = xmlDoc.SelectSingleNode("//Version")?.InnerText;
                     string? requiredDownloadSystemVersion = xmlDoc.SelectSingleNode("//RequiredDownloadSystemVersion")?.InnerText;
-                    string? requiredSystemVersion = xmlDoc.SelectSingleNode("//RequiredSystemVersion")?.InnerText;                    Rom? rom = list.FirstOrDefault(x => x.TitleID == id);
+                    string? requiredSystemVersion = xmlDoc.SelectSingleNode("//RequiredSystemVersion")?.InnerText;
+                    Rom? rom = list.FirstOrDefault(x => x.TitleID == id);
                     if (rom is null)
                     {
                         var romtype = SwitchUtils.GetRomMetadataClass(id ?? "") ?? typeof(SwitchGame);
@@ -63,7 +66,8 @@ public class SwitchRomNSPNSZParser : IRomParser<SwitchConsole>
                 }
             }
         }
-        foreach (var id in ExtensionsData)        {
+        foreach (var id in ExtensionsData)
+        {
             Rom? rom = list.FirstOrDefault(x => x.TitleID == id);
             if (rom is null)
             {
@@ -76,4 +80,6 @@ public class SwitchRomNSPNSZParser : IRomParser<SwitchConsole>
 
                 list.Add(rom);
         }
-        return list;    }}
+        return list;
+    }
+}

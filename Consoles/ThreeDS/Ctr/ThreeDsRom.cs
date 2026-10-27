@@ -98,47 +98,59 @@ public class ThreeDsRom : IExtendedFileSystem, IDisposable
         var rom = new ThreeDsRom();
         await rom.OpenFile(filename);
         return rom;
-    }    public static async Task<ThreeDsRom> Load(string filename, IFileSystem fileSystem)
+    }
+    public static async Task<ThreeDsRom> Load(string filename, IFileSystem fileSystem)
     {
         var rom = new ThreeDsRom(fileSystem);
         await rom.OpenFile(filename);
         return rom;
-    }    public static async Task<ThreeDsRom> Load(BinaryFile file)
+    }
+    public static async Task<ThreeDsRom> Load(BinaryFile file)
     {
         var rom = new ThreeDsRom(file);
         await rom.OpenFile(file);
         return rom;
-    }    public static async Task<bool> IsThreeDsRom(BinaryFile file)
+    }
+    public static async Task<bool> IsThreeDsRom(BinaryFile file)
     {
         return await NcsdFile.IsNcsd(file)
             || await CiaFile.IsCia(file)
             || await NcchPartition.IsNcch(file)
             || await ExeFs.IsExeFs(file);
-    }    public ThreeDsRom()
+    }
+    public ThreeDsRom()
     {
         (this as IFileSystem).ResetWorkingDirectory();
         CurrentFileSystem = new PhysicalFileSystem();
-    }    public ThreeDsRom(IFileSystem fileSystem)
+    }
+    public ThreeDsRom(IFileSystem fileSystem)
     {
         CurrentFileSystem = fileSystem;
-    }    public ThreeDsRom(BinaryFile file)
+    }
+    public ThreeDsRom(BinaryFile file)
     {
         RawData = file;
         CurrentFileSystem = new PhysicalFileSystem();
-    }    public ThreeDsRom(ExeFs exefs, int partitionIndex = 0)
+    }
+    public ThreeDsRom(ExeFs exefs, int partitionIndex = 0)
     {
         Container = new SingleNcchPartitionContainer(new NcchPartition(exefs: exefs), partitionIndex);
-    }    public ThreeDsRom(NcchPartition ncch, int partitionIndex = 0)
+    }
+    public ThreeDsRom(NcchPartition ncch, int partitionIndex = 0)
     {
         Container = new SingleNcchPartitionContainer(ncch, partitionIndex);
-    }    private INcchPartitionContainer? Container { get; set; }
+    }
+    private INcchPartitionContainer? Container { get; set; }
     public NcchPartition[] Partitions => Container?.Partitions ?? throw new InvalidOperationException("ROM has not yet been initialized");
     private BinaryFile? RawData { get; set; }
-    private IFileSystem? CurrentFileSystem { get; set; }    public async Task OpenFile(string filename, IFileSystem fileSystem)
+    private IFileSystem? CurrentFileSystem { get; set; }
+    public async Task OpenFile(string filename, IFileSystem fileSystem)
     {
-        CurrentFileSystem = fileSystem;        if (fileSystem.FileExists(filename))
+        CurrentFileSystem = fileSystem;
+        if (fileSystem.FileExists(filename))
         {
-            RawData = new BinaryFile(filename, CurrentFileSystem);            await OpenFile(RawData);
+            RawData = new BinaryFile(filename, CurrentFileSystem);
+            await OpenFile(RawData);
         }
         else if (fileSystem.DirectoryExists(filename))
         {
@@ -149,16 +161,20 @@ public class ThreeDsRom : IExtendedFileSystem, IDisposable
         {
             throw new FileNotFoundException("Could not find file or directory at the given path", filename);
         }
-    }    public async Task OpenFile(IReadOnlyBinaryDataAccessor file)
+    }
+    public async Task OpenFile(IReadOnlyBinaryDataAccessor file)
     {
         if (CurrentFileSystem == null)
         {
             throw new InvalidOperationException("ROM has already been initialized");
-        }        // Clear virtual path if it exists
+        }
+        // Clear virtual path if it exists
         if (!string.IsNullOrEmpty(VirtualPath) && CurrentFileSystem.DirectoryExists(VirtualPath))
         {
             CurrentFileSystem.DeleteDirectory(VirtualPath);
-        }        VirtualPath = CurrentFileSystem.GetTempDirectory();        if (await NcsdFile.IsNcsd(file))
+        }
+        VirtualPath = CurrentFileSystem.GetTempDirectory();
+        if (await NcsdFile.IsNcsd(file))
         {
             Container = await NcsdFile.Load(file);
         }
@@ -173,16 +189,21 @@ public class ThreeDsRom : IExtendedFileSystem, IDisposable
                 : await ExeFs.IsExeFs(file)
                             ? (INcchPartitionContainer)new SingleNcchPartitionContainer(new NcchPartition(exefs: await ExeFs.Load(file)))
                             : throw new BadImageFormatException(Properties.Resources.ThreeDsRom_UnsupportedFileFormat);
-        }    }    public async Task OpenFile(string filename)
+        }
+    }
+    public async Task OpenFile(string filename)
     {
         if (CurrentFileSystem == null)
         {
             throw new InvalidOperationException("ROM has already been initialized");
-        }        await this.OpenFile(filename, CurrentFileSystem);
-    }    public NcchPartition? GetPartitionOrDefault(int partitionIndex)
+        }
+        await this.OpenFile(filename, CurrentFileSystem);
+    }
+    public NcchPartition? GetPartitionOrDefault(int partitionIndex)
     {
         return Partitions.Length > partitionIndex ? Partitions[partitionIndex] : null;
-    }    public string GetRomFsDirectoryName(int partitionId)
+    }
+    public string GetRomFsDirectoryName(int partitionId)
     {
         return Container == null
             ? throw new InvalidOperationException("ROM has not yet been initialized")
@@ -196,48 +217,57 @@ public class ThreeDsRom : IExtendedFileSystem, IDisposable
                 6 => "N3DSUpdate",
                 7 => "O3DSUpdate",
                 _ => "RomFS-" + partitionId.ToString(),
-            };    }    public static string GetExeFsDirectoryName(int partitionId)
+            };
+    }
+    public static string GetExeFsDirectoryName(int partitionId)
     {
         return partitionId switch
         {
             0 => "ExeFS",
             _ => "ExeFS-" + partitionId.ToString(),
         };
-    }    public static string GetHeaderFileName(int partitionId)
+    }
+    public static string GetHeaderFileName(int partitionId)
     {
         return partitionId switch
         {
             0 => "Header.bin",
             _ => "Header-" + partitionId.ToString() + ".bin",
         };
-    }    public static string GetExHeaderFileName(int partitionId)
+    }
+    public static string GetExHeaderFileName(int partitionId)
     {
         return partitionId switch
         {
             0 => "ExHeader.bin",
             _ => "ExHeader-" + partitionId.ToString() + ".bin",
         };
-    }    public static string GetPlainRegionFileName(int partitionId)
+    }
+    public static string GetPlainRegionFileName(int partitionId)
     {
         return partitionId switch
         {
             0 => "PlainRegion.txt",
             _ => "PlainRegion-" + partitionId.ToString() + ".txt",
         };
-    }    public static string GetLogoFileName(int partitionId)
+    }
+    public static string GetLogoFileName(int partitionId)
     {
         return partitionId switch
         {
             0 => "Logo.bin",
             _ => "Logo-" + partitionId.ToString() + ".bin",
         };
-    }    public async Task Save(string filename, IFileSystem fileSystem)
+    }
+    public async Task Save(string filename, IFileSystem fileSystem)
     {
         throw new NotImplementedException();
-    }    public async Task Save(string filename)
+    }
+    public async Task Save(string filename)
     {
         await Save(filename, PhysicalFileSystem.Instance);
-    }    #region IDisposable Support
+    }
+    #region IDisposable Support
     private bool disposedValue = false; // To detect redundant calls
     protected virtual void Dispose(bool disposing)
     {
@@ -249,7 +279,8 @@ public class ThreeDsRom : IExtendedFileSystem, IDisposable
                 if (CurrentFileSystem != null && !string.IsNullOrEmpty(VirtualPath) && CurrentFileSystem.DirectoryExists(VirtualPath))
                 {
                     CurrentFileSystem.DeleteDirectory(VirtualPath);
-                }                if (Container is IDisposable disposableContainer)
+                }
+                if (Container is IDisposable disposableContainer)
                 {
                     disposableContainer.Dispose();
                 }
@@ -258,18 +289,22 @@ public class ThreeDsRom : IExtendedFileSystem, IDisposable
             // TODO: set large fields to null.
             disposedValue = true;
         }
-    }    // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
+    }
+    // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
     // ~ThreeDsRom() {
     //   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
     //   Dispose(false);
-    // }    // This code added to correctly implement the disposable pattern.
+    // }
+    // This code added to correctly implement the disposable pattern.
     public void Dispose()
     {
         // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
         Dispose(true);
         // TODO: uncomment the following line if the finalizer is overridden above.
         // GC.SuppressFinalize(this);
-    }    #endregion#pragma warning disable CS0162 // Unreachable code detected
+    }
+    #endregion
+#pragma warning disable CS0162 // Unreachable code detected
     #region IIOProvider Implementation
     /// <summary>
     /// Gets a regular expression for the given search pattern for use with <see cref="GetFiles(string, string, bool)"/>.  Do not provide asterisks.
@@ -287,7 +322,8 @@ public class ThreeDsRom : IExtendedFileSystem, IDisposable
             }
         }
         return regexString;
-    }    /// <summary>
+    }
+    /// <summary>
     /// Gets a regular expression for the given search pattern for use with <see cref="GetFiles(string, string, bool)"/>.
     /// </summary>
     /// <param name="searchPattern"></param>
@@ -295,7 +331,8 @@ public class ThreeDsRom : IExtendedFileSystem, IDisposable
     private static string GetFileSearchRegex(string searchPattern)
     {
         var asteriskParts = searchPattern.Split('*');
-        var regexString = new StringBuilder();        foreach (var part in asteriskParts)
+        var regexString = new StringBuilder();
+        foreach (var part in asteriskParts)
         {
             if (string.IsNullOrEmpty(part))
             {
@@ -306,17 +343,22 @@ public class ThreeDsRom : IExtendedFileSystem, IDisposable
             {
                 regexString.Append(GetFileSearchRegexQuestionMarkOnly(part));
             }
-        }        return regexString.ToString();
-    }    /// <summary>
+        }
+        return regexString.ToString();
+    }
+    /// <summary>
     /// Keeps track of files that have been logically deleted
     /// </summary>
-    private static List<string> BlacklistedPaths => new();    /// <summary>
+    private static List<string> BlacklistedPaths => new();
+    /// <summary>
     /// Path in the current I/O provider where temporary files are stored
     /// </summary>
-    private string? VirtualPath { get; set; }    /// <summary>
+    private string? VirtualPath { get; set; }
+    /// <summary>
     /// Whether or not to delete <see cref="VirtualPath"/> on delete
     /// </summary>
-    private bool DisposeVirtualPath { get; set; }    string IFileSystem.WorkingDirectory
+    private bool DisposeVirtualPath { get; set; }
+    string IFileSystem.WorkingDirectory
     {
         get
         {
@@ -337,13 +379,16 @@ public class ThreeDsRom : IExtendedFileSystem, IDisposable
             _workingDirectoryParts = GetPathParts(value);
         }
     }
-    private string[]? _workingDirectoryParts;    protected string[] GetPathParts(string path)
+    private string[]? _workingDirectoryParts;
+    protected string[] GetPathParts(string path)
     {
-        var parts = new List<string>();        path = path.Replace('\\', '/');
+        var parts = new List<string>();
+        path = path.Replace('\\', '/');
         if (!path.StartsWith("/") && !(_workingDirectoryParts?.Length == 1 && _workingDirectoryParts[0] == string.Empty))
         {
             parts.AddRange(_workingDirectoryParts);
-        }        foreach (var item in path.TrimStart('/').Split('/'))
+        }
+        foreach (var item in path.TrimStart('/').Split('/'))
         {
             switch (item)
             {
@@ -363,17 +408,22 @@ public class ThreeDsRom : IExtendedFileSystem, IDisposable
             parts.Add(string.Empty);
         }
         return [.. parts];
-    }    void IFileSystem.ResetWorkingDirectory()
+    }
+    void IFileSystem.ResetWorkingDirectory()
     {
         (this as IFileSystem).WorkingDirectory = "/";
-    }    private string FixPath(string path)
+    }
+    private string FixPath(string path)
     {
-        var fixedPath = path.Replace('\\', '/');        // Apply working directory
+        var fixedPath = path.Replace('\\', '/');
+        // Apply working directory
         return fixedPath.StartsWith("/") ? fixedPath : Path.Combine((this as IFileSystem).WorkingDirectory, path);
-    }    private string? GetVirtualPath(string path)
+    }
+    private string? GetVirtualPath(string path)
     {
         return VirtualPath == null ? null : Path.Combine(VirtualPath, path.TrimStart('/'));
-    }    private IReadOnlyBinaryDataAccessor? GetDataReference(string[] parts, bool throwIfNotFound = true)
+    }
+    private IReadOnlyBinaryDataAccessor? GetDataReference(string[] parts, bool throwIfNotFound = true)
     {
         IReadOnlyBinaryDataAccessor? getExeFsDataReference(string[] pathParts, int partitionId)
         {
@@ -381,8 +431,11 @@ public class ThreeDsRom : IExtendedFileSystem, IDisposable
             {
                 var data = GetPartitionOrDefault(partitionId)?.ExeFs?.Files[pathParts.Last()]?.RawData;
                 return data == null ? null : (IReadOnlyBinaryDataAccessor)new BinaryFile(data);
-            }            return null;
-        }        IReadOnlyBinaryDataAccessor? dataReference = null;        var firstDirectory = parts[0].ToLower();
+            }
+            return null;
+        }
+        IReadOnlyBinaryDataAccessor? dataReference = null;
+        var firstDirectory = parts[0].ToLower();
         switch (firstDirectory)
         {
             case "ncsdheader.bin":
@@ -394,7 +447,8 @@ public class ThreeDsRom : IExtendedFileSystem, IDisposable
             case "exefs-0":
             case "exefs":
                 dataReference = getExeFsDataReference(parts, 0);
-                break;            case "header.bin":
+                break;
+            case "header.bin":
                 dataReference = GetPartitionOrDefault(0)?.Header?.ToBinary();
                 break;
             case "exheader.bin":
@@ -448,10 +502,12 @@ public class ThreeDsRom : IExtendedFileSystem, IDisposable
                     }
                 }
                 break;
-        }        if (dataReference != null)
+        }
+        if (dataReference != null)
         {
             return dataReference;
-        }        if (throwIfNotFound)
+        }
+        if (throwIfNotFound)
         {
             var path = "/" + string.Join("/", parts);
             throw new FileNotFoundException(string.Format(Properties.Resources.ThreeDsRom_ErrorRomFileNotFound, path), path);
@@ -460,19 +516,23 @@ public class ThreeDsRom : IExtendedFileSystem, IDisposable
         {
             return null;
         }
-    }    long IReadOnlyFileSystem.GetFileLength(string filename)
+    }
+    long IReadOnlyFileSystem.GetFileLength(string filename)
     {
         var file = GetDataReference(GetPathParts(filename));
         return file == null
             ? throw new FileNotFoundException(string.Format(Properties.Resources.ThreeDsRom_ErrorRomFileNotFound, filename), filename)
             : file.Length;
-    }    bool IReadOnlyFileSystem.FileExists(string filename)
+    }
+    bool IReadOnlyFileSystem.FileExists(string filename)
     {
         var virtualPath = GetVirtualPath(filename);
         return (CurrentFileSystem != null && !string.IsNullOrEmpty(virtualPath) && CurrentFileSystem.FileExists(virtualPath))
             || GetDataReference(GetPathParts(filename), false) != null;
-    }    private bool DirectoryExists(string[] parts)
-    {        if (parts.Length == 1)
+    }
+    private bool DirectoryExists(string[] parts)
+    {
+        if (parts.Length == 1)
         {
             var dirName = parts[0].ToLower();
             switch (dirName)
@@ -480,7 +540,8 @@ public class ThreeDsRom : IExtendedFileSystem, IDisposable
                 case "exefs-0":
                 case "exefs":
                     return GetPartitionOrDefault(0)?.ExeFs != null;
-                case "romfs-0":                default:
+                case "romfs-0":
+                default:
                     if (dirName.StartsWith("exefs-"))
                     {
                         var partitionNumRaw = dirName.Split("-".ToCharArray(), 2)[1];
@@ -504,7 +565,9 @@ public class ThreeDsRom : IExtendedFileSystem, IDisposable
                 case "exefs-0":
                 case "exefs":
                     // Directories inside exefs are not supported
-                    return false;                default:                    if (dirName.StartsWith("exefs-partition-"))
+                    return false;
+                default:
+                    if (dirName.StartsWith("exefs-partition-"))
                     {
                         // Directories inside exefs are not supported
                         return false;
@@ -512,7 +575,8 @@ public class ThreeDsRom : IExtendedFileSystem, IDisposable
                     return false;
             }
         }
-    }    bool IReadOnlyFileSystem.DirectoryExists(string path)
+    }
+    bool IReadOnlyFileSystem.DirectoryExists(string path)
     {
         var virtualPath = GetVirtualPath(path);
         return !BlacklistedPaths.Contains(FixPath(path))
@@ -520,13 +584,15 @@ public class ThreeDsRom : IExtendedFileSystem, IDisposable
                 ((CurrentFileSystem != null && !string.IsNullOrEmpty(virtualPath) && CurrentFileSystem.DirectoryExists(virtualPath))
                     || DirectoryExists(GetPathParts(path))
                 );
-    }    void IFileSystem.CreateDirectory(string path)
+    }
+    void IFileSystem.CreateDirectory(string path)
     {
         var fixedPath = FixPath(path);
         if (BlacklistedPaths.Contains(fixedPath))
         {
             BlacklistedPaths.Remove(fixedPath);
-        }        if (!(this as IFileSystem).DirectoryExists(fixedPath))
+        }
+        if (!(this as IFileSystem).DirectoryExists(fixedPath))
         {
             var virtualPath = GetVirtualPath(fixedPath);
             if (!string.IsNullOrEmpty(virtualPath))
@@ -534,11 +600,13 @@ public class ThreeDsRom : IExtendedFileSystem, IDisposable
                 CurrentFileSystem?.CreateDirectory(virtualPath);
             }
         }
-    }    string[] IReadOnlyFileSystem.GetFiles(string path, string searchPattern, bool topDirectoryOnly)
+    }
+    string[] IReadOnlyFileSystem.GetFiles(string path, string searchPattern, bool topDirectoryOnly)
     {
         var searchPatternRegex = new Regex(GetFileSearchRegex(searchPattern), RegexOptions.Compiled | RegexOptions.IgnoreCase);
         var parts = GetPathParts(path);
-        var output = new List<string>();        var dirName = parts[0].ToLower();
+        var output = new List<string>();
+        var dirName = parts[0].ToLower();
         switch (dirName)
         {
             case "" when parts.Length == 1:
@@ -585,7 +653,8 @@ public class ThreeDsRom : IExtendedFileSystem, IDisposable
                         if (Partitions[i].ExeFs != null)
                         {
                             output.AddRange((this as IFileSystem).GetFiles("/" + GetExeFsDirectoryName(i), searchPattern, topDirectoryOnly));
-                        }                    }
+                        }
+                    }
                 }
                 break;
             case "exefs" when parts.Length == 1:
@@ -595,7 +664,8 @@ public class ThreeDsRom : IExtendedFileSystem, IDisposable
                 {
                     output.Add("/ExeFS/" + file);
                 }
-                break;            default:
+                break;
+            default:
                 if (dirName.StartsWith("exefs-"))
                 {
                     var partitionNumRaw = dirName.Split("-".ToCharArray(), 2)[1];
@@ -609,7 +679,8 @@ public class ThreeDsRom : IExtendedFileSystem, IDisposable
                     }
                 }
                 break;
-        }        // Apply shadowed files
+        }
+        // Apply shadowed files
         var virtualPath = GetVirtualPath(path);
         if (CurrentFileSystem != null && !string.IsNullOrEmpty(virtualPath) && CurrentFileSystem.DirectoryExists(virtualPath))
         {
@@ -621,11 +692,14 @@ public class ThreeDsRom : IExtendedFileSystem, IDisposable
                     output.Add(overlayPath);
                 }
             }
-        }        return [.. output];
-    }    string[] IReadOnlyFileSystem.GetDirectories(string path, bool topDirectoryOnly)
+        }
+        return [.. output];
+    }
+    string[] IReadOnlyFileSystem.GetDirectories(string path, bool topDirectoryOnly)
     {
         var parts = GetPathParts(path);
-        var output = new List<string>();        var dirName = parts[0].ToLower();
+        var output = new List<string>();
+        var dirName = parts[0].ToLower();
         switch (dirName)
         {
             case "" when parts.Length == 1:
@@ -638,11 +712,14 @@ public class ThreeDsRom : IExtendedFileSystem, IDisposable
                         {
                             output.AddRange((this as IFileSystem).GetDirectories("/" + GetExeFsDirectoryName(i), topDirectoryOnly));
                         }
-                    }                }
+                    }
+                }
                 break;
             case "exefs" when parts.Length == 1:
                 // ExeFs doesn't support directories
-                break;        }        // Apply shadowed files
+                break;
+        }
+        // Apply shadowed files
         var virtualPath = GetVirtualPath(path);
         if (CurrentFileSystem != null && !string.IsNullOrEmpty(virtualPath) && CurrentFileSystem.DirectoryExists(virtualPath))
         {
@@ -654,8 +731,10 @@ public class ThreeDsRom : IExtendedFileSystem, IDisposable
                     output.Add(overlayPath);
                 }
             }
-        }        return [.. output];
-    }    byte[] IReadOnlyFileSystem.ReadAllBytes(string filename)
+        }
+        return [.. output];
+    }
+    byte[] IReadOnlyFileSystem.ReadAllBytes(string filename)
     {
         var fixedPath = FixPath(filename);
         if (BlacklistedPaths.Contains(fixedPath))
@@ -677,7 +756,8 @@ public class ThreeDsRom : IExtendedFileSystem, IDisposable
                     : data.ReadArray();
             }
         }
-    }    public IReadOnlyBinaryDataAccessor? GetFileReference(string filename)
+    }
+    public IReadOnlyBinaryDataAccessor? GetFileReference(string filename)
     {
         var fixedPath = FixPath(filename);
         if (BlacklistedPaths.Contains(fixedPath))
@@ -691,67 +771,82 @@ public class ThreeDsRom : IExtendedFileSystem, IDisposable
                 ? new BinaryFile(CurrentFileSystem.ReadAllBytes(virtualPath))
                 : GetDataReference(GetPathParts(filename));
         }
-    }    void IExtendedFileSystem.WriteAllBytes(string filename, byte[] data)
+    }
+    void IExtendedFileSystem.WriteAllBytes(string filename, byte[] data)
     {
         if (CurrentFileSystem == null)
         {
             throw new NotSupportedException("Cannot open a file as a stream without an IO provider.");
-        }        var fixedPath = FixPath(filename);
+        }
+        var fixedPath = FixPath(filename);
         if (BlacklistedPaths.Contains(fixedPath))
         {
             BlacklistedPaths.Remove(fixedPath);
-        }        var virtualPath = GetVirtualPath(filename);
+        }
+        var virtualPath = GetVirtualPath(filename);
         if (!string.IsNullOrEmpty(virtualPath))
         {
             var virtualDir = Path.GetDirectoryName(virtualPath);
             if (!string.IsNullOrEmpty(virtualDir) && !CurrentFileSystem.DirectoryExists(virtualDir))
             {
                 CurrentFileSystem.CreateDirectory(virtualDir);
-            }            CurrentFileSystem.WriteAllBytes(virtualPath, data);
+            }
+            CurrentFileSystem.WriteAllBytes(virtualPath, data);
         }
-    }    void IFileSystem.CopyFile(string sourceFilename, string destinationFilename)
+    }
+    void IFileSystem.CopyFile(string sourceFilename, string destinationFilename)
     {
         this.WriteAllBytes(destinationFilename, (this as IFileSystem).ReadAllBytes(sourceFilename));
-    }    void IFileSystem.DeleteFile(string filename)
+    }
+    void IFileSystem.DeleteFile(string filename)
     {
         var fixedPath = FixPath(filename);
         if (!BlacklistedPaths.Contains(fixedPath))
         {
             BlacklistedPaths.Add(fixedPath);
-        }        var virtualPath = GetVirtualPath(filename);
+        }
+        var virtualPath = GetVirtualPath(filename);
         if (!string.IsNullOrEmpty(virtualPath) && CurrentFileSystem != null && CurrentFileSystem.FileExists(virtualPath))
         {
             CurrentFileSystem.DeleteFile(virtualPath);
         }
-    }    void IFileSystem.DeleteDirectory(string path)
+    }
+    void IFileSystem.DeleteDirectory(string path)
     {
         var fixedPath = FixPath(path);
         if (!BlacklistedPaths.Contains(fixedPath))
         {
             BlacklistedPaths.Add(fixedPath);
-        }        var virtualPath = GetVirtualPath(path);
+        }
+        var virtualPath = GetVirtualPath(path);
         if (CurrentFileSystem != null && !string.IsNullOrEmpty(virtualPath) && CurrentFileSystem.FileExists(virtualPath))
         {
             CurrentFileSystem.DeleteFile(virtualPath);
         }
-    }    string IFileSystem.GetTempFilename()
+    }
+    string IFileSystem.GetTempFilename()
     {
         // The class can't map temp files to the underlying file system yet
-        throw new NotImplementedException();        var path = "/temp/files/" + Guid.NewGuid().ToString();
+        throw new NotImplementedException();
+        var path = "/temp/files/" + Guid.NewGuid().ToString();
         this.WriteAllBytes(path, Array.Empty<byte>());
         return path;
-    }    string IFileSystem.GetTempDirectory()
+    }
+    string IFileSystem.GetTempDirectory()
     {
         // The class can't map temp files to the underlying file system yet
-        throw new NotImplementedException();        var path = "/temp/dirs/" + Guid.NewGuid().ToString();
+        throw new NotImplementedException();
+        var path = "/temp/dirs/" + Guid.NewGuid().ToString();
         (this as IFileSystem).CreateDirectory(path);
         return path;
-    }    Stream IFileSystem.OpenFile(string filename)
+    }
+    Stream IFileSystem.OpenFile(string filename)
     {
         if (CurrentFileSystem == null)
         {
             throw new NotSupportedException("Cannot open a file as a stream without an IO provider.");
-        }        var virtualPath = GetVirtualPath(filename);
+        }
+        var virtualPath = GetVirtualPath(filename);
         if (!string.IsNullOrEmpty(virtualPath))
         {
             var virtualDir = Path.GetDirectoryName(virtualPath);
@@ -760,8 +855,10 @@ public class ThreeDsRom : IExtendedFileSystem, IDisposable
                 CurrentFileSystem.CreateDirectory(virtualDir);
             }
             CurrentFileSystem.WriteAllBytes(virtualPath, (this as IFileSystem).ReadAllBytes(filename));
-        }        return CurrentFileSystem.OpenFile(virtualPath!);
-    }    Stream IReadOnlyFileSystem.OpenFileReadOnly(string filename)
+        }
+        return CurrentFileSystem.OpenFile(virtualPath!);
+    }
+    Stream IReadOnlyFileSystem.OpenFileReadOnly(string filename)
     {
         if (CurrentFileSystem == null)
         {
@@ -774,7 +871,8 @@ public class ThreeDsRom : IExtendedFileSystem, IDisposable
             {
                 throw new NotSupportedException("Cannot open a file as a stream without an IO provider.");
             }
-        }        var virtualPath = GetVirtualPath(filename);
+        }
+        var virtualPath = GetVirtualPath(filename);
         if (!string.IsNullOrEmpty(virtualPath))
         {
             var virtualDir = Path.GetDirectoryName(virtualPath);
@@ -783,13 +881,16 @@ public class ThreeDsRom : IExtendedFileSystem, IDisposable
                 CurrentFileSystem.CreateDirectory(virtualDir);
             }
             CurrentFileSystem.WriteAllBytes(virtualPath, (this as IFileSystem).ReadAllBytes(filename));
-        }        return CurrentFileSystem.OpenFileReadOnly(virtualPath!);
-    }    Stream IFileSystem.OpenFileWriteOnly(string filename)
+        }
+        return CurrentFileSystem.OpenFileReadOnly(virtualPath!);
+    }
+    Stream IFileSystem.OpenFileWriteOnly(string filename)
     {
         if (CurrentFileSystem == null)
         {
             throw new NotSupportedException("Cannot open a file as a stream without an IO provider.");
-        }        var virtualPath = GetVirtualPath(filename);
+        }
+        var virtualPath = GetVirtualPath(filename);
         if (!string.IsNullOrEmpty(virtualPath))
         {
             var virtualDir = Path.GetDirectoryName(virtualPath);
@@ -798,18 +899,23 @@ public class ThreeDsRom : IExtendedFileSystem, IDisposable
                 CurrentFileSystem.CreateDirectory(virtualDir);
             }
             CurrentFileSystem.WriteAllBytes(virtualPath, (this as IFileSystem).ReadAllBytes(filename));
-        }        return CurrentFileSystem.OpenFileWriteOnly(virtualPath!);
-    }    void IExtendedFileSystem.WriteAllText(string filename, string data, Encoding encoding)
+        }
+        return CurrentFileSystem.OpenFileWriteOnly(virtualPath!);
+    }
+    void IExtendedFileSystem.WriteAllText(string filename, string data, Encoding encoding)
     {
         (this as IExtendedFileSystem).WriteAllBytes(filename, encoding.GetBytes(data));
-    }    Task IExtendedFileSystem.WriteAllTextAsync(string filename, string data, Encoding encoding)
+    }
+    Task IExtendedFileSystem.WriteAllTextAsync(string filename, string data, Encoding encoding)
     {
         (this as IExtendedFileSystem).WriteAllText(filename, data, encoding);
         return Task.CompletedTask;
-    }    Task IExtendedFileSystem.WriteAllBytesAsync(string filename, byte[] data)
+    }
+    Task IExtendedFileSystem.WriteAllBytesAsync(string filename, byte[] data)
     {
         (this as IExtendedFileSystem).WriteAllBytes(filename, data);
         return Task.CompletedTask;
-    }    #endregion
+    }
+    #endregion
 #pragma warning restore CS0162 // Unreachable code detected
 }

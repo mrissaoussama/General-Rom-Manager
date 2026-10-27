@@ -15,10 +15,12 @@ public class GameBoyMetadata
     public string MaskRomVersionNumber { get; set; } = "";
     public string HeaderChecksum { get; set; } = "";
     public byte[] StoredGlobalChecksum { get; internal set; } = [];
-    public string CgbFlagcode { get; internal set; } = "";    public string GetGameTypeChar()
+    public string CgbFlagcode { get; internal set; } = "";
+    public string GetGameTypeChar()
     {
         return GameCode.Length == 4 ? GameCode[0].ToString() : "";
-    }    public string GetCountryChar()
+    }
+    public string GetCountryChar()
     {
         return GameCode.Length == 4 ? GameCode[3..] : "";
     }

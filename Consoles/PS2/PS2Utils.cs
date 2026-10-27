@@ -56,4 +56,5 @@ public static class PS2Utils
         string fileName = Path.GetFileName(filename);
         var extensionIsSupported = Extensions.Any(ext => filename.EndsWith(ext, StringComparison.OrdinalIgnoreCase));
         return extensionIsSupported;
-    }}
+    }
+}

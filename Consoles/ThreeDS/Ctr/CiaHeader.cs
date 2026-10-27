@@ -13,9 +13,11 @@ public class CiaHeader
         TicketSize = BitConverter.ToInt32(data, 0xC);
         TmdFileSize = BitConverter.ToInt32(data, 0x10);
         MetaSize = BitConverter.ToInt32(data, 0x14);
-        ContentSize = BitConverter.ToInt32(data, 0x18);        ContentIndex = new byte[ArchiveHeaderSize - 0x20];
+        ContentSize = BitConverter.ToInt32(data, 0x18);
+        ContentIndex = new byte[ArchiveHeaderSize - 0x20];
         Array.Copy(data, 0x20, ContentIndex, 0, ContentIndex.Length);
-    }    /// <summary>
+    }
+    /// <summary>
     /// Archive Header Size (Usually = 0x2020 bytes)
     /// </summary>
     public int ArchiveHeaderSize { get; set; } // Offset: 0x0, Size: 4
@@ -23,7 +25,8 @@ public class CiaHeader
     public short Version { get; set; } // Offset: 0x6, Size: 2
     public int CertificateChainSize { get; set; } // Offset: 0x8, Size: 4
     public int TicketSize { get; set; } // Offset: 0xC, Size: 4
-    public int TmdFileSize { get; set; } // Offset: 0x10, Size: 4    /// <summary>
+    public int TmdFileSize { get; set; } // Offset: 0x10, Size: 4
+    /// <summary>
     /// Meta size (0 if no Meta data is present)
     /// </summary>
     public int MetaSize { get; set; } // Offset: 0x14, Size: 4

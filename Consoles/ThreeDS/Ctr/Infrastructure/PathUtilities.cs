@@ -18,6 +18,7 @@ public static class PathUtilities
             otherPathString += "/";
         }
         var absolutePath = new Uri("file://" + targetPath.Replace('\\', '/'));
-        var otherPath = new Uri("file://" + otherPathString);        return Uri.UnescapeDataString(otherPath.MakeRelativeUri(absolutePath).OriginalString);
+        var otherPath = new Uri("file://" + otherPathString);
+        return Uri.UnescapeDataString(otherPath.MakeRelativeUri(absolutePath).OriginalString);
     }
 }

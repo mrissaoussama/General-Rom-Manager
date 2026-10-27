@@ -15,14 +15,16 @@ public class ExeFs
             if (file.Length < 0x200)
             {
                 return false;
-            }            var exefs = await ExeFs.Load(file).ConfigureAwait(false);
+            }
+            var exefs = await ExeFs.Load(file).ConfigureAwait(false);
             return exefs.Files.Any() && exefs.AreAllHashesValid();
         }
         catch (Exception)
         {
             return false;
         }
-    }    /// <summary>
+    }
+    /// <summary>
     /// Loads an existing executable file system from the given data.
     /// </summary>
     /// <param name="data">Accessor to the raw data to load as a executable file system</param>
@@ -32,7 +34,8 @@ public class ExeFs
         var exefs = new ExeFs(exeFsData);
         await exefs.Initialize().ConfigureAwait(false);
         return exefs;
-    }    /// <summary>
+    }
+    /// <summary>
     /// Builds a new executable file system from the given directory
     /// </summary>
     /// <param name="directory">Directory from which to load the files</param>
@@ -44,10 +47,12 @@ public class ExeFs
         if (files.Count > 10)
         {
             throw new ArgumentException(Properties.Resources.ExeFs_ExceededMaximumFileCount, nameof(directory));
-        }        if (progressReportToken != null)
+        }
+        if (progressReportToken != null)
         {
             progressReportToken.TotalFileCount = files.Count;
-        }        var exefs = new ExeFs();
+        }
+        var exefs = new ExeFs();
         foreach (var file in files)
         {
             exefs.Files.Add(Path.GetFileName(file), null);
@@ -56,14 +61,18 @@ public class ExeFs
         {
             exefs.Files[Path.GetFileName(file)] = new ExeFsEntry(fileSystem.ReadAllBytes(file));
             progressReportToken?.IncrementProcessedFileCount();
-        }        return exefs;
-    }    public ExeFs()
+        }
+        return exefs;
+    }
+    public ExeFs()
     {
         Files = new Dictionary<string, ExeFsEntry?>(StringComparer.OrdinalIgnoreCase);
-    }    public ExeFs(IReadOnlyBinaryDataAccessor exeFsData) : this()
+    }
+    public ExeFs(IReadOnlyBinaryDataAccessor exeFsData) : this()
     {
         ExeFsData = exeFsData ?? throw new ArgumentNullException(nameof(exeFsData));
-    }    protected async Task Initialize()
+    }
+    protected async Task Initialize()
     {
         var headers = new ExeFsHeader[10];
         var fileData = new byte[10][];
@@ -78,7 +87,8 @@ public class ExeFs
           
                 fileData[i] = await ExeFsData.Slice((ulong)offset, headers[i].FileSize).ReadArrayAsync().ConfigureAwait(false);
             }
-        })).ConfigureAwait(false);        for (int i = 0; i < headers.Length; i++)
+        })).ConfigureAwait(false);
+        for (int i = 0; i < headers.Length; i++)
         {
             var header = headers[i];
             var data = fileData[i];
@@ -88,7 +98,10 @@ public class ExeFs
                 Files.Add(header.Filename, new ExeFsEntry(data, hash));
             }
         }
-    }    protected IReadOnlyBinaryDataAccessor ExeFsData { get; set; }    public Dictionary<string, ExeFsEntry?> Files { get; set; }    /// <summary>
+    }
+    protected IReadOnlyBinaryDataAccessor ExeFsData { get; set; }
+    public Dictionary<string, ExeFsEntry?> Files { get; set; }
+    /// <summary>
     /// Saves all files in the executable file system to the specified file system
     /// </summary>
     /// <param name="directoryName">Directory on the specified file system to which the files should be saved.</param>
@@ -99,15 +112,19 @@ public class ExeFs
         if (progressReportToken != null)
         {
             progressReportToken.TotalFileCount = Files.Count;
-        }        if (!fileSystem.DirectoryExists(directoryName))
+        }
+        if (!fileSystem.DirectoryExists(directoryName))
         {
             fileSystem.CreateDirectory(directoryName);
-        }        foreach (var file in Files)
+        }
+        foreach (var file in Files)
         {
-            fileSystem.WriteAllBytes(Path.Combine(directoryName, file.Key), file.Value.RawData);            progressReportToken?.IncrementProcessedFileCount();
+            fileSystem.WriteAllBytes(Path.Combine(directoryName, file.Key), file.Value.RawData);
+            progressReportToken?.IncrementProcessedFileCount();
         }
         await Task.CompletedTask;
-    }    /// <summary>
+    }
+    /// <summary>
     /// Turns the executable file system into its binary representation
     /// </summary>
     public byte[] ToByteArray()
@@ -124,66 +141,82 @@ public class ExeFs
             Array.Copy(BitConverter.GetBytes(file.Value!.RawData.Length), 0, header, (0x10 * fileIndex) + 0xC, 4);
             // Hash
             // Note: Hashes are stored in reverse order from headers
-            Array.Copy(file.Value.Hash, 0, header, 0xC0 + ((9 - fileIndex) * 32), Math.Min(file.Value.Hash.Length, 32));            // Data
+            Array.Copy(file.Value.Hash, 0, header, 0xC0 + ((9 - fileIndex) * 32), Math.Min(file.Value.Hash.Length, 32));
+            // Data
             data.AddRange(file.Value.RawData);
             while (data.Count % 0x200 != 0)
             {
                 data.Add(0);
-            }            fileIndex += 1;
-        }        data.InsertRange(0, header);
+            }
+            fileIndex += 1;
+        }
+        data.InsertRange(0, header);
         return [.. data];
-    }    public long GetBinaryLength()
+    }
+    public long GetBinaryLength()
     {
         return 0x200 // Header
             + Files.Values
             .Where(f => f != null)
             .Select(f => f!.RawData.Length + (0x200 - (f.RawData.Length % 0x200)))
             .Sum();
-    }    public bool AreAllHashesValid()
+    }
+    public bool AreAllHashesValid()
     {
         return Files.Values
             .Select(f => f!.IsFileHashValid())
             .All(valid => valid);
-    }    public static byte[] GetSuperblockHash(SHA256 sha, byte[] data)
+    }
+    public static byte[] GetSuperblockHash(SHA256 sha, byte[] data)
     {
         return sha.ComputeHash(data, 0, 0x200);
-    }    public byte[] GetSuperblockHash(SHA256 sha)
+    }
+    public byte[] GetSuperblockHash(SHA256 sha)
     {
         var data = ToByteArray();
         return GetSuperblockHash(sha, data);
-    }    public byte[] GetSuperblockHash()
+    }
+    public byte[] GetSuperblockHash()
     {
         using var sha = SHA256.Create();
         return GetSuperblockHash(sha);
-    }    protected class ExeFsHeader
+    }
+    protected class ExeFsHeader
     {
         public ExeFsHeader(byte[] data)
         {
             if (data == null)
             {
                 throw new ArgumentNullException(nameof(data));
-            }            Filename = Encoding.ASCII.GetString(data, 0, 8).TrimEnd('\0');
+            }
+            Filename = Encoding.ASCII.GetString(data, 0, 8).TrimEnd('\0');
             Offset = BitConverter.ToUInt64(data, 8);
             FileSize = BitConverter.ToInt32(data, 0xC);
-        }        public string Filename { get; private set; }
+        }
+        public string Filename { get; private set; }
         public ulong Offset { get; private set; }
         public int FileSize { get; private set; }
-    }    public class ExeFsEntry
+    }
+    public class ExeFsEntry
     {
         public ExeFsEntry(byte[] rawData)
         {
             RawData = rawData ?? throw new ArgumentNullException(nameof(rawData));
             Hash = ComputeHash();
-        }        public ExeFsEntry(byte[] rawData, byte[] hash)
+        }
+        public ExeFsEntry(byte[] rawData, byte[] hash)
         {
             RawData = rawData ?? throw new ArgumentNullException(nameof(rawData));
             Hash = hash ?? throw new ArgumentNullException(nameof(hash));
-        }        public byte[] RawData { get; set; }
-        public byte[] Hash { get; set; }        private byte[] ComputeHash()
+        }
+        public byte[] RawData { get; set; }
+        public byte[] Hash { get; set; }
+        private byte[] ComputeHash()
         {
             using var sha = SHA256.Create();
             return sha.ComputeHash(RawData);
-        }        public bool IsFileHashValid()
+        }
+        public bool IsFileHashValid()
         {
             return ComputeHash().SequenceEqual(Hash);
         }

@@ -7,4 +7,4 @@ public class PS2Game : Game, IPS2Rom
     public PS2Game() : base()
     {
     }
-}
+}

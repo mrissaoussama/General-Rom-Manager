@@ -7,4 +7,4 @@ public class SNESGame : Game, ISNESRom
     public SNESGame() : base()
     {
     }
-}
+}

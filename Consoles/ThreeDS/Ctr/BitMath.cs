@@ -8,7 +8,8 @@ public static class BitMath
     {
         int mask = ~(alignment - 1);
         return (offset + (alignment - 1)) & mask;
-    }    public static long Align(long offset, int alignment)
+    }
+    public static long Align(long offset, int alignment)
     {
         long mask = ~(alignment - 1);
         return (offset + (alignment - 1)) & mask;

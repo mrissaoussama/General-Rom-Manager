@@ -13,7 +13,8 @@ public class DSMetadataReader
     private const int MAKER_CODE_LENGTH = 2;
     private const int REGION_CODE_OFFSET = 0x1D;
     private const int ROM_VERSION_OFFSET = 0x1E;
-    private const int CART_HEADER_OFFSET = 0x68;    private const int UNIT_CODE_OFFSET = 18;
+    private const int CART_HEADER_OFFSET = 0x68;
+    private const int UNIT_CODE_OFFSET = 18;
     private const int ICON_BITMAP_OFFSET = 0x20;
     private const int ICON_BITMAP_SIZE = 0x200;
     private const int ICON_PALETTE_OFFSET = 0x220;

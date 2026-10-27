@@ -1,7 +1,9 @@
-﻿using RomManagerShared.Utils;namespace RomManagerShared.GameBoyAdvance;
+﻿using RomManagerShared.Utils;
+namespace RomManagerShared.GameBoyAdvance;
 
 public class GameBoyAdvanceMetadataReader
-{    private const int HEADER_LENGTH = 192; // 0xC0
+{
+    private const int HEADER_LENGTH = 192; // 0xC0
     private const int TITLE_OFFSET = 160; // 0xA0
     private const int TITLE_LENGTH = 12;
     private const int GAME_CODE_OFFSET = 172; // 0xAC
@@ -13,16 +15,19 @@ public class GameBoyAdvanceMetadataReader
     private const int HEADER_CHECKSUM_OFFSET = 189; // 0xBD
     public static GameBoyAdvanceMetadata GetMetadata(string path)
     {
-        byte[] gbaHeader;        using (FileStream fileStream = new(path, FileMode.Open, FileAccess.Read))
+        byte[] gbaHeader;
+        using (FileStream fileStream = new(path, FileMode.Open, FileAccess.Read))
         {
             gbaHeader = new byte[HEADER_LENGTH];
             fileStream.ReadExactly(gbaHeader, 0, HEADER_LENGTH);
-        }        string title = BinUtils.AsciiToString(gbaHeader, TITLE_OFFSET, TITLE_LENGTH).Replace("\0", ""); ;
+        }
+        string title = BinUtils.AsciiToString(gbaHeader, TITLE_OFFSET, TITLE_LENGTH).Replace("\0", ""); ;
         string gameCode = BinUtils.AsciiToString(gbaHeader, GAME_CODE_OFFSET, GAME_CODE_LENGTH);
         string makerCode = BinUtils.AsciiToString(gbaHeader, MAKER_CODE_OFFSET, MAKER_CODE_LENGTH);
         string unitCode = BinUtils.ByteToHex(gbaHeader[UNIT_CODE_OFFSET]);
         string versionCode = BinUtils.ByteToHex(gbaHeader[VERSION_CODE_OFFSET]);
-        string headerChecksum = BinUtils.ByteToHex(gbaHeader[HEADER_CHECKSUM_OFFSET]);        GameBoyAdvanceMetadata metadata = new()
+        string headerChecksum = BinUtils.ByteToHex(gbaHeader[HEADER_CHECKSUM_OFFSET]);
+        GameBoyAdvanceMetadata metadata = new()
         {
             Title = title,
             GameCode = gameCode,
@@ -30,6 +35,7 @@ public class GameBoyAdvanceMetadataReader
             UnitCode = unitCode,
             VersionCode = versionCode,
             HeaderChecksum = headerChecksum
-        };        return metadata;
+        };
+        return metadata;
     }
 }

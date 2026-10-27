@@ -23,7 +23,8 @@ public class ThreeDSUtils
         int contentCategory = GetContentCategory(titleId);
         TidCategory category = (TidCategory)contentCategory;
         return category;
-    }    static int GetContentCategory(string titleId)
+    }
+    static int GetContentCategory(string titleId)
     {
         int abcd = int.Parse(titleId.Substring(4, 4), System.Globalization.NumberStyles.HexNumber);
         return abcd;
@@ -34,13 +35,17 @@ public class ThreeDSUtils
     }
     public static List<List<Rom>> GroupRomList(IEnumerable<Rom> romList)
     {
-        Dictionary<string, List<Rom>> romGroups = [];        foreach (var rom in romList)
+        Dictionary<string, List<Rom>> romGroups = [];
+        foreach (var rom in romList)
         {
             if (string.IsNullOrEmpty(rom.TitleID))
-                continue;            string modifiedTitleId = GetIdentifyingTitleID(rom.TitleID);            if (!romGroups.ContainsKey(modifiedTitleId))
+                continue;
+            string modifiedTitleId = GetIdentifyingTitleID(rom.TitleID);
+            if (!romGroups.ContainsKey(modifiedTitleId))
             {
                 romGroups[modifiedTitleId] = [];
-            }            romGroups[modifiedTitleId].Add(rom);
+            }
+            romGroups[modifiedTitleId].Add(rom);
         }
         List<List<Rom>> groupedRomList = new(
   romGroups.Values.Select(group => new List<Rom>(

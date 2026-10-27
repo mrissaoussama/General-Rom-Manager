@@ -1,4 +1,5 @@
-﻿using System.Text;namespace RomManagerShared.SNES;
+﻿using System.Text;
+namespace RomManagerShared.SNES;
 //source https://github.com/Zeokat/SNES-ROM-Header-Dumper-CSharp/blob/master/snes_dumper.cs
 public class SNESMetadataReader
 {
@@ -13,17 +14,20 @@ public class SNESMetadataReader
         Data = File.ReadAllBytes(path);
         snesmetadata = new SNESMetadata();
         SmcHeader = Data.Length % 1024 == 512 || (Data.Length % 1024 == 0 ? false : throw new Exception("invalid snes rom"));
-        HeaderLocation = 0x81C0;        if (!HeaderIsAt(0x07FC0))
+        HeaderLocation = 0x81C0;
+        if (!HeaderIsAt(0x07FC0))
         {
             HeaderIsAt(0x0FFC0);
-        }        ReadHeader();
+        }
+        ReadHeader();
         return snesmetadata;
     }
     private bool VerifyChecksum()
     {
         // La rom tiene header smc
         if (SmcHeader)
-            this.HeaderLocation += 512;        snesmetadata.ChecksumCompliment = BitConverter.ToUInt16(this.Get(0x1C, 0x1D), 0);
+            this.HeaderLocation += 512;
+        snesmetadata.ChecksumCompliment = BitConverter.ToUInt16(this.Get(0x1C, 0x1D), 0);
         snesmetadata.Checksum = BitConverter.ToUInt16(this.Get(0x1E, 0x1F), 0);
         ushort ver = (ushort)(snesmetadata.Checksum ^ snesmetadata.ChecksumCompliment);
         return ver == 0xFFFF;
@@ -32,7 +36,8 @@ public class SNESMetadataReader
     {
         this.HeaderLocation = addr;
         return VerifyChecksum();
-    }    private void ReadHeader()
+    }
+    private void ReadHeader()
     {
         snesmetadata.Name = Encoding.ASCII.GetString(this.Get(0x00, 0x14)); // 21 chars
         snesmetadata.Layout = this.At(0x15);
@@ -42,7 +47,8 @@ public class SNESMetadataReader
         snesmetadata.CountryCode = this.At(0x19);
         snesmetadata.LicenseCode = this.At(0x1A);
         snesmetadata.VersionNumber = this.At(0x1B);
-    }    private string GetROmB()
+    }
+    private string GetROmB()
     {
         return String.Format("{0}", snesmetadata.RomSize);
     }

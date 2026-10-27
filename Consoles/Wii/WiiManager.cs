@@ -17,4 +17,4 @@ public class WiiManager : ConsoleManager<WiiConsole>
 
 
   
-}
+}

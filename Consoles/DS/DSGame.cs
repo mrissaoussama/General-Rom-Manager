@@ -7,4 +7,4 @@ public class DSGame : Game, IDSRom
     public DSGame() : base()
     {
     }
-}
+}

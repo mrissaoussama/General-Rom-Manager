@@ -7,4 +7,4 @@ public class GameBoyAdvanceGame : Game, IGameBoyAdvanceRom
     public GameBoyAdvanceGame() : base()
     {
     }
-}
+}

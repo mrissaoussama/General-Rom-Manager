@@ -9,7 +9,8 @@ public class WiiWadRomParser : IRomParser<WiiConsole>
     public WiiWadRomParser()
     {
         Extensions = ["wad"];
-    }    public Task<List<Rom>> ProcessFile(string path)
+    }
+    public Task<List<Rom>> ProcessFile(string path)
     {
         WadInfo wadInfo = new();
         byte[] wadfile = WadInfo.LoadFileToByteArray(path);

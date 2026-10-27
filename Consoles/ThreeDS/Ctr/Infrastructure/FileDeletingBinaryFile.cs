@@ -10,7 +10,8 @@ public class FileDeletingBinaryFile : BinaryFile
 {
     public FileDeletingBinaryFile(string filename) : base(filename)
     {
-    }    public override void Dispose()
+    }
+    public override void Dispose()
     {
         base.Dispose();
         if (File.Exists(Filename))

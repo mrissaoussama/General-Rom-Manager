@@ -1,4 +1,5 @@
-﻿using RomManagerShared.Base;namespace RomManagerShared.Wii;
+﻿using RomManagerShared.Base;
+namespace RomManagerShared.Wii;
 
 public interface IWiiRom { }
 public class WiiGame : Game, IWiiRom
@@ -11,5 +12,6 @@ public class WiiWadGame : Game, IWiiRom
 {
     public WiiWadGame() : base()
     {
-    }    public string ChannelType { get; internal set; } = "";
+    }
+    public string ChannelType { get; internal set; } = "";
 }
