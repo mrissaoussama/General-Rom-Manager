@@ -235,7 +235,7 @@ game data, not Wii), gbc 367, nsp 97, pkg 56, cso 46, iso 33).
       runs can be diffed before and after a change.
 - [x] Scanner integration test: temp folder → scan → modify → rescan → assert the diff (`LibraryScannerTests`).
 - [x] ViewModel tests for the filters (`ConsoleViewModelFilterTests`; tests reference AvaloniaUI).
-- [ ] ViewModel tests for commands and empty states.
+- [x] ViewModel tests for empty states, grouping, dashboard totals and commands (`ConsoleViewModelStateTests`).
 - [x] Release: `dotnet publish -r <rid>` gives a self-contained single-file `RomManager`; a `v*` tag
       builds win-x64/linux-x64/osx-arm64 archives (`.github/workflows/release.yml`). Version in
       `Directory.Build.props`, overridden from the tag.
