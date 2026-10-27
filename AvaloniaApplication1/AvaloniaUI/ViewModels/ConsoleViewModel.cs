@@ -173,7 +173,8 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
                 if (p.CurrentFile is not null)
                     StatusMessage = $"Scanning {p.Processed + 1}/{p.Total}: {Path.GetFileName(p.CurrentFile)}";
             });
-            var roms = await scanner.ScanAsync(manager, libraryKey, romPath, fullRescan, progress, ct);
+            var roms = await scanner.ScanAsync(manager, libraryKey, romPath, fullRescan, progress, ct,
+                Settings.Instance.GetScanOptions(ConsoleName, romPath));
             ShowRoms(roms);
             StatusMessage = scanner.Unrecognized.Count == 0
                 ? $"Loaded {Roms.Count} ROMs"

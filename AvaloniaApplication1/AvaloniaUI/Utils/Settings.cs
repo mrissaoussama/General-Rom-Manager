@@ -44,6 +44,14 @@ public class Settings
     /// <summary>Per console id: emulator executable and arguments template (see EmulatorLauncher).</summary>
     public Dictionary<string, EmulatorSettings> Emulators { get; set; } = new();
 
+    /// <summary>Per-console scan settings, keyed by console id.</summary>
+    public Dictionary<string, ConsoleScanSettings> ScanSettings { get; set; } = new();
+
+    public ScanOptions GetScanOptions(string consoleId, string root) =>
+        ScanSettings.TryGetValue(consoleId, out var s)
+            ? ScanOptions.For(root, s.Parallelism, s.ExcludedFolders)
+            : ScanOptions.For(root, null, null);
+
     // ── File Organiser ────────────────────────────────────────────────────
     /// <summary>Default rename format string, e.g. "{TitleName} [{Region}] [v{Version}]".</summary>
     public string RenameFormatString { get; set; } = "{TitleName} [{Region}] [v{Version}]";
@@ -152,4 +160,13 @@ public sealed class EmulatorSettings
 {
     public string Path { get; set; } = "";
     public string Arguments { get; set; } = RomManagerShared.Utils.EmulatorLauncher.DefaultArguments;
+}
+
+/// <summary>Scan settings for one console's ROM folder.</summary>
+public class ConsoleScanSettings
+{
+    /// <summary>Files parsed at once; null: automatic (1 on network drives, otherwise 4).</summary>
+    public int? Parallelism { get; set; }
+    /// <summary>Folder names or relative paths to skip.</summary>
+    public List<string> ExcludedFolders { get; set; } = [];
 }

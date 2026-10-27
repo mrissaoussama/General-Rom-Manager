@@ -47,6 +47,20 @@ public sealed class LibraryScannerTests : IDisposable
     }
 
     [Fact]
+    public async Task ScanAsync_SkipsExcludedFolders()
+    {
+        File.WriteAllText(Path.Combine(_root, "A.nsp"), "a");
+        Directory.CreateDirectory(Path.Combine(_root, "Backups"));
+        File.WriteAllText(Path.Combine(_root, "Backups", "B.nsp"), "b");
+
+        var roms = await new LibraryScanner(_db).ScanAsync(_manager, "Switch", _root, ct: TestContext.Current.CancellationToken,
+            options: ScanOptions.For(_root, 1, ["Backups"]));
+
+        roms.Should().ContainSingle().Which.TitleID.Should().Be("A");
+        _parser.Calls.Should().Be(1);
+    }
+
+    [Fact]
     public async Task ScanAsync_ReusesUnchangedFiles_ReparsesChanged_RemovesDeleted()
     {
         var a = Path.Combine(_root, "A.nsp");

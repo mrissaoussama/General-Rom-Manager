@@ -16,8 +16,6 @@ public sealed class LibraryScanner(AppDbContext db)
     /// <summary>Bump when parser output changes so cached entries get re-parsed.</summary>
     public const int ScanVersion = 16;
     private const int SaveBatchSize = 25;
-    /// <summary>Files parsed concurrently. Kept low: most libraries live on HDDs or network shares.</summary>
-    public int MaxParallelism { get; init; } = 4;
 
     /// <summary>Files from the last <see cref="ScanAsync{T}"/> that matched an extension but produced no roms.</summary>
     public IReadOnlyList<UnrecognizedFile> Unrecognized { get; private set; } = [];
@@ -32,12 +30,15 @@ public sealed class LibraryScanner(AppDbContext db)
     }
 
     public async Task<List<Rom>> ScanAsync<T>(ConsoleManager<T> manager, string console, string root,
-        bool fullRescan = false, IProgress<ScanProgress>? progress = null, CancellationToken ct = default)
+        bool fullRescan = false, IProgress<ScanProgress>? progress = null, CancellationToken ct = default,
+        ScanOptions? options = null)
         where T : GamingConsole
     {
+        options ??= ScanOptions.Default;
         var extensions = manager.RomParserExecutor.GetSupportedExtensions();
         var fingerprint = manager.TitleInfoProviderManager?.DataFingerprint ?? "";
-        var files = await Task.Run(() => FileUtils.GetFilesInDirectoryWithExtensions(root, extensions), ct);
+        var files = await Task.Run(() => FileUtils.GetFilesInDirectoryWithExtensions(root, extensions)
+            .Where(f => !options.IsExcluded(root, f)).ToList(), ct);
         var cached = await db.LibraryFiles
             .Where(f => f.Console == console)
             .ToDictionaryAsync(f => f.Path, StringComparer.OrdinalIgnoreCase, ct);
@@ -60,7 +61,7 @@ public sealed class LibraryScanner(AppDbContext db)
 
         int processed = files.Count - pending.Count, parsed = 0;
         progress?.Report(new ScanProgress(processed, files.Count, parsed, null));
-        foreach (var batch in pending.Chunk(MaxParallelism))
+        foreach (var batch in pending.Chunk(options.MaxParallelism))
         {
             ct.ThrowIfCancellationRequested();
             progress?.Report(new ScanProgress(processed, files.Count, parsed, files[batch[0]]));

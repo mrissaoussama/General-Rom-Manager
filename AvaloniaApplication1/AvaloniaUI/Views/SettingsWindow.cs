@@ -191,6 +191,37 @@ public sealed class SettingsWindow : Window
 
         sp.Children.Add(MakeSeparator());
 
+        // ── Scanning ──────────────────────────────────────────────────────
+        sp.Children.Add(MakeLabel("Scanning", fontSize: 14, bold: true));
+        sp.Children.Add(MakeLabel(
+            "Files parsed at once (empty: automatic, 1 on network drives, otherwise 4) and folders to skip, separated by ';'. " +
+            "A name (Backups) skips that folder anywhere; a path (Updates/old) is relative to the ROM folder.",
+            fontSize: 11, muted: true));
+        foreach (var consoleName in knownConsoles)
+        {
+            var id = consoleName;
+            settings.ScanSettings.TryGetValue(id, out var current);
+            var parallelBox = MakeTextBox(current?.Parallelism?.ToString() ?? "", w: 50);
+            parallelBox.Watermark = "auto";
+            var excludeBox = MakeTextBox(string.Join("; ", current?.ExcludedFolders ?? []), w: 300);
+            void Store()
+            {
+                int? parallel = int.TryParse(parallelBox.Text, out var n) && n > 0 ? n : null;
+                var excluded = (excludeBox.Text ?? "").Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+                if (parallel is null && excluded.Count == 0) settings.ScanSettings.Remove(id);
+                else settings.ScanSettings[id] = new ConsoleScanSettings { Parallelism = parallel, ExcludedFolders = excluded };
+            }
+            parallelBox.TextChanged += (_, _) => Store();
+            excludeBox.TextChanged += (_, _) => Store();
+            var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Margin = new Thickness(0, 2) };
+            row.Children.Add(new TextBlock { Text = id, Width = 120, VerticalAlignment = VerticalAlignment.Center });
+            row.Children.Add(parallelBox);
+            row.Children.Add(excludeBox);
+            sp.Children.Add(row);
+        }
+
+        sp.Children.Add(MakeSeparator());
+
         // ── File Organiser ────────────────────────────────────────────────
         sp.Children.Add(MakeLabel("File Organiser", fontSize: 14, bold: true));
 

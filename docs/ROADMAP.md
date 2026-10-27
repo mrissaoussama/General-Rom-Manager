@@ -47,7 +47,8 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
 ### B.4 Scanning
 - [x] Polling fallback for ROM folders on network drives/UNC paths (every 2 minutes: file count, total
       size and newest write time of matching files).
-- [ ] Per-root scan settings: parallelism (1 for network/HDD), excluded sub-folders.
+- [x] Per-console scan settings (`ScanOptions`, Settings → Scanning): parallelism (automatic: 1 on network
+      drives, else 4) and excluded sub-folders.
 - [x] Hash cache (`Cache/hashes.json`, keyed by path, size and mtime) so Redump matching never re-hashes
       an unchanged disc image when DATs change.
 
@@ -74,7 +75,8 @@ Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice 
       choose-console dialogs are AXAML views hosted by `DialogWindow`.
 - [ ] Settings and Onboarding as AXAML views (still built in code; shown through `IDialogService.ShowWindowAsync`).
 - [x] Settings: toggle Redump hashing (settings.json overrides config.json).
-- [ ] Settings: scan parallelism, DAT file overview per console.
+- [x] Settings: scan parallelism and excluded folders.
+- [ ] Settings: DAT file overview per console.
 - [x] Plugins page: the enable/disable toggle is now enforced (it was saved but ignored), permissions
       shown, "Revoke approval".
 - [x] Unrecognised files: "Move to folder…" from the list (preview, keeps sub-folders, rescans after).
