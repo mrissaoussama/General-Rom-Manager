@@ -1,67 +1,96 @@
-# Roadmap v3
+# Roadmap v4
 
-Written 2026-10-27 after finishing [v2](ROADMAP-v2.md) (v1: [ROADMAP-v1.md](ROADMAP-v1.md)) and reviewing the
-branch again. v2 left three items open for good reasons (below); the review found the rest.
+Written 2026-10-28 after a full review of the code, docs, dependencies and CI, with [v3](ROADMAP-v3.md) finished
+(earlier: [v2](ROADMAP-v2.md), [v1](ROADMAP-v1.md)). Baseline: the solution builds with zero warnings and
+325 of 326 tests pass (one is Windows-recycle-bin only).
 
 Legend: **[P0]** data safety or correctness, **[P1]** high value, **[P2]** nice to have.
 
 ---
 
-## Phase A: Dependencies and build
+## Phase A: Dependencies, build and CI
 
-- [x] Microsoft.Extensions / EF Core / System.IO.Hashing 10.0.13 → 10.0.14.
-- [x] **[P1]** `Ryujinx.LibHac` 0.20.0 is unlisted on nuget.org (Ryujinx ended in 2024). Fallback: `nuget.config`
-      adds the repo-local feed `nuget-local/`, filled by `tools/pin-packages.ps1` from the NuGet cache (SHA-512
-      checked; `.nupkg` git-ignored). Restoring from that feed alone was checked. Vendoring is the next step only if
-      the package ever stops restoring.
-- [ ] Linux and macOS CI have not run since the headless UI tests and Avalonia 12 landed; check them on the
-      next push (Skia needs fontconfig on Linux runners).
+Every direct NuGet package is current and none is vulnerable or deprecated (`dotnet list package
+--outdated/--vulnerable/--deprecated`). Transitive SkiaSharp 4 and SQLitePCLRaw 3 are new majors pinned by
+Avalonia and EF Core; leave them to those packages.
+
+- [ ] **[P1]** GitHub Actions on Node 20 (`checkout@v4`, `setup-dotnet@v4`, `upload-artifact@v4`) move to the
+      current majors; CI cancels runs superseded by a newer push.
+- [ ] **[P1]** `HashUtils` carries a copy of a third-party CRC32 class although `System.IO.Hashing` (already a
+      dependency) has one. Use the package.
+- [ ] **[P2]** About a dozen files have several statements merged on one line (`byte[] x;        using (...)`),
+      left over from an old mass edit. Split them.
+- [ ] **[P2]** WiiU imports `LibHac.Tools.Fs` without using it; drop the import (one less module tied to LibHac).
+- [ ] **[P1]** Culture analyzers: `.editorconfig` turns CA1304/CA1311 (culture-sensitive `ToLower`/`ToUpper`)
+      into errors outside vendored code, so the bugs in C1 cannot come back.
 
 ## Phase B: Architecture
 
-- [x] **[P1]** Every console is a module assembly in `Consoles/` (ADR 0003 outcome). The EF model is core-only
-      (unused rom/title-DB tables dropped), and modules reach the app only through interfaces
-      (`[ConsoleInfo]`, `IFolderLayout`, `IDownloadableResources`, `IConsoleOptions`). Removing a module DLL
-      leaves the app working (`MissingModuleTests`; checked with the real app).
-- [x] config.json is an options model: `AppOptions` (also `IOptionsMonitor<AppOptions>`) and typed per-module
-      `Consoles:<Id>` sections with defaults. No string-key reads left; fixed keys the modules read but config.json
-      never had (3DS title DB URL/region files, Wii GameTDB URL, Switch title DB path read from the wrong section),
-      the Wii GameTDB zip, and a download that unpacked a zip while it was still open. Dead configuration
-      (PS4/PSP/PS Vita, Wii U titledb.xml) removed.
-- [x] **[P1]** Removed dead code: the PS4 Store scraper (`PS4PKGUpdateAndDLCChecker`, its HtmlAgilityPack use),
-      the never-implemented `IRomMissingContentChecker` (PS4, 3DS stubs that only log "not implemented") and
-      `RomMissingUpdates`/`RomMissingDLCs`. `PROJECT_ANALYSIS.md` is stale: delete it.
+- [ ] **[P1]** `IMissingUpdateReporter` is async-first. Today the sync method is the contract and PS4 implements
+      it by blocking on network calls (`GetAwaiter().GetResult()`, one request per game).
+- [ ] **[P1]** One hashing path: `HashUtils` computes every requested algorithm in a single read (it read the
+      file once per algorithm: three passes over a 4 GB ISO), takes a cancellation token and progress, hashes
+      folder roms recursively, and does not append duplicates to `Rom.Hashes`. `RomOperationService` and
+      `UniversalRomActions` both use it instead of two copies of the same loop.
+- [ ] **[P2]** A console's id comes from one place (`ConsoleModules.IdOf`) instead of three
+      `Name.Replace("Console", "")` copies.
+- [ ] **[P1]** Scanner pipeline: files were parsed in fixed chunks of `MaxParallelism` and each chunk waited for
+      its slowest file (one 40 GB PS4 pkg held up three small files). Parse with a bounded worker pool feeding
+      the sequential enrich/save step.
+- [ ] **[P2]** `RomParserExecutor.GetSupportedExtensions` returns each extension once.
 
 ## Phase C: Correctness and data safety
 
-- [x] **[P0]** Scanner: a file deleted or moved mid-scan aborted the scan; paths collided by case on Linux.
-- [x] **[P0]** Move, undo, rename, delete and the plugin loader compare paths like the OS; case-only renames apply.
-- [x] In-app update installs after a normal exit (it used to kill the process; window placement was lost).
-- [x] **[P1]** A ROM folder that is offline keeps its cached rows (v2), but nothing told the user. Show
-      offline folders on the console page and the dashboard, with "remove folder" for ones that are gone.
-- [x] **[P1]** Box art downloads from libretro-thumbnails happened without asking. Make network use explicit:
-      one "Online features" section in Settings (box art, title database downloads, PS4 updates, app updates).
+- [ ] **[P0]** Culture bugs. `ReleaseDate.ToString("yyyy-MM-dd")` uses the current calendar, so with an Arabic
+      (Hijri), Thai or Japanese-era locale renamed files get the wrong year. `ToLower()` on extensions breaks with
+      Turkish casing (`"ISO"` → `"ıso"`, so no parser matches). Use the invariant culture.
+- [ ] **[P0]** Rename: a rom with no title and the template `{TitleName}` was renamed to `.nsp` (a hidden file on
+      Linux/macOS). Empty names are refused. Names are made portable for the SD cards and shares ROMs end up on:
+      characters invalid on Windows/FAT are replaced on every OS, trailing dots and spaces are trimmed,
+      reserved device names (`CON`, `NUL`, `COM1`…) are escaped, and names are capped at 255 characters.
+- [ ] **[P0]** Conversion tools got their arguments as one string with paths pasted in; a file name with a quote
+      (legal on Linux/macOS) could inject arguments. Arguments are tokenised once and passed through
+      `ProcessStartInfo.ArgumentList`.
+- [ ] **[P1]** Move: "already there" compared paths ignoring case on every OS, and a target folder with the
+      file's name was not treated as a collision.
+- [ ] **[P1]** Console-specific grid columns were found by type-name prefix, so the Game Boy page took Game Boy
+      Advance rom types and Wii took Wii U ones. Match on the console's module assembly too.
+- [ ] **[P1]** A failed database migration was logged and ignored; every later query then failed. The library
+      database is a cache: move the broken file aside (`*.broken-<time>`), create a new one and tell the user.
+- [ ] **[P1]** Rename/move that partly fail ended "Completed" with no sign of the failures. The operation keeps
+      a warning ("3 of 10 failed: …") that the Operations panel shows.
+- [ ] **[P2]** Plugin loading errors went to `Console.WriteLine` (invisible in a GUI app); log them.
+- [ ] **[P2]** `OperationQueue` disposes each operation's `CancellationTokenSource` when it finishes.
 
 ## Phase D: UI and UX
 
-- [x] **[P1]** Localisation: UI text in `AvaloniaUI/Resources/Strings.resx` (built-in strongly-typed resources, `{x:Static res:Strings.Key}` in AXAML,
-  `Labels` for property names and filter values). English only for now; a language is a `Strings.<culture>.resx` file.
-- [x] Duplicates…: keeps one file per identical rom (same ID, type and version; a DAT-verified dump or the largest)
-      and moves the other copies after a preview (`DuplicateDetector.FindExactCopies`).
-- [x] "Verify" report per console (`DatVerification`): which dumps match a DAT exactly and which do not.
+- [ ] **[P1]** Operations panel shows the warning of an operation that finished with errors (C).
+- [ ] **[P1]** Rename preview marks names that will be refused (empty) instead of letting them through.
+- [ ] **[P2]** The shell's initial "Ready" status comes from `Strings.resx`.
 
 ## Phase E: Features
 
-- [ ] XCI parsing test — needs a real XCI (cannot be identified without keys).
-- [x] Scheduled rescans: Settings → Scanning → "Rescan every (hours)".
+- [ ] **[P1]** Tool pinning (ADR 0002 todo): the SHA-256 of each user-supplied conversion tool is recorded on
+      first use; a changed binary needs confirmation before it runs again.
+- [ ] **[P2]** Rename placeholders `{Year}` and `{Languages}`.
 
 ## Phase F: Plugins
 
-- [x] Plugin settings: `IPluginSettings` declares options (Text, Secret, Boolean); Settings → Plugins edits them;
-      plugins read `IPluginContext.Settings`. The sample plugin's API key moved there.
+- [ ] **[P2]** Plugins that fail to load are listed in Settings → Plugins with the reason (today only the log
+      says why a plugin is missing).
 
 ## Phase G: Testing and release
 
-- [ ] Code signing certificates (Windows Authenticode, Apple Developer ID); the workflow already uses them when
-      the secrets exist.
-- [ ] Coverage gate in CI once Linux/macOS are green.
+- [ ] Tests for every fix above (rename sanitising, culture, move collisions, single-pass hashing, column type
+      matching, DB recovery, argument tokenising, tool pinning, scanner ordering with uneven parse times).
+
+## Not in this round (blocked or needs a decision)
+
+- Linux and macOS CI: runs on the next push to GitHub (not verifiable locally on Windows).
+- Code signing certificates (Windows Authenticode, Apple Developer ID); the release workflow already uses them
+  when the secrets exist.
+- XCI parsing test: needs a real XCI.
+- Coverage gate in CI: once Linux/macOS are green.
+- Module-private dependencies (LibHac only in the Switch module, SkyEditor in 3DS, DiscUtils in PS2/PSP,
+  HtmlAgilityPack in Wii U). Modules would ship their own dependency DLLs next to them and the loader would
+  resolve them; this changes the published layout and single-file publishing, so it gets its own ADR first.
