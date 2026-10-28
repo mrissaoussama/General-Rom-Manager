@@ -810,6 +810,98 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
         return [.. Roms.Where(r => related.Contains(r.RomSource) && !roms.Contains(r))];
     }
 
+    // ── Save data ─────────────────────────────────────────────────────────
+
+    /// <summary>Saves of a row, looked up with its console's emulator (Settings → Emulators).</summary>
+    public static IReadOnlyList<SaveLocation> FindSaves(RomViewModel rom, string consoleName)
+    {
+        var console = rom.Console.Length > 0 ? rom.Console : consoleName;
+        var emulator = Settings.Instance.Emulators.GetValueOrDefault(console)?.Path;
+        try { return SaveData.Find(console, rom.RomSource, emulator); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            AppLog.Warn($"[Saves] {rom.Path}: {ex.Message}");
+            return [];
+        }
+    }
+
+    /// <summary>Where save backups go: &lt;base folder&gt;/SaveBackups/&lt;console&gt;/.</summary>
+    public string SaveBackupFolder(RomViewModel rom) =>
+        Path.Combine(RomManagerConfiguration.UnderBase("SaveBackups"), rom.Console.Length > 0 ? rom.Console : ConsoleName);
+
+    [RelayCommand]
+    private void OpenSaveFolder(IReadOnlyList<RomViewModel> roms)
+    {
+        if (roms.FirstOrDefault() is not { } rom) return;
+        var saves = FindSaves(rom, ConsoleName);
+        if (saves.Count == 0)
+        {
+            StatusMessage = string.Format(Strings.Console_NoSavesFound, rom.Title);
+            return;
+        }
+        Shell.RevealInExplorer(saves[0].Path);
+    }
+
+    /// <summary>Zips each selected game's saves into the backup folder (one zip per game, dated).</summary>
+    [RelayCommand]
+    private async Task BackupSaves(IReadOnlyList<RomViewModel> roms)
+    {
+        if (roms.Count == 0) return;
+        int done = 0;
+        string? folder = null;
+        try
+        {
+            await Task.Run(() =>
+            {
+                foreach (var rom in roms)
+                {
+                    var saves = FindSaves(rom, ConsoleName);
+                    if (saves.Count == 0) continue;
+                    folder = SaveBackupFolder(rom);
+                    var name = FileRenamer.SanitizeFileName($"{rom.Title} {DateTime.Now.ToString("yyyy-MM-dd HHmmss", System.Globalization.CultureInfo.InvariantCulture)}.zip");
+                    SaveData.Backup(saves, Path.Combine(folder, name));
+                    done++;
+                    AppLog.Info($"[Saves] Backed up {saves.Count} save location(s) of {rom.Title} to {Path.Combine(folder, name)}");
+                }
+            });
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            AppLog.Warn($"[Saves] Backup failed: {ex.Message}");
+            StatusMessage = string.Format(Strings.Console_Error, ex.Message);
+            return;
+        }
+        StatusMessage = done == 0 ? Strings.Console_NoSavesToBackUp : string.Format(Strings.Console_SavesBackedUp, done, folder);
+        if (done > 0 && folder is not null) Shell.RevealInExplorer(folder);
+    }
+
+    /// <summary>Puts a backup back after showing where it goes; the current saves are backed up first.</summary>
+    [RelayCommand]
+    private async Task RestoreSaves(IReadOnlyList<RomViewModel> roms)
+    {
+        if (roms.FirstOrDefault() is not { } rom) return;
+        if (await Dialogs.PickFileAsync(Strings.Console_RestoreSaves, Strings.Console_SaveBackups, "zip") is not { } zip) return;
+        try
+        {
+            var targets = SaveData.Contents(zip);
+            if (!await Dialogs.PreviewAsync(Strings.Console_RestoreSaves, string.Format(Strings.Console_RestoreSavesSummary, rom.Title),
+                    targets.Select(t => t.Path), Strings.Console_Restore))
+                return;
+            var current = FindSaves(rom, ConsoleName);
+            if (current.Count > 0)
+                SaveData.Backup(current, Path.Combine(SaveBackupFolder(rom), FileRenamer.SanitizeFileName(
+                    $"{rom.Title} before restore {DateTime.Now.ToString("yyyy-MM-dd HHmmss", System.Globalization.CultureInfo.InvariantCulture)}.zip")));
+            await Task.Run(() => SaveData.Restore(zip));
+            AppLog.Info($"[Saves] Restored {zip} for {rom.Title}");
+            StatusMessage = string.Format(Strings.Console_SavesRestored, rom.Title);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
+        {
+            AppLog.Warn($"[Saves] Restore of {zip} failed: {ex.Message}");
+            StatusMessage = string.Format(Strings.Console_Error, ex.Message);
+        }
+    }
+
     [RelayCommand]
     private Task ViewProperties(IReadOnlyList<RomViewModel> roms) =>
         roms.FirstOrDefault() is { } r ? Dialogs.ShowPropertiesAsync(r, _images, ShowRom) : Task.CompletedTask;

@@ -267,6 +267,11 @@ public partial class ConsoleView : UserControl
         };
         batch.Items.Add(selectRelated);
         menu.Items.Add(batch);
+        var saves = new MenuItem { Header = Strings.ConsoleView_SaveData };
+        saves.Items.Add(Item(Strings.ConsoleView_OpenSaveFolder, vm.OpenSaveFolderCommand, single));
+        saves.Items.Add(Item(Strings.ConsoleView_BackUpSaves + n, vm.BackupSavesCommand));
+        saves.Items.Add(Item(Strings.ConsoleView_RestoreSaves, vm.RestoreSavesCommand, single));
+        menu.Items.Add(saves);
         if (ConsoleViewModelBase.AvailableConversions(sel) is { Count: > 0 } conversions)
         {
             var convert = new MenuItem { Header = Strings.ConsoleView_Convert + n };

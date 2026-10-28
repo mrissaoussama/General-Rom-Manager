@@ -36,6 +36,9 @@ public sealed partial class RomDetailsViewModel : ViewModelBase, IDisposable
     /// <summary>A related rom was clicked; the page selects it.</summary>
     public event Action<Rom>? NavigateRequested;
     public ObservableCollection<Bitmap> Images { get; } = [];
+    /// <summary>Where the game's saves are (found in the background).</summary>
+    public ObservableCollection<DetailRow> Saves { get; } = [];
+    public bool HasSaves => Saves.Count > 0;
     public bool HasImages => Images.Count > 0;
 
     public RomDetailsViewModel(RomViewModel rom, ImageCache? images)
@@ -73,6 +76,15 @@ public sealed partial class RomDetailsViewModel : ViewModelBase, IDisposable
 
         if (images is not null)
             _ = LoadImagesAsync(images, src);
+        _ = LoadSavesAsync();
+    }
+
+    private async Task LoadSavesAsync()
+    {
+        var saves = await Task.Run(() => ConsoleViewModelBase.FindSaves(Rom, Rom.Console));
+        if (_cts.IsCancellationRequested) return;
+        foreach (var save in saves) Saves.Add(new DetailRow(save.Source, save.Path));
+        OnPropertyChanged(nameof(HasSaves));
     }
 
     private static string Name(Rom r) => r.Titles?.FirstOrDefault()?.Value ?? r.TitleID ?? "Unknown";

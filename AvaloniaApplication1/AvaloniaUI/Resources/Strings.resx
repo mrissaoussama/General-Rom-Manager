@@ -464,4 +464,17 @@ Run it anyway? It will be trusted from now on.</value></data>
   <data name="Console_NothingToGroup" xml:space="preserve"><value>Nothing to group: the files are already in their game's folder, or have no linked game.</value></data>
   <data name="Console_GroupByGame" xml:space="preserve"><value>One folder per game</value></data>
   <data name="Console_GroupByGameSummary" xml:space="preserve"><value>{0} file(s) will move into a folder named after their game (updates and DLC go with it). Undo puts them back.</value></data>
+  <data name="ConsoleView_SaveData" xml:space="preserve"><value>Save data</value></data>
+  <data name="ConsoleView_OpenSaveFolder" xml:space="preserve"><value>Open save folder</value></data>
+  <data name="ConsoleView_BackUpSaves" xml:space="preserve"><value>Back up saves</value></data>
+  <data name="ConsoleView_RestoreSaves" xml:space="preserve"><value>Restore saves…</value></data>
+  <data name="Console_NoSavesFound" xml:space="preserve"><value>No saves found for {0}. Saves are looked for next to the ROM and in the emulator's folders (set the emulator in Settings → Emulators).</value></data>
+  <data name="Console_NoSavesToBackUp" xml:space="preserve"><value>No saves found for the selected games.</value></data>
+  <data name="Console_SavesBackedUp" xml:space="preserve"><value>Backed up the saves of {0} game(s) to {1}</value></data>
+  <data name="Console_RestoreSaves" xml:space="preserve"><value>Restore saves</value></data>
+  <data name="Console_SaveBackups" xml:space="preserve"><value>Save backups</value></data>
+  <data name="Console_RestoreSavesSummary" xml:space="preserve"><value>These saves of {0} will be replaced by the backup. The current saves are backed up first.</value></data>
+  <data name="Console_Restore" xml:space="preserve"><value>Restore</value></data>
+  <data name="Console_SavesRestored" xml:space="preserve"><value>Restored the saves of {0}</value></data>
+  <data name="RomDetails_SaveData" xml:space="preserve"><value>Save data</value></data>
 </root>

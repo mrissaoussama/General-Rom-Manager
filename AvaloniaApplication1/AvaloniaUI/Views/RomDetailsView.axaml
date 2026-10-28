@@ -71,6 +71,23 @@
             </ItemsControl.ItemTemplate>
         </ItemsControl>
 
+        <StackPanel IsVisible="{Binding HasSaves}">
+            <TextBlock Text="{x:Static res:Strings.RomDetails_SaveData}" Classes="section" />
+            <ItemsControl ItemsSource="{Binding Saves}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:DetailRow">
+                        <Grid ColumnDefinitions="110,*,Auto" Margin="0,1">
+                            <TextBlock Text="{Binding Key}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                            <SelectableTextBlock Grid.Column="1" Text="{Binding Value}" TextWrapping="Wrap" />
+                            <Button Grid.Column="2" Classes="copy" Content="⧉" ToolTip.Tip="{x:Static res:Strings.RomDetails_CopyTip}"
+                                    AutomationProperties.Name="{x:Static res:Strings.RomDetails_Copy}"
+                                    Command="{Binding #Root.((vm:RomDetailsViewModel)DataContext).CopyCommand}" CommandParameter="{Binding Value}" />
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+
         <StackPanel IsVisible="{Binding HasHashes}">
             <TextBlock Text="{x:Static res:Strings.RomDetails_Hashes}" Classes="section" />
             <ItemsControl ItemsSource="{Binding Hashes}">
