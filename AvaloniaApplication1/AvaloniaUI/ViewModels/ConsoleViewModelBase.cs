@@ -461,19 +461,32 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
         if (!await Dialogs.ConfirmAsync(Strings.Console_Delete, string.Format(Strings.Console_MoveFileToTheRecycleBinTrash, files.Count, plural, skipped), Strings.Console_MoveToTrash))
             return;
 
+        var deleted = new List<string>();
         void RemoveRows(string path)
         {
+            deleted.Add(path);
             foreach (var row in Roms.Where(r => string.Equals(r.Path, path, FileUtils.PathComparison)).ToList())
                 RemoveRow(row);
         }
+        try
+        {
+            await DeleteFilesAsync(files, plural, RemoveRows);
+        }
+        finally
+        {
+            Operations?.NotifyFilesChanged("Delete", [.. roms.Select(r => r.RomSource)], [.. deleted.Select(p => new LibraryFileChange(p, null))]);
+        }
+    }
 
+    private async Task DeleteFilesAsync(List<string> files, string plural, Action<string> removeRows)
+    {
         List<(string Path, string Reason)> notTrashed = [];
         foreach (var path in files)
         {
             try
             {
                 if (File.Exists(path)) await Task.Run(() => Trash.MoveToTrash(path));
-                RemoveRows(path);
+                removeRows(path);
             }
             catch (Exception ex) { notTrashed.Add((path, ex.Message)); }
         }
@@ -496,7 +509,7 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
             try
             {
                 if (File.Exists(path)) File.Delete(path);
-                RemoveRows(path);
+                removeRows(path);
             }
             catch (Exception ex) { StatusMessage = string.Format(Strings.Console_DeleteFailed, ex.Message); }
         }
@@ -630,6 +643,24 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
         }
         try { EmulatorLauncher.Launch(emulator.Path, emulator.Arguments, rom.Path); }
         catch (Exception ex) { StatusMessage = string.Format(Strings.Console_CouldNotStartTheEmulator, ex.Message); }
+    }
+
+    /// <summary>CRC32, MD5 and SHA1 of the selected files, shown when done and kept with the library.</summary>
+    [RelayCommand]
+    private void CalculateHashes(IReadOnlyList<RomViewModel> roms)
+    {
+        if (Operations is null || roms.Count == 0) return;
+        var op = Operations.EnqueueHashCalculation([.. roms.Select(r => r.RomSource)], hashed =>
+            Dispatcher.UIThread.Post(async () =>
+            {
+                var lines = hashed.Where(r => r.Hashes is { Count: > 0 })
+                    .Select(r => $"{Path.GetFileName(r.Path)}  " + string.Join("  ", r.Hashes!.Where(h => h.Description == "Local")
+                        .GroupBy(h => h.Type).Select(g => $"{g.Key}: {g.Last().Value}")))
+                    .ToList();
+                await Dialogs.PreviewAsync(Strings.Console_Hashes,
+                    string.Format(Strings.Console_HashedFiles, lines.Count, hashed.Count), lines, Strings.Console_Close, showCancel: false);
+            }));
+        Track(op, roms);
     }
 
     [RelayCommand]

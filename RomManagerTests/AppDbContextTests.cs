@@ -1,4 +1,4 @@
-using AwesomeAssertions;
+﻿using AwesomeAssertions;
 using Microsoft.EntityFrameworkCore;
 using RomManagerShared.Base;
 using RomManagerShared.Base.Database;
@@ -31,7 +31,7 @@ public class AppDbContextTests
     {
         using var db = CreateInMemory(Guid.NewGuid().ToString());
         db.Model.GetEntityTypes().Select(e => e.ClrType.Name).Should()
-            .BeEquivalentTo(["RomHash", "RomHashProperty", "LibraryFile"]);
+            .BeEquivalentTo(["RomHash", "RomHashProperty", "LibraryFile", "RomMetadataOverride"]);
     }
 
     [Fact]

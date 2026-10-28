@@ -60,7 +60,9 @@ public enum PluginPermission
     /// <summary>Read and write the ROM database.</summary>
     Database,
     /// <summary>Launch external processes / tools.</summary>
-    ExternalProcess
+    ExternalProcess,
+    /// <summary>Change titles, descriptions, covers and other metadata of roms in the library.</summary>
+    LibraryMetadata,
 }
 
 /// <summary>A single menu option exposed by a plugin.</summary>
@@ -68,8 +70,13 @@ public sealed class PluginOption
 {
     public required string Name { get; init; }
     public string? Description { get; init; }
-    /// <summary>Avalonia resource key or file path for a 16×16 icon.</summary>
+    /// <summary>
+    /// A 16×16 icon: an image file (a relative path is resolved next to the plugin's DLL) or an Avalonia resource key.
+    /// </summary>
     public string? IconKey { get; init; }
+
+    /// <summary>Submenu of the rom context menu the option appears in; the plugin's name when null.</summary>
+    public string? Category { get; init; }
     /// <summary>
     /// When set, the option only appears when the selected ROMs satisfy this predicate.
     /// </summary>
@@ -109,13 +116,52 @@ public interface IPluginContext
     string ConfigFilePath { get; }
 
     /// <summary>
-    /// Allows a plugin to display arbitrary UI (Avalonia Control)
-    /// inside the host application's plugin panel.
+    /// Shows an Avalonia <c>Control</c> (or a string) in a window. Prefer <see cref="ShowMessageAsync"/> and
+    /// <see cref="ShowTableAsync"/>, which need no Avalonia reference and match the app's look.
     /// </summary>
     Task ShowPluginUIAsync(object avaloniaControl, string title);
 
-    /// <summary>Read-only access to the current selection in the ROM list.</summary>
+    /// <summary>
+    /// Copies of the roms selected when the option ran (empty in hooks). Changing them changes nothing in the
+    /// library; use <see cref="UpdateMetadataAsync"/>.
+    /// </summary>
     IReadOnlyList<Rom> SelectedRoms { get; }
+
+    /// <summary>The console page the option ran from ("Switch", "PS2"); empty in hooks.</summary>
+    string ConsoleId { get; }
+
+    /// <summary>That console's display name ("Nintendo Switch"); empty in hooks.</summary>
+    string ConsoleName { get; }
+
+    /// <summary>Progress of the running option, 0–100; shown in the Operations panel.</summary>
+    IProgress<double> Progress { get; }
+
+    /// <summary>
+    /// Saves metadata for a rom (one of <see cref="SelectedRoms"/>, or any rom the plugin was given). The values
+    /// are kept apart from scan results, so rescans and moves keep them, and the user can undo the option's changes
+    /// from the Operations panel. Requires <see cref="PluginPermission.LibraryMetadata"/>.
+    /// </summary>
+    /// <exception cref="PluginPermissionException">LibraryMetadata was not approved.</exception>
+    Task UpdateMetadataAsync(Rom rom, RomMetadata metadata, CancellationToken cancellationToken = default);
+
+    /// <summary>Shows a message with a Close button.</summary>
+    Task ShowMessageAsync(string title, string message);
+
+    /// <summary>Shows rows of text under column headers (e.g. lookup results).</summary>
+    Task ShowTableAsync(string title, IReadOnlyList<string> columns, IReadOnlyList<IReadOnlyList<string>> rows);
+
+    /// <summary>Asks a yes/no question; true when the user confirmed.</summary>
+    Task<bool> ConfirmAsync(string title, string message, string? confirmText = null);
+
+    /// <summary>
+    /// Lets the user choose where to save a file; null when cancelled. The chosen file can then be written with
+    /// <see cref="OpenFile"/> without the FileSystem permission.
+    /// </summary>
+    Task<string?> PickSaveFileAsync(string title, string suggestedName, string extension);
+
+    /// <summary>Opens an http(s) address in the user's browser.</summary>
+    /// <exception cref="ArgumentException">The address is not http or https.</exception>
+    void OpenInBrowser(Uri url);
 
     /// <summary>The permissions the user approved for this plugin.</summary>
     IReadOnlySet<PluginPermission> GrantedPermissions { get; }
@@ -199,7 +245,23 @@ public interface ILibraryHooks
     /// <summary>A scan of <see cref="LibraryScanCompleted.Console"/> finished; Added/Removed are relative to the
     /// library shown before it.</summary>
     Task OnScanCompletedAsync(LibraryScanCompleted scan, IPluginContext context);
+
+    /// <summary>Files of the library were renamed, moved (also by an undo) or deleted from the app.</summary>
+    Task OnFilesChangedAsync(LibraryFilesChanged change, IPluginContext context) => Task.CompletedTask;
 }
+
+public enum LibraryFileChangeKind
+{
+    Renamed,
+    Moved,
+    Deleted,
+}
+
+/// <summary>One file or folder: where it was and where it is now (null when deleted).</summary>
+public sealed record LibraryFileChange(string OldPath, string? NewPath);
+
+/// <summary>Files changed by one operation of the app. <see cref="Console"/> is the console id ("Switch"), or "" when mixed.</summary>
+public sealed record LibraryFilesChanged(string Console, LibraryFileChangeKind Kind, IReadOnlyList<LibraryFileChange> Files);
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Core plugin interface
@@ -234,7 +296,8 @@ public interface IPlugin : IAsyncDisposable
     Task InitializeAsync(IPluginContext context);
 
     /// <summary>
-    /// Execute the option at <paramref name="optionIndex"/> from <see cref="Options"/>.
+    /// Execute the option at <paramref name="optionIndex"/> from <see cref="Options"/>. Runs in the app's operation
+    /// queue: <paramref name="cancellationToken"/> fires when the user cancels it.
     /// </summary>
-    Task ExecuteAsync(int optionIndex, IPluginContext context);
+    Task ExecuteAsync(int optionIndex, IPluginContext context, CancellationToken cancellationToken);
 }

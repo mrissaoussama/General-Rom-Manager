@@ -26,7 +26,9 @@ public sealed class LibraryScanner(AppDbContext db)
             .Where(f => f.Console == console)
             .Select(f => f.RomsJson)
             .ToListAsync(ct);
-        return files.SelectMany(RomSnapshot.Deserialize).ToList();
+        var roms = files.SelectMany(RomSnapshot.Deserialize).ToList();
+        await new MetadataOverrideStore(db).ApplyAsync(console, roms, ct);
+        return roms;
     }
 
     public Task<List<Rom>> ScanAsync<T>(ConsoleManager<T> manager, string console, string root,
@@ -130,6 +132,7 @@ public sealed class LibraryScanner(AppDbContext db)
             .Select(x => new UnrecognizedFile(x.f, errors[x.i] ?? "No parser recognised the file"))];
         db.LibraryFiles.RemoveRange(cached.Values.Where(f => !seen.Contains(f.Path)));
         await db.SaveChangesAsync(ct);
+        await new MetadataOverrideStore(db).ApplyAsync(console, result, ct);
         return result;
     }
 
@@ -178,6 +181,36 @@ public sealed class LibraryScanner(AppDbContext db)
             stop.Cancel();
             await workers;
         }
+    }
+
+    /// <summary>
+    /// Writes the roms' hashes into their files' cached scan results, so they show on the next load. A rom is matched
+    /// by type, title ID and version within its file's entry; roms whose file has no entry are skipped. Only the hashes
+    /// are copied: the roms in memory carry metadata overrides, which must stay out of the cache so an undo removes them.
+    /// The cache entry is dropped as usual when the file changes.
+    /// </summary>
+    public async Task<int> UpdateCachedHashesAsync(IEnumerable<Rom> roms, CancellationToken ct = default)
+    {
+        int updated = 0;
+        foreach (var byFile in roms.Where(r => r.Path is not null).GroupBy(r => r.Path!))
+        {
+            foreach (var entry in await db.LibraryFiles.Where(f => f.Path == byFile.Key).ToListAsync(ct))
+            {
+                var cachedRoms = RomSnapshot.Deserialize(entry.RomsJson);
+                bool changed = false;
+                foreach (var rom in byFile)
+                {
+                    var i = cachedRoms.FindIndex(c => c.GetType() == rom.GetType() && c.TitleID == rom.TitleID && c.Version == rom.Version);
+                    if (i < 0) continue;
+                    cachedRoms[i].Hashes = rom.Hashes;
+                    changed = true;
+                    updated++;
+                }
+                if (changed) entry.RomsJson = RomSnapshot.Serialize(cachedRoms);
+            }
+        }
+        await db.SaveChangesAsync(ct);
+        return updated;
     }
 
     private static bool IsUnchanged(LibraryFile entry, string path, string fingerprint)

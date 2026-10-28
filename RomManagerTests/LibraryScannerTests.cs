@@ -21,7 +21,7 @@ public sealed class LibraryScannerTests : IDisposable
         public Task<List<Rom>> ProcessFile(string path)
         {
             var call = Interlocked.Increment(ref Calls); // the scanner parses files in parallel
-            var rom = new Game { TitleID = Path.GetFileNameWithoutExtension(path), Path = path };
+            var rom = new SwitchGame { TitleID = Path.GetFileNameWithoutExtension(path), Path = path };
             rom.AddTitleName($"Title {call}");
             return Task.FromResult<List<Rom>>([rom]);
         }
@@ -290,5 +290,39 @@ public sealed class LibraryScannerTests : IDisposable
 
         var roms = await scan;
         roms.Select(r => r.TitleID).Should().Equal(Directory.GetFiles(_root, "*.nsp").Select(Path.GetFileNameWithoutExtension));
+    }
+
+    [Fact]
+    public async Task UpdateCachedHashes_KeepsHashesWithTheLibrary()
+    {
+        File.WriteAllText(Path.Combine(_root, "A.nsp"), "a");
+        var scanner = new LibraryScanner(_db);
+        var ct = TestContext.Current.CancellationToken;
+        var rom = (await scanner.ScanAsync(_manager, "Switch", _root, ct: ct)).Should().ContainSingle().Subject;
+
+        rom.Hashes = [new RomHash { Type = HashTypeEnum.CRC32, Value = "E8B7BE43", Description = "Local" }];
+        (await scanner.UpdateCachedHashesAsync([rom], ct)).Should().Be(1);
+
+        (await scanner.LoadCachedAsync("Switch", ct)).Should().ContainSingle().Which.Hashes.Should().ContainSingle().Which.Value.Should().Be("E8B7BE43");
+    }
+
+    [Fact]
+    public async Task UpdateCachedHashes_DoesNotBakeOverridesIntoTheCache()
+    {
+        File.WriteAllText(Path.Combine(_root, "A.nsp"), "a");
+        var scanner = new LibraryScanner(_db);
+        var store = new MetadataOverrideStore(_db);
+        var ct = TestContext.Current.CancellationToken;
+        var rom = (await scanner.ScanAsync(_manager, nameof(SwitchConsole), _root, ct: ct)).Should().ContainSingle().Subject;
+        var (before, after) = await store.SetAsync(rom, new RomMetadata { Title = "Override" }, "test", Path.Combine(_root, "covers"), ct);
+
+        rom.Hashes = [new RomHash { Type = HashTypeEnum.CRC32, Value = "E8B7BE43", Description = "Local" }];
+        await scanner.UpdateCachedHashesAsync([rom], ct);
+        (await scanner.LoadCachedAsync(nameof(SwitchConsole), ct)).Should().ContainSingle().Which.Titles![0].Value.Should().Be("Override");
+        await store.RestoreAsync(after, before, ct);
+
+        var cached = (await scanner.LoadCachedAsync(nameof(SwitchConsole), ct)).Should().ContainSingle().Subject;
+        (cached.Titles ?? []).Select(t => t.Value).Should().NotContain("Override");
+        cached.Hashes.Should().ContainSingle();
     }
 }

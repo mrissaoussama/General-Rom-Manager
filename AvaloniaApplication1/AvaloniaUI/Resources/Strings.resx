@@ -348,6 +348,14 @@ cannot be opened or created: {1}
 Scans will not be saved until this is fixed (check that the folder is writable).</value></data>
   <data name="Operations_PartlyDone" xml:space="preserve"><value>Partly done</value></data>
   <data name="Settings_PluginsNotLoaded" xml:space="preserve"><value>Not loaded</value></data>
+  <data name="Console_Hashes" xml:space="preserve"><value>Hashes</value></data>
+  <data name="Console_HashedFiles" xml:space="preserve"><value>{0} of {1} file(s) hashed. The values are kept with the library until the file changes.</value></data>
+  <data name="ConsoleView_CalculateHashes" xml:space="preserve"><value>Calculate hashes</value></data>
+  <data name="Settings_Enabled" xml:space="preserve"><value>Enabled</value></data>
+  <data name="Settings_Disabled" xml:space="preserve"><value>Disabled</value></data>
+  <data name="Common_Copy" xml:space="preserve"><value>Copy</value></data>
+  <data name="Settings_BuiltIn" xml:space="preserve"><value>built in</value></data>
+  <data name="Settings_Author" xml:space="preserve"><value>Author: {0}</value></data>
   <data name="Console_ToolChangedTitle" xml:space="preserve"><value>Program changed</value></data>
   <data name="Console_ToolChanged" xml:space="preserve"><value>{0} at
 {1}

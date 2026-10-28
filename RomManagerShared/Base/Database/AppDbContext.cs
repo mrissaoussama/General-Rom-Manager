@@ -26,6 +26,7 @@ public class AppDbContext : DbContext, IUnitOfWork
     public DbSet<RomHash> RomHashes { get; set; } = null!;
     public DbSet<RomHashProperty> RomHashProperties { get; set; } = null!;
     public DbSet<LibraryFile> LibraryFiles { get; set; } = null!;
+    public DbSet<RomMetadataOverride> RomMetadataOverrides { get; set; } = null!;
 
     // ── Configuration ─────────────────────────────────────────────────────
 
@@ -68,6 +69,9 @@ public class AppDbContext : DbContext, IUnitOfWork
     {
         modelBuilder.Entity<LibraryFile>()
             .HasIndex(f => new { f.Console, f.Path })
+            .IsUnique();
+        modelBuilder.Entity<RomMetadataOverride>()
+            .HasIndex(o => new { o.Console, o.RomKey, o.RomType })
             .IsUnique();
 
         base.OnModelCreating(modelBuilder);

@@ -227,7 +227,7 @@ public sealed partial class SettingsViewModel : DialogViewModel
     {
         Plugins.Clear();
         foreach (var p in _plugins?.Plugins ?? [])
-            Plugins.Add(new PluginRow(p, _settings.IsPluginEnabled(p.PluginName)));
+            Plugins.Add(new PluginRow(p, _settings.IsPluginEnabled(p.PluginName), _plugins!.IsBundled(p)));
         OnPropertyChanged(nameof(HasPlugins));
         PluginFailures.Clear();
         foreach (var f in _plugins?.Failures ?? [])
@@ -483,8 +483,11 @@ public sealed partial class ColumnGroup(string consoleName, string displayName, 
     }
 }
 
-public sealed partial class PluginRow(IPlugin plugin, bool enabled) : ObservableObject
+public sealed partial class PluginRow(IPlugin plugin, bool enabled, bool bundled = false) : ObservableObject
 {
+    /// <summary>Ships with the app: trusted without approval, so there is nothing to revoke.</summary>
+    public bool IsBundled { get; } = bundled;
+
     public IPlugin Plugin { get; } = plugin;
     public string Name { get; } = plugin.PluginName;
 
@@ -494,13 +497,13 @@ public sealed partial class PluginRow(IPlugin plugin, bool enabled) : Observable
         : [];
 
     public bool HasFields => Fields.Count > 0;
-    public string Heading { get; } = $"{plugin.PluginName}  v{plugin.PluginVersion}";
+    public string Heading { get; } = $"{plugin.PluginName}  v{plugin.PluginVersion}" + (bundled ? $"  ({Strings.Settings_BuiltIn})" : "");
     public string Description { get; } = plugin.PluginDescription;
     public string Details { get; } = string.Join(" · ", new[]
     {
-        string.IsNullOrEmpty(plugin.PluginAuthor) ? null : $"Author: {plugin.PluginAuthor}",
+        string.IsNullOrEmpty(plugin.PluginAuthor) ? null : string.Format(Strings.Settings_Author, plugin.PluginAuthor),
         plugin.SupportedConsoles is { Count: > 0 } c ? string.Format(Strings.Settings_Consoles, string.Join(", ", c)) : null,
-        string.Format(Strings.Settings_Permissions, (plugin.RequiredPermissions.Count == 0 ? "none" : string.Join(", ", plugin.RequiredPermissions))),
+        string.Format(Strings.Settings_Permissions, (plugin.RequiredPermissions.Count == 0 ? Strings.App_None : string.Join(", ", plugin.RequiredPermissions))),
     }.Where(x => x is not null));
     [ObservableProperty] private bool _isEnabled = enabled;
     [ObservableProperty] private bool _isRevoked;

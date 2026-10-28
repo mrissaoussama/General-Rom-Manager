@@ -284,7 +284,7 @@
                                     <Border BorderBrush="Gray" BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,0,0,6">
                                         <DockPanel>
                                             <ToggleSwitch DockPanel.Dock="Right" VerticalAlignment="Center" IsChecked="{Binding IsEnabled}"
-                                                          IsEnabled="{Binding !IsRevoked}" OnContent="Enabled" OffContent="Disabled"
+                                                          IsEnabled="{Binding !IsRevoked}" OnContent="{x:Static res:Strings.Settings_Enabled}" OffContent="{x:Static res:Strings.Settings_Disabled}"
                                                           AutomationProperties.Name="{Binding Name}" />
                                             <StackPanel Spacing="2">
                                                 <TextBlock Text="{Binding Heading}" FontWeight="SemiBold" />
@@ -307,7 +307,7 @@
                                                     </ItemsControl.ItemTemplate>
                                                 </ItemsControl>
                                                 <Button Content="{x:Static res:Strings.Settings_RevokeApproval}" Classes="small" HorizontalAlignment="Left"
-                                                        IsEnabled="{Binding !IsRevoked}" CommandParameter="{Binding}"
+                                                        IsEnabled="{Binding !IsRevoked}" IsVisible="{Binding !IsBundled}" CommandParameter="{Binding}"
                                                         ToolTip.Tip="{x:Static res:Strings.Settings_AskAgainBeforeLoadingThisPluginItStaysLoadedUnti}"
                                                         Command="{Binding #Root.((vm:SettingsViewModel)DataContext).RevokePluginCommand}" />
                                             </StackPanel>

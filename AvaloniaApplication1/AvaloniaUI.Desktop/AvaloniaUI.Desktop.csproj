@@ -55,4 +55,33 @@
   <Target Name="PublishConsoleModules" AfterTargets="Publish" DependsOnTargets="CollectConsoleModules">
     <Copy SourceFiles="@(ConsoleModuleDll)" DestinationFolder="$(PublishDir)Consoles" SkipUnchangedFiles="true" />
   </Target>
+
+  <!-- Plugins that ship with the app: each build output goes to BuiltInPlugins/<Name>/ (trusted without approval). -->
+  <ItemGroup>
+    <BuiltInPlugin Include="..\..\SamplePlugin\SamplePlugin.csproj;..\..\Plugins\*\*.csproj" />
+    <ProjectReference Include="@(BuiltInPlugin)" ReferenceOutputAssembly="false" Private="false"
+                      GlobalPropertiesToRemove="$(ConsoleModuleRemovedProperties)" />
+  </ItemGroup>
+
+  <Target Name="CollectBuiltInPlugins">
+    <MSBuild Projects="@(BuiltInPlugin)" Targets="Build" Properties="Configuration=$(Configuration)"
+             RemoveProperties="$(ConsoleModuleRemovedProperties)">
+      <Output TaskParameter="TargetOutputs" ItemName="BuiltInPluginDll" />
+    </MSBuild>
+    <ItemGroup>
+      <BuiltInPluginFile Include="%(BuiltInPluginDll.RootDir)%(BuiltInPluginDll.Directory)**\*">
+        <Plugin>%(BuiltInPluginDll.Filename)</Plugin>
+      </BuiltInPluginFile>
+    </ItemGroup>
+  </Target>
+
+  <Target Name="CopyBuiltInPlugins" AfterTargets="Build" DependsOnTargets="CollectBuiltInPlugins">
+    <Copy SourceFiles="@(BuiltInPluginFile)" SkipUnchangedFiles="true"
+          DestinationFiles="@(BuiltInPluginFile->'$(OutDir)BuiltInPlugins\%(Plugin)\%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
+
+  <Target Name="PublishBuiltInPlugins" AfterTargets="Publish" DependsOnTargets="CollectBuiltInPlugins">
+    <Copy SourceFiles="@(BuiltInPluginFile)" SkipUnchangedFiles="true"
+          DestinationFiles="@(BuiltInPluginFile->'$(PublishDir)BuiltInPlugins\%(Plugin)\%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
 </Project>

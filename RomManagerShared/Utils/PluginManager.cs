@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using RomManagerShared.Base;
+using RomManagerShared.Base.Database;
+using RomManagerShared.Base.Library;
 using System.IO.Compression;
 using System.Reflection;
 using System.Runtime.Loader;
@@ -44,8 +46,13 @@ internal sealed class PluginLoadContext : AssemblyLoadContext
 internal sealed class DefaultPluginContext : IPluginContext, IDisposable
 {
     private readonly IServiceScope _scope;
-    private readonly Func<object, string, Task> _showUI;
+    private readonly IPluginHost? _host;
     private readonly string _pluginName;
+    // Copies handed to the plugin → the library's roms they were made from.
+    private readonly Dictionary<Rom, Rom> _originals = new(ReferenceEqualityComparer.Instance);
+    // Files the user picked in PickSaveFileAsync: writable without the FileSystem permission.
+    private readonly HashSet<string> _picked = new(FileUtils.PathComparer);
+    private readonly List<MetadataChange> _changes = [];
 
     public DefaultPluginContext(
         IServiceProvider rootProvider,
@@ -55,9 +62,13 @@ internal sealed class DefaultPluginContext : IPluginContext, IDisposable
         string pluginDataDirectory,
         string configFilePath,
         IReadOnlyList<Rom> selectedRoms,
-        Func<object, string, Task> showUI,
-        IReadOnlyDictionary<string, string>? settings = null)
+        IPluginHost? host,
+        IReadOnlyDictionary<string, string>? settings = null,
+        IProgress<double>? progress = null,
+        ConsoleDescriptor? console = null)
     {
+        ConsoleId = console?.Id ?? "";
+        ConsoleName = console?.DisplayName ?? "";
         _scope = rootProvider.CreateScope();
         _pluginName = pluginName;
         Settings = settings ?? new Dictionary<string, string>();
@@ -66,9 +77,20 @@ internal sealed class DefaultPluginContext : IPluginContext, IDisposable
         Logger = logger;
         PluginDataDirectory = pluginDataDirectory;
         ConfigFilePath = configFilePath;
-        SelectedRoms = selectedRoms;
-        _showUI = showUI;
+        _host = host;
+        Progress = progress ?? new Progress<double>();
+        var copies = new List<Rom>(selectedRoms.Count);
+        foreach (var rom in selectedRoms)
+        {
+            var copy = RomSnapshot.Deserialize(RomSnapshot.Serialize([rom])).FirstOrDefault() ?? rom;
+            _originals[copy] = rom;
+            copies.Add(copy);
+        }
+        SelectedRoms = copies;
     }
+
+    /// <summary>Metadata written during this run, oldest first (for undo).</summary>
+    public IReadOnlyList<MetadataChange> Changes => _changes;
 
     public IServiceProvider Services { get; }
     public ILogger Logger { get; }
@@ -77,9 +99,48 @@ internal sealed class DefaultPluginContext : IPluginContext, IDisposable
     public IReadOnlyList<Rom> SelectedRoms { get; }
     public IReadOnlySet<PluginPermission> GrantedPermissions { get; }
     public IReadOnlyDictionary<string, string> Settings { get; }
+    public IProgress<double> Progress { get; }
+    public string ConsoleId { get; }
+    public string ConsoleName { get; }
 
     public Task ShowPluginUIAsync(object avaloniaControl, string title)
-        => _showUI(avaloniaControl, title);
+        => _host?.ShowUIAsync(avaloniaControl, title) ?? Task.CompletedTask;
+
+    public Task ShowMessageAsync(string title, string message)
+        => _host?.ShowMessageAsync(title, message) ?? Task.CompletedTask;
+
+    public Task ShowTableAsync(string title, IReadOnlyList<string> columns, IReadOnlyList<IReadOnlyList<string>> rows)
+        => _host?.ShowTableAsync(title, columns, rows) ?? Task.CompletedTask;
+
+    public Task<bool> ConfirmAsync(string title, string message, string? confirmText = null)
+        => _host?.ConfirmAsync(title, message, confirmText) ?? Task.FromResult(false);
+
+    public async Task<string?> PickSaveFileAsync(string title, string suggestedName, string extension)
+    {
+        if (_host is null) return null;
+        var path = await _host.PickSaveFileAsync(title, suggestedName, extension.TrimStart('.'));
+        if (path is not null) _picked.Add(Path.GetFullPath(path));
+        return path;
+    }
+
+    public void OpenInBrowser(Uri url)
+    {
+        if (!url.IsAbsoluteUri || (url.Scheme != Uri.UriSchemeHttp && url.Scheme != Uri.UriSchemeHttps))
+            throw new ArgumentException("Only http and https addresses can be opened", nameof(url));
+        _host?.OpenInBrowser(url);
+    }
+
+    public async Task UpdateMetadataAsync(Rom rom, RomMetadata metadata, CancellationToken cancellationToken = default)
+    {
+        Demand(PluginPermission.LibraryMetadata);
+        if (metadata.IsEmpty) return;
+        var target = _originals.GetValueOrDefault(rom, rom);
+        var before = RomFields.Capture(target);
+        var store = new MetadataOverrideStore(_scope.ServiceProvider.GetRequiredService<AppDbContext>());
+        var (old, now) = await store.SetAsync(target, metadata, _pluginName, PluginManager.CoversDirectory(), cancellationToken);
+        if (!ReferenceEquals(target, rom)) MetadataOverrideStore.Apply(rom, now);
+        lock (_changes) _changes.Add(new MetadataChange(target, before, old, now));
+    }
 
     private void Demand(PluginPermission permission)
     {
@@ -98,7 +159,7 @@ internal sealed class DefaultPluginContext : IPluginContext, IDisposable
     public Stream OpenFile(string path, FileMode mode, FileAccess access)
     {
         var full = Path.GetFullPath(path, PluginDataDirectory);
-        if (!IsInside(full, PluginDataDirectory)) Demand(PluginPermission.FileSystem);
+        if (!IsInside(full, PluginDataDirectory) && !_picked.Contains(full)) Demand(PluginPermission.FileSystem);
         if (access != FileAccess.Read) Directory.CreateDirectory(Path.GetDirectoryName(full)!);
         return new FileStream(full, mode, access, access == FileAccess.Read ? FileShare.Read : FileShare.None);
     }
@@ -146,7 +207,7 @@ internal sealed class PermissionFilteredServiceProvider(IServiceProvider inner, 
 // PluginEntry — pairs a plugin instance with its isolated load context
 // ──────────────────────────────────────────────────────────────────────────────
 
-public sealed record PluginEntry(IPlugin Plugin, WeakReference<AssemblyLoadContext> LoadContext);
+public sealed record PluginEntry(IPlugin Plugin, WeakReference<AssemblyLoadContext> LoadContext, string DllPath, bool Bundled = false);
 
 // ──────────────────────────────────────────────────────────────────────────────
 // PluginManager
@@ -168,11 +229,11 @@ public sealed class PluginManager : IAsyncDisposable
     private readonly ILoggerFactory _loggerFactory;
     private readonly ILogger<PluginManager> _logger;
 
-    /// <summary>
-    /// Delegate the host application must supply to allow plugins to push UI into
-    /// the shell (e.g. open a flyout / dialog containing the plugin's Avalonia control).
-    /// </summary>
-    public Func<object, string, Task>? ShowPluginUICallback { get; set; }
+    /// <summary>The app's dialogs for plugins (messages, tables, save pickers, browser); null shows nothing.</summary>
+    public IPluginHost? Host { get; set; }
+
+    /// <summary>Whether a loaded plugin is switched on (Settings → Plugins); hooks skip the others. All when null.</summary>
+    public Func<IPlugin, bool>? IsEnabled { get; set; }
 
     /// <summary>
     /// Asks the user to approve a plugin that is new, changed, or asks for different permissions.
@@ -228,7 +289,21 @@ public sealed class PluginManager : IAsyncDisposable
     /// (imported zips extract into <c>Plugins/&lt;name&gt;/</c>); DLLs already loaded are skipped.
     /// </summary>
     public async Task LoadPluginsAsync(string pluginDirectory, IReadOnlyList<Rom>? selectedRoms = null,
-        bool askForApproval = false)
+        bool askForApproval = false) => await LoadAsync(pluginDirectory, selectedRoms, askForApproval, bundled: false);
+
+    /// <summary>
+    /// Loads the plugins that ship with the app (<c>&lt;app&gt;/BuiltInPlugins</c>). They are trusted like the app
+    /// itself: no approval prompt. Plugins the user adds go through <see cref="LoadPluginsAsync"/>.
+    /// </summary>
+    public Task LoadBundledPluginsAsync(string directory) => LoadAsync(directory, null, askForApproval: false, bundled: true);
+
+    /// <summary>True for a plugin that ships with the app.</summary>
+    public bool IsBundled(IPlugin plugin)
+    {
+        lock (_entries) return _entries.Any(e => ReferenceEquals(e.Plugin, plugin) && e.Bundled);
+    }
+
+    private async Task LoadAsync(string pluginDirectory, IReadOnlyList<Rom>? selectedRoms, bool askForApproval, bool bundled)
     {
         if (!Directory.Exists(pluginDirectory))
         {
@@ -246,7 +321,7 @@ public sealed class PluginManager : IAsyncDisposable
             foreach (var dll in dlls)
             {
                 if (_loadedPaths.Contains(Path.GetFullPath(dll))) continue;
-                await TryLoadPluginDllAsync(dll, selectedRoms ?? [], askForApproval);
+                await TryLoadPluginDllAsync(dll, selectedRoms ?? [], askForApproval, bundled);
             }
         }
         finally
@@ -255,7 +330,7 @@ public sealed class PluginManager : IAsyncDisposable
         }
     }
 
-    private async Task TryLoadPluginDllAsync(string dllPath, IReadOnlyList<Rom> selectedRoms, bool askForApproval)
+    private async Task TryLoadPluginDllAsync(string dllPath, IReadOnlyList<Rom> selectedRoms, bool askForApproval, bool bundled)
     {
         ClearFailures(dllPath);
         var loadContext = new PluginLoadContext(dllPath);
@@ -295,8 +370,8 @@ public sealed class PluginManager : IAsyncDisposable
                 var attr = type.GetCustomAttribute<PluginAttribute>()!;
                 var request = new PluginApprovalRequest(attr.Name, attr.Version, attr.Author, attr.Description,
                     attr.Permissions, dllPath, sha256);
-                if (!await IsApprovedAsync(request, askForApproval)) continue;
-                if (await TryInstantiateAndInitAsync(type, loadContext, dllPath, selectedRoms)) loaded++;
+                if (!bundled && !await IsApprovedAsync(request, askForApproval)) continue;
+                if (await TryInstantiateAndInitAsync(type, loadContext, dllPath, selectedRoms, bundled)) loaded++;
             }
             if (loaded == 0) loadContext.Unload();
             else _loadedPaths.Add(Path.GetFullPath(dllPath));
@@ -327,7 +402,8 @@ public sealed class PluginManager : IAsyncDisposable
         Type type,
         PluginLoadContext loadContext,
         string dllPath,
-        IReadOnlyList<Rom> selectedRoms)
+        IReadOnlyList<Rom> selectedRoms,
+        bool bundled)
     {
         try
         {
@@ -351,8 +427,12 @@ public sealed class PluginManager : IAsyncDisposable
 
             await plugin.InitializeAsync(context);
 
-            lock (_entries) _entries.Add(new PluginEntry(plugin, new WeakReference<AssemblyLoadContext>(loadContext)));
+            lock (_entries) _entries.Add(new PluginEntry(plugin, new WeakReference<AssemblyLoadContext>(loadContext), dllPath, bundled));
             _logger.LogInformation("Loaded plugin: {Name} v{Version}", plugin.PluginName, plugin.PluginVersion);
+            var known = ConsoleModules.Descriptors.SelectMany(d => new[] { d.Id, d.DisplayName }).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            foreach (var console in plugin.SupportedConsoles.Where(c => !known.Contains(c)))
+                _logger.LogWarning("Plugin {Name} lists console '{Console}', which is not one of: {Known}",
+                    plugin.PluginName, console, string.Join(", ", ConsoleModules.Descriptors.Select(d => d.Id)));
             return true;
         }
         catch (Exception ex)
@@ -369,15 +449,61 @@ public sealed class PluginManager : IAsyncDisposable
     /// Executes the option at <paramref name="optionIndex"/> on the plugin identified
     /// by <paramref name="pluginName"/>.
     /// </summary>
-    public async Task ExecuteAsync(string pluginName, int optionIndex, IReadOnlyList<Rom>? selectedRoms = null)
+    /// <returns>The metadata the option changed, for <see cref="UndoMetadataAsync"/>.</returns>
+    public async Task<IReadOnlyList<MetadataChange>> ExecuteAsync(string pluginName, int optionIndex, IReadOnlyList<Rom>? selectedRoms = null,
+        IProgress<double>? progress = null, CancellationToken cancellationToken = default, string? consoleId = null)
     {
         PluginEntry? found;
         lock (_entries) found = _entries.FirstOrDefault(e => e.Plugin.PluginName == pluginName);
         var entry = found
             ?? throw new InvalidOperationException($"Plugin '{pluginName}' is not loaded.");
 
-        using var context = CreateContext(entry.Plugin, selectedRoms ?? []);
-        await entry.Plugin.ExecuteAsync(optionIndex, context);
+        var console = consoleId is null ? null : ConsoleModules.Descriptors.FirstOrDefault(d => d.Id.Equals(consoleId, StringComparison.OrdinalIgnoreCase));
+        using var context = CreateContext(entry.Plugin, selectedRoms ?? [], progress, console);
+        await entry.Plugin.ExecuteAsync(optionIndex, context, cancellationToken);
+        if (context.Changes.Count > 0)
+            _logger.LogInformation("Plugin {Name} changed the metadata of {Count} rom(s)", pluginName, context.Changes.Count);
+        return [.. context.Changes];
+    }
+
+    /// <summary>Puts back metadata changed by a plugin run, newest first: the stored overrides and the roms in memory.</summary>
+    public async Task UndoMetadataAsync(IReadOnlyList<MetadataChange> changes, CancellationToken cancellationToken = default)
+    {
+        using var scope = _rootServices.CreateScope();
+        var store = new MetadataOverrideStore(scope.ServiceProvider.GetRequiredService<AppDbContext>());
+        foreach (var change in changes.Reverse())
+        {
+            await store.RestoreAsync(change.After, change.Before, cancellationToken);
+            change.FieldsBefore.Restore(change.Rom);
+        }
+    }
+
+    /// <summary>Tells plugins with <see cref="ILibraryHooks"/> that files were renamed, moved or deleted.</summary>
+    public async Task NotifyFilesChangedAsync(LibraryFilesChanged change)
+    {
+        if (change.Files.Count == 0) return;
+        var plugins = change.Console.Length > 0 ? GetPluginsForConsole(change.Console) : Plugins;
+        foreach (var plugin in plugins.OfType<ILibraryHooks>().ToList())
+        {
+            var p = (IPlugin)plugin;
+            if (IsEnabled is not null && !IsEnabled(p)) continue;
+            try
+            {
+                using var context = CreateContext(p, []);
+                await plugin.OnFilesChangedAsync(change, context);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Plugin {Name} failed in OnFilesChangedAsync", p.PluginName);
+            }
+        }
+    }
+
+    /// <summary>The folder a plugin was loaded from (icons and other files it ships); null when not loaded.</summary>
+    public string? PluginDirectory(IPlugin plugin)
+    {
+        lock (_entries)
+            return _entries.FirstOrDefault(e => ReferenceEquals(e.Plugin, plugin))?.DllPath is { } dll ? Path.GetDirectoryName(dll) : null;
     }
 
     /// <summary>
@@ -390,7 +516,7 @@ public sealed class PluginManager : IAsyncDisposable
         foreach (var plugin in GetPluginsForConsole(scan.Console).OfType<ILibraryHooks>().ToList())
         {
             var p = (IPlugin)plugin;
-            if (isEnabled is not null && !isEnabled(p)) continue;
+            if ((isEnabled ?? IsEnabled) is { } enabled && !enabled(p)) continue;
             try
             {
                 using var context = CreateContext(p, []);
@@ -403,7 +529,8 @@ public sealed class PluginManager : IAsyncDisposable
         }
     }
 
-    private DefaultPluginContext CreateContext(IPlugin plugin, IReadOnlyList<Rom> selectedRoms)
+    private DefaultPluginContext CreateContext(IPlugin plugin, IReadOnlyList<Rom> selectedRoms, IProgress<double>? progress = null,
+        ConsoleDescriptor? console = null)
     {
         var attr = plugin.GetType().GetCustomAttribute<PluginAttribute>();
         var name = attr?.Name ?? plugin.PluginName;
@@ -416,9 +543,18 @@ public sealed class PluginManager : IAsyncDisposable
             pluginDataDir,
             Path.Combine(pluginDataDir, "config.json"),
             selectedRoms,
-            ShowPluginUICallback ?? ((_, _) => Task.CompletedTask),
-            GetSettings(plugin));
+            Host,
+            GetSettings(plugin),
+            progress,
+            console);
     }
+
+    /// <summary>Where covers set through <see cref="IPluginContext.UpdateMetadataAsync"/> are kept: next to the database.</summary>
+    internal static string CoversDirectory() =>
+        CoversRootOverride ?? Path.Combine(Path.GetDirectoryName(Path.GetFullPath(AppDbContext.GetDbPath()))!, "Covers");
+
+    /// <summary>Tests point covers somewhere private.</summary>
+    internal static string? CoversRootOverride { get; set; }
 
     /// <summary>Folder holding one data folder per plugin; tests point it somewhere private.</summary>
     internal static string? DataRootOverride { get; set; }
@@ -441,17 +577,22 @@ public sealed class PluginManager : IAsyncDisposable
                 stored = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(file)) ?? [];
         }
         catch (Exception ex) { AppLog.Warn($"[Plugins] {plugin.PluginName} settings: {ex.Message}"); }
-        return declared.SettingDescriptors.ToDictionary(d => d.Key, d => stored.GetValueOrDefault(d.Key, d.Default));
+        return declared.SettingDescriptors.ToDictionary(d => d.Key, d => stored.TryGetValue(d.Key, out var value)
+            ? d.Kind == PluginSettingKind.Secret ? SecretProtector.Unprotect(value) : value
+            : d.Default);
     }
 
     /// <summary>Saves the plugin's settings; keys it does not declare are dropped.</summary>
     public static void SaveSettings(IPlugin plugin, IReadOnlyDictionary<string, string> values)
     {
         if (plugin is not IPluginSettings declared) return;
-        var keep = declared.SettingDescriptors.Where(d => values.ContainsKey(d.Key)).ToDictionary(d => d.Key, d => values[d.Key]);
+        // Secrets are encrypted for the current user (Windows) or kept in a file only the user can read.
+        var keep = declared.SettingDescriptors.Where(d => values.ContainsKey(d.Key)).ToDictionary(d => d.Key,
+            d => d.Kind == PluginSettingKind.Secret ? SecretProtector.Protect(values[d.Key]) : values[d.Key]);
         var file = SettingsFile(plugin);
         Directory.CreateDirectory(Path.GetDirectoryName(file)!);
         File.WriteAllText(file, System.Text.Json.JsonSerializer.Serialize(keep, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+        if (declared.SettingDescriptors.Any(d => d.Kind == PluginSettingKind.Secret)) SecretProtector.RestrictToUser(file);
     }
 
     // ── Query helpers ──────────────────────────────────────────────────────

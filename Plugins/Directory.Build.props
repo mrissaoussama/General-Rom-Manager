@@ -1,0 +1,14 @@
+<Project>
+  <!-- Plugins that ship with the app. Built with the desktop head and copied to <app>/BuiltInPlugins/<Name>/; they see
+       only the plugin contract (RomManager.Abstractions), exactly like third-party plugins. -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="RomManagerTests" />
+    <!-- RomManager supplies the contract at runtime: compile against it, never copy it. -->
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\RomManager.Abstractions\RomManager.Abstractions.csproj" Private="false" />
+  </ItemGroup>
+</Project>

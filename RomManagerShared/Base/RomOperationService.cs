@@ -122,16 +122,34 @@ public sealed class RomOperationService
                         entry = _journal.Add(name, category, plan);
                         _journalOps[op!.Id] = entry.Id;
                     }
+                    NotifyFilesChanged(category, roms, [.. plan.Select(m => new LibraryFileChange(m.To, m.From))]);
                 }
                 progress.Report(100);
             },
             UndoAsync = ct => Task.Run(() =>
             {
+                var plan = BuildRestorePlan(originalPaths);
                 RestorePaths(originalPaths, ct);
                 if (entry is not null) _journal?.Remove(entry.Id);
+                NotifyFilesChanged(category, roms, [.. plan.Select(m => new LibraryFileChange(m.From, m.To))]);
             }, ct),
         };
         return _queue.Enqueue(op);
+    }
+
+    /// <summary>Tells plugins (<see cref="ILibraryHooks.OnFilesChangedAsync"/>) about renamed, moved or deleted files, in the background.</summary>
+    public void NotifyFilesChanged(string category, IReadOnlyList<Rom> roms, IReadOnlyList<LibraryFileChange> files)
+    {
+        if (files.Count == 0 || _services.GetService<PluginManager>() is not { Plugins.Count: > 0 } plugins) return;
+        var kind = category switch
+        {
+            "Rename" => LibraryFileChangeKind.Renamed,
+            "Delete" => LibraryFileChangeKind.Deleted,
+            _ => LibraryFileChangeKind.Moved,
+        };
+        var consoles = roms.Select(r => ConsoleModules.ConsoleOf(r.GetType())).Distinct().ToList();
+        var console = consoles is [{ } only] ? ConsoleModules.Describe(only).Id : "";
+        _ = Task.Run(() => plugins.NotifyFilesChangedAsync(new LibraryFilesChanged(console, kind, files)));
     }
 
     /// <summary>Re-adds journaled operations from earlier sessions to the queue as undoable.</summary>
@@ -276,7 +294,7 @@ public sealed class RomOperationService
     /// Enqueue hash calculation for selected ROMs. Computed hashes are saved
     /// to the database via <see cref="RomHashRepository"/>.
     /// </summary>
-    public QueuedOperation EnqueueHashCalculation(IReadOnlyList<Rom> roms)
+    public QueuedOperation EnqueueHashCalculation(IReadOnlyList<Rom> roms, Action<IReadOnlyList<Rom>>? onCompleted = null)
     {
         return _queue.Enqueue(new QueuedOperation
         {
@@ -286,6 +304,18 @@ public sealed class RomOperationService
             {
                 var done = await HashUtils.HashRomsAsync(roms, SaveHashesToDbAsync, progress, ct);
                 AppLog.Info($"[Hash] Finished calculating hashes for {done}/{roms.Count} ROM(s).");
+                try
+                {
+                    // Keep them with the library so the grid and Properties show them after a restart.
+                    using var scope = _services.CreateScope();
+                    if (scope.ServiceProvider.GetService<Library.LibraryScanner>() is { } scanner)
+                        await scanner.UpdateCachedHashesAsync(roms.Where(r => r.Hashes is { Count: > 0 }), ct);
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    AppLog.Warn($"[Hash] Could not store hashes with the library: {ex.Message}");
+                }
+                onCompleted?.Invoke(roms);
             },
         });
     }
@@ -356,16 +386,24 @@ public sealed class RomOperationService
     /// </summary>
     public QueuedOperation EnqueueAction(IConsoleRomAction action, IReadOnlyList<Rom> roms)
     {
-        return _queue.Enqueue(new QueuedOperation
+        QueuedOperation? op = null;
+        op = new QueuedOperation
         {
             Name = action.Name,
             Category = action.Category,
             ExecuteAsync = async (ct, progress) =>
             {
-                using var scope = _services.CreateScope();
-                await action.ExecuteAsync(roms, scope.ServiceProvider, ct);
+                using (var scope = _services.CreateScope())
+                    await action.ExecuteAsync(roms, scope.ServiceProvider, ct, progress);
                 progress.Report(100);
+                if (action is IUndoableRomAction { CanUndo: true } undoable)
+                    op!.UndoAsync = async undoCt =>
+                    {
+                        using var scope = _services.CreateScope();
+                        await undoable.UndoAsync(scope.ServiceProvider, undoCt);
+                    };
             },
-        });
+        };
+        return _queue.Enqueue(op);
     }
 }

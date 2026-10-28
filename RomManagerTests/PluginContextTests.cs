@@ -1,4 +1,4 @@
-using AwesomeAssertions;
+﻿using AwesomeAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using RomManagerShared.Base;
@@ -19,7 +19,7 @@ public sealed class PluginContextTests : IDisposable
         // Never constructed for real: only whether the provider hands it out matters.
         services.AddSingleton(_ => (RomHashRepository)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typeof(RomHashRepository)));
         return new DefaultPluginContext(services.BuildServiceProvider(), NullLogger.Instance, "Test", granted,
-            _dir, Path.Combine(_dir, "config.json"), [], (_, _) => Task.CompletedTask);
+            _dir, Path.Combine(_dir, "config.json"), [], new FakePluginHost());
     }
 
     [Fact]

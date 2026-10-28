@@ -5,28 +5,12 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>SamplePlugin</AssemblyName>
-    <!-- Build to default obj/bin path; a post-build target copies the DLL to the plugins folder -->
+    <!-- Shipped with the app: the desktop head copies the build output to BuiltInPlugins/SamplePlugin/. -->
   </PropertyGroup>
 
   <ItemGroup>
     <!-- The plugin contract and rom model; RomManager supplies the assembly at runtime, so it is not copied. -->
     <ProjectReference Include="..\RomManager.Abstractions\RomManager.Abstractions.csproj" Private="false" />
   </ItemGroup>
-
-  <!--
-    After building, copy the plugin DLL into the Desktop run output so it loads at
-    startup.  This only runs on Windows (backslash path separator); on other OSes the
-    desktop output folder path for the Debug configuration may differ.
-    The destination mirrors the path that PluginManager scans at runtime.
-  -->
-  <Target Name="CopyPluginToDesktopBin" AfterTargets="Build">
-    <PropertyGroup>
-      <_PluginDest>$(MSBuildThisFileDirectory)..\AvaloniaApplication1\AvaloniaUI.Desktop\bin\$(Configuration)\net10.0\Plugins\SamplePlugin\</_PluginDest>
-    </PropertyGroup>
-    <MakeDir Directories="$(_PluginDest)" />
-    <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll"
-          DestinationFolder="$(_PluginDest)"
-          SkipUnchangedFiles="true" />
-  </Target>
 
 </Project>

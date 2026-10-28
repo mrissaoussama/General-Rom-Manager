@@ -28,6 +28,8 @@
     <ProjectReference Include="..\AvaloniaApplication1\AvaloniaUI\AvaloniaUI.csproj" />
     <!-- Built so PluginManagerTests can load the real sample plugin; not referenced at compile time. -->
     <ProjectReference Include="..\SamplePlugin\SamplePlugin.csproj" ReferenceOutputAssembly="false" />
+    <!-- Built-in plugins: their logic is tested directly (InternalsVisibleTo). -->
+    <ProjectReference Include="..\Plugins\*\*.csproj" />
   </ItemGroup>
 
 </Project>

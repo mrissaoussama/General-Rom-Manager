@@ -102,9 +102,9 @@ public partial class App : Application
             {
                 var pluginDir = RomManagerConfiguration.GetPluginsPath();
                 var pluginManager = _host.Services.GetRequiredService<PluginManager>();
-                // Forward UI requests from plugins onto the Avalonia UI thread
-                pluginManager.ShowPluginUICallback = async (control, title) =>
-                    await Dispatcher.UIThread.InvokeAsync(() => ShowPluginUI(control, title));
+                // Plugins' dialogs; hooks skip plugins switched off in Settings.
+                pluginManager.Host = new PluginHost(() => DialogService.Current);
+                pluginManager.IsEnabled = p => Settings.Instance.IsPluginEnabled(p.PluginName);
                 pluginManager.ApprovalCallback = request => Dispatcher.UIThread.InvokeAsync(() => DialogService.Current.ConfirmAsync(
                     "Allow plugin?",
                     $"{request.Name} {request.Version}" + (request.Author is null ? "" : $" by {request.Author}") + Environment.NewLine
@@ -113,6 +113,7 @@ public partial class App : Application
                     + string.Format(Strings.App_File, request.DllPath) + Environment.NewLine + Environment.NewLine
                     + Strings.App_PluginsRunWithYourUserAccountSAccessOnlyAllowPlu,
                     Strings.App_Allow));
+                await pluginManager.LoadBundledPluginsAsync(Path.Combine(AppContext.BaseDirectory, "BuiltInPlugins"));
                 await pluginManager.LoadPluginsAsync(pluginDir);
             }
             catch (Exception ex)
@@ -182,42 +183,6 @@ public partial class App : Application
         }
 
         base.OnFrameworkInitializationCompleted();
-    }
-
-    /// <summary>
-    /// Default plugin UI handler — opens a window with the plugin's control.
-    /// Replace this with a more integrated panel in the main shell if desired.
-    /// </summary>
-    private static Task ShowPluginUI(object control, string title)
-    {
-        // Accept either an Avalonia Control or a plain string from plugins
-        Avalonia.Controls.Control content = control switch
-        {
-            Avalonia.Controls.Control c => c,
-            string s => new ScrollViewer
-            {
-                Content = new TextBlock
-                {
-                    Text = s,
-                    TextWrapping = Avalonia.Media.TextWrapping.Wrap,
-                    Margin = new Avalonia.Thickness(16),
-                    FontFamily = new Avalonia.Media.FontFamily("Consolas,Monospace"),
-                    FontSize = 13,
-                }
-            },
-            _ => new TextBlock { Text = control?.ToString() ?? Strings.App_Empty }
-        };
-
-        var win = new Window
-        {
-            Title = title,
-            Content = content,
-            Width = 640,
-            Height = 480,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner,
-        };
-        win.Show();
-        return Task.CompletedTask;
     }
 
     // Restores the last position only if it is still on a connected screen (monitors change).

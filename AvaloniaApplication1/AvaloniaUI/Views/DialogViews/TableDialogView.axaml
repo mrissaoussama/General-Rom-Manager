@@ -1,0 +1,16 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:res="using:AvaloniaUI.Resources"
+             xmlns:vm="using:AvaloniaUI.ViewModels"
+             x:Class="AvaloniaUI.Views.DialogViews.TableDialogView"
+             x:DataType="vm:TableDialogViewModel">
+    <DockPanel>
+        <TextBlock DockPanel.Dock="Top" Text="{Binding Summary}" TextWrapping="Wrap" Margin="0,0,0,8" IsVisible="{Binding HasSummary}" />
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" Margin="0,10,0,0">
+            <Button Content="{x:Static res:Strings.Common_Copy}" Command="{Binding CopyCommand}" />
+            <Button Content="{x:Static res:Strings.Console_Close}" IsDefault="True" IsCancel="True" Command="{Binding ConfirmCommand}" />
+        </StackPanel>
+        <DataGrid x:Name="Table" ItemsSource="{Binding Rows}" IsReadOnly="True" CanUserResizeColumns="True"
+                  CanUserSortColumns="True" GridLinesVisibility="Horizontal" />
+    </DockPanel>
+</UserControl>

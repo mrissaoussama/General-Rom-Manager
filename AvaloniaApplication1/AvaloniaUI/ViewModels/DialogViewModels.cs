@@ -32,12 +32,14 @@ public abstract partial class DialogViewModel : ViewModelBase
     private void Cancel() => CloseRequested?.Invoke();
 }
 
-public sealed class ConfirmDialogViewModel(string title, string message, string confirmText) : DialogViewModel
+/// <summary>A question with Cancel and a confirm button; without Cancel, a message.</summary>
+public sealed class ConfirmDialogViewModel(string title, string message, string confirmText, bool showCancel = true) : DialogViewModel
 {
     public override string Title => title;
     public override double Width => 420;
     public string Message => message;
     public string ConfirmText => confirmText;
+    public bool ShowCancel => showCancel;
 }
 
 /// <summary>Lists planned changes (one line each) and asks to go ahead.</summary>
@@ -52,6 +54,27 @@ public sealed class PreviewDialogViewModel(string title, string summary, IEnumer
     public IReadOnlyList<string> Lines { get; } = [.. lines];
     public string ConfirmText => confirmText;
     public bool ShowCancel => showCancel;
+}
+
+/// <summary>Rows of text under column headers (plugin results); Copy puts them on the clipboard as tab-separated text.</summary>
+public sealed partial class TableDialogViewModel(string title, string summary, IReadOnlyList<string> columns,
+    IReadOnlyList<IReadOnlyList<string>> rows) : DialogViewModel
+{
+    public override string Title => title;
+    public override double Width => 820;
+    public override double Height => 480;
+    public override bool CanResize => true;
+    public string Summary => summary;
+    public bool HasSummary => summary.Length > 0;
+    public IReadOnlyList<string> Columns => columns;
+    // Short rows are padded so every column binds.
+    public IReadOnlyList<string[]> Rows { get; } = [.. rows.Select(r => Enumerable.Range(0, columns.Count).Select(i => i < r.Count ? r[i] : "").ToArray())];
+
+    public string AsText() => string.Join(Environment.NewLine,
+        new[] { string.Join('\t', Columns) }.Concat(Rows.Select(r => string.Join('\t', r))));
+
+    [RelayCommand]
+    private Task Copy() => Shell.CopyAsync(AsText());
 }
 
 /// <summary>Read-only list of every property of a rom.</summary>

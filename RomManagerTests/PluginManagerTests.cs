@@ -71,7 +71,7 @@ public sealed class PluginManagerTests : IDisposable
 
         first.Plugins.Should().ContainSingle().Which.PluginName.Should().Be("GameMetadataFetcher");
         first.Failures.Should().BeEmpty();
-        asked!.Permissions.Should().BeEquivalentTo([PluginPermission.Network]);
+        asked!.Permissions.Should().BeEquivalentTo([PluginPermission.Network, PluginPermission.LibraryMetadata]);
 
         // Reloading the same folder does not load the plugin twice.
         await first.LoadPluginsAsync(_dir, askForApproval: true);
@@ -108,11 +108,46 @@ public sealed class PluginManagerTests : IDisposable
         var plugin = manager.Plugins.Should().ContainSingle().Subject;
         plugin.Should().BeAssignableTo<IPluginSettings>();
 
-        PluginManager.GetSettings(plugin).Should().Equal(new Dictionary<string, string> { ["ApiKey"] = "" });
+        PluginManager.GetSettings(plugin).Should().Equal(new Dictionary<string, string> { ["ApiKey"] = "", ["ReplaceTitles"] = "false", ["Covers"] = "true" });
 
-        PluginManager.SaveSettings(plugin, new Dictionary<string, string> { ["ApiKey"] = "k-123", ["Unknown"] = "dropped" });
+        PluginManager.SaveSettings(plugin, new Dictionary<string, string> { ["ApiKey"] = "k-123", ["Covers"] = "false", ["Unknown"] = "dropped" });
 
-        PluginManager.GetSettings(plugin).Should().Equal(new Dictionary<string, string> { ["ApiKey"] = "k-123" });
-        File.ReadAllText(Path.Combine(_dir, "data", "GameMetadataFetcher", "settings.json")).Should().NotContain("Unknown");
+        PluginManager.GetSettings(plugin).Should().Equal(new Dictionary<string, string> { ["ApiKey"] = "k-123", ["ReplaceTitles"] = "false", ["Covers"] = "false" });
+        var file = File.ReadAllText(Path.Combine(_dir, "data", "GameMetadataFetcher", "settings.json"));
+        file.Should().NotContain("Unknown");
+        // The API key is a Secret: encrypted for the user on Windows, in a user-only file elsewhere.
+        if (OperatingSystem.IsWindows()) file.Should().NotContain("k-123").And.Contain("dpapi:");
+    }
+
+    [Fact]
+    public async Task BundledPlugins_LoadWithoutApproval()
+    {
+        CopySample();
+        await using var manager = CreateManager(new PluginApprovalStore(Path.Combine(_dir, "approvals.json")));
+
+        await manager.LoadBundledPluginsAsync(_dir);
+
+        var plugin = manager.Plugins.Should().ContainSingle().Subject;
+        manager.IsBundled(plugin).Should().BeTrue();
+        manager.Failures.Should().BeEmpty();
+        manager.PluginDirectory(plugin).Should().Be(Path.Combine(_dir, "Sample"));
+    }
+
+    [Fact]
+    public async Task Execute_HandsOverCancellationAndConsole()
+    {
+        CopySample();
+        await using var manager = CreateManager(new PluginApprovalStore(Path.Combine(_dir, "approvals.json")));
+        manager.Host = new FakePluginHost();
+        await manager.LoadBundledPluginsAsync(_dir);
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+
+        // Option 0 without an API key only shows a message; it must still run (and not throw for the cancelled token).
+        var changes = await manager.ExecuteAsync("GameMetadataFetcher", 0, [new Game { TitleID = "1", Titles = [new RomTitle("Zelda")] }],
+            cancellationToken: cts.Token, consoleId: "Switch");
+
+        changes.Should().BeEmpty();
+        ((FakePluginHost)manager.Host).Messages.Should().ContainSingle().Which.Should().Contain("API key");
     }
 }

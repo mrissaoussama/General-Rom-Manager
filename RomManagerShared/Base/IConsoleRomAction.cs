@@ -38,9 +38,18 @@ public interface IConsoleRomAction
     /// </summary>
     bool CanExecute(IEnumerable<Rom> selectedRoms);
 
-    /// <summary>Performs the action.</summary>
+    /// <summary>Performs the action; <paramref name="progress"/> takes 0–100 for the Operations panel.</summary>
     Task ExecuteAsync(IEnumerable<Rom> selectedRoms, IServiceProvider services,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default, IProgress<double>? progress = null);
+}
+
+/// <summary>An action that can put back what its last run changed (offered as Undo in the Operations panel).</summary>
+public interface IUndoableRomAction
+{
+    /// <summary>True when the last run changed something that <see cref="UndoAsync"/> can restore.</summary>
+    bool CanUndo { get; }
+
+    Task UndoAsync(IServiceProvider services, CancellationToken cancellationToken = default);
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -77,5 +86,5 @@ public abstract class ConsoleRomActionBase : IConsoleRomAction
         => selectedRoms.Any();
 
     public abstract Task ExecuteAsync(IEnumerable<Rom> selectedRoms, IServiceProvider services,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default, IProgress<double>? progress = null);
 }

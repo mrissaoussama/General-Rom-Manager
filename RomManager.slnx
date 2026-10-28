@@ -28,6 +28,10 @@
     <Project Path="Consoles/WiiU/RomManager.Consoles.WiiU.csproj" />
     <Project Path="Consoles/Xbox/RomManager.Consoles.Xbox.csproj" />
   </Folder>
+  <Folder Name="/Plugins/">
+    <Project Path="Plugins/Playlists/RomManager.Plugins.Playlists.csproj" />
+    <Project Path="Plugins/WebSearch/RomManager.Plugins.WebSearch.csproj" />
+  </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/ParserHarness/ParserHarness.csproj" />
   </Folder>

@@ -321,7 +321,23 @@ public sealed class HeadlessUiTests
         tabs.SelectedIndex = 2;
         settingsWindow.UpdateLayout();
         Find<Button>(settingsWindow, b => b.Content as string == "Reload plugins").Should().NotBeNull();
+        Capture(settingsWindow, "settings-plugins");
         settingsWindow.Close();
+
+        // What plugins show: a table of results and a message.
+        var results = new DialogWindow(new TableDialogViewModel("RAWG: 2 of 3 found", "", ["File", "RAWG match", "Released", "Genres"],
+            [["Star Courier.bin", "Star Courier", "1991-04-12", "Action, Shooter"],
+             ["Pixel Quest.bin", "Pixel Quest DX", "1993-11-02", "Role-playing (RPG)"],
+             ["Lunar Drift.bin", "(not found)"]]));
+        results.Show();
+        Find<DataGrid>(results).Columns.Should().HaveCount(4);
+        Capture(results, "plugin-results");
+        results.Close();
+
+        var message = new DialogWindow(new ConfirmDialogViewModel("Playlists", "Wrote 6 entries to Nintendo - NES.lpl", "Close", showCancel: false));
+        message.Show();
+        Capture(message, "plugin-message");
+        message.Close();
 
         var onboarding = new OnboardingViewModel(new AvaloniaUI.Utils.Settings(), _ => { });
         onboarding.NextCommand.Execute(null);

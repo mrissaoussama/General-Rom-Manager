@@ -148,7 +148,7 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
             ? []
             : pluginManager.GetPluginsForConsole(ConsoleName)
                 .Where(p => Settings.Instance.IsPluginEnabled(p.PluginName))
-                .SelectMany(p => p.Options.Select((opt, i) => (IConsoleRomAction)new PluginRomAction(p, i, opt)));
+                .SelectMany(p => p.Options.Select((opt, i) => (IConsoleRomAction)new PluginRomAction(p, i, opt, pluginManager.PluginDirectory(p), ConsoleName)));
 
         var roms = selectedRoms.ToList();
         return backendActions.Concat(pluginActions).Where(a => a.CanExecute(roms)).ToList();
@@ -321,24 +321,41 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
     }
 }
 
-// Adapts an IPlugin option into an IConsoleRomAction for the context menu.
-internal sealed class PluginRomAction(IPlugin plugin, int optionIndex, PluginOption option) : IConsoleRomAction
+// Adapts an IPlugin option into an IConsoleRomAction for the context menu. One instance per menu entry, so it can
+// remember what its run changed for Undo.
+internal sealed class PluginRomAction(IPlugin plugin, int optionIndex, PluginOption option, string? pluginDirectory, string consoleId)
+    : IConsoleRomAction, IUndoableRomAction
 {
+    private IReadOnlyList<RomManagerShared.Base.Library.MetadataChange> _changes = [];
+
     public string Name => option.Name;
     public string Description => option.Description ?? option.Name;
-    public string? IconKey => option.IconKey;
-    public string Category => "Plugins";
+    // A relative icon path is a file shipped next to the plugin.
+    public string? IconKey => option.IconKey is { } key && pluginDirectory is not null && !Path.IsPathRooted(key)
+        && File.Exists(Path.Combine(pluginDirectory, key)) ? Path.Combine(pluginDirectory, key) : option.IconKey;
+    public string Category => option.Category ?? plugin.PluginName;
     public bool SupportsBulk => true;
+    public bool CanUndo => _changes.Count > 0;
 
     public bool CanExecute(IEnumerable<Rom> selectedRoms)
-        => option.CanExecutePredicate?.Invoke(selectedRoms) ?? true;
+    {
+        try { return option.CanExecutePredicate?.Invoke(selectedRoms) ?? true; }
+        catch (Exception ex)
+        {
+            AppLog.Warn($"[Plugins] {plugin.PluginName}: '{option.Name}' CanExecute failed: {ex.Message}");
+            return false;
+        }
+    }
 
     public async Task ExecuteAsync(IEnumerable<Rom> selectedRoms, IServiceProvider services,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default, IProgress<double>? progress = null)
     {
         var pm = services.GetRequiredService<PluginManager>();
-        await pm.ExecuteAsync(plugin.PluginName, optionIndex, selectedRoms.ToList());
+        _changes = await pm.ExecuteAsync(plugin.PluginName, optionIndex, selectedRoms.ToList(), progress, cancellationToken, consoleId);
     }
+
+    public Task UndoAsync(IServiceProvider services, CancellationToken cancellationToken = default) =>
+        services.GetRequiredService<PluginManager>().UndoMetadataAsync(_changes, cancellationToken);
 }
 
 public class DictionaryItemConverter : IValueConverter

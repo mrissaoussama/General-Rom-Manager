@@ -29,8 +29,8 @@ public sealed class QueuedOperation
     /// <summary>The async work to perform. Receives the CancellationToken and a progress callback (0–100).</summary>
     public required Func<CancellationToken, IProgress<double>, Task> ExecuteAsync { get; init; }
 
-    /// <summary>Optional undo logic. If set, the operation is considered undoable.</summary>
-    public Func<CancellationToken, Task>? UndoAsync { get; init; }
+    /// <summary>Optional undo logic. If set, the operation is considered undoable (the work itself may set it).</summary>
+    public Func<CancellationToken, Task>? UndoAsync { get; set; }
 
     public OperationState State { get; internal set; } = OperationState.Pending;
     public double ProgressPercent { get; internal set; }

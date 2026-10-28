@@ -333,10 +333,27 @@ public enum RatingContent
 
 public enum GenreEnum
 {
+    // Stored as numbers in the library cache: add new values at the end only.
     Unknown,
     Adventure,
     Fighting,
-    Puzzle
+    Puzzle,
+    Action,
+    Platformer,
+    Racing,
+    RolePlaying,
+    Shooter,
+    Sports,
+    Strategy,
+    Simulation,
+    Music,
+    Party,
+    Arcade,
+    Casual,
+    Educational,
+    Family,
+    Board,
+    Card,
 }
 public enum RatingSystem
 {

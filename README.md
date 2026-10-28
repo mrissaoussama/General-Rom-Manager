@@ -29,9 +29,11 @@ Screenshots are rendered by the headless UI tests with sample data (`SCREENSHOTS
   3DS and Wii U, libretro box art for DAT-matched games, embedded icons and banners.
 - **Missing updates**: Switch (titledb `versions.json`) and, opt-in, PS4 (Sony's update server).
   **Switch missing DLC** from the titledb title database.
-- **Plugins**: add context-menu actions and hear about scans; each plugin declares its permissions, needs
-  your approval before it runs, and only gets network, files outside its folder, processes and the
-  database when it declared them. See [SamplePlugin](SamplePlugin/README.md).
+- **Plugins**: add context-menu actions, save metadata to the library (undoable) and hear about scans and
+  file changes; each plugin declares its permissions, needs your approval before it runs, and only gets
+  network, files outside its folder, processes, the database and library metadata when it declared them.
+  Shipped with the app: RAWG metadata, web search (web, YouTube, GameFAQs) and playlists (RetroArch `.lpl`,
+  EmulationStation `gamelist.xml`). See [SamplePlugin](SamplePlugin/README.md).
 
 ## Supported formats
 

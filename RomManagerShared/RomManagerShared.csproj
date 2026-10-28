@@ -29,5 +29,6 @@
 		<PackageReference Include="Microsoft.Extensions.Hosting" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
 		<PackageReference Include="System.IO.Hashing" />
+		<PackageReference Include="System.Security.Cryptography.ProtectedData" />
 	</ItemGroup>
 </Project>

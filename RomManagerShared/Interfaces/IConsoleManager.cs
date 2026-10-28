@@ -80,15 +80,10 @@ public  class ConsoleManager<T> :IConsoleManager<T>, IHasContextMenuActions wher
     public IReadOnlyList<ConsoleRequirement> GetUnmetRequirements()
         => GetAllRequirements().Where(r => !r.IsOptional && !r.IsMet).ToList();
 
-    // ── Universal context menu actions (all consoles) ─────────────────────
+    // ── Console-specific context menu actions ─────────────────────────────
     /// <summary>
-    /// Returns the universal set of context actions available for every console.
-    /// Subclasses can override to add console-specific actions.
+    /// Actions this console adds to the rom context menu, after the built-in ones (rename, move, hashes…).
+    /// None by default; a module overrides this to add its own.
     /// </summary>
-    public virtual IEnumerable<IConsoleRomAction> GetContextMenuActions()
-    {
-        yield return new FindDuplicatesAction();
-        yield return new RenameRomsAction();
-        yield return new CalculateHashesAction();
-    }
+    public virtual IEnumerable<IConsoleRomAction> GetContextMenuActions() => [];
 }

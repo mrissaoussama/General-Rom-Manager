@@ -5,9 +5,12 @@
              x:Class="AvaloniaUI.Views.DialogViews.ConfirmDialogView"
              x:DataType="vm:ConfirmDialogViewModel">
     <StackPanel Spacing="12">
-        <TextBlock Text="{Binding Message}" TextWrapping="Wrap" />
+        <!-- Plugin messages can be long: they scroll instead of growing past the screen. -->
+        <ScrollViewer MaxHeight="420">
+            <SelectableTextBlock Text="{Binding Message}" TextWrapping="Wrap" />
+        </ScrollViewer>
         <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-            <Button Content="{x:Static res:Strings.Common_Cancel}" IsCancel="True" Command="{Binding CancelCommand}" />
+            <Button Content="{x:Static res:Strings.Common_Cancel}" IsCancel="True" IsVisible="{Binding ShowCancel}" Command="{Binding CancelCommand}" />
             <Button Content="{Binding ConfirmText}" IsDefault="True" Command="{Binding ConfirmCommand}" />
         </StackPanel>
     </StackPanel>

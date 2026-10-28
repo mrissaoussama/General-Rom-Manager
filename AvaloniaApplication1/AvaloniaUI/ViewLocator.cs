@@ -22,6 +22,7 @@ public class ViewLocator : IDataTemplate
             RomDetailsViewModel => new RomDetailsView(),
             ConfirmDialogViewModel => new Views.DialogViews.ConfirmDialogView(),
             PreviewDialogViewModel => new Views.DialogViews.PreviewDialogView(),
+            TableDialogViewModel => new Views.DialogViews.TableDialogView(),
             PropertiesDialogViewModel => new Views.DialogViews.PropertiesDialogView(),
             ChooseConsoleDialogViewModel => new Views.DialogViews.ChooseConsoleDialogView(),
             RenameDialogViewModel => new Views.DialogViews.RenameDialogView(),

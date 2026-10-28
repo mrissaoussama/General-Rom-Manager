@@ -9,8 +9,8 @@ AvaloniaUI.Desktop ──► AvaloniaUI ──► RomManagerShared ──► Rom
         │                                          ├─► Ryujinx.LibHac, LTRData.DiscUtils, CHDSharp, HtmlAgilityPack (NuGet)
         │                                          └─► SkyEditor.IO (vendored, net10.0; used by the 3DS module)
         └ builds and copies (no reference) ──► Consoles/RomManager.Consoles.<Name> ──► RomManagerShared
-RomManagerTests ──► RomManagerShared, every console module, AvaloniaUI, SamplePlugin (built, loaded at runtime)
-SamplePlugin    ──► RomManager.Abstractions
+        └ builds and copies (no reference) ──► SamplePlugin, Plugins/<Name> (bundled plugins) ──► RomManager.Abstractions
+RomManagerTests ──► RomManagerShared, every console module, AvaloniaUI, bundled plugins (built, loaded at runtime)
 tools/ParserHarness ──► AvaloniaUI, every console module
 ```
 
@@ -60,7 +60,11 @@ singleton. Console view models create a scope per load or action.
 
 SQLite via EF Core (no lazy loading). `LibraryFiles` holds one row per scanned file (path, size, mtime,
 scan version, data fingerprint, error, roms as polymorphic JSON from `RomSnapshot`). Title-database
-DTOs and hashes have their own tables. `MigrationTests` and CI check for pending model changes.
+DTOs and hashes have their own tables. `RomMetadataOverrides` (console, title ID or path, rom type → title,
+description, publisher, developer, release date, genres, cover path) holds metadata set by plugins:
+`MetadataOverrideStore.ApplyAsync` puts it on the roms after every scan and cache load, so rescans and moves keep it,
+and it never enters the `LibraryFiles` snapshots (hashes are copied into them alone, `UpdateCachedHashesAsync`).
+`MigrationTests` and CI check for pending model changes.
 
 ## Cross-cutting
 
@@ -72,9 +76,9 @@ DTOs and hashes have their own tables. `MigrationTests` and CI check for pending
 | Hashing | `HashUtils`: every algorithm in one read (`System.IO.Hashing.Crc32`, `IncrementalHash`), cancellable with progress | `HashRomsAsync` serves the queue and the context action |
 | File names | `FileRenamer.SanitizeFileName`: Windows/FAT-safe on every OS (invalid characters, trailing dots, device names, 255 chars) | Versions compare with `VersionKey` (numeric parts, culture-independent) |
 | Requirements | `IHasRequirements` → `ConsoleRequirement` (keys, dirs, DB files) | Surfaced in UI/onboarding |
-| Context actions | `IHasContextMenuActions`, `IConsoleRomAction`, `UniversalRomActions` | |
+| Context actions | Built-in menu items are commands of `ConsoleViewModelBase` (rename, move, hashes, convert, delete…); `IHasContextMenuActions` / `IConsoleRomAction` add console and plugin actions, grouped in submenus by `Category` | Actions run in the queue with progress; `IUndoableRomAction` adds Undo. The cards view shares the table's menu |
 | Missing updates | `IMissingUpdateReporter` (Switch: `SwitchUpdateChecker` + versions.json) | Console page report + dashboard total |
-| Plugins | `PluginManager`: collectible `AssemblyLoadContext`, `[Plugin(Permissions = ...)]`, `PluginApiVersion`, approvals pinned to SHA-256 | Permissions are approved, not sandboxed; `IPluginContext` hands out HTTP, files outside the data folder, processes and DB services only for approved permissions |
+| Plugins | `PluginManager`: collectible `AssemblyLoadContext`, `[Plugin(Permissions = ...)]`, `PluginApiVersion`, approvals pinned to SHA-256. Bundled plugins load from `<app>/BuiltInPlugins` without approval; user plugins from `<data>/Plugins` | Permissions are approved, not sandboxed; `IPluginContext` hands out HTTP, files outside the data folder, processes, DB services and metadata writes (`LibraryMetadata`, undoable) only for approved permissions. Dialogs go through `IPluginHost` (`PluginHost` in the UI). Options run in the operation queue (cancel, progress). Secret settings: DPAPI on Windows, 0600 elsewhere (`SecretProtector`) |
 | Downloads | `FileDownloader` (`[ResourceDownload]` methods) | |
 | External tools | Optional, user-supplied (cdecrypt, xextool, converters) under `<BaseDirectory>/Tools` | ADR 0002: no binaries in the repo. Converters get arguments as a list (`ConversionTool.BuildArguments`) and are pinned to their SHA-256 (`ToolPins`, `tool-pins.json`) |
 

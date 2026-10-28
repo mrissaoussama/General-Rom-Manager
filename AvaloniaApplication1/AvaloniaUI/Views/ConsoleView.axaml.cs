@@ -17,7 +17,12 @@ public partial class ConsoleView : UserControl
     private readonly ContextMenu _menu;
 
     private ConsoleViewModelBase? Vm => DataContext as ConsoleViewModelBase;
-    private IReadOnlyList<RomViewModel> Selection => _grid.SelectedItems.OfType<RomViewModel>().ToList();
+    // The card under the pointer when the cards' menu opened (cards have no multi-selection).
+    private RomViewModel? _cardTarget;
+
+    private IReadOnlyList<RomViewModel> Selection => Vm is { IsCardView: true }
+        ? (_cardTarget is null ? [] : [_cardTarget])
+        : _grid.SelectedItems.OfType<RomViewModel>().ToList();
 
     public ConsoleView()
     {
@@ -25,7 +30,7 @@ public partial class ConsoleView : UserControl
         _grid = this.FindControl<DataGrid>("RomsGrid")!;
         _search = this.FindControl<TextBox>("SearchBox")!;
         _menu = this.FindControl<ContextMenu>("RomMenu")!;
-        _menu.Opening += (_, _) => BuildMenu();
+        _menu.Opening += (_, _) => BuildMenu(_menu);
         this.FindControl<Button>("ColumnsButton")!.Click += (s, _) => ShowColumnsFlyout((Control)s!);
         _grid.KeyDown += OnGridKeyDown;
         // Cards are virtualized; free covers of recycled cards so large libraries keep memory flat.
@@ -33,6 +38,15 @@ public partial class ConsoleView : UserControl
         _cards.ElementClearing += (_, e) =>
             (e.Element.DataContext as RomViewModel)?.ReleaseCover();
         _cards.AddHandler(KeyDownEvent, OnCardsKeyDown, RoutingStrategies.Tunnel);
+        // Right-click on a card: the same menu as the table, for that card.
+        var cardMenu = new ContextMenu();
+        cardMenu.Opening += (_, _) => BuildMenu(cardMenu);
+        _cards.ContextMenu = cardMenu;
+        _cards.AddHandler(ContextRequestedEvent, (_, e) =>
+        {
+            _cardTarget = (e.Source as Control)?.FindAncestorOfType<Button>(includeSelf: true)?.DataContext as RomViewModel;
+            if (_cardTarget is not null && Vm is { } vm) vm.SelectedRom = _cardTarget;
+        }, RoutingStrategies.Tunnel);
     }
 
     private readonly ItemsRepeater _cards;
@@ -174,7 +188,7 @@ public partial class ConsoleView : UserControl
             };
             panel.Children.Add(cb);
         }
-        var reset = new Button { Content = "Reset to defaults", Margin = new Thickness(8, 0, 8, 8) };
+        var reset = new Button { Content = Strings.Settings_ResetToDefaults, Margin = new Thickness(8, 0, 8, 8) };
         reset.Click += (_, _) =>
         {
             Settings.Instance.VisibleColumns[vm.ConsoleName] = [.. vm.DefaultColumns];
@@ -190,14 +204,14 @@ public partial class ConsoleView : UserControl
 
     // ── Context menu + keys ───────────────────────────────────────────────
 
-    private void BuildMenu()
+    private void BuildMenu(ContextMenu menu)
     {
-        _menu.Items.Clear();
+        menu.Items.Clear();
         if (Vm is not { } vm) return;
         var sel = Selection;
         if (sel.Count == 0)
         {
-            _menu.Items.Add(new MenuItem { Header = Strings.ConsoleView_NoROMSelected, IsEnabled = false });
+            menu.Items.Add(new MenuItem { Header = Strings.ConsoleView_NoROMSelected, IsEnabled = false });
             return;
         }
         var single = sel.Count == 1;
@@ -212,17 +226,18 @@ public partial class ConsoleView : UserControl
             InputGesture = gesture is null ? null : KeyGesture.Parse(gesture),
         };
 
-        _menu.Items.Add(Item(Strings.ConsoleView_ShowInFolder, vm.RevealInExplorerCommand, single));
-        _menu.Items.Add(Item(Strings.ConsoleView_OpenWithDefaultApp, vm.OpenWithDefaultAppCommand, single));
-        _menu.Items.Add(Item(Strings.ConsoleView_LaunchInEmulator, vm.LaunchInEmulatorCommand, single));
-        _menu.Items.Add(new Separator());
-        _menu.Items.Add(Item(Strings.ConsoleView_CopyTitleID + n, vm.CopyTitleIdsCommand));
-        _menu.Items.Add(Item(Strings.ConsoleView_CopyTitle + n, vm.CopyTitlesCommand));
-        _menu.Items.Add(Item(Strings.ConsoleView_CopyFileName + n, vm.CopyFileNamesCommand));
-        _menu.Items.Add(new Separator());
-        _menu.Items.Add(Item(Strings.ConsoleView_Rename + n, vm.RenameCommand, gesture: "F2"));
-        _menu.Items.Add(Item(Strings.ConsoleView_MoveTo + n, vm.MoveCommand));
-        _menu.Items.Add(Item(Strings.ConsoleView_Properties, vm.ViewPropertiesCommand, single));
+        menu.Items.Add(Item(Strings.ConsoleView_ShowInFolder, vm.RevealInExplorerCommand, single));
+        menu.Items.Add(Item(Strings.ConsoleView_OpenWithDefaultApp, vm.OpenWithDefaultAppCommand, single));
+        menu.Items.Add(Item(Strings.ConsoleView_LaunchInEmulator, vm.LaunchInEmulatorCommand, single));
+        menu.Items.Add(new Separator());
+        menu.Items.Add(Item(Strings.ConsoleView_CopyTitleID + n, vm.CopyTitleIdsCommand));
+        menu.Items.Add(Item(Strings.ConsoleView_CopyTitle + n, vm.CopyTitlesCommand));
+        menu.Items.Add(Item(Strings.ConsoleView_CopyFileName + n, vm.CopyFileNamesCommand));
+        menu.Items.Add(new Separator());
+        menu.Items.Add(Item(Strings.ConsoleView_Rename + n, vm.RenameCommand, gesture: "F2"));
+        menu.Items.Add(Item(Strings.ConsoleView_MoveTo + n, vm.MoveCommand));
+        menu.Items.Add(Item(Strings.ConsoleView_Properties, vm.ViewPropertiesCommand, single));
+        menu.Items.Add(Item(Strings.ConsoleView_CalculateHashes + n, vm.CalculateHashesCommand));
         if (ConsoleViewModelBase.AvailableConversions(sel) is { Count: > 0 } conversions)
         {
             var convert = new MenuItem { Header = Strings.ConsoleView_Convert + n };
@@ -233,23 +248,41 @@ public partial class ConsoleView : UserControl
                 item.Click += async (_, _) => await vm.ConvertAsync(tool, sel);
                 convert.Items.Add(item);
             }
-            _menu.Items.Add(convert);
+            menu.Items.Add(convert);
         }
-        _menu.Items.Add(new Separator());
-        _menu.Items.Add(Item(Strings.ConsoleView_Delete + n, vm.DeleteCommand, gesture: "Delete"));
+        menu.Items.Add(new Separator());
+        menu.Items.Add(Item(Strings.ConsoleView_Delete + n, vm.DeleteCommand, gesture: "Delete"));
 
         var actions = vm.GetContextActionsForSelection(sel.Select(r => r.RomSource)).GroupBy(a => a.Category).ToList();
+        if (actions.Count > 0) menu.Items.Add(new Separator());
         foreach (var group in actions)
         {
             var sub = new MenuItem { Header = group.Key };
             foreach (var action in group)
             {
-                var item = new MenuItem { Header = action.Name };
+                var item = new MenuItem { Header = action.Name, Icon = MenuIcon(action.IconKey) };
                 ToolTip.SetTip(item, action.Description);
                 item.Click += (_, _) => vm.RunAction(action, sel);
                 sub.Items.Add(item);
             }
-            _menu.Items.Add(sub);
+            menu.Items.Add(sub);
+        }
+    }
+
+    // IconKey: an image file (a plugin's icons are resolved next to its DLL) or an application resource.
+    private static Control? MenuIcon(string? key)
+    {
+        if (string.IsNullOrWhiteSpace(key)) return null;
+        try
+        {
+            IImage? image = File.Exists(key) ? new Avalonia.Media.Imaging.Bitmap(key)
+                : Application.Current?.TryFindResource(key, out var resource) == true ? resource as IImage : null;
+            return image is null ? null : new Image { Source = image, Width = 16, Height = 16 };
+        }
+        catch (Exception ex)
+        {
+            AppLog.Warn($"[Menu] icon '{key}': {ex.Message}");
+            return null;
         }
     }
 

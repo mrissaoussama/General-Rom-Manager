@@ -30,7 +30,18 @@ public static class ConsoleModules
     // The core library and the rom model (RomManager.Abstractions); consoles come from module assemblies.
     private static readonly Assembly[] CoreAssemblies = [typeof(GamingConsole).Assembly, typeof(Rom).Assembly];
     private static List<Assembly> _loaded = [];
-    private static List<Assembly> _assemblies = [.. CoreAssemblies];
+    private static List<Assembly> _assembliesField = [.. CoreAssemblies];
+
+    // Every change of the assembly set drops lookups computed from the old one.
+    private static List<Assembly> _assemblies
+    {
+        get => _assembliesField;
+        set
+        {
+            _assembliesField = value;
+            _consoleOfRom.Clear();
+        }
+    }
 
     public static IReadOnlyList<Assembly> Assemblies => _assemblies;
 
@@ -114,6 +125,12 @@ public static class ConsoleModules
             && t.Assembly == consoleType.Assembly && t.Name.StartsWith(prefix, StringComparison.Ordinal)
             && !OtherConsoleClaims(t, consoleType));
     }
+
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<Type, Type?> _consoleOfRom = new();
+
+    /// <summary>The console a rom type belongs to (see <see cref="RomTypesOf"/>); null for the shared base types.</summary>
+    public static Type? ConsoleOf(Type romType) =>
+        _consoleOfRom.GetOrAdd(romType, t => ConsoleTypes.FirstOrDefault(c => RomTypesOf(c).Contains(t)));
 
     // Two consoles in one module (Xbox 360 and the original Xbox): the longer matching id wins.
     private static bool OtherConsoleClaims(Type romType, Type consoleType)
