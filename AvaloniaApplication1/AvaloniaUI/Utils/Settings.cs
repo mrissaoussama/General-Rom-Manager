@@ -1,4 +1,4 @@
-// AvaloniaApplication1/AvaloniaUI/Utils/Settings.cs
+﻿// AvaloniaApplication1/AvaloniaUI/Utils/Settings.cs
 
 using System.Text.Json;
 
@@ -42,6 +42,13 @@ public class Settings
 
     /// <summary>The first-run wizard was finished or closed; it is not shown again.</summary>
     public bool OnboardingCompleted { get; set; }
+
+    /// <summary>
+    /// Library folders the app organises: each console's roms live in <c>&lt;folder&gt;/&lt;console name&gt;</c>
+    /// (<see cref="RomManagerShared.Base.Library.LibraryImport.ConsoleFolderName"/>). Those sub-folders are scanned
+    /// without being listed per console; File → Add to library moves or copies files into them.
+    /// </summary>
+    public List<string> LibraryFolders { get; set; } = [];
 
     /// <summary>More ROM folders per console id, scanned together with the primary one.</summary>
     public Dictionary<string, List<string>> ConsoleExtraLibraryPaths { get; set; } = new();

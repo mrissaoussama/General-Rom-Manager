@@ -8,6 +8,7 @@
         <KeyBinding Gesture="F5" Command="{Binding RefreshCommand}" />
         <KeyBinding Gesture="Shift+F5" Command="{Binding RescanAllCommand}" />
         <KeyBinding Gesture="Ctrl+OemComma" Command="{Binding OpenSettingsCommand}" />
+        <KeyBinding Gesture="Ctrl+O" Command="{Binding AddToLibraryCommand}" />
         <KeyBinding Gesture="Ctrl+D" Command="{Binding ShowDashboardCommand}" />
         <KeyBinding Gesture="Ctrl+L" Command="{Binding ShowLogCommand}" />
     </UserControl.KeyBindings>
@@ -15,6 +16,7 @@
     <DockPanel>
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="{x:Static res:Strings.Main_File}">
+                <MenuItem Header="{x:Static res:Strings.Main_AddToLibrary}" InputGesture="Ctrl+O" Command="{Binding AddToLibraryCommand}" />
                 <MenuItem Header="{x:Static res:Strings.Main_Settings}" InputGesture="Ctrl+OemComma" Command="{Binding OpenSettingsCommand}" />
                 <Separator />
                 <MenuItem Header="{x:Static res:Strings.Main_EXit}" Command="{Binding ExitCommand}" />

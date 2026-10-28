@@ -1,9 +1,10 @@
-namespace AvaloniaUI.Utils;
+﻿namespace AvaloniaUI.Utils;
 
 /// <summary>
 /// ROM folders from config.json (<c>Consoles:&lt;Name&gt;:RomPath</c>) and settings.json (the primary folder in
 /// <see cref="Settings.ConsoleLibraryPaths"/> wins over config.json; more in <see cref="Settings.ConsoleExtraLibraryPaths"/>).
-/// Read on every call, so changes in Settings apply without a reload step.
+/// Each <see cref="Settings.LibraryFolders"/> adds its console sub-folder when it exists. Read on every call, so
+/// changes in Settings apply without a reload step.
 /// </summary>
 public sealed class LibraryRoots : ILibraryRoots
 {
@@ -17,7 +18,15 @@ public sealed class LibraryRoots : ILibraryRoots
             roots.Add(configured);
         if (Settings.Instance.ConsoleExtraLibraryPaths.TryGetValue(id, out var extra))
             roots.AddRange(extra.Where(p => !string.IsNullOrWhiteSpace(p)));
+        roots.AddRange(ManagedFolders(console).Where(Directory.Exists));
         return [.. roots.Select(p => p.Trim()).Distinct(FileUtils.PathComparer)];
+    }
+
+    /// <summary>The console's sub-folder in every library folder (existing or not).</summary>
+    public static IReadOnlyList<string> ManagedFolders(Type console)
+    {
+        var name = LibraryImport.ConsoleFolderName(ConsoleModules.Describe(console));
+        return [.. Settings.Instance.LibraryFolders.Where(f => !string.IsNullOrWhiteSpace(f)).Select(f => Path.Combine(f.Trim(), name))];
     }
 
     public IReadOnlyList<Type> ConfiguredConsoles() => [.. ConsoleModules.ConsoleTypes.Where(t => GetRoots(t).Count > 0)];

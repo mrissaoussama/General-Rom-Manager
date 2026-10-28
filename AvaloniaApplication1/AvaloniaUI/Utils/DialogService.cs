@@ -23,6 +23,9 @@ public interface IDialogService
 
     Task<string?> PickFileAsync(string title, string filterName, params string[] extensions);
 
+    /// <summary>Any number of files; empty when cancelled.</summary>
+    Task<IReadOnlyList<string>> PickFilesAsync(string title);
+
     /// <summary>Shows any <see cref="DialogViewModel"/>; true when the user confirmed.</summary>
     Task<bool> ShowAsync(DialogViewModel dialog);
 
@@ -78,6 +81,9 @@ public sealed class AvaloniaDialogService : IDialogService
 
     public Task<string?> PickFileAsync(string title, string filterName, params string[] extensions) =>
         Owner is { } owner ? Dialogs.PickFileAsync(owner, title, filterName, extensions) : Task.FromResult<string?>(null);
+
+    public Task<IReadOnlyList<string>> PickFilesAsync(string title) =>
+        Owner is { } owner ? Dialogs.PickFilesAsync(owner, title) : Task.FromResult<IReadOnlyList<string>>([]);
 
     public Task<string?> PickSaveFileAsync(string title, string suggestedName, params (string Name, string Extension)[] types) =>
         Owner is { } owner ? Dialogs.SaveFileAsync(owner, title, suggestedName, types) : Task.FromResult<string?>(null);

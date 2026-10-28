@@ -1,0 +1,46 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:res="using:AvaloniaUI.Resources"
+             xmlns:vm="using:AvaloniaUI.ViewModels"
+             x:Class="AvaloniaUI.Views.DialogViews.AddToLibraryView"
+             x:DataType="vm:AddToLibraryViewModel">
+    <DockPanel>
+        <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,8">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+                <TextBlock Classes="label" Text="{x:Static res:Strings.Import_Add}" VerticalAlignment="Center" Width="110" />
+                <Button Content="{x:Static res:Strings.Import_PickFolder}" Command="{Binding PickFolderCommand}" />
+                <Button Content="{x:Static res:Strings.Import_PickFiles}" Command="{Binding PickFilesCommand}" />
+                <TextBlock Text="{Binding SourceFolder}" Classes="muted" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <TextBlock Classes="label" Text="{x:Static res:Strings.Import_Action}" VerticalAlignment="Center" Width="110" />
+                <RadioButton GroupName="mode" Content="{x:Static res:Strings.Import_Move}" IsChecked="{Binding IsMove}" />
+                <RadioButton GroupName="mode" Content="{x:Static res:Strings.Import_Copy}" IsChecked="{Binding IsCopy}" />
+                <RadioButton GroupName="mode" Content="{x:Static res:Strings.Import_Keep}" IsChecked="{Binding IsKeep}" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding NeedsLibraryFolder}">
+                <TextBlock Classes="label" Text="{x:Static res:Strings.Import_Into}" VerticalAlignment="Center" Width="110" />
+                <ComboBox ItemsSource="{Binding LibraryFolders}" SelectedItem="{Binding LibraryFolder}" MinWidth="360"
+                          PlaceholderText="{x:Static res:Strings.Import_NoLibraryFolder}"
+                          AutomationProperties.Name="{x:Static res:Strings.Import_Into}" />
+                <Button Content="{x:Static res:Strings.Import_OtherFolder}" Command="{Binding ChooseLibraryFolderCommand}" />
+            </StackPanel>
+            <TextBlock Text="{Binding Summary}" TextWrapping="Wrap" FontWeight="SemiBold" />
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" Margin="0,10,0,0">
+            <Button Content="{x:Static res:Strings.Common_Cancel}" IsCancel="True" Command="{Binding CancelCommand}" />
+            <Button Content="{x:Static res:Strings.Import_Go}" IsDefault="True" Command="{Binding ConfirmCommand}" />
+        </StackPanel>
+        <ListBox ItemsSource="{Binding Rows}">
+            <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:ImportRow">
+                    <Grid ColumnDefinitions="2*,140,3*" Opacity="{Binding WillChange, Converter={x:Static vm:ImportRowOpacity.Instance}}">
+                        <TextBlock Text="{Binding Source}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Source}" />
+                        <TextBlock Grid.Column="1" Text="{Binding Console}" Margin="8,0" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Grid.Column="2" Text="{Binding Outcome}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Outcome}" Classes="muted" />
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </DockPanel>
+</UserControl>

@@ -285,14 +285,13 @@ public partial class MainViewModel : ViewModelBase
         Settings.RaiseCompactModeChanged();
     }
 
-    /// <summary>Adds a dropped folder as a console's ROM folder, guessing the console from its files.</summary>
-    public async Task AddLibraryFolderAsync(string folder)
+    // Each console's parser extensions, and a header check for extensions several consoles share.
+    // The check uses the scope's parsers: keep the scope until detection is done.
+    private static (Dictionary<Type, IReadOnlyCollection<string>> Extensions, ConsoleDetector.HeaderCheck Check) BuildDetector(IServiceScope scope)
     {
-        var consoles = ConsoleModules.Descriptors;
         Dictionary<Type, IReadOnlyCollection<string>> extensions = [];
         Dictionary<Type, RomManagerShared.IRomParserExecutor> executors = [];
-        using var scope = _serviceProvider.CreateScope();
-        foreach (var d in consoles)
+        foreach (var d in ConsoleModules.Descriptors)
             try
             {
                 if (scope.ServiceProvider.GetService(typeof(RomManagerShared.RomParserExecutor<>).MakeGenericType(d.ConsoleType))
@@ -303,10 +302,85 @@ public partial class MainViewModel : ViewModelBase
                 }
             }
             catch (Exception ex) { AppLog.Warn($"[AddFolder] {d.Id}: {ex.Message}"); }
+        return (extensions, (console, path, header) => executors[console].MightParse(path, header));
+    }
+
+    /// <summary>
+    /// File → Add to library: files or a folder go into the library folder's console sub-folders (moved or copied,
+    /// after a preview), or stay where they are and their folder is added to each console found.
+    /// </summary>
+    [RelayCommand]
+    private async Task AddToLibrary()
+    {
+        using var scope = _serviceProvider.CreateScope();
+        var (extensions, check) = BuildDetector(scope);
+        var dialog = new AddToLibraryViewModel(new LibraryImport(ConsoleModules.Descriptors, extensions, check), Settings.Instance.LibraryFolders);
+        if (!await Dialogs.ShowAsync(dialog)) return;
+        var plan = dialog.Plan.Where(i => i.WillChange).ToList();
+        if (plan.Count == 0) return;
+
+        if (dialog.Mode == ImportMode.KeepInPlace)
+        {
+            var folders = dialog.SourceFolder is { } picked ? plan.Select(i => (i.Console!, Folder: picked))
+                : plan.Select(i => (i.Console!, Folder: Path.GetDirectoryName(i.Source)!));
+            foreach (var (console, folder) in folders.Distinct())
+                AddRoot(console, folder);
+            Settings.Instance.Save();
+            StatusMessage = string.Format(Strings.Main_ImportKept, dialog.SourceFolder ?? Path.GetDirectoryName(plan[0].Source),
+                string.Join(", ", plan.Select(i => i.Console!.DisplayName).Distinct()));
+            await RefreshConsolesAsync(plan.Select(i => i.Console!.Id));
+            return;
+        }
+
+        var root = dialog.LibraryFolder!;
+        if (!Settings.Instance.LibraryFolders.Contains(root, FileUtils.PathComparer))
+        {
+            Settings.Instance.LibraryFolders.Add(root);
+            Settings.Instance.Save();
+        }
+        var op = OperationService.EnqueueImport(plan, dialog.Mode);
+        SelectedBottomTab = OperationsTab;
+        StatusMessage = string.Format(Strings.Main_ImportQueued, plan.Count);
+        var ids = plan.Select(i => i.Console!.Id).ToList();
+        Operations.OperationStateChanged += OnChanged;
+
+        void OnChanged(QueuedOperation changed)
+        {
+            if (changed.Id != op.Id || !changed.IsFinished) return;
+            Operations.OperationStateChanged -= OnChanged;
+            Dispatcher.UIThread.Post(() => _ = RefreshConsolesAsync(ids));
+        }
+    }
+
+    // A console's first folder becomes its primary one; later ones are extra folders.
+    private void AddRoot(ConsoleDescriptor console, string folder)
+    {
+        var existing = _roots.GetRoots(console.ConsoleType);
+        if (existing.Contains(folder, FileUtils.PathComparer)) return;
+        if (existing.Count == 0)
+            Settings.Instance.ConsoleLibraryPaths[console.Id] = folder;
+        else
+            Settings.Instance.ConsoleExtraLibraryPaths[console.Id] = [.. Settings.Instance.ConsoleExtraLibraryPaths.GetValueOrDefault(console.Id) ?? [], folder];
+    }
+
+    // New console folders become pages; the consoles that got files are rescanned.
+    private async Task RefreshConsolesAsync(IEnumerable<string> consoleIds)
+    {
+        await SyncConsolesAsync();
+        foreach (var page in ConsoleViewModels.Where(c => consoleIds.Contains(c.ConsoleName)).ToList())
+            await page.LoadData();
+        RecalculateTotalRomCount();
+    }
+
+    /// <summary>Adds a dropped folder as a console's ROM folder, guessing the console from its files.</summary>
+    public async Task AddLibraryFolderAsync(string folder)
+    {
+        var consoles = ConsoleModules.Descriptors;
+        using var scope = _serviceProvider.CreateScope();
+        var (extensions, check) = BuildDetector(scope);
 
         IReadOnlyList<ConsoleDetector.Guess> guesses;
-        try { guesses = await Task.Run(() => ConsoleDetector.Rank(ConsoleDetector.SampleFiles(folder), extensions,
-            (console, path, header) => executors[console].MightParse(path, header))); }
+        try { guesses = await Task.Run(() => ConsoleDetector.Rank(ConsoleDetector.SampleFiles(folder), extensions, check)); }
         catch (Exception ex)
         {
             StatusMessage = string.Format(Strings.Main_CannotRead, folder, ex.Message);

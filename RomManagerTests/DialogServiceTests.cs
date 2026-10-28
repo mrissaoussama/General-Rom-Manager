@@ -37,6 +37,7 @@ public sealed class DialogServiceTests : IDisposable
             Task.FromResult<string?>(null);
         public Task<string?> PickFolderAsync(string title) => Task.FromResult(Folder);
         public Task<string?> PickFileAsync(string title, string filterName, params string[] extensions) => Task.FromResult(Folder);
+        public Task<IReadOnlyList<string>> PickFilesAsync(string title) => Task.FromResult<IReadOnlyList<string>>(Folder is null ? [] : [Folder]);
         public Task<bool> ShowAsync(DialogViewModel dialog) => Task.FromResult(Answer);
         public Task<string?> PickSaveFileAsync(string title, string suggestedName, params (string Name, string Extension)[] types) =>
             Task.FromResult<string?>(null);

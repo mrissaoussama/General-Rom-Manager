@@ -42,6 +42,19 @@ public sealed partial class ConsoleViewModel<T> : ConsoleViewModelBase where T :
         CanCheckDlc = manager is IMissingDlcReporter;
     }
 
+    public override IReadOnlyList<string> LibraryRootFolders => _roots.GetRoots(_consoleType);
+
+    protected override void AddRootFolder(string folder)
+    {
+        var settings = Settings.Instance;
+        if (_roots.GetRoots(_consoleType).Count == 0)
+            settings.ConsoleLibraryPaths[ConsoleName] = folder;
+        else
+            settings.ConsoleExtraLibraryPaths[ConsoleName] = [.. settings.ConsoleExtraLibraryPaths.GetValueOrDefault(ConsoleName) ?? [], folder];
+        settings.Save();
+        AppLog.Info($"[{ConsoleName}] Added ROM folder {folder}");
+    }
+
     public override IReadOnlyList<RomManagerShared.Utils.Dat.DatIndex> GetDatIndexes()
     {
         using var scope = _serviceProvider.CreateScope();

@@ -1,4 +1,4 @@
-using Avalonia.Controls;
+﻿using Avalonia.Controls;
 using Avalonia.Platform.Storage;
 
 namespace AvaloniaUI.Utils;
@@ -22,6 +22,13 @@ internal static class Dialogs
             FileTypeFilter = [new FilePickerFileType(filterName) { Patterns = [.. extensions.Select(e => "*." + e)] }],
         });
         return result.Count > 0 ? result[0].TryGetLocalPath() : null;
+    }
+
+    /// <summary>Any number of files of any type; empty when cancelled.</summary>
+    public static async Task<IReadOnlyList<string>> PickFilesAsync(TopLevel owner, string title)
+    {
+        var result = await owner.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions { Title = title, AllowMultiple = true });
+        return [.. result.Select(f => f.TryGetLocalPath()).OfType<string>()];
     }
 
     /// <summary>Save dialog offering each (name, extension) pair as a file type.</summary>

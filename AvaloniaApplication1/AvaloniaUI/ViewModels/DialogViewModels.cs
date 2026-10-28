@@ -103,6 +103,39 @@ public sealed class PropertiesDialogViewModel : DialogViewModel
     public override void OnClosed() => Details.Dispose();
 }
 
+/// <summary>Where to move roms: one of the console's library folders, or another folder (<see cref="PickOther"/>).</summary>
+public sealed partial class ChooseFolderDialogViewModel : DialogViewModel
+{
+    public ChooseFolderDialogViewModel(string title, string message, IReadOnlyList<string> folders)
+    {
+        Title = title;
+        Message = message;
+        Folders = folders;
+        _selected = folders.FirstOrDefault();
+    }
+
+    public override string Title { get; }
+    public override double Width => 560;
+    public string Message { get; }
+    public IReadOnlyList<string> Folders { get; }
+    /// <summary>The user chose "Other folder…": the caller shows a folder picker.</summary>
+    public bool PickOther { get; private set; }
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(ConfirmCommand))]
+    private string? _selected;
+
+    protected override bool CanConfirm() => Selected is not null;
+
+    [RelayCommand]
+    private void Other()
+    {
+        PickOther = true;
+        Selected = null;
+        CancelCommand.Execute(null);
+    }
+}
+
 /// <summary>Asks which console a dropped folder holds, preselecting the detected one.</summary>
 public sealed partial class ChooseConsoleDialogViewModel : DialogViewModel
 {

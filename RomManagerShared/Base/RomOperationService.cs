@@ -79,6 +79,46 @@ public sealed class RomOperationService
                     [.. results.Where(r => !r.Success).Select(r => (r.SourcePath, r.ErrorMessage))]);
             });
 
+    // ── Import ("Add to library") ─────────────────────────────────────────
+
+    /// <summary>
+    /// Moves or copies the planned files into the library folder (<see cref="LibraryImport"/>). Undo moves them back
+    /// (journaled, also after a restart) or deletes the copies.
+    /// </summary>
+    public QueuedOperation EnqueueImport(IReadOnlyList<Library.ImportItem> plan, Library.ImportMode mode)
+    {
+        var count = plan.Count(i => i.WillChange);
+        var name = $"{(mode == Library.ImportMode.Copy ? "Copy" : "Move")} {count} item(s) into the library";
+        Library.ImportResult? result = null;
+        JournalEntry? entry = null;
+        QueuedOperation? op = null;
+        op = new QueuedOperation
+        {
+            Name = name,
+            Description = string.Join(", ", plan.Where(i => i.WillChange).Select(i => i.Console!.DisplayName).Distinct()),
+            Category = "Import",
+            ExecuteAsync = async (ct, progress) =>
+            {
+                result = await Task.Run(() => Library.LibraryImport.Execute(plan, mode, progress, ct), ct);
+                if (result.Undo.Count > 0 && _journal is not null)
+                {
+                    entry = _journal.Add(name, "Import", [.. result.Undo]);
+                    _journalOps[op!.Id] = entry.Id;
+                }
+                op!.Warning = Summarise("Import", mode == Library.ImportMode.Copy ? "copied" : "moved", result.Done,
+                    [.. result.Failed.Select(f => (f.Path, (string?)f.Error))]);
+            },
+            UndoAsync = ct => Task.Run(() =>
+            {
+                if (result is null) return;
+                ApplyRestorePlan(result.Undo, ct);
+                Library.LibraryImport.DeleteCreated(result.Created);
+                if (entry is not null) _journal?.Remove(entry.Id);
+            }, ct),
+        };
+        return _queue.Enqueue(op);
+    }
+
     // Logs the outcome. Everything failed: throws (the operation fails). Some failed: the operation's warning.
     private static string? Summarise(string kind, string verb, int ok, IReadOnlyList<(string Path, string? Error)> failed)
     {

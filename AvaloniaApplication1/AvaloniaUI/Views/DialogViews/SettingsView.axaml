@@ -55,6 +55,25 @@
                             <TextBlock Classes="status" Text="{Binding DatabasePath.Status.Text}" Foreground="{Binding DatabasePath.Status.Brush}" />
                         </StackPanel>
 
+                        <TextBlock Classes="heading" Text="{x:Static res:Strings.Settings_LibraryFolders}" />
+                        <TextBlock Classes="hint" TextWrapping="Wrap" Text="{x:Static res:Strings.Settings_LibraryFoldersHint}" />
+                        <ItemsControl ItemsSource="{Binding LibraryFolders}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="x:String">
+                                    <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,1">
+                                        <TextBlock Text="{Binding}" VerticalAlignment="Center" MinWidth="320" />
+                                        <Button Classes="small" Content="{x:Static res:Strings.Console_Remove}" CommandParameter="{Binding}"
+                                                Command="{Binding #Root.((vm:SettingsViewModel)DataContext).RemoveLibraryFolderCommand}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <Button Content="{x:Static res:Strings.Settings_AddLibraryFolder}" Command="{Binding AddLibraryFolderCommand}" />
+                            <Button Content="{x:Static res:Strings.Settings_CreateConsoleFolders}" Command="{Binding CreateConsoleFoldersCommand}" />
+                            <TextBlock Classes="status" Text="{Binding LibraryFoldersStatus}" VerticalAlignment="Center" />
+                        </StackPanel>
+
                         <TextBlock Classes="heading" Text="{x:Static res:Strings.Common_ROMFolders}" />
                         <TextBlock Classes="hint" Text="{x:Static res:Strings.Settings_TheFolderWithEachConsoleSROMsMoreFoldersSeparate}" />
                         <ItemsControl ItemsSource="{Binding Consoles}">

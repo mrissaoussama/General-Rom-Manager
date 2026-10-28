@@ -436,11 +436,33 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
         Track(op, roms);
     }
 
+    /// <summary>This console's ROM folders (primary, extra and library-folder ones); empty for the all-consoles view.</summary>
+    public virtual IReadOnlyList<string> LibraryRootFolders => [];
+
+    /// <summary>Lets the console's view model add a folder to its ROM folders (Settings → ROM folders).</summary>
+    protected virtual void AddRootFolder(string folder) { }
+
+    // The console's other ROM folders first (drives, shares); "Other folder…" opens a picker.
+    private async Task<string?> ChooseMoveTargetAsync(IReadOnlyList<RomViewModel> roms)
+    {
+        var current = roms.Select(r => r.Path).ToList();
+        var folders = LibraryRootFolders.Where(Directory.Exists)
+            .Where(f => !current.All(p => p.StartsWith(Path.TrimEndingDirectorySeparator(f) + Path.DirectorySeparatorChar, FileUtils.PathComparison)))
+            .ToList();
+        if (folders.Count > 0)
+        {
+            var choice = new ChooseFolderDialogViewModel(Strings.Console_Move, string.Format(Strings.Console_MoveToWhichFolder, DisplayName), folders);
+            if (await Dialogs.ShowAsync(choice)) return choice.Selected;
+            if (!choice.PickOther) return null;
+        }
+        return await Dialogs.PickFolderAsync(Strings.Console_SelectTargetDirectory);
+    }
+
     [RelayCommand]
     private async Task Move(IReadOnlyList<RomViewModel> roms)
     {
         if (Operations is null || roms.Count == 0) return;
-        var target = await Dialogs.PickFolderAsync(Strings.Console_SelectTargetDirectory);
+        var target = await ChooseMoveTargetAsync(roms);
         if (target is null) return;
         var sources = roms.Select(r => r.RomSource).ToList();
 
@@ -457,6 +479,12 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
                 string.Format(Strings.Console_MoveFileSTo, moving.Count, FileUtils.FormatFileSize(bytes), target),
                 moving.Select(m => $"{m.SourcePath}  →  {m.DestinationPath}"), Strings.Console_Move))
             return;
+        // Outside every ROM folder, the next scan would drop the moved roms from the library.
+        var inLibrary = LibraryRootFolders.Any(f => string.Equals(Path.TrimEndingDirectorySeparator(target), Path.TrimEndingDirectorySeparator(f), FileUtils.PathComparison)
+            || target.StartsWith(Path.TrimEndingDirectorySeparator(f) + Path.DirectorySeparatorChar, FileUtils.PathComparison));
+        if (!inLibrary && LibraryRootFolders.Count > 0
+            && await Dialogs.ConfirmAsync(Strings.Console_Move, string.Format(Strings.Console_AddMoveTargetAsFolder, target, DisplayName), Strings.Main_AddFolder))
+            AddRootFolder(target);
         Track(Operations.EnqueueMove(sources, target), roms);
     }
 

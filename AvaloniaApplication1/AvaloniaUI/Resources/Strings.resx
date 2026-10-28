@@ -417,4 +417,36 @@ Run it anyway? It will be trusted from now on.</value></data>
   <data name="Console_NoEmulatorChoose" xml:space="preserve"><value>No emulator is set for {0}. Choose its program now? It is saved in Settings → Emulators, where the arguments can be changed.</value></data>
   <data name="Console_ChooseEmulator" xml:space="preserve"><value>Choose…</value></data>
   <data name="Console_StartedEmulator" xml:space="preserve"><value>Started {0} with {1}</value></data>
+  <data name="Settings_LibraryFolders" xml:space="preserve"><value>Library folders</value></data>
+  <data name="Settings_LibraryFoldersHint" xml:space="preserve"><value>Folders the app organises: each console gets a sub-folder named after it (for example Nintendo 3DS), scanned automatically. File → Add to library moves or copies ROMs into them.</value></data>
+  <data name="Settings_ChooseLibraryFolder" xml:space="preserve"><value>Choose a library folder</value></data>
+  <data name="Settings_AddLibraryFolder" xml:space="preserve"><value>Add library folder…</value></data>
+  <data name="Settings_CreateConsoleFolders" xml:space="preserve"><value>Create console folders</value></data>
+  <data name="Settings_ConsoleFoldersCreated" xml:space="preserve"><value>{0} folder(s) created</value></data>
+  <data name="Import_Title" xml:space="preserve"><value>Add to library</value></data>
+  <data name="Import_Add" xml:space="preserve"><value>Add</value></data>
+  <data name="Import_PickFolder" xml:space="preserve"><value>A folder…</value></data>
+  <data name="Import_PickFiles" xml:space="preserve"><value>Files…</value></data>
+  <data name="Import_Action" xml:space="preserve"><value>Then</value></data>
+  <data name="Import_Move" xml:space="preserve"><value>Move into the library</value></data>
+  <data name="Import_Copy" xml:space="preserve"><value>Copy into the library</value></data>
+  <data name="Import_Keep" xml:space="preserve"><value>Keep where they are</value></data>
+  <data name="Import_Into" xml:space="preserve"><value>Library folder</value></data>
+  <data name="Import_NoLibraryFolder" xml:space="preserve"><value>Choose a library folder</value></data>
+  <data name="Import_OtherFolder" xml:space="preserve"><value>Other…</value></data>
+  <data name="Import_Go" xml:space="preserve"><value>Add</value></data>
+  <data name="Import_PickSomething" xml:space="preserve"><value>Pick a folder or files to add.</value></data>
+  <data name="Import_Planning" xml:space="preserve"><value>Looking at the files…</value></data>
+  <data name="Import_SummaryMove" xml:space="preserve"><value>{0} of {1} item(s) will be moved into {2}, one folder per console.</value></data>
+  <data name="Import_SummaryCopy" xml:space="preserve"><value>{0} of {1} item(s) will be copied into {2}, one folder per console.</value></data>
+  <data name="Import_SummaryKeep" xml:space="preserve"><value>{0} of {1} item(s) recognised; the folder is added to: {2}.</value></data>
+  <data name="Import_AndCompanions" xml:space="preserve"><value> (+{0} file(s))</value></data>
+  <data name="Import_Skipped" xml:space="preserve"><value>Skipped: {0}</value></data>
+  <data name="Import_StaysHere" xml:space="preserve"><value>Stays here</value></data>
+  <data name="Main_AddToLibrary" xml:space="preserve"><value>Add to library…</value></data>
+  <data name="Main_ImportQueued" xml:space="preserve"><value>Adding {0} item(s) to the library; see Operations.</value></data>
+  <data name="Main_ImportKept" xml:space="preserve"><value>Added {0} as a folder of {1}.</value></data>
+  <data name="Console_MoveToWhichFolder" xml:space="preserve"><value>Move to which of the {0} folders?</value></data>
+  <data name="Console_OtherFolder" xml:space="preserve"><value>Other folder…</value></data>
+  <data name="Console_AddMoveTargetAsFolder" xml:space="preserve"><value>{0} is not one of the {1} ROM folders, so the moved ROMs would leave the library on the next scan. Add it as a ROM folder?</value></data>
 </root>

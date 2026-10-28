@@ -43,6 +43,7 @@ public sealed partial class SettingsViewModel : DialogViewModel
         _rescanIntervalHours = settings.RescanIntervalHours > 0 ? settings.RescanIntervalHours.ToString() : "";
         _hashDiscImages = RomManagerShared.Utils.Dat.DiscHashing.Enabled;
 
+        LibraryFolders = [.. settings.LibraryFolders];
         Consoles = [.. ConsoleModules.Descriptors.Select(d => new ConsoleSettingsRow(d, settings))];
         Tools = [.. ConversionTools.All.Select(t => new ToolPathRow(t, settings.ToolPaths.GetValueOrDefault(t.Id, "")))];
         ColumnGroups = [.. BuildColumnGroups()];
@@ -94,6 +95,46 @@ public sealed partial class SettingsViewModel : DialogViewModel
     private async Task BrowsePluginsDirectory()
     {
         if (await Dialogs.PickFolderAsync(Strings.Settings_SelectPluginsDirectory) is { } path) PluginsDirectory.Value = path;
+    }
+
+    /// <summary>Folders the app organises (one sub-folder per console); see <see cref="Settings.LibraryFolders"/>.</summary>
+    public ObservableCollection<string> LibraryFolders { get; }
+
+    [ObservableProperty] private string? _libraryFoldersStatus;
+
+    [RelayCommand]
+    private async Task AddLibraryFolder()
+    {
+        if (await Dialogs.PickFolderAsync(Strings.Settings_ChooseLibraryFolder) is { } path
+            && !LibraryFolders.Contains(path, FileUtils.PathComparer))
+            LibraryFolders.Add(path);
+    }
+
+    [RelayCommand]
+    private void RemoveLibraryFolder(string folder) => LibraryFolders.Remove(folder);
+
+    /// <summary>Creates every console's sub-folder in each library folder, so files can be dropped straight in.</summary>
+    [RelayCommand]
+    private void CreateConsoleFolders()
+    {
+        int created = 0;
+        try
+        {
+            foreach (var root in LibraryFolders)
+                foreach (var console in ConsoleModules.Descriptors)
+                {
+                    var folder = Path.Combine(root, LibraryImport.ConsoleFolderName(console));
+                    if (Directory.Exists(folder)) continue;
+                    Directory.CreateDirectory(folder);
+                    created++;
+                }
+            LibraryFoldersStatus = string.Format(Strings.Settings_ConsoleFoldersCreated, created);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            LibraryFoldersStatus = string.Format(Strings.Console_Error, ex.Message);
+            AppLog.Warn($"[Settings] Creating console folders: {ex.Message}");
+        }
     }
 
     [RelayCommand]
@@ -299,6 +340,7 @@ public sealed partial class SettingsViewModel : DialogViewModel
         s.IsCompactMode = IsCompactMode;
         s.DatabasePath = NullIfBlank(DatabasePath.Value);
         s.PluginsDirectory = string.IsNullOrWhiteSpace(PluginsDirectory.Value) ? "plugins" : PluginsDirectory.Value.Trim();
+        s.LibraryFolders = [.. LibraryFolders];
         foreach (var row in Consoles) row.ApplyTo(s);
         s.ToolPaths = Tools.Where(t => !string.IsNullOrWhiteSpace(t.Path)).ToDictionary(t => t.Tool.Id, t => t.Path.Trim());
         s.RegionPriority = RegionPriority;

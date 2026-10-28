@@ -1,4 +1,4 @@
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 
 namespace AvaloniaUI;
 
@@ -28,6 +28,8 @@ public class ViewLocator : IDataTemplate
             RenameDialogViewModel => new Views.DialogViews.RenameDialogView(),
             SettingsViewModel => new Views.DialogViews.SettingsView(),
             OnboardingViewModel => new Views.DialogViews.OnboardingView(),
+            AddToLibraryViewModel => new Views.DialogViews.AddToLibraryView(),
+            ChooseFolderDialogViewModel => new Views.DialogViews.ChooseFolderDialogView(),
             _ => null,
         };
         if (view is null) return new TextBlock { Text = "No view for " + param.GetType().Name };
