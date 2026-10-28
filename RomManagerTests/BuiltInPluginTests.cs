@@ -1,6 +1,8 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Xml.Linq;
 using AwesomeAssertions;
+using RomManager.Plugins.GameTdbCovers;
+using RomManager.Plugins.Igdb;
 using RomManager.Plugins.Playlists;
 using RomManager.Plugins.WebSearch;
 using RomManagerShared.Base;
@@ -82,5 +84,52 @@ public class BuiltInPluginTests
         games[0].Element("developer")!.Value.Should().Be("Nintendo R&D1");
         games[1].Element("path")!.Value.Should().Be(outside.Path);
         games[1].Element("releasedate").Should().BeNull();
+    }
+
+    // ── GameTDB ───────────────────────────────────────────────────────────
+
+    [Fact]
+    public void GameTdb_TriesTheGamesRegionFirst()
+    {
+        var game = new Game { TitleID = "0004000000030700", ProductCode = "CTR-P-AMKJ" };
+
+        GameTdbCoversPlugin.CandidateUrls(game, "3ds", "jpg").Select(u => u.AbsoluteUri).Should().Equal(
+            "https://art.gametdb.com/3ds/cover/JA/AMKJ.jpg",
+            "https://art.gametdb.com/3ds/cover/US/AMKJ.jpg",
+            "https://art.gametdb.com/3ds/cover/EN/AMKJ.jpg");
+    }
+
+    [Fact]
+    public void GameTdb_UsesWiiGameIdsAndWiiUMakerCode()
+    {
+        GameTdbCoversPlugin.CandidateUrls(new Game { TitleID = "RMGE01" }, "wii", "png").First().AbsoluteUri
+            .Should().Be("https://art.gametdb.com/wii/cover/US/RMGE01.png");
+        GameTdbCoversPlugin.CandidateUrls(new Game { TitleID = "0005000010101D00", ProductCode = "WUP-P-ARPE" }, "wiiu", "jpg").First().AbsoluteUri
+            .Should().Be("https://art.gametdb.com/wiiu/cover/US/ARPE01.jpg");
+        GameTdbCoversPlugin.RegionOf("BLES00001", "ps3").Should().Be("EN");
+    }
+
+    // ── IGDB ──────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void Igdb_QueryEscapesTheTitleAndFiltersByPlatform()
+    {
+        IgdbPlugin.Query("Say \"Hi\"", [37]).Should().StartWith("search \"Say \\\"Hi\\\"\";")
+            .And.Contain("where platforms = (37);").And.EndWith("limit 1;");
+        IgdbPlugin.Query("Zelda", null).Should().NotContain("where");
+    }
+
+    [Fact]
+    public void Igdb_ReadsTheReleaseDateAndCompanies()
+    {
+        var game = System.Text.Json.JsonSerializer.Deserialize<IgdbPlugin.IgdbGame>("""
+            {"name":"Mario Kart 7","first_release_date":1322697600,
+             "involved_companies":[{"developer":true,"publisher":false,"company":{"name":"Retro Studios"}},
+                                   {"developer":false,"publisher":true,"company":{"name":"Nintendo"}}]}
+            """)!;
+
+        game.ReleaseDate.Should().Be(new DateOnly(2011, 12, 1));
+        game.Company(developer: true).Should().Be("Retro Studios");
+        game.Company(developer: false).Should().Be("Nintendo");
     }
 }

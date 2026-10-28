@@ -29,6 +29,8 @@
     <Project Path="Consoles/Xbox/RomManager.Consoles.Xbox.csproj" />
   </Folder>
   <Folder Name="/Plugins/">
+    <Project Path="Plugins/GameTdbCovers/RomManager.Plugins.GameTdbCovers.csproj" />
+    <Project Path="Plugins/Igdb/RomManager.Plugins.Igdb.csproj" />
     <Project Path="Plugins/Playlists/RomManager.Plugins.Playlists.csproj" />
     <Project Path="Plugins/WebSearch/RomManager.Plugins.WebSearch.csproj" />
   </Folder>
