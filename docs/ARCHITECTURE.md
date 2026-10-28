@@ -1,4 +1,4 @@
-# Architecture
+﻿# Architecture
 
 State as of 2026-10-28. Target architecture and migration steps are in [ROADMAP.md](ROADMAP.md).
 
@@ -25,6 +25,11 @@ Solution: `RomManager.slnx`. Package versions: `Directory.Packages.props`. The d
   Icon, Images…). Subclasses per console and content kind: `Game`, `Update`, `DLC` and
   `<Console>Game/Update/DLC`. `[UiProperty]` drives grid columns.
 - `Rom.Equals` = (TitleID, Path).
+- `Game.Updates`/`DLCs` and `Update`/`DLC.RelatedGame` are runtime links, not stored (`[JsonIgnore]`):
+  `RomRelations.Link` fills them whenever a page shows its roms, matching `RomRelations.BaseTitleId` (3DS/Wii U
+  category word, Switch update/DLC bits, the same ID elsewhere). Updates/DLC without an icon take the game's.
+- `Rom.Size` is the size on disk: parsers may set a content size (Switch titles inside an XCI), the scanner fills
+  the file's (or game folder's) size when they do not, and title providers only fill a missing one.
 
 ## Pipeline
 
@@ -73,6 +78,8 @@ and it never enters the `LibraryFiles` snapshots (hashes are copied into them al
 | Logging | `AppLog` over `ILoggerFactory` (the host's in the app); `LogFileProvider` → `LogSink` (file, log panel) | `ParseDiagnostics` captures per-file messages during a scan; `FileUtils.Log` stays as a shim for plugins |
 | Config | `AppOptions` + per-module `Consoles:<Id>` sections (config.json, reloading) + `Settings.Instance` (settings.json) | Static accessor kept for non-DI code; `IOptionsMonitor<AppOptions>` in DI |
 | Operations | `OperationQueue` / `QueuedOperation` with cancel + undo, `RomOperationService` | Rename/move have dry-run previews; partial failures set `QueuedOperation.Warning` ("Partly done") |
+| Library folders | `Settings.LibraryFolders`; `LibraryRoots` adds `<folder>/<console display name>` when it exists. `LibraryImport` plans and runs File → Add to library (classify by `ConsoleDetector`, companions of sheets, skip reasons); `RomOperationService.EnqueueImport` queues it with undo | Keep in place adds the source folder to each console found |
+| Save data | `SaveData.Find` (next to the ROM + per-console emulator folders, portable from Settings → Emulators or installed), `Backup`/`Restore` (zip with a manifest of original paths) | Read-only while looking; restore backs up the current saves first |
 | Hashing | `HashUtils`: every algorithm in one read (`System.IO.Hashing.Crc32`, `IncrementalHash`), cancellable with progress | `HashRomsAsync` serves the queue and the context action |
 | File names | `FileRenamer.SanitizeFileName`: Windows/FAT-safe on every OS (invalid characters, trailing dots, device names, 255 chars) | Versions compare with `VersionKey` (numeric parts, culture-independent) |
 | Requirements | `IHasRequirements` → `ConsoleRequirement` (keys, dirs, DB files) | Surfaced in UI/onboarding |

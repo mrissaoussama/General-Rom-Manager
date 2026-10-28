@@ -1,4 +1,4 @@
-# RomManager
+﻿# RomManager
 
 A desktop ROM library manager for Windows, Linux and macOS (.NET 10 + Avalonia). Point it at one
 folder per console and it reads each file's header or container to find the title ID, name, version,
@@ -10,6 +10,8 @@ hash files.
 | Table | Cards |
 |---|---|
 | ![Console page, table](docs/screenshots/console-table.png) | ![Console page, cards](docs/screenshots/console-cards.png) |
+| **Add to library** | **Properties** |
+| ![Add to library preview](docs/screenshots/add-to-library.png) | ![Properties with linked update and DLC](docs/screenshots/properties.png) |
 
 Screenshots are rendered by the headless UI tests with sample data (`SCREENSHOTS=1 dotnet test`).
 
@@ -21,8 +23,13 @@ Screenshots are rendered by the headless UI tests with sample data (`SCREENSHOTS
 - **Browse**: table or cover cards, an "All consoles" view, grouping of updates/DLC under their game,
   filters (type, region, language, format, has/no update, duplicates, unnamed) and search.
 - **Organise**: rename with a preview of old → new names, move with a preview, delete, hash
-  (CRC32/MD5/SHA1), duplicate detection, 1G1R (keep one version per game by region priority); operations
-  run in a queue with cancel and undo (undo survives a restart).
+  (CRC32/MD5/SHA1), duplicate detection, 1G1R (keep one version per game by region priority), one folder per
+  game (with its updates and DLC), verify a selection against DATs; operations run in a queue with cancel and
+  undo (undo survives a restart).
+- **Library folders**: folders the app organises with one sub-folder per console. File → Add to library moves
+  or copies files or a folder into them (or keeps them in place), showing where each file goes first.
+- **Save data**: finds a game's saves next to the ROM and in common emulators' folders (Citra/Azahar, Yuzu-based,
+  PPSSPP, Dolphin, RPCS3, Vita3K), opens them, backs them up to a zip and restores them.
 - **Convert**: CHD, RVZ, CSO and NSZ through chdman, DolphinTool, maxcso or nsz that you install
   yourself (Settings → Conversion tools); originals are kept.
 - **Identify**: No-Intro DAT matching for cartridge consoles (by hash), title databases for Switch,
@@ -32,8 +39,8 @@ Screenshots are rendered by the headless UI tests with sample data (`SCREENSHOTS
 - **Plugins**: add context-menu actions, save metadata to the library (undoable) and hear about scans and
   file changes; each plugin declares its permissions, needs your approval before it runs, and only gets
   network, files outside its folder, processes, the database and library metadata when it declared them.
-  Shipped with the app: RAWG metadata, web search (web, YouTube, GameFAQs) and playlists (RetroArch `.lpl`,
-  EmulationStation `gamelist.xml`). See [SamplePlugin](SamplePlugin/README.md).
+  Shipped with the app: RAWG and IGDB metadata, GameTDB box art, web search (web, YouTube, GameFAQs) and
+  playlists (RetroArch `.lpl`, EmulationStation `gamelist.xml`). See [SamplePlugin](SamplePlugin/README.md).
 
 ## Supported formats
 

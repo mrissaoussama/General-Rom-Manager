@@ -1,4 +1,4 @@
-using RomManagerShared.GameBoy;
+﻿using RomManagerShared.GameBoy;
 using RomManagerShared.NES;
 using Avalonia;
 using Avalonia.Controls;
@@ -338,6 +338,43 @@ public sealed class HeadlessUiTests
         message.Show();
         Capture(message, "plugin-message");
         message.Close();
+
+        // File → Add to library: the plan before anything moves.
+        var import = new AddToLibraryViewModel(new LibraryImport([], new Dictionary<Type, IReadOnlyCollection<string>>()), [@"D:\Games"])
+        {
+            SourceFolder = @"D:\Downloads",
+            Summary = @"4 of 5 item(s) will be moved into D:\Games, one folder per console.",
+        };
+        import.Rows.Add(new ImportRow("Star Courier.nes", "NES", @"→ D:\Games\Nintendo Entertainment System\Star Courier.nes", true));
+        import.Rows.Add(new ImportRow("Ghost Lantern.gb", "Game Boy", @"→ D:\Games\Game Boy\Ghost Lantern.gb", true));
+        import.Rows.Add(new ImportRow("Sky Ferry.cue (+2 file(s))", "PlayStation", @"→ D:\Games\PlayStation\Sky Ferry.cue", true));
+        import.Rows.Add(new ImportRow("Lunar Drift", "Wii U", @"→ D:\Games\Wii U\Lunar Drift", true));
+        import.Rows.Add(new ImportRow("readme.txt", "?", "Skipped: Not a ROM format", false));
+        var importWindow = new DialogWindow(import);
+        importWindow.Show();
+        Find<ListBox>(importWindow).ItemCount.Should().Be(5);
+        Capture(importWindow, "add-to-library");
+        importWindow.Close();
+
+        // Properties: a game with its update and DLC as links.
+        var game = new Game
+        {
+            TitleID = "0004000000030700", Path = Path.Combine(Path.GetTempPath(), "roms", "Star Courier.3ds"), Version = "0",
+            Size = 512L << 20, Publisher = "Nintendo", ProductCode = "CTR-P-AMKE",
+        };
+        game.AddTitleName("Star Courier");
+        game.AddRegion(Region.USA);
+        var update = new Update { TitleID = "0004000E00030700", Path = Path.Combine(Path.GetTempPath(), "roms", "Star Courier Update.cia"), Version = "3152" };
+        update.AddTitleName("Star Courier Update");
+        var dlc = new DLC { TitleID = "0004008C00030700", Path = Path.Combine(Path.GetTempPath(), "roms", "Star Courier Tracks.cia") };
+        dlc.AddTitleName("Star Courier Track Pack");
+        var page = new TestConsoleViewModel();
+        page.Show(game, update, dlc);
+        var properties = new DialogWindow(new PropertiesDialogViewModel(page.Roms[0]));
+        properties.Show();
+        Find<Button>(properties, b => b.Content as string == "Star Courier Update v3152").Should().NotBeNull();
+        Capture(properties, "properties");
+        properties.Close();
 
         var onboarding = new OnboardingViewModel(new AvaloniaUI.Utils.Settings(), _ => { });
         onboarding.NextCommand.Execute(null);
