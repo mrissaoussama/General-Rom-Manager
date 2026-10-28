@@ -449,4 +449,19 @@ Run it anyway? It will be trusted from now on.</value></data>
   <data name="Console_MoveToWhichFolder" xml:space="preserve"><value>Move to which of the {0} folders?</value></data>
   <data name="Console_OtherFolder" xml:space="preserve"><value>Other folder…</value></data>
   <data name="Console_AddMoveTargetAsFolder" xml:space="preserve"><value>{0} is not one of the {1} ROM folders, so the moved ROMs would leave the library on the next scan. Add it as a ROM folder?</value></data>
+  <data name="ConsoleView_Batch" xml:space="preserve"><value>Batch</value></data>
+  <data name="ConsoleView_VerifyWithDat" xml:space="preserve"><value>Verify against DATs</value></data>
+  <data name="ConsoleView_GroupByGame" xml:space="preserve"><value>One folder per game</value></data>
+  <data name="ConsoleView_ExportSelection" xml:space="preserve"><value>Export selection…</value></data>
+  <data name="ConsoleView_SelectUpdatesAndDlc" xml:space="preserve"><value>Select updates and DLC ({0})</value></data>
+  <data name="Console_VerifiedSelection" xml:space="preserve"><value>{0} of {1} file(s) are good dumps listed in a DAT.</value></data>
+  <data name="Console_ColumnFile" xml:space="preserve"><value>File</value></data>
+  <data name="Console_ColumnResult" xml:space="preserve"><value>Result</value></data>
+  <data name="Console_ColumnDatEntry" xml:space="preserve"><value>DAT entry</value></data>
+  <data name="Console_GoodDump" xml:space="preserve"><value>Good dump</value></data>
+  <data name="Console_NotInDat" xml:space="preserve"><value>Not in any DAT</value></data>
+  <data name="Console_NotHashed" xml:space="preserve"><value>Could not hash</value></data>
+  <data name="Console_NothingToGroup" xml:space="preserve"><value>Nothing to group: the files are already in their game's folder, or have no linked game.</value></data>
+  <data name="Console_GroupByGame" xml:space="preserve"><value>One folder per game</value></data>
+  <data name="Console_GroupByGameSummary" xml:space="preserve"><value>{0} file(s) will move into a folder named after their game (updates and DLC go with it). Undo puts them back.</value></data>
 </root>

@@ -79,6 +79,24 @@ public sealed class RomOperationService
                     [.. results.Where(r => !r.Success).Select(r => (r.SourcePath, r.ErrorMessage))]);
             });
 
+    // ── Group by game ─────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Puts each game and its updates and DLC into a folder named after the game (<see cref="RomGrouping"/>).
+    /// <paramref name="library"/> is every rom of the console, so roms sharing a moved file follow it. Undoable.
+    /// </summary>
+    public QueuedOperation EnqueueGroupByGame(IReadOnlyList<(Rom Rom, string Destination)> plan, IReadOnlyList<Rom> library)
+    {
+        var roms = plan.Select(p => p.Rom).ToList();
+        var affected = library.Where(r => roms.Any(m => string.Equals(m.Path, r.Path, FileUtils.PathComparison))).ToList();
+        return EnqueuePathOperation(affected, $"Group {plan.Count} file(s) by game", "One folder per game", "Move",
+            ct => Task.Run(() =>
+            {
+                var (moved, failed) = RomGrouping.Execute(plan, library, ct);
+                return Summarise("Group", "moved", moved, failed);
+            }, ct));
+    }
+
     // ── Import ("Add to library") ─────────────────────────────────────────
 
     /// <summary>

@@ -149,4 +149,20 @@ public class ConsoleViewModelStateTests
 
         vm.Roms.Select(r => r.GroupKey).Distinct().Should().Equal("Mario Kart 7");
     }
+
+    [Fact]
+    public void RelatedRows_AreTheSelectionsGameUpdatesAndDlc()
+    {
+        var vm = new TestConsoleViewModel();
+        var game = Named(new Game(), "01007EF00011E000", "Game");
+        var update = Named(new Update(), "01007EF00011E800", "Update");
+        var dlc = Named(new DLC(), "01007EF00011F001", "Dlc");
+        var other = Named(new Game(), "0100000000010000", "Other");
+        vm.Show(game, update, dlc, other);
+        RomViewModel Row(Rom r) => vm.Roms.Single(x => x.RomSource == r);
+
+        vm.RelatedRows([Row(game)]).Select(r => r.RomSource).Should().BeEquivalentTo(new Rom[] { update, dlc });
+        vm.RelatedRows([Row(dlc)]).Select(r => r.RomSource).Should().BeEquivalentTo(new Rom[] { game, update });
+        vm.RelatedRows([Row(other)]).Should().BeEmpty();
+    }
 }

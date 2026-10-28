@@ -255,6 +255,18 @@ public partial class ConsoleView : UserControl
         menu.Items.Add(Item(Strings.ConsoleView_MoveTo + n, vm.MoveCommand));
         menu.Items.Add(Item(Strings.ConsoleView_Properties, vm.ViewPropertiesCommand, single));
         menu.Items.Add(Item(Strings.ConsoleView_CalculateHashes + n, vm.CalculateHashesCommand));
+        var batch = new MenuItem { Header = Strings.ConsoleView_Batch };
+        batch.Items.Add(Item(Strings.ConsoleView_VerifyWithDat + n, vm.VerifySelectionCommand));
+        batch.Items.Add(Item(Strings.ConsoleView_GroupByGame + n, vm.GroupByGameCommand));
+        batch.Items.Add(Item(Strings.ConsoleView_ExportSelection + n, vm.ExportSelectionCommand));
+        var related = vm.RelatedRows(sel);
+        var selectRelated = new MenuItem { Header = string.Format(Strings.ConsoleView_SelectUpdatesAndDlc, related.Count), IsEnabled = related.Count > 0 && !vm.IsCardView };
+        selectRelated.Click += (_, _) =>
+        {
+            foreach (var row in related) _grid.SelectedItems.Add(row);
+        };
+        batch.Items.Add(selectRelated);
+        menu.Items.Add(batch);
         if (ConsoleViewModelBase.AvailableConversions(sel) is { Count: > 0 } conversions)
         {
             var convert = new MenuItem { Header = Strings.ConsoleView_Convert + n };

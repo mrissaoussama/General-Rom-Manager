@@ -728,6 +728,88 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
         Track(op, roms);
     }
 
+    /// <summary>
+    /// Hashes the selected files and checks them against the console's DATs: which are good dumps (and of what), which
+    /// no DAT lists. Works for disc images too, which the scan does not hash by default.
+    /// </summary>
+    [RelayCommand]
+    private void VerifySelection(IReadOnlyList<RomViewModel> roms)
+    {
+        if (Operations is null || roms.Count == 0) return;
+        var indexes = GetDatIndexes();
+        if (indexes.Count == 0)
+        {
+            StatusMessage = Strings.Console_NoDATForThisConsoleAddNoIntroOrRedumpDATsToTheDA;
+            return;
+        }
+        var files = roms.Select(r => r.RomSource).Where(r => !r.IsFolderFormat).DistinctBy(r => r.Path, FileUtils.PathComparer).ToList();
+        var op = Operations.EnqueueHashCalculation(files, hashed => Dispatcher.UIThread.Post(async () =>
+        {
+            var checks = hashed.Select(r => RomManagerShared.Utils.Dat.DatVerifier.Verify(r, indexes)).ToList();
+            var good = checks.Count(c => c.Verdict == RomManagerShared.Utils.Dat.DatVerdict.Verified);
+            AppLog.Info($"[{ConsoleName}] Verified {good} of {checks.Count} file(s) against DATs");
+            await Dialogs.ShowAsync(new TableDialogViewModel(Strings.Console_Verify2,
+                string.Format(Strings.Console_VerifiedSelection, good, checks.Count),
+                [Strings.Console_ColumnFile, Strings.Console_ColumnResult, Strings.Console_ColumnDatEntry],
+                [.. checks.Select(c => (IReadOnlyList<string>)[Path.GetFileName(c.Rom.Path ?? ""), c.Verdict switch
+                {
+                    RomManagerShared.Utils.Dat.DatVerdict.Verified => Strings.Console_GoodDump,
+                    RomManagerShared.Utils.Dat.DatVerdict.NotInDat => Strings.Console_NotInDat,
+                    _ => Strings.Console_NotHashed,
+                }, c.Match?.Game ?? ""])]));
+        }));
+        Track(op, roms);
+    }
+
+    /// <summary>Moves each selected game with its updates and DLC into a folder named after the game (undoable).</summary>
+    [RelayCommand]
+    private async Task GroupByGame(IReadOnlyList<RomViewModel> roms)
+    {
+        if (Operations is null || roms.Count == 0) return;
+        // A selected game takes its updates and DLC along, selected or not.
+        var selected = roms.Select(r => r.RomSource)
+            .SelectMany(r => r is Game g ? [g, .. g.Updates ?? [], .. g.DLCs ?? []] : new[] { r })
+            .Distinct().ToList();
+        var plan = RomGrouping.Plan(selected);
+        if (plan.Count == 0)
+        {
+            StatusMessage = Strings.Console_NothingToGroup;
+            return;
+        }
+        if (!await Dialogs.PreviewAsync(Strings.Console_GroupByGame,
+                string.Format(Strings.Console_GroupByGameSummary, plan.Count),
+                plan.Select(p => $"{p.Rom.Path}  →  {p.Destination}"), Strings.Console_Move))
+            return;
+        Track(Operations.EnqueueGroupByGame(plan, [.. Roms.Select(r => r.RomSource)]), roms);
+    }
+
+    /// <summary>Saves the selected rows as CSV or JSON (the same columns as Library → Export).</summary>
+    [RelayCommand]
+    private async Task ExportSelection(IReadOnlyList<RomViewModel> roms)
+    {
+        if (roms.Count == 0) return;
+        var rows = roms.Select(r => ExportRow.From(r.Console.Length > 0 ? r.Console : ConsoleName, r.RomSource)).ToList();
+        try
+        {
+            if (await Shell.ExportAsync(Dialogs, $"{DisplayName} selection.csv", rows) is { } path)
+                StatusMessage = string.Format(Strings.Console_ExportedRowsTo, rows.Count, path);
+        }
+        catch (Exception ex) { StatusMessage = string.Format(Strings.Console_ExportFailed, ex.Message); }
+    }
+
+    /// <summary>The rows of the selected games' updates and DLC and of the selected updates'/DLC's games.</summary>
+    public IReadOnlyList<RomViewModel> RelatedRows(IReadOnlyList<RomViewModel> roms)
+    {
+        var related = roms.Select(r => r.RomSource).SelectMany(r => r switch
+        {
+            Game g => (IEnumerable<Rom>)[.. g.Updates ?? [], .. g.DLCs ?? []],
+            Update { RelatedGame: { } g } => [g, .. g.Updates ?? [], .. g.DLCs ?? []],
+            DLC { RelatedGame: { } g } => [g, .. g.Updates ?? [], .. g.DLCs ?? []],
+            _ => [],
+        }).ToHashSet(ReferenceEqualityComparer.Instance);
+        return [.. Roms.Where(r => related.Contains(r.RomSource) && !roms.Contains(r))];
+    }
+
     [RelayCommand]
     private Task ViewProperties(IReadOnlyList<RomViewModel> roms) =>
         roms.FirstOrDefault() is { } r ? Dialogs.ShowPropertiesAsync(r, _images, ShowRom) : Task.CompletedTask;
