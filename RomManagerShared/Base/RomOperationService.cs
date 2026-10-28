@@ -42,7 +42,7 @@ public sealed class RomOperationService
         EnqueuePathOperation([rom], $"Rename: {Path.GetFileName(rom.Path)}", $"Rename using template: {formatString}", "Rename",
             async ct =>
             {
-                var results = await FileRenamer.RenameFilesAsync([rom], formatString, ct: ct);
+                var results = await FileRenamer.RenameFilesAsync([rom], formatString, AppLog.For<FileRenamer>(), ct);
                 var result = results.FirstOrDefault();
                 if (result is not null && !result.Success)
                     throw new InvalidOperationException(result.ErrorMessage ?? "Rename failed");
@@ -57,7 +57,7 @@ public sealed class RomOperationService
         EnqueuePathOperation(roms, $"Rename {roms.Count} ROM(s)", $"Rename using template: {formatString}", "Rename",
             async ct =>
             {
-                var results = await FileRenamer.RenameFilesAsync(roms, formatString, ct: ct);
+                var results = await FileRenamer.RenameFilesAsync(roms, formatString, AppLog.For<FileRenamer>(), ct);
                 return Summarise("Rename", "renamed", results.Count(r => r.Success && r.Changed),
                     [.. results.Where(r => !r.Success).Select(r => (r.SourcePath, r.ErrorMessage))]);
             });

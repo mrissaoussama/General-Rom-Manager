@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 
 
 namespace AvaloniaUI.ViewModels;
@@ -72,7 +72,7 @@ public sealed partial class DashboardViewModel : ViewModelBase
         Updates = roms.Count(r => r.RomSource is Update);
         Dlcs = roms.Count(r => r.RomSource is DLC);
         Unidentified = roms.Count(r => r.Title == "Unknown" || string.IsNullOrEmpty(r.TitleID));
-        TotalSize = FileUtils.FormatFileSize(roms.Sum(r => r.RomSource.Size ?? 0));
+        TotalSize = FileUtils.FormatFileSize(FileUtils.SizeOnDisk(roms.Select(r => r.RomSource)));
         Duplicates = Consoles.Sum(c => c.DuplicateCount);
         NotRecognised = Consoles.Sum(c => c.Unrecognized.Count);
         _ = CountMissingUpdatesAsync();

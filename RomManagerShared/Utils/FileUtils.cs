@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using RomManagerShared.Base;
 using RomManagerShared.Configuration;
 using RomManagerShared.Logging;
 using System.Diagnostics;
@@ -57,6 +58,20 @@ public class FileUtils
         }
         return -1; // Return -1 if the file doesn't exist
     }
+    /// <summary>Total size of the files under <paramref name="directory"/> (sub-folders included).</summary>
+    public static long GetDirectorySize(string directory) =>
+        new DirectoryInfo(directory).EnumerateFiles("*", new EnumerationOptions { RecurseSubdirectories = true, IgnoreInaccessible = true })
+            .Sum(f => f.Length);
+
+    /// <summary>
+    /// Bytes on disk taken by <paramref name="roms"/>: each file counts once (an NSP holding a game and its update is
+    /// one file), using the largest size any of its roms reports.
+    /// </summary>
+    public static long SizeOnDisk(IEnumerable<Rom> roms) =>
+        roms.Where(r => !string.IsNullOrEmpty(r.Path))
+            .GroupBy(r => r.Path!, PathComparer)
+            .Sum(g => g.Max(r => r.Size ?? 0));
+
     public static List<string> GetFilesInDirectoryWithExtensions(string directory, IEnumerable<string> extensions)
     {
         var results = Directory

@@ -1,4 +1,4 @@
-using AwesomeAssertions;
+﻿using AwesomeAssertions;
 using RomManagerShared.Base;
 using RomManagerShared.Utils;
 
@@ -199,5 +199,75 @@ public class FileRenamerTests
             Directory.GetFiles(dir).Select(Path.GetFileName).Should().Equal("Zelda.nes");
         }
         finally { Directory.Delete(dir, true); }
+    }
+
+    // ── Placeholder spellings and console properties ──────────────────────
+
+    private sealed class CartRom : Game
+    {
+        [UiProperty(DisplayName = "Save Type")]
+        public string? SaveType { get; set; }
+        public int Mapper { get; set; }
+    }
+
+    [Fact]
+    public void GenerateFileName_AcceptsColumnNamesWithSpacesAndAnyCase()
+    {
+        var rom = MakeRom("C:/roms/game.cia", "0004000000030700", "Mario Kart 7");
+        rom.ProductCode = "CTR-P-AMKE";
+        rom.MinimumFirmware = "11.0";
+
+        FileRenamer.GenerateFileName([rom], "{Product Code} {title name} [{Min Firmware}]")
+            .Should().Be("CTR-P-AMKE Mario Kart 7 [11.0].cia");
+    }
+
+    [Fact]
+    public void GenerateFileName_FileNameIsTheCurrentNameAndBracesInItAreKept()
+    {
+        var rom = MakeRom("C:/roms/{TitleName} old.cia", "1", "New");
+
+        FileRenamer.GenerateFileName([rom], "{FileName} - {TitleName}").Should().Be("{TitleName} old - New.cia");
+    }
+
+    [Fact]
+    public void GenerateFileName_FillsConsolePropertiesByNameOrDisplayName()
+    {
+        var rom = new CartRom { Path = "C:/roms/a.nes", TitleID = "1", Titles = [new RomTitle("Zelda")], SaveType = "SRAM", Mapper = 4 };
+
+        FileRenamer.GenerateFileName([rom], "{TitleName} [{Save Type}] (m{Mapper})").Should().Be("Zelda [SRAM] (m4).nes");
+        FileRenamer.UnknownPlaceholders(rom, "{SaveType} {Mapper}").Should().BeEmpty();
+    }
+
+    [Fact]
+    public void GenerateFileName_DropsEmptyBracketsOfConsoleProperties()
+    {
+        var rom = new CartRom { Path = "C:/roms/a.nes", TitleID = "1", Titles = [new RomTitle("Zelda")] };
+
+        FileRenamer.GenerateFileName([rom], "{TitleName} [{SaveType}]").Should().Be("Zelda.nes");
+    }
+
+    [Fact]
+    public void Rename_WithAnUnknownPlaceholder_FailsInsteadOfWritingItIntoTheName()
+    {
+        var rom = MakeRom("C:/roms/game.cia", "1", "Game");
+
+        FileRenamer.UnknownPlaceholders(rom, "{TitleName} {Bogus}").Should().Equal("{Bogus}");
+        var result = FileRenamer.PreviewRename([rom], "{TitleName} {Bogus}").Single();
+        result.Success.Should().BeFalse();
+        result.ErrorMessage.Should().Contain("{Bogus}");
+    }
+
+    [Fact]
+    public void ConsolePlaceholders_ListsVisibleUiPropertiesOfTheRomTypes()
+    {
+        FileRenamer.ConsolePlaceholders([typeof(CartRom)]).Should().Equal("{SaveType}");
+    }
+
+    [Fact]
+    public void GenerateFileName_EmptyVersionAndDlcCountLeaveNoPlaceholder()
+    {
+        var rom = new Update { Path = "C:/roms/u.cia", TitleID = "1", Titles = [new RomTitle("Game")] };
+
+        FileRenamer.GenerateFileName([rom], "{TitleName} {Version} {DLCCount}").Should().Be("Game.cia");
     }
 }

@@ -1,4 +1,4 @@
-namespace AvaloniaUI.ViewModels;
+﻿namespace AvaloniaUI.ViewModels;
 
 public partial class RomViewModel : ViewModelBase
 {
@@ -129,16 +129,25 @@ public partial class RomViewModel : ViewModelBase
         // Also exclude any properties we already added in LoadProperties
         var alreadyAdded = Properties.Select(p => p.Key).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        // Get properties from the actual runtime type that aren't in base Rom
+        // Get properties from the actual runtime type that aren't in base Rom. Links to other roms (RelatedGame,
+        // Updates, DLCs) are shown as sections of the details, not as values.
         var derivedProps = _rom.GetType().GetProperties()
-            .Where(p => !baseProps.Contains(p.Name) && p.GetMethod?.IsPublic == true)
+            .Where(p => !baseProps.Contains(p.Name) && p.GetMethod?.IsPublic == true && p.GetIndexParameters().Length == 0
+                && !typeof(Rom).IsAssignableFrom(p.PropertyType)
+                && !typeof(IEnumerable<Rom>).IsAssignableFrom(p.PropertyType))
             .ToList();
     
         // Add each unique property from the derived class (skip if key already exists)
         foreach (var prop in derivedProps)
         {
             if (alreadyAdded.Contains(prop.Name)) continue;
-            var value = prop.GetValue(_rom)?.ToString() ?? "N/A";
+            var value = prop.GetValue(_rom) switch
+            {
+                null => "N/A",
+                string text => text,
+                System.Collections.IEnumerable items => string.Join(", ", items.Cast<object>()),
+                var other => other.ToString() ?? "N/A",
+            };
             AddProperty(prop.Name, value);
         }
     }

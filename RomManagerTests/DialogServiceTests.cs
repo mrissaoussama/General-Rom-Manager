@@ -1,4 +1,4 @@
-using AvaloniaUI.Utils;
+﻿using AvaloniaUI.Utils;
 using AvaloniaUI.ViewModels;
 using AwesomeAssertions;
 using Microsoft.Extensions.DependencyInjection;
@@ -30,7 +30,7 @@ public sealed class DialogServiceTests : IDisposable
             return Task.FromResult(Answer);
         }
 
-        public Task ShowPropertiesAsync(RomViewModel rom) => Task.CompletedTask;
+        public Task ShowPropertiesAsync(RomViewModel rom, RomManagerShared.Utils.ImageCache? images = null, Action<Rom>? navigate = null) => Task.CompletedTask;
         public Task<ConsoleDescriptor?> ChooseConsoleAsync(string folder, IReadOnlyList<ConsoleDescriptor> consoles, ConsoleDescriptor? guess, string detail) =>
             Task.FromResult(guess);
         public Task<string?> AskRenameTemplateAsync(IReadOnlyList<Rom> roms, IEnumerable<string> consoleProperties, string consoleName, string template) =>
@@ -107,7 +107,7 @@ public sealed class DialogServiceTests : IDisposable
     {
         var rom = new Game { Path = Path.Combine(_dir, "old.nes"), TitleID = "1" };
         rom.AddTitleName("New");
-        var vm = new RenameDialogViewModel([rom], ["Mapper"], "NES", "{TitleName}");
+        var vm = new RenameDialogViewModel([rom], ["{Mapper}", "{TitleID}"], "NES", "{TitleName}");
 
         vm.PreviewRows.Should().ContainSingle().Which.Should().Be("old.nes  →  New.nes");
         vm.HasConsolePlaceholders.Should().BeTrue();
@@ -117,6 +117,21 @@ public sealed class DialogServiceTests : IDisposable
         vm.InsertCommand.Execute(" [{TitleID}]");
         vm.Template.Should().Be("{TitleName} [{TitleID}]");
         vm.PreviewRows.Should().ContainSingle().Which.Should().Be("old.nes  →  New [1].nes");
+        vm.ConfirmCommand.CanExecute(null).Should().BeTrue();
+    }
+
+    [Fact]
+    public void RenameDialog_RefusesUnknownPlaceholders()
+    {
+        var rom = new Game { Path = Path.Combine(_dir, "old.nes"), TitleID = "1" };
+        rom.AddTitleName("New");
+        var vm = new RenameDialogViewModel([rom], [], "NES", "{TitleName} {Bogus}");
+
+        vm.Summary.Should().Contain("{Bogus}");
+        vm.ConfirmCommand.CanExecute(null).Should().BeFalse();
+        vm.PreviewRows.Should().ContainSingle().Which.Should().Contain(RomManagerShared.Utils.FileRenamer.UnknownPlaceholderError);
+
+        vm.Template = "{Title Name} {Product Code}";
         vm.ConfirmCommand.CanExecute(null).Should().BeTrue();
     }
 

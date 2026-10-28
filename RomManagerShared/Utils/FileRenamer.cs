@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using RomManagerShared.Base;
 using System.Globalization;
+using System.Reflection;
 using System.Text.RegularExpressions;
 
 namespace RomManagerShared.Utils;
@@ -34,6 +35,24 @@ public partial class FileRenamer
 
     /// <summary>The error a rename reports when the template gives an empty name.</summary>
     public const string EmptyNameError = "The template gives an empty file name";
+
+    /// <summary>The error a rename reports when the template has a placeholder the rom does not know.</summary>
+    public const string UnknownPlaceholderError = "Unknown placeholder";
+
+    /// <summary>Placeholders every rom understands (the rename dialog shows these).</summary>
+    public static readonly IReadOnlyList<string> GeneralPlaceholders =
+    [
+        "{TitleName}", "{TitleID}", "{Region}", "{Version}", "{Publisher}", "{Developer}", "{ReleaseDate}", "{Year}",
+        "{Platform}", "{ProductCode}", "{Size}", "{Genres}", "{Players}", "{Languages}", "{Type}", "{MinFirmware}",
+        "{DLCCount}", "{FileName}",
+    ];
+
+    // Spellings of the general placeholders that the grid uses as column names ("Product Code", "Min Firmware"...).
+    private static readonly Dictionary<string, string> _aliases = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["Title"] = "TitleName", ["Name"] = "TitleName", ["MinimumFirmware"] = "MinFirmware",
+        ["NumberOfPlayers"] = "Players", ["RomType"] = "Type", ["Regions"] = "Region",
+    };
 
     // ── Public API ────────────────────────────────────────────────────────
 
@@ -103,6 +122,8 @@ public partial class FileRenamer
 
     private static RenameResult ProcessFolder(string folder, IList<Rom> roms, string formatString, bool dryRun, ILogger? logger)
     {
+        if (UnknownPlaceholders(roms[0], formatString) is [var unknown, ..])
+            return new RenameResult(folder, folder, false, dryRun, $"{UnknownPlaceholderError} {unknown}");
         // The template's extension comes from the marker file; folders have none.
         var name = SanitizeFileName(Path.GetFileNameWithoutExtension(GenerateFileName(roms, formatString)));
         var parent = Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(folder)) ?? "";
@@ -139,6 +160,8 @@ public partial class FileRenamer
     {
         // BUG FIX: romGroup.First().Path is already absolute — do NOT combine with directory
         string sourcePath = romGroup.First().Path!;
+        if (UnknownPlaceholders(romGroup[0], formatString) is [var unknown, ..])
+            return new RenameResult(sourcePath, sourcePath, false, dryRun, $"{UnknownPlaceholderError} {unknown}");
         string newFileNameSanitized = SanitizeFileName(GenerateFileName(romGroup, formatString));
 
         // A template whose placeholders are all empty would leave just the extension (".nsp").
@@ -181,14 +204,15 @@ public partial class FileRenamer
     /// Supported placeholders:
     ///   {TitleName}, {TitleID}, {Region}, {Version}, {DLCCount},
     ///   {Publisher}, {Developer}, {ReleaseDate}, {Platform}, {ProductCode},
-    ///   {Size}, {Genres}, {Players}, {Type}, {MinFirmware}, {Description}, {Year}, {Languages}
-    /// Bracket variants [v{Version}], [d{DLCCount}], [{Region}] are stripped when empty.
+    ///   {Size}, {Genres}, {Players}, {Type}, {MinFirmware}, {Description}, {Year}, {Languages}, {FileName}
+    /// plus the console-specific properties of the rom's type ({Firmware}...). Names are case-insensitive and may
+    /// have spaces ("{Product Code}"). Bracket variants [v{Version}], [d{DLCCount}], [{Region}] are stripped when empty.
     /// </summary>
     public static string GenerateFileName(IEnumerable<Rom> romGroup, string formatString)
     {
         var romList = romGroup as IList<Rom> ?? romGroup.ToList();
         Rom rom = romList.First();
-        string fn = formatString;
+        string fn = NormalizeTemplate(formatString);
 
         // Core fields
         ReplacePlaceholder(ref fn, "{TitleName}",    rom.Titles?.FirstOrDefault()?.Value ?? "");
@@ -216,52 +240,113 @@ public partial class FileRenamer
 
         // Size — formatted human-readable
         string sizeStr = rom.Size.HasValue ? FileUtils.FormatFileSize(rom.Size.Value) : "";
-        ReplacePlaceholders(ref fn, ["[{Size}]", "{Size}"], sizeStr);
+        ReplaceOptional(ref fn, "Size", sizeStr);
 
         // Genres — comma-separated
         string genresStr = (rom.Genres?.Any() == true) ? string.Join(", ", rom.Genres) : "";
-        ReplacePlaceholders(ref fn, ["[{Genres}]", "{Genres}"], genresStr);
+        ReplaceOptional(ref fn, "Genres", genresStr);
 
         // Players
         string playersStr = rom.NumberOfPlayers > 0 ? rom.NumberOfPlayers.ToString() : "";
-        ReplacePlaceholders(ref fn, ["[{Players}]", "{Players}"], playersStr);
+        ReplaceOptional(ref fn, "Players", playersStr);
 
         // ROM type (Game, Update, DLC, Homebrew)
         string typeStr = rom switch { Game => "Game", Update => "Update", DLC => "DLC", Homebrew => "Homebrew", _ => "" };
-        ReplacePlaceholders(ref fn, ["[{Type}]", "{Type}"], typeStr);
+        ReplaceOptional(ref fn, "Type", typeStr);
 
         // Min firmware
         string fwStr = rom.MinimumFirmware ?? "";
-        ReplacePlaceholders(ref fn, ["[{MinFirmware}]", "{MinFirmware}"], fwStr);
+        ReplaceOptional(ref fn, "MinFirmware", fwStr);
 
         // Description (first available, truncated for file name safety)
         string descStr = rom.Descriptions?.FirstOrDefault()?.Value ?? "";
         if (descStr.Length > 80) descStr = descStr[..80];
-        ReplacePlaceholders(ref fn, ["[{Description}]", "{Description}"], descStr);
+        ReplaceOptional(ref fn, "Description", descStr);
 
         // Region — strip bracket variant when empty / unknown
         string regionStr = (rom.Regions?.Count > 0 && rom.Regions.First() != Region.Unknown)
             ? string.Join(",", rom.Regions)
             : "";
-        ReplacePlaceholders(ref fn, ["[{Region}]", "{Region}"], regionStr);
+        ReplaceOptional(ref fn, "Region", regionStr);
 
         // Version
         string version = GetVersion(romList) ?? "";
         if (version.Length == 0)
-            ReplacePlaceholders(ref fn, ["[v{Version}]", "v{Version}", "[{Version}]"], "");
+            ReplacePlaceholders(ref fn, ["[v{Version}]", "v{Version}", "[{Version}]", "{Version}"], "");
         else
             ReplacePlaceholders(ref fn, _versionPlaceholders, version);
 
         // DLC count
         int dlcCount = GetDLCCount(romList);
         if (rom is not Game || dlcCount == 0)
-            ReplacePlaceholders(ref fn, ["[d{DLCCount}]", "[{DLCCount}]", "d{DLCCount}"], "");
+            ReplacePlaceholders(ref fn, ["[d{DLCCount}]", "[{DLCCount}]", "d{DLCCount}", "{DLCCount}"], "");
         else
             ReplacePlaceholders(ref fn, _dlcPlaceholders, dlcCount.ToString());
+
+        // Anything left is a console property ({Firmware}, {Category}...) or unknown (left as is).
+        fn = PlaceholderRegex().Replace(fn, m =>
+            ConsoleProperty(rom, m.Groups[1].Value) is { } p ? Format(p.GetValue(rom)) : m.Value);
+        fn = CollapseSpacesRegex().Replace(EmptyBracketsRegex().Replace(fn, ""), " ").Trim();
+
+        // Last, so braces in the current name are never read as placeholders.
+        string fileName = Path.GetFileNameWithoutExtension(Path.TrimEndingDirectorySeparator(rom.Path ?? ""));
+        ReplacePlaceholder(ref fn, "{FileName}", fileName);
 
         fn += Path.GetExtension(romList.First().Path ?? "");
         return fn;
     }
+
+    /// <summary>Placeholders of the template that <paramref name="rom"/> has no value for, e.g. a typo.</summary>
+    public static IReadOnlyList<string> UnknownPlaceholders(Rom rom, string formatString)
+    {
+        var known = GeneralPlaceholders.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return [.. PlaceholderRegex().Matches(NormalizeTemplate(formatString))
+            .Select(m => m.Value)
+            .Where(token => !known.Contains(token) && token != "{Description}" && ConsoleProperty(rom, token[1..^1]) is null)
+            .Distinct()];
+    }
+
+    /// <summary>Placeholders for the console-specific properties of <paramref name="romTypes"/> (e.g. "{Firmware}").</summary>
+    public static IReadOnlyList<string> ConsolePlaceholders(IEnumerable<Type> romTypes) =>
+        [.. romTypes.SelectMany(t => t.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            .Where(p => p.DeclaringType != typeof(Rom) && IsSimple(p.PropertyType)
+                && p.GetCustomAttribute<UiPropertyAttribute>(true) is { Visible: true })
+            .Select(p => "{" + p.Name + "}")
+            .Distinct()];
+
+    // "{Product Code}" → "{ProductCode}", "{title}" → "{TitleName}": the grid's column names work too.
+    private static string NormalizeTemplate(string formatString) =>
+        PlaceholderRegex().Replace(formatString, m =>
+        {
+            var name = m.Groups[1].Value.Replace(" ", "", StringComparison.Ordinal);
+            if (_aliases.TryGetValue(name, out var alias)) name = alias;
+            var general = GeneralPlaceholders.Concat(["{Description}"])
+                .FirstOrDefault(g => string.Equals(g[1..^1], name, StringComparison.OrdinalIgnoreCase));
+            return general ?? "{" + name + "}";
+        });
+
+    // A public property of the rom's own type (below Rom) with a plain value, matched by name or display name.
+    private static PropertyInfo? ConsoleProperty(Rom rom, string name) =>
+        rom.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Where(p => p.DeclaringType != typeof(Rom) && p.CanRead && p.GetIndexParameters().Length == 0 && IsSimple(p.PropertyType))
+            .FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(p.GetCustomAttribute<UiPropertyAttribute>(true)?.DisplayName.Replace(" ", "", StringComparison.Ordinal), name, StringComparison.OrdinalIgnoreCase));
+
+    private static bool IsSimple(Type type)
+    {
+        type = Nullable.GetUnderlyingType(type) ?? type;
+        return type.IsPrimitive || type.IsEnum || type == typeof(string) || type == typeof(decimal) || type == typeof(DateOnly) || type == typeof(DateTime);
+    }
+
+    private static string Format(object? value) => value switch
+    {
+        null => "",
+        bool b => b ? "Yes" : "",
+        DateOnly d => d.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+        DateTime d => d.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+        IFormattable f => f.ToString(null, CultureInfo.InvariantCulture),
+        _ => value.ToString() ?? "",
+    };
 
     // ── Helper: placeholder replacement ──────────────────────────────────
 
@@ -270,6 +355,16 @@ public partial class FileRenamer
         input = input.Replace(placeholder, replacement, StringComparison.Ordinal).Trim();
         // Collapse double spaces introduced by empty replacements
         input = CollapseSpacesRegex().Replace(input, " ").Trim();
+    }
+
+    // "[{X}]"/"({X})" disappear with their brackets when the value is empty; otherwise only "{X}" is replaced.
+    private static void ReplaceOptional(ref string input, string name, string value)
+    {
+        var token = "{" + name + "}";
+        if (value.Length == 0)
+            ReplacePlaceholders(ref input, ["[" + token + "]", "(" + token + ")", token], "");
+        else
+            ReplacePlaceholder(ref input, token, value);
     }
 
     // A null value leaves the placeholders alone (used to drop a bracketed placeholder only when it is empty).
@@ -349,4 +444,11 @@ public partial class FileRenamer
 
     [GeneratedRegex(@"\s{2,}")]
     private static partial Regex CollapseSpacesRegex();
+
+    [GeneratedRegex(@"\{([^{}]+)\}")]
+    private static partial Regex PlaceholderRegex();
+
+    // "[]" or "()" left by a console placeholder with no value.
+    [GeneratedRegex(@"\[\s*\]|\(\s*\)")]
+    private static partial Regex EmptyBracketsRegex();
 }

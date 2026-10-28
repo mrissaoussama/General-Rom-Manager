@@ -78,13 +78,29 @@ public sealed partial class TableDialogViewModel(string title, string summary, I
 }
 
 /// <summary>Read-only list of every property of a rom.</summary>
-public sealed class PropertiesDialogViewModel(RomViewModel rom) : DialogViewModel
+public sealed class PropertiesDialogViewModel : DialogViewModel
 {
-    public override string Title => string.Format(Strings.Dialogs_Properties, rom.Title);
-    public override double Width => 560;
-    public override double Height => 520;
+    /// <param name="navigate">Selects a related rom in the page; the dialog closes first. Null hides nothing, clicks do nothing.</param>
+    public PropertiesDialogViewModel(RomViewModel rom, ImageCache? images = null, Action<Rom>? navigate = null)
+    {
+        Rom = rom;
+        Details = new RomDetailsViewModel(rom, images);
+        Details.NavigateRequested += related =>
+        {
+            CancelCommand.Execute(null);
+            navigate?.Invoke(related);
+        };
+    }
+
+    public RomViewModel Rom { get; }
+    public override string Title => string.Format(Strings.Dialogs_Properties, Rom.Title);
+    public override double Width => 600;
+    public override double Height => 620;
     public override bool CanResize => true;
-    public IReadOnlyList<DetailRow> Rows { get; } = [.. rom.Properties.Select(kv => new DetailRow(Labels.Property(kv.Key), kv.Value))];
+    /// <summary>The same content as the side panel.</summary>
+    public RomDetailsViewModel Details { get; }
+
+    public override void OnClosed() => Details.Dispose();
 }
 
 /// <summary>Asks which console a dropped folder holds, preselecting the detected one.</summary>
@@ -113,21 +129,16 @@ public sealed partial class ChooseConsoleDialogViewModel : DialogViewModel
 /// <summary>Rename template editor with a live dry run of the real renamer.</summary>
 public sealed partial class RenameDialogViewModel : DialogViewModel
 {
-    private static readonly string[] GeneralPlaceholders =
-    [
-        "{TitleName}", "{TitleID}", "{Region}", "{Version}", "{Publisher}", "{Developer}", "{ReleaseDate}", "{Year}",
-        "{Platform}", "{ProductCode}", "{Size}", "{Genres}", "{Players}", "{Languages}", "{Type}", "{MinFirmware}", "{DLCCount}",
-    ];
-
     public const int PreviewLimit = 50;
     private readonly IReadOnlyList<Rom> _roms;
     private bool _valid = true;
 
-    public RenameDialogViewModel(IReadOnlyList<Rom> roms, IEnumerable<string> consoleProperties, string consoleName, string template)
+    /// <param name="consolePlaceholders">The console's own placeholders, e.g. "{Firmware}" (<see cref="FileRenamer.ConsolePlaceholders"/>).</param>
+    public RenameDialogViewModel(IReadOnlyList<Rom> roms, IEnumerable<string> consolePlaceholders, string consoleName, string template)
     {
         _roms = roms;
         ConsoleName = consoleName;
-        ConsolePlaceholders = [.. consoleProperties.Take(12).Select(p => "{" + p + "}")];
+        ConsolePlaceholders = [.. consolePlaceholders.Except(FileRenamer.GeneralPlaceholders, StringComparer.OrdinalIgnoreCase)];
         _template = template;
         UpdatePreview();
     }
@@ -135,7 +146,7 @@ public sealed partial class RenameDialogViewModel : DialogViewModel
     public override string Title => _roms.Count == 1 ? Strings.Dialogs_Rename : string.Format(Strings.Dialogs_RenameROMs, _roms.Count);
     public override double Width => 760;
     public string ConsoleName { get; }
-    public IReadOnlyList<string> General => GeneralPlaceholders;
+    public IReadOnlyList<string> General => FileRenamer.GeneralPlaceholders;
     public IReadOnlyList<string> ConsolePlaceholders { get; }
     public bool HasConsolePlaceholders => ConsolePlaceholders.Count > 0;
     public ObservableCollection<string> PreviewRows { get; } = [];
@@ -171,7 +182,11 @@ public sealed partial class RenameDialogViewModel : DialogViewModel
                     : $"{Path.GetFileName(r.SourcePath)}  →  {Path.GetFileName(r.DestinationPath)}");
             var changed = results.Count(r => r.Success && r.SourcePath != r.DestinationPath);
             Summary = string.Format(Strings.Dialogs_OfFileSChange, changed, results.Count) + (_roms.Count > PreviewLimit ? string.Format(Strings.Dialogs_FirstShown, PreviewLimit) : "");
-            _valid = true;
+            // A typo would otherwise end up in every file name.
+            var unknown = _roms.SelectMany(r => FileRenamer.UnknownPlaceholders(r, Template)).Distinct().ToList();
+            if (unknown.Count > 0)
+                Summary = string.Format(Strings.Dialogs_UnknownPlaceholders, string.Join(", ", unknown));
+            _valid = unknown.Count == 0;
         }
         catch (Exception ex)
         {

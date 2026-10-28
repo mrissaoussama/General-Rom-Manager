@@ -23,10 +23,11 @@ public sealed class RomMover
     private readonly string _targetRoot;
     private readonly ILogger? _logger;
 
+    /// <param name="logger">Where moves are logged; the app log when not given.</param>
     public RomMover(string targetRoot, ILogger? logger = null)
     {
         _targetRoot = targetRoot ?? throw new ArgumentNullException(nameof(targetRoot));
-        _logger = logger;
+        _logger = logger ?? AppLog.For<RomMover>();
     }
 
     // ── Public API ────────────────────────────────────────────────────────

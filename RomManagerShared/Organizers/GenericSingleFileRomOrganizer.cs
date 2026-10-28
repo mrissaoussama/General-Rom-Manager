@@ -1,4 +1,4 @@
-// File: RomManagerShared/Organizers/GenericSingleFileRomOrganizer.cs
+﻿// File: RomManagerShared/Organizers/GenericSingleFileRomOrganizer.cs
 using RomManagerShared.Base;
 using RomManagerShared.Interfaces;
 using RomManagerShared.Utils;
@@ -22,7 +22,7 @@ namespace RomManagerShared.Organizers
         {
             if (romList == null || romList.Count == 0)
             {
-                Console.WriteLine("No ROMs to organize.");
+                AppLog.Info("No ROMs to organize.");
                 return;
             }
 
@@ -33,7 +33,7 @@ namespace RomManagerShared.Organizers
 
             if (firstRom == null)
             {
-                Console.WriteLine("No suitable ROM found to determine folder name.");
+                AppLog.Info("No suitable ROM found to determine folder name.");
                 return;
             }
 
@@ -46,7 +46,7 @@ namespace RomManagerShared.Organizers
             string? folderPath = Path.GetDirectoryName(firstRom.Path);
             if (folderPath == null)
             {
-                Console.WriteLine("Invalid ROM path.");
+                AppLog.Info("Invalid ROM path.");
                 return;
             }
 
@@ -61,7 +61,7 @@ namespace RomManagerShared.Organizers
             // Before creating the directory, check permissions
             if (!HasWritePermission(folderFullPath))
             {
-                Console.WriteLine($"Insufficient permissions to write to directory '{folderFullPath}'.");
+                AppLog.Warn($"Insufficient permissions to write to directory '{folderFullPath}'.");
                 return;
             }
 
@@ -70,7 +70,7 @@ namespace RomManagerShared.Organizers
 
             if (!HasEnoughDiskSpace(folderFullPath, totalRomSize))
             {
-                Console.WriteLine($"Not enough disk space to move ROMs to '{folderFullPath}'.");
+                AppLog.Warn($"Not enough disk space to move ROMs to '{folderFullPath}'.");
                 return;
             }
 
@@ -118,15 +118,15 @@ namespace RomManagerShared.Organizers
                     // Update the ROM's path in groupedRomList
                     UpdateGroupedRomPaths(groupedRomList, rom.Path, uniqueDestinationPath);
 
-                    Console.WriteLine($"Moved '{originalFileName}' to '{cleanedFolderName}' folder.");
+                    AppLog.Info($"Moved '{originalFileName}' to '{cleanedFolderName}' folder.");
                 }
                 catch (UnauthorizedAccessException)
                 {
-                    Console.WriteLine($"Insufficient permissions to move file '{rom.Path}'.");
+                    AppLog.Warn($"Insufficient permissions to move file '{rom.Path}'.");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error moving file '{originalFileName}': {ex.Message}");
+                    AppLog.Warn($"Error moving file '{originalFileName}': {ex.Message}");
                     continue;
                 }
             }
@@ -170,7 +170,7 @@ namespace RomManagerShared.Organizers
                 count++;
             } while (File.Exists(newDestinationPath));
 
-            Console.WriteLine($"File '{Path.GetFileName(destinationPath)}' already exists. Renaming to '{Path.GetFileName(newDestinationPath)}'.");
+            AppLog.Info($"File '{Path.GetFileName(destinationPath)}' already exists. Renaming to '{Path.GetFileName(newDestinationPath)}'.");
 
             return newDestinationPath;
         }
@@ -214,7 +214,7 @@ namespace RomManagerShared.Organizers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error checking disk space: {ex.Message}");
+                AppLog.Warn($"Error checking disk space: {ex.Message}");
                 return false;
             }
         }

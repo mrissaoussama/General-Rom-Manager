@@ -14,7 +14,7 @@ public sealed record UnrecognizedFile(string Path, string Reason);
 public sealed class LibraryScanner(AppDbContext db)
 {
     /// <summary>Bump when parser output changes so cached entries get re-parsed.</summary>
-    public const int ScanVersion = 17;
+    public const int ScanVersion = 18;
     private const int SaveBatchSize = 25;
 
     /// <summary>Files from the last <see cref="ScanAsync{T}"/> that matched an extension but produced no roms.</summary>
@@ -95,6 +95,7 @@ public sealed class LibraryScanner(AppDbContext db)
                 continue;
             }
             var roms = await manager.EnrichAsync(parse.Roms, ct);
+            FillSizes(roms, info.Length);
             slots[i] = roms;
             errors[i] = roms.Count == 0 ? parse.UnidentifiedReason : null;
 
@@ -134,6 +135,24 @@ public sealed class LibraryScanner(AppDbContext db)
         await db.SaveChangesAsync(ct);
         await new MetadataOverrideStore(db).ApplyAsync(console, result, ct);
         return result;
+    }
+
+    // Size on disk for roms the parser gave none: the file, or the whole game folder for folder formats.
+    private static void FillSizes(List<Rom> roms, long fileLength)
+    {
+        foreach (var rom in roms.Where(r => r.Size is not > 0))
+        {
+            try
+            {
+                rom.Size = rom.IsFolderFormat && Directory.Exists(RomUtils.GetRomBaseFolder(rom))
+                    ? FileUtils.GetDirectorySize(RomUtils.GetRomBaseFolder(rom))
+                    : fileLength;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                rom.Size = fileLength;
+            }
+        }
     }
 
     /// <summary>

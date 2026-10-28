@@ -417,12 +417,19 @@ public class DLC : Rom
     {
     }
     public string MinimumGameUpdate { get; set; } = "";
+    /// <summary>The library's base game, linked after each scan (<c>RomRelations.Link</c>); not stored.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
     public virtual Game? RelatedGame { get; set; }
 }
 public class Game : Rom
 {
+    [System.Text.Json.Serialization.JsonIgnore]
     public virtual List<Game>? RomHacks { get; set; }
+    /// <summary>The library's updates for this game, linked after each scan (<c>RomRelations.Link</c>); not stored.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
     public virtual List<Update>? Updates { get; set; }
+    /// <summary>The library's DLC for this game, linked after each scan; not stored.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
     public virtual List<DLC>? DLCs { get; set; }
     //maybe add supported controllers if possible
     public Game() : base()
@@ -431,6 +438,8 @@ public class Game : Rom
 }
 public class Update : Rom
 {
+    /// <summary>The library's base game, linked after each scan (<c>RomRelations.Link</c>); not stored.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
     public virtual Game? RelatedGame { get; set; }
 
     public Update() : base()

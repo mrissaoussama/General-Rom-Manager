@@ -1,4 +1,4 @@
-using AvaloniaUI.ViewModels;
+﻿using AvaloniaUI.ViewModels;
 using AwesomeAssertions;
 using RomManagerShared.Base;
 using RomManagerShared.Base.Library;
@@ -105,5 +105,48 @@ public class ConsoleViewModelStateTests
         dashboard.OpenCommand.Execute(vm);
 
         opened.Should().BeSameAs(vm);
+    }
+
+    [Fact]
+    public void Details_LinkTheGameWithItsUpdateAndClickingSelectsIt()
+    {
+        var vm = new TestConsoleViewModel();
+        var game = Named(new Game(), "0004000000030700", "Mario Kart 7");
+        var update = Named(new Update { Version = "3152" }, "0004000E00030700", "Mario Kart 7 Update");
+        vm.Show(game, update);
+        vm.TypeFilter = "Game";
+
+        vm.SelectedRom = vm.Roms.Single(r => r.RomSource == game);
+        var section = vm.Details!.Sections.Should().ContainSingle().Subject;
+        var item = section.Items.Should().ContainSingle().Subject;
+        item.Text.Should().Be("Mario Kart 7 Update v3152");
+        item.IsLink.Should().BeTrue();
+
+        vm.Details.OpenCommand.Execute(item.Rom);
+
+        vm.SelectedRom!.RomSource.Should().BeSameAs(update);
+        vm.TypeFilter.Should().Be(ConsoleViewModelBase.AnyOption, "the filter hid the update");
+        vm.Details!.BaseGame!.Rom.Should().BeSameAs(game);
+    }
+
+    [Fact]
+    public void Properties_LeaveOutLinksToOtherRoms()
+    {
+        var vm = new TestConsoleViewModel();
+        var game = Named(new Game(), "ULES00590", "Game");
+        var update = Named(new Update(), "ULES00590", "Update");
+        vm.Show(game, update);
+
+        vm.Roms.SelectMany(r => r.Properties).Select(p => p.Key)
+            .Should().NotContain(["RelatedGame", "Updates", "DLCs", "RomHacks"]);
+    }
+
+    [Fact]
+    public void GroupedView_Puts3dsUpdatesUnderTheirGame()
+    {
+        var vm = new TestConsoleViewModel();
+        vm.Show(Named(new Game(), "0004000000030700", "Mario Kart 7"), Named(new Update(), "0004000E00030700", "MK7 Update"));
+
+        vm.Roms.Select(r => r.GroupKey).Distinct().Should().Equal("Mario Kart 7");
     }
 }

@@ -103,11 +103,28 @@ public partial class ConsoleView : UserControl
         _search.SelectAll();
     }
 
+    private ConsoleViewModelBase? _subscribed;
+
     protected override void OnDataContextChanged(EventArgs e)
     {
         base.OnDataContextChanged(e);
+        if (_subscribed is not null) _subscribed.RomRevealed -= OnRomRevealed;
+        _subscribed = Vm;
+        if (_subscribed is not null) _subscribed.RomRevealed += OnRomRevealed;
         BuildColumns();
     }
+
+    // A related game/update/DLC was clicked in the details: bring its row (or card) into view.
+    private void OnRomRevealed(RomViewModel row) => Dispatcher.UIThread.Post(() =>
+    {
+        if (Vm is { IsCardView: true })
+        {
+            var index = _cards.ItemsSourceView?.IndexOf(row) ?? -1;
+            if (index >= 0) _cards.GetOrCreateElement(index).BringIntoView();
+        }
+        else
+            _grid.ScrollIntoView(row, null);
+    }, DispatcherPriority.Background);
 
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {

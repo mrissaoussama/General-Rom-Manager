@@ -205,8 +205,12 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
             : string.Format(Strings.Console_MissingSomeFeaturesMayBeUnavailableCheckSettings, string.Join(", ", unmet.Select(r => r.DisplayName)));
     }
 
-    protected void ShowRoms(IEnumerable<Rom> roms) =>
-        Roms = new ObservableCollection<RomViewModel>(roms.Select(r => new RomViewModel(r) { Console = ConsoleName }));
+    protected void ShowRoms(IEnumerable<Rom> roms)
+    {
+        var list = roms.ToList();
+        RomRelations.Link(list);
+        Roms = new ObservableCollection<RomViewModel>(list.Select(r => new RomViewModel(r) { Console = ConsoleName }));
+    }
 
     /// <summary>Removes a deleted row; the all-consoles view forwards this to the owning console.</summary>
     public virtual void RemoveRow(RomViewModel row) => Roms.Remove(row);
@@ -254,9 +258,7 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
     public bool IsFiltered => SearchText.Length > 0 || TypeFilter != AnyOption || RegionFilter != AnyOption || UnnamedOnly
         || UpdateFilter != AnyOption || DuplicatesOnly || LanguageFilter != AnyOption || FormatFilter != AnyOption;
 
-    // Switch-style 16-char IDs share the first 13 chars across game/update/DLC; other consoles reuse the ID.
-    private static string BaseKey(RomViewModel r) =>
-        r.TitleID.Length == 16 ? r.TitleID[..13] : r.TitleID.Length > 0 ? r.TitleID : r.GroupKey;
+    private static string BaseKey(RomViewModel r) => RomRelations.BaseTitleId(r.TitleID) ?? r.GroupKey;
 
     private void ComputeSets(IList<RomViewModel> roms)
     {
@@ -335,15 +337,14 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
         return current.Skip(1).SequenceEqual(sorted) ? current : [AnyOption, .. sorted];
     }
 
-    // Updates/DLC share the game's base title ID prefix (Switch-style IDs); group them under the game's name.
+    // Updates/DLC are grouped under their game's name (see RomRelations.BaseTitleId).
     private static void AssignGroupKeys(IList<RomViewModel> roms)
     {
-        static string? BaseId(string id) => id.Length == 16 ? id[..13] : null;
-        var names = roms.Where(r => r.RomType == "Game" && BaseId(r.TitleID) is not null)
-            .GroupBy(r => BaseId(r.TitleID)!)
+        var names = roms.Where(r => r.RomType == "Game" && RomRelations.BaseTitleId(r.TitleID) is not null)
+            .GroupBy(r => RomRelations.BaseTitleId(r.TitleID)!)
             .ToDictionary(g => g.Key, g => g.First().Title);
         foreach (var r in roms)
-            r.GroupKey = BaseId(r.TitleID) is { } b && names.TryGetValue(b, out var n) ? n : r.Title;
+            r.GroupKey = RomRelations.BaseTitleId(r.TitleID) is { } b && names.TryGetValue(b, out var n) ? n : r.Title;
     }
 
     partial void OnSearchTextChanged(string value) => RefreshFilter();
@@ -368,8 +369,23 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
 
     partial void OnIsLoadingChanged(bool value) => OnPropertyChanged(nameof(ShowEmptyState));
 
-    partial void OnSelectedRomChanged(RomViewModel? value) =>
+    partial void OnSelectedRomChanged(RomViewModel? value)
+    {
         Details = value is null ? null : new RomDetailsViewModel(value, _images);
+        if (Details is not null) Details.NavigateRequested += ShowRom;
+    }
+
+    /// <summary>Selects the row of <paramref name="rom"/> (a related game, update or DLC), clearing filters that hide it.</summary>
+    public void ShowRom(Rom rom)
+    {
+        if (Roms.FirstOrDefault(r => ReferenceEquals(r.RomSource, rom)) is not { } row) return;
+        if (!Matches(row)) ClearFilters();
+        SelectedRom = row;
+        RomRevealed?.Invoke(row);
+    }
+
+    /// <summary>Raised by <see cref="ShowRom"/>; the view scrolls the row into view.</summary>
+    public event Action<RomViewModel>? RomRevealed;
 
     partial void OnDetailsChanged(RomDetailsViewModel? oldValue, RomDetailsViewModel? newValue) => oldValue?.Dispose();
 
@@ -407,8 +423,8 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
     private async Task Rename(IReadOnlyList<RomViewModel> roms)
     {
         if (Operations is null || roms.Count == 0) return;
-        if (await Dialogs.AskRenameTemplateAsync([.. roms.Select(r => r.RomSource)], GetColumnDescriptors()
-                .Where(d => d.UsesDictionaryLookup).Select(d => d.PropName), ConsoleName,
+        if (await Dialogs.AskRenameTemplateAsync([.. roms.Select(r => r.RomSource)],
+                FileRenamer.ConsolePlaceholders(roms.Select(r => r.RomSource.GetType()).Distinct()), ConsoleName,
                 Settings.Instance.RenameFormatString) is not { } format)
             return;
 
@@ -436,7 +452,7 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
             StatusMessage = Strings.Console_NothingToMoveFilesAreAlreadyThere;
             return;
         }
-        var bytes = sources.Sum(r => r.Size ?? 0);
+        var bytes = FileUtils.SizeOnDisk(sources);
         if (!await Dialogs.PreviewAsync(Strings.Console_Move,
                 string.Format(Strings.Console_MoveFileSTo, moving.Count, FileUtils.FormatFileSize(bytes), target),
                 moving.Select(m => $"{m.SourcePath}  →  {m.DestinationPath}"), Strings.Console_Move))
@@ -630,19 +646,40 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
         Track(Operations.EnqueueConvert([.. roms.Select(r => r.RomSource)], tool, exe), roms);
     }
 
-    /// <summary>Starts the emulator configured for the rom's console (Settings → Emulators).</summary>
+    /// <summary>
+    /// Starts the emulator configured for the rom's console (Settings → Emulators). When none is set, offers to pick
+    /// the program now (saved with the default arguments).
+    /// </summary>
     [RelayCommand]
-    private void LaunchInEmulator(IReadOnlyList<RomViewModel> roms)
+    private async Task LaunchInEmulator(IReadOnlyList<RomViewModel> roms)
     {
         if (roms.FirstOrDefault() is not { } rom) return;
         var console = rom.Console.Length > 0 ? rom.Console : ConsoleName;
         if (!Settings.Instance.Emulators.TryGetValue(console, out var emulator) || string.IsNullOrWhiteSpace(emulator.Path))
         {
+            AppLog.Info($"[Emulator] No emulator set for {console}");
             StatusMessage = string.Format(Strings.Console_NoEmulatorSetForAddOneInSettingsEmulators, console);
-            return;
+            if (!await Dialogs.ConfirmAsync(Strings.Console_EmulatorTitle, string.Format(Strings.Console_NoEmulatorChoose, console), Strings.Console_ChooseEmulator)
+                || await Dialogs.PickFileAsync(string.Format(Strings.Settings_EmulatorFor, DisplayName), Strings.Settings_Programs,
+                    Strings.Settings_Exe, "*") is not { } exe)
+                return;
+            emulator = new EmulatorSettings { Path = exe };
+            Settings.Instance.Emulators[console] = emulator;
+            Settings.Instance.Save();
+            AppLog.Info($"[Emulator] {console}: set to {exe}");
         }
-        try { EmulatorLauncher.Launch(emulator.Path, emulator.Arguments, rom.Path); }
-        catch (Exception ex) { StatusMessage = string.Format(Strings.Console_CouldNotStartTheEmulator, ex.Message); }
+        try
+        {
+            EmulatorLauncher.Launch(emulator.Path, emulator.Arguments, rom.Path);
+            AppLog.Info($"[Emulator] Started {emulator.Path} for {rom.Path}");
+            StatusMessage = string.Format(Strings.Console_StartedEmulator, Path.GetFileNameWithoutExtension(emulator.Path), rom.Title);
+        }
+        catch (Exception ex)
+        {
+            AppLog.Warn($"[Emulator] {emulator.Path} for {rom.Path}: {ex.Message}");
+            StatusMessage = string.Format(Strings.Console_CouldNotStartTheEmulator, ex.Message);
+            await Dialogs.ShowAsync(new ConfirmDialogViewModel(Strings.Console_EmulatorTitle, StatusMessage, Strings.Console_Close, showCancel: false));
+        }
     }
 
     /// <summary>CRC32, MD5 and SHA1 of the selected files, shown when done and kept with the library.</summary>
@@ -665,7 +702,7 @@ public abstract partial class ConsoleViewModelBase : ViewModelBase, IConsoleView
 
     [RelayCommand]
     private Task ViewProperties(IReadOnlyList<RomViewModel> roms) =>
-        roms.FirstOrDefault() is { } r ? Dialogs.ShowPropertiesAsync(r) : Task.CompletedTask;
+        roms.FirstOrDefault() is { } r ? Dialogs.ShowPropertiesAsync(r, _images, ShowRom) : Task.CompletedTask;
 
     public void RunAction(IConsoleRomAction action, IReadOnlyList<RomViewModel> roms)
     {

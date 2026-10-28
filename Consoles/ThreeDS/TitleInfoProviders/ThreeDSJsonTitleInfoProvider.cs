@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
+﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using RomManagerShared.Base;
 using RomManagerShared.Base.Database;
 using RomManagerShared.Base.Interfaces;
@@ -66,10 +66,15 @@ public class ThreeDSJsonTitleInfoProvider  : TitleInfoProvider<ThreeDSConsole>
             if (titleInfoDto.Name is not null) rom.AddTitleName(titleInfoDto.Name);
             if (rom.Version == null || rom.Version == "0" || int.Parse(rom.Version) < 0)
                 rom.Version = titleInfoDto.Version;
-            rom.Publisher = titleInfoDto.Publisher;
-            rom.ProductCode = titleInfoDto.ProductCode;
-            rom.Size = titleInfoDto.Size;
+            // The file's own values win: the DB lists the eShop size, and blank fields must not clear what the header gave.
+            if (string.IsNullOrWhiteSpace(rom.Publisher)) rom.Publisher = titleInfoDto.Publisher;
+            if (string.IsNullOrWhiteSpace(rom.ProductCode)) rom.ProductCode = titleInfoDto.ProductCode;
+            if (rom.Size is not > 0 && titleInfoDto.Size > 0) rom.Size = titleInfoDto.Size;
         }
+
+        // Encrypted cartridge dumps have no readable icon: show GameTDB's box art (downloaded when first shown).
+        if (rom is Game && string.IsNullOrWhiteSpace(rom.Icon) && string.IsNullOrWhiteSpace(rom.Thumbnail))
+            rom.Thumbnail = ThreeDSUtils.GameTdbCoverUrl(rom.ProductCode);
 
         return rom;
     }

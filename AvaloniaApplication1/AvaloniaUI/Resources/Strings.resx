@@ -405,4 +405,16 @@ Run it anyway? It will be trusted from now on.</value></data>
   <data name="Theme_Dark" xml:space="preserve"><value>Dark</value></data>
   <data name="Common_OK" xml:space="preserve"><value>OK</value></data>
   <data name="Settings_NotSet" xml:space="preserve"><value>Not set</value></data>
+  <data name="Dialogs_UnknownPlaceholders" xml:space="preserve"><value>Unknown placeholder(s): {0}. Pick one from the lists below.</value></data>
+  <data name="RomDetails_Updates" xml:space="preserve"><value>Updates</value></data>
+  <data name="RomDetails_Dlc" xml:space="preserve"><value>DLC</value></data>
+  <data name="RomDetails_RomHacks" xml:space="preserve"><value>ROM hacks</value></data>
+  <data name="RomDetails_BaseGame" xml:space="preserve"><value>Base game</value></data>
+  <data name="RomDetails_Copy" xml:space="preserve"><value>Copy</value></data>
+  <data name="RomDetails_CopyTip" xml:space="preserve"><value>Copy to the clipboard</value></data>
+  <data name="RomDetails_OpenTip" xml:space="preserve"><value>Show this rom in the list</value></data>
+  <data name="Console_EmulatorTitle" xml:space="preserve"><value>Emulator</value></data>
+  <data name="Console_NoEmulatorChoose" xml:space="preserve"><value>No emulator is set for {0}. Choose its program now? It is saved in Settings → Emulators, where the arguments can be changed.</value></data>
+  <data name="Console_ChooseEmulator" xml:space="preserve"><value>Choose…</value></data>
+  <data name="Console_StartedEmulator" xml:space="preserve"><value>Started {0} with {1}</value></data>
 </root>

@@ -68,7 +68,7 @@ public class WiiUWikiBrewScraper
         }
         else
         {
-            Console.WriteLine("Failed to retrieve HTML content from the URL.");
+            AppLog.Warn("[WiiU] Failed to retrieve HTML content from WiiUBrew.");
         }
 
         return titles;

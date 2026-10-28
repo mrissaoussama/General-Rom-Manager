@@ -1,11 +1,19 @@
-using Avalonia.Media.Imaging;
+﻿using Avalonia.Media.Imaging;
 
 namespace AvaloniaUI.ViewModels;
 
 public sealed record DetailRow(string Key, string Value);
-public sealed record DetailSection(string Header, IReadOnlyList<string> Items);
+/// <summary>A line of a section; <paramref name="Rom"/> is set when it names another rom of the library (clickable).</summary>
+public sealed record DetailItem(string Text, Rom? Rom = null)
+{
+    public bool IsLink => Rom is not null;
+}
+public sealed record DetailSection(string Header, IReadOnlyList<DetailItem> Items);
 
-/// <summary>Side panel content for the selected rom; images load in the background.</summary>
+/// <summary>
+/// Everything known about a rom: the side panel and the Properties dialog show the same thing. Images load in the
+/// background; related games (base game, updates, DLC) are links (<see cref="NavigateRequested"/>).
+/// </summary>
 public sealed partial class RomDetailsViewModel : ViewModelBase, IDisposable
 {
     private const int MaxImages = 6;
@@ -22,7 +30,11 @@ public sealed partial class RomDetailsViewModel : ViewModelBase, IDisposable
     public bool HasHashes => Hashes.Count > 0;
     public IReadOnlyList<DetailSection> Sections { get; }
     public string? Description { get; }
-    public string? BaseGame { get; }
+    public DetailItem? BaseGame { get; }
+    public bool HasBaseGame => BaseGame is not null;
+
+    /// <summary>A related rom was clicked; the page selects it.</summary>
+    public event Action<Rom>? NavigateRequested;
     public ObservableCollection<Bitmap> Images { get; } = [];
     public bool HasImages => Images.Count > 0;
 
@@ -40,20 +52,22 @@ public sealed partial class RomDetailsViewModel : ViewModelBase, IDisposable
 
         var sections = new List<DetailSection>();
         if (src.Ratings?.Count > 0)
-            sections.Add(new("Ratings", src.Ratings.Select(r =>
-                $"{r.Name}: {r.Age}+" + (r.RatingContents?.Any() == true ? $" ({string.Join(", ", r.RatingContents)})" : "")).ToList()));
+            sections.Add(new(Labels.Property("Rating"), src.Ratings.Select(r => new DetailItem(
+                $"{r.Name}: {r.Age}+" + (r.RatingContents?.Any() == true ? $" ({string.Join(", ", r.RatingContents)})" : ""))).ToList()));
         if (src is Game game)
         {
-            AddSection(sections, "Updates", game.Updates?.Select(u => Name(u) + (string.IsNullOrEmpty(u.Version) ? "" : $" v{u.Version}")));
-            AddSection(sections, "DLC", game.DLCs?.Select(Name));
-            AddSection(sections, "ROM hacks", game.RomHacks?.Select(Name));
+            AddSection(sections, Strings.RomDetails_Updates, game.Updates?
+                .OrderBy(u => VersionKey.Parse(u.Version))
+                .Select(u => new DetailItem(Name(u) + (string.IsNullOrEmpty(u.Version) ? "" : $" v{u.Version}"), u)));
+            AddSection(sections, Strings.RomDetails_Dlc, game.DLCs?.Select(d => new DetailItem(Name(d), d)));
+            AddSection(sections, Strings.RomDetails_RomHacks, game.RomHacks?.Select(h => new DetailItem(Name(h), h)));
         }
         Sections = sections;
 
         BaseGame = src switch
         {
-            Update { RelatedGame: { } g } => Name(g),
-            DLC { RelatedGame: { } g } => Name(g),
+            Update { RelatedGame: { } g } => new DetailItem(Name(g), g),
+            DLC { RelatedGame: { } g } => new DetailItem(Name(g), g),
             _ => null,
         };
 
@@ -63,12 +77,21 @@ public sealed partial class RomDetailsViewModel : ViewModelBase, IDisposable
 
     private static string Name(Rom r) => r.Titles?.FirstOrDefault()?.Value ?? r.TitleID ?? "Unknown";
 
-    private static void AddSection(List<DetailSection> sections, string header, IEnumerable<string>? items)
+    private static void AddSection(List<DetailSection> sections, string header, IEnumerable<DetailItem>? items)
     {
         var list = items?.ToList();
         if (list is { Count: > 0 })
-            sections.Add(new($"{header} ({list.Count})", list.Take(20).ToList()));
+            sections.Add(new($"{header} ({list.Count})", list.Take(50).ToList()));
     }
+
+    [RelayCommand]
+    private void Open(Rom? rom)
+    {
+        if (rom is not null) NavigateRequested?.Invoke(rom);
+    }
+
+    [RelayCommand]
+    private static Task Copy(string? value) => string.IsNullOrEmpty(value) ? Task.CompletedTask : Shell.CopyAsync(value);
 
     private async Task LoadImagesAsync(ImageCache cache, Rom src)
     {

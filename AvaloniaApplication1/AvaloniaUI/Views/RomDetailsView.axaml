@@ -1,10 +1,11 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:res="using:AvaloniaUI.Resources"
              xmlns:vm="using:AvaloniaUI.ViewModels"
              xmlns:imaging="using:Avalonia.Media.Imaging"
              x:Class="AvaloniaUI.Views.RomDetailsView"
-             x:DataType="vm:RomDetailsViewModel">
+             x:DataType="vm:RomDetailsViewModel"
+             x:Name="Root">
     <StackPanel Margin="10" Spacing="4">
         <ItemsControl ItemsSource="{Binding Images}" IsVisible="{Binding HasImages}" Margin="0,0,0,6">
             <ItemsControl.ItemsPanel>
@@ -25,16 +26,22 @@
         <ItemsControl ItemsSource="{Binding Properties}">
             <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="vm:DetailRow">
-                    <Grid ColumnDefinitions="110,*" Margin="0,1">
+                    <Grid ColumnDefinitions="110,*,Auto" Margin="0,1">
                         <TextBlock Text="{Binding Key}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
                         <SelectableTextBlock Grid.Column="1" Text="{Binding Value}" TextWrapping="Wrap" />
+                        <Button Grid.Column="2" Classes="copy" Content="⧉" ToolTip.Tip="{x:Static res:Strings.RomDetails_CopyTip}"
+                                AutomationProperties.Name="{x:Static res:Strings.RomDetails_Copy}"
+                                Command="{Binding #Root.((vm:RomDetailsViewModel)DataContext).CopyCommand}" CommandParameter="{Binding Value}" />
                     </Grid>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>
 
-        <TextBlock Text="{Binding BaseGame, StringFormat={x:Static res:Strings.RomDetails_BaseGame0}}" Classes="muted" Margin="0,6,0,0"
-                   IsVisible="{Binding BaseGame, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,6,0,0" IsVisible="{Binding HasBaseGame}">
+            <TextBlock Text="{x:Static res:Strings.RomDetails_BaseGame}" FontWeight="SemiBold" />
+            <Button Classes="link" Content="{Binding BaseGame.Text}" ToolTip.Tip="{x:Static res:Strings.RomDetails_OpenTip}"
+                    Command="{Binding OpenCommand}" CommandParameter="{Binding BaseGame.Rom}" />
+        </StackPanel>
 
         <StackPanel IsVisible="{Binding Description, Converter={x:Static ObjectConverters.IsNotNull}}">
             <TextBlock Text="{x:Static res:Strings.RomDetails_Description}" Classes="section" />
@@ -48,8 +55,14 @@
                         <TextBlock Text="{Binding Header}" Classes="section" />
                         <ItemsControl ItemsSource="{Binding Items}">
                             <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="x:String">
-                                    <TextBlock Text="{Binding}" Margin="8,0,0,1" TextTrimming="CharacterEllipsis" />
+                                <DataTemplate x:DataType="vm:DetailItem">
+                                    <Panel Margin="8,0,0,1">
+                                        <TextBlock Text="{Binding Text}" TextTrimming="CharacterEllipsis" IsVisible="{Binding !IsLink}" />
+                                        <Button Classes="link" Content="{Binding Text}" IsVisible="{Binding IsLink}"
+                                                ToolTip.Tip="{x:Static res:Strings.RomDetails_OpenTip}"
+                                                Command="{Binding #Root.((vm:RomDetailsViewModel)DataContext).OpenCommand}"
+                                                CommandParameter="{Binding Rom}" />
+                                    </Panel>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
@@ -63,9 +76,12 @@
             <ItemsControl ItemsSource="{Binding Hashes}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:DetailRow">
-                        <Grid ColumnDefinitions="60,*" Margin="0,1">
+                        <Grid ColumnDefinitions="60,*,Auto" Margin="0,1">
                             <TextBlock Text="{Binding Key}" FontWeight="SemiBold" />
                             <SelectableTextBlock Grid.Column="1" Text="{Binding Value}" Classes="mono" TextWrapping="Wrap" />
+                            <Button Grid.Column="2" Classes="copy" Content="⧉" ToolTip.Tip="{x:Static res:Strings.RomDetails_CopyTip}"
+                                    AutomationProperties.Name="{x:Static res:Strings.RomDetails_Copy}"
+                                    Command="{Binding #Root.((vm:RomDetailsViewModel)DataContext).CopyCommand}" CommandParameter="{Binding Value}" />
                         </Grid>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>

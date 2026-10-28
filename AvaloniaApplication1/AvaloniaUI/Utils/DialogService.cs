@@ -1,4 +1,4 @@
-namespace AvaloniaUI.Utils;
+﻿namespace AvaloniaUI.Utils;
 
 /// <summary>
 /// Dialogs and pickers for view models, so they never construct windows themselves and tests can
@@ -11,7 +11,8 @@ public interface IDialogService
     /// <summary>Shows a one-line-per-change list; true when the user confirmed.</summary>
     Task<bool> PreviewAsync(string title, string summary, IEnumerable<string> lines, string confirmText, bool showCancel = true);
 
-    Task ShowPropertiesAsync(RomViewModel rom);
+    /// <summary>The rom's details; clicking a related rom closes the dialog and calls <paramref name="navigate"/>.</summary>
+    Task ShowPropertiesAsync(RomViewModel rom, ImageCache? images = null, Action<Rom>? navigate = null);
 
     Task<ConsoleDescriptor?> ChooseConsoleAsync(string folder, IReadOnlyList<ConsoleDescriptor> consoles, ConsoleDescriptor? guess, string detail);
 
@@ -55,7 +56,8 @@ public sealed class AvaloniaDialogService : IDialogService
     public Task<bool> PreviewAsync(string title, string summary, IEnumerable<string> lines, string confirmText, bool showCancel = true) =>
         ShowAsync(new PreviewDialogViewModel(title, summary, lines, confirmText, showCancel));
 
-    public Task ShowPropertiesAsync(RomViewModel rom) => ShowAsync(new PropertiesDialogViewModel(rom));
+    public Task ShowPropertiesAsync(RomViewModel rom, ImageCache? images = null, Action<Rom>? navigate = null) =>
+        ShowAsync(new PropertiesDialogViewModel(rom, images, navigate));
 
     public async Task<ConsoleDescriptor?> ChooseConsoleAsync(string folder, IReadOnlyList<ConsoleDescriptor> consoles,
         ConsoleDescriptor? guess, string detail)

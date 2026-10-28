@@ -1,4 +1,4 @@
-using RomManagerShared.Base;
+﻿using RomManagerShared.Base;
 using RomManagerShared.Base.Database;
 using RomManagerShared.Base.Interfaces;
 using RomManagerShared.Interfaces;
@@ -325,7 +325,7 @@ public class SwitchJsonTitleInfoProvider : TitleInfoProvider<SwitchConsole>
         //rom.Genres = romDto.Genres ;
         //  rom.Languages = romDto.Languages ?? rom.Languages;
         rom.Developer = romDto.Developer ?? rom.Developer;
-        rom.Size = romDto.Size ?? rom.Size;
+        rom.Size ??= romDto.Size; // the parser's size is the file's; the DB's is the eShop download
         // rom.Description = romDto.Description ?? rom.Description;
         if (romDto.Languages is not null)
         {
